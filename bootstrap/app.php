@@ -1,0 +1,88 @@
+<?php
+
+    use App\Http\Middleware\AfterMiddleware;
+    use App\Http\Middleware\EnsureEmailIsVerified;
+    use App\Http\Middleware\SubscribedMiddleware;
+    use Illuminate\Foundation\Application;
+    use Illuminate\Foundation\Configuration\Exceptions;
+    use Illuminate\Foundation\Configuration\Middleware;
+    use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+    use Spatie\Permission\Middleware\PermissionMiddleware;
+
+    return Application::configure( basePath: dirname( __DIR__ ) )
+                      ->withRouting(
+                          web: __DIR__ . '/../routes/web.php' ,
+                          api: __DIR__ . '/../routes/api.php' ,
+                          commands: __DIR__ . '/../routes/console.php' ,
+                          health: '/up' ,
+                      )
+                      ->withMiddleware( function (Middleware $middleware) : void {
+                          $middleware->api( prepend: [
+                              EnsureFrontendRequestsAreStateful::class ,
+                              AfterMiddleware::class ,
+                              SubscribedMiddleware::class
+                          ] );
+
+                          $middleware->alias( [
+                              'verified'   => EnsureEmailIsVerified::class ,
+                              'subscribed' => SubscribedMiddleware::class ,
+                              'after'      => AfterMiddleware::class ,
+                              'permission' => PermissionMiddleware::class ,
+                          ] );
+
+                      } )
+                      ->withExceptions( function (Exceptions $exceptions) : void {
+                          // Handle unauthorized access
+                          $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => 'User does not have the right permissions.'
+                              ] , 403 );
+                          } );
+
+                          // Handle model not found
+                          $exceptions->render( function (Illuminate\Database\Eloquent\ModelNotFoundException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => 'No query results for model.'
+                              ] , 404 );
+                          } );
+
+                          // Handle method not allowed
+                          $exceptions->render( function (Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => 'Method not supported for the route.'
+                              ] , 405 );
+                          } );
+
+                          // Handle not found (invalid route)
+                          $exceptions->render( function (Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => 'The specified URL cannot be found.'
+                              ] , 404 );
+                          } );
+
+                          // Handle general HTTP exceptions
+                          $exceptions->render( function (Symfony\Component\HttpKernel\Exception\HttpException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => $e->getMessage()
+                              ] , 422 );
+                          } );
+
+                          // Handle query exceptions
+                          $exceptions->render( function (Illuminate\Database\QueryException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => $e->getMessage()
+                              ] , 422 );
+                          } );
+
+                          // Optional: log for debugging (like your `reportable` callback)
+                          $exceptions->report( function (Throwable $e) {
+                              info( "{$e->getFile()} line {$e->getLine()}" );
+                              info( $e->getTraceAsString() );
+                          } );
+                      } )->create();

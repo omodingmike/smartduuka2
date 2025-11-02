@@ -1,0 +1,9 @@
+LOAD DATABASE
+     FROM mysql://root@localhost/ajmalcollections
+     INTO postgresql://postgres@localhost/ajmalcollections
+
+ WITH include no drop, create tables, create indexes, reset sequences,
+      data only
+
+ SET work_mem to '16MB',
+     maintenance_work_mem to '512 MB';
