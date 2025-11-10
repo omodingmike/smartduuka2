@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+    namespace App\Http\Controllers\Admin;
 
 
+    use App\Http\Controllers\Controller;
+    use App\Traits\HasAdvancedIndex;
 
-use App\Http\Controllers\Controller;
-
-class AdminController extends Controller
-{
-    public function __construct()
+    class AdminController extends Controller
     {
+        use HasAdvancedIndex;
 
+        public function __construct() {}
     }
-}

@@ -26,9 +26,9 @@ class OtpResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            "otp_type"        => $this->info['otp_type'],
-            "otp_digit_limit" => $this->info['otp_digit_limit'],
-            "otp_expire_time" => $this->info['otp_expire_time'],
+            'otp_type'        => $this->info[ 'otp_type' ] ?? '' ,
+            'otp_digit_limit' => $this->info[ 'otp_digit_limit' ] ?? 4 ,
+            'otp_expire_time' => $this->info[ 'otp_expire_time' ] ?? 1 ,
         ];
     }
 }

@@ -6,10 +6,12 @@ use App\Http\Requests\CurrencyRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\CurrencyResource;
 use App\Models\Currency;
+use App\Models\PaymentMethod;
 use App\Services\CurrencyService;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -68,5 +70,9 @@ class CurrencyController extends AdminController
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
+    }
+    public function deleteMethods(Request $request)
+    {
+        Currency::destroy( $request->get( 'ids' ) );
     }
 }

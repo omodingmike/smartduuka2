@@ -6,6 +6,9 @@ use App\Http\Requests\NotificationRequest;
 use App\Http\Resources\NotificationResource;
 use App\Services\NotificationService;
 use Exception;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Response;
 
 class NotificationController extends AdminController
 {
@@ -19,7 +22,7 @@ class NotificationController extends AdminController
     }
 
     public function index(
-    ) : \Illuminate\Http\Response | NotificationResource | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    ) : Response | NotificationResource | Application | ResponseFactory
     {
         try {
             return new NotificationResource($this->notificationService->list());
@@ -29,7 +32,7 @@ class NotificationController extends AdminController
     }
 
     public function update(NotificationRequest $request
-    ) : \Illuminate\Http\Response | NotificationResource | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory {
+    ) : Response | NotificationResource | Application | ResponseFactory {
         try {
             return new NotificationResource($this->notificationService->update($request));
         } catch (Exception $exception) {

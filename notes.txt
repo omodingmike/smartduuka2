@@ -1,0 +1,4 @@
+$query        = PaymentMethod::query();
+            $searchFields = [ 'name' , 'code' ];
+            $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
+            return PaymentMethodResource::collection( $methods );

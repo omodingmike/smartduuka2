@@ -22,6 +22,8 @@
     use App\Http\Controllers\Admin\MenuSectionController;
     use App\Http\Controllers\Admin\MenuTemplateController;
     use App\Http\Controllers\Admin\MyOrderDetailsController;
+    use App\Http\Controllers\Admin\NotificationController;
+    use App\Http\Controllers\Admin\OtpController;
     use App\Http\Controllers\Admin\PaymentGatewayController;
     use App\Http\Controllers\Admin\PermissionController;
     use App\Http\Controllers\Admin\PosController;
@@ -234,12 +236,23 @@
                 Route::match( [ 'put' , 'patch' ] , '/' , [ MailController::class , 'update' ] );
             } );
 
+            Route::prefix( 'notification' )->name( 'notification.' )->group( function () {
+                Route::get( '/' , [ NotificationController::class , 'index' ] );
+                Route::match( [ 'put' , 'patch' ] , '/' , [ NotificationController::class , 'update' ] );
+            } );
+
+            Route::prefix( 'otp' )->name( 'otp.' )->group( function () {
+                Route::get( '/' , [ OtpController::class , 'index' ] );
+                Route::match( [ 'put' , 'patch' ] , '/' , [ OtpController::class , 'update' ] );
+            } );
+
             Route::prefix( 'currency' )->name( 'currency.' )->group( function () {
                 Route::get( '/' , [ CurrencyController::class , 'index' ] );
                 Route::get( '/show/{currency}' , [ CurrencyController::class , 'show' ] );
                 Route::post( '/' , [ CurrencyController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{currency}' , [ CurrencyController::class , 'update' ] );
-                Route::delete( '/{currency}' , [ CurrencyController::class , 'destroy' ] );
+                // Route::delete( '/{currency}' , [ CurrencyController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ CurrencyController::class , 'deleteMethods' ] );
             } );
 
             Route::prefix( 'tax' )->name( 'tax.' )->group( function () {
@@ -247,7 +260,8 @@
                 Route::get( '/show/{tax}' , [ TaxController::class , 'show' ] );
                 Route::post( '/' , [ TaxController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{tax}' , [ TaxController::class , 'update' ] );
-                Route::delete( '/{tax}' , [ TaxController::class , 'destroy' ] );
+//                Route::delete( '/{tax}' , [ TaxController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ TaxController::class , 'deleteMethods' ] );
             } );
 
             Route::prefix( 'product-category' )->name( 'product-category.' )->group( function () {
@@ -345,7 +359,8 @@
                 Route::post( '/' , [ RoleController::class , 'store' ] );
                 Route::get( '/show/{role}' , [ RoleController::class , 'show' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{role}' , [ RoleController::class , 'update' ] );
-                Route::delete( '/{role}' , [ RoleController::class , 'destroy' ] );
+//                Route::delete( '/{role}' , [ RoleController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ RoleController::class , 'destroy' ] );
             } );
 
             Route::prefix( 'permission' )->name( 'permission.' )->group( function () {

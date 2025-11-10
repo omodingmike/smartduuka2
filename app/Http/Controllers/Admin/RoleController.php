@@ -10,6 +10,7 @@
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
     use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
     use Spatie\Permission\Models\Role;
 
@@ -21,52 +22,55 @@
         {
             parent::__construct();
             $this->roleService = $roleService;
-            $this->middleware([ 'permission:settings' ])->only('show' , 'store' , 'update' , 'destroy');
+            $this->middleware( [ 'permission:settings' ] )->only( 'show' , 'store' , 'update' , 'destroy' );
         }
 
-        public function index(PaginateRequest $request) : Application | Response | \Illuminate\Http\Resources\Json\AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return RoleResource::collection($this->roleService->list($request));
+                $query        = Role::query();
+                $searchFields = [ 'name' ];
+                $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
+                return RoleResource::collection( $methods );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function show(Role $role) : RoleResource | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return new RoleResource($this->roleService->show($role));
+                return new RoleResource( $this->roleService->show( $role ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function store(RoleRequest $request) : RoleResource | Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return new RoleResource($this->roleService->store($request));
+                return new RoleResource( $this->roleService->store( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function update(RoleRequest $request , Role $role) : RoleResource | Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return new RoleResource($this->roleService->update($request , $role));
+                return new RoleResource( $this->roleService->update( $request , $role ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
-        public function destroy(Role $role) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function destroy(Request $request) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                $this->roleService->destroy($role);
-                return response('' , 202);
+                Role::destroy( $request->ids );
+                return response( '' , 202 );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
     }
