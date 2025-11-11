@@ -27,25 +27,24 @@
             $this->permissionService = $permissionService;
             $this->middleware( [ 'permission:settings' ] )->only( 'update' );
         }
-
-        public function index(Role $role) : Application | Response | JsonResponse | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function index(Role $role)
         {
             try {
                 $permissions     = Permission::get();
                 $rolePermissions = Permission::join(
-                    "role_has_permissions" ,
-                    "role_has_permissions.permission_id" ,
-                    "=" ,
-                    "permissions.id"
-                )->where( "role_has_permissions.role_id" , $role->id )->get()->pluck( 'name' , 'id' );
-                $permissions     = AppLibrary::permissionWithAccess( $permissions , $rolePermissions );
-                $permissions     = AppLibrary::numericToAssociativeArrayBuilder( $permissions->toArray() );
-                $role->users()->each( function (User $user) {
-                    $user->tokens()->delete();
-                } );
-                return new JsonResponse( [ 'data' => $permissions ] , 201 );
+                    'role_has_permissions' ,
+                    'role_has_permissions.permission_id' ,
+                    '=' ,
+                    'permissions.id'
+                )->where('role_has_permissions.role_id' , $role->id)->get()->pluck('name' , 'id');
+                $permissions     = permissionWithAccess($permissions , $rolePermissions);
+                return [
+                    'role'        => $role ,
+                    'permissions' => numericToAssociativeArrayBuilder($permissions->toArray()) ,
+                    'access'         => $role->permissions
+                ];
             } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
             }
         }
 

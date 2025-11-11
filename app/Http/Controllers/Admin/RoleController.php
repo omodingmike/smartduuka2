@@ -64,10 +64,10 @@
             }
         }
 
-        public function destroy(Request $request) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function destroy(Request $request)
         {
             try {
-                Role::destroy( $request->ids );
+                Role::whereIn( 'id' , $request->ids )->delete();
                 return response( '' , 202 );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

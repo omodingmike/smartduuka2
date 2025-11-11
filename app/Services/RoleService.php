@@ -6,7 +6,6 @@
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\RoleRequest;
     use Exception;
-    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Log;
     use Spatie\Permission\Models\Role;
 

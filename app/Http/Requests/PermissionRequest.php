@@ -28,4 +28,14 @@ class PermissionRequest extends FormRequest
             'permissions' => ['nullable', 'array']
         ];
     }
+    protected function prepareForValidation(): void
+    {
+        $permissions = $this->input('permissions');
+
+        if ($permissions && is_string($permissions)) {
+            $this->merge([
+                'permissions' => json_decode($permissions)
+            ]);
+        }
+    }
 }

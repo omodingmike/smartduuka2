@@ -25,11 +25,54 @@
         return Settings::group( 'site' )->get( 'project' );
     }
 
+    function numericToAssociativeArrayBuilder($array) : array
+    {
+        $i                 = 0;
+        $parentId          = null;
+        $parentIncrementId = null;
+        $buildArray        = [];
+        if ( count($array) ) {
+            foreach ( $array as $arr ) {
+                if ( ! $arr['parent'] ) {
+                    $parentId          = $arr['id'];
+                    $parentIncrementId = $i;
+                    $buildArray[$i]    = $arr;
+                    $i++;
+                }
+
+                if ( $arr['parent'] == $parentId ) {
+                    $buildArray[$parentIncrementId]['children'][] = $arr;
+                }
+            }
+        }
+        if ( $buildArray ) {
+            foreach ( $buildArray as $key => $build ) {
+                if ( $build['url'] == '#' && ! isset($build['children']) ) {
+                    unset($buildArray[$key]);
+                }
+            }
+        }
+        return $buildArray;
+    }
     function phoneNumber() : string
     {
         $code  = Settings::group( 'company' )->get( 'company_calling_code' );
         $phone = substr( Settings::group( 'company' )->get( 'company_phone' ) , -9 );
         return "$code$phone";
+    }
+
+    function permissionWithAccess(&$permissions , $rolePermissions) : object
+    {
+        if ( $permissions ) {
+            foreach ( $permissions as $permission ) {
+                if ( isset($rolePermissions[$permission->id]) ) {
+                    $permission->access = true;
+                } else {
+                    $permission->access = false;
+                }
+            }
+        }
+        return $permissions;
     }
 
     function isDistributor()
