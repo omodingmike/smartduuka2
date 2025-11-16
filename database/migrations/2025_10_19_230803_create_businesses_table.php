@@ -12,6 +12,7 @@
          */
         public function up() : void
         {
+            Schema::dropIfExists( 'businesses' );
             Schema::create( 'businesses' , function (Blueprint $table) {
                 $table->id();
                 $table->string( 'business_id' );

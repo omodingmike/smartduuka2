@@ -15,10 +15,8 @@
 
         public function index(Request $request)
         {
-            $query        = PaymentMethod::query();
-            $searchFields = [ 'name' , 'code' ];
-            $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
-            return PaymentMethodResource::collection( $methods );
+            $filtered = $this->filter( new PaymentMethod() , $request , [ 'name' , 'code' ] );
+            return PaymentMethodResource::collection( $filtered );
         }
 
         public function store(StorePaymentMethodRequest $request)

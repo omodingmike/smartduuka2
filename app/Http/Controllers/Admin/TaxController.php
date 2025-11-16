@@ -5,7 +5,6 @@
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\TaxRequest;
     use App\Http\Resources\TaxResource;
-    use App\Models\Currency;
     use App\Models\Tax;
     use App\Services\TaxService;
     use Exception;
@@ -29,11 +28,8 @@
         public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                $query        = Tax::query();
-                $searchFields = [ 'name' ];
-                $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
+                $methods = $this->filter( new Tax() , $request , [ 'name' ] );
                 return TaxResource::collection( $methods );
-//            return TaxResource::collection($this->taxService->list($request));
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

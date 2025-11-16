@@ -2,3 +2,5 @@ $query        = PaymentMethod::query();
             $searchFields = [ 'name' , 'code' ];
             $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
             return PaymentMethodResource::collection( $methods );
+
+              $filtered = $this->handleIndex( new PaymentMethod() , $request , [ 'name' , 'code' ] );

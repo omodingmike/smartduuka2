@@ -31,7 +31,7 @@
         public static function datetime($dateTime , $pattern = NULL) : string
         {
             if ( ! $pattern ) {
-                $pattern =  config( 'system.time_format' ) . ', ' . config( 'system.date_format' );
+                $pattern = config( 'system.time_format' ) . ', ' . config( 'system.date_format' );
             }
             return Carbon::parse( $dateTime )->format( $pattern );
         }
@@ -39,7 +39,7 @@
         public static function datetime2(Carbon $dateTime , $pattern = NULL) : string
         {
             if ( ! $pattern ) {
-                $pattern = config( 'system.date_format' ) . ' ' . config( 'system.time_format' ) ;
+                $pattern = config( 'system.date_format' ) . ' ' . config( 'system.time_format' );
             }
             return $dateTime->format( $pattern );
         }
@@ -55,7 +55,7 @@
         public static function deliveryTime($dateTime , $pattern = NULL) : string
         {
             if ( ! $pattern ) {
-                $pattern =config( 'system.time_format' );
+                $pattern = config( 'system.time_format' );
             }
             $explode = explode( '-' , $dateTime );
             if ( count( $explode ) == 2 ) {
@@ -123,7 +123,6 @@
                     }
                 }
             }
-
             return $buildArray;
         }
 
@@ -237,20 +236,20 @@
 
         public static function currencyAmountFormat($amount) : string
         {
-            if ( config('system.currency_position') == CurrencyPosition::LEFT ) {
-                return config('system.currency_symbol') . ' ' . number_format( $amount , config('system.currency_decimal_point'));
+            if ( config( 'system.currency_position' ) == CurrencyPosition::LEFT ) {
+                return config( 'system.currency_symbol' ) . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
             }
-            return number_format( $amount , config('system.currency_decimal_point') ) . ' ' . config('system.currency_symbol');
+            return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . config( 'system.currency_symbol' );
         }
 
         public static function flatAmountFormat($amount) : string
         {
-            return number_format( $amount , config('system.currency_decimal_point') , '.' , '' );
+            return number_format( $amount , config( 'system.currency_decimal_point' ) , '.' , '' );
         }
 
         public static function convertAmountFormat($amount) : float
         {
-            return (float) number_format( $amount , config('system.currency_decimal_point') , '.' , '' );
+            return (float) number_format( $amount , config( 'system.currency_decimal_point' ) , '.' , '' );
         }
 
         public static function fcmDataBind($request) : void
@@ -411,7 +410,7 @@
 
         public static function reportCurrencyAmountFormat($amount) : string
         {
-            return number_format( $amount , config('system.currency_decimal_point') , '.' , ',' );
+            return number_format( $amount , config( 'system.currency_decimal_point' ) , '.' , ',' );
         }
 
         public static function textShortener($text , $number = 30)

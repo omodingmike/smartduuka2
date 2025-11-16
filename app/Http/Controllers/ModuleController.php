@@ -43,7 +43,6 @@
             try {
                 $data = $request->validated();
                 Settings::group('module')->set($data);
-                PersonalAccessToken::truncate();
                 return new SiteModuleResource($this->list());
             } catch ( Exception $exception ) {
                 Log::info($exception->getMessage());

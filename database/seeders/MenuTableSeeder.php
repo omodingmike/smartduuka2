@@ -22,6 +22,7 @@
                     'created_at' => now() ,
                     'updated_at' => now()
                 ] ,
+
                 [
                     'name'       => 'Sales' ,
                     'language'   => 'sales' ,
@@ -47,7 +48,7 @@
                         ] ,
                         [
                             'name'       => 'Add Sale' ,
-                            'url'        => 'sales/add' ,
+                            'url'        => 'add' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -70,9 +71,9 @@
                         ,
 
                         [
-                            'name'       => 'Orders & Sales' ,
+                            'name'       => 'Sales' ,
                             'language'   => 'pos_orders' ,
-                            'url'        => 'pos-orders' ,
+                            'url'        => 'sales' ,
                             'icon'       => 'lab lab-line-push-notification' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
@@ -81,9 +82,9 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Credit Orders' ,
-                            'language'   => 'pos_credit_orders' ,
-                            'url'        => 'pos-orders/credit' ,
+                            'name'       => 'Credit Sales' ,
+                            'language'   => 'credit' ,
+                            'url'        => 'credit' ,
                             'icon'       => 'lab lab-line-orders' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
@@ -92,9 +93,9 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Deposited Orders' ,
+                            'name'       => 'Deposited Sales' ,
                             'language'   => 'pos_deposit_orders' ,
-                            'url'        => 'pos-orders/deposit' ,
+                            'url'        => 'deposit' ,
                             'icon'       => 'lab lab-line-pages' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
@@ -105,7 +106,18 @@
                     ] ,
                 ] ,
                 [
-                    'name'       => 'Distribution Hub' ,
+                    'name'       => 'Commission' ,
+                    'language'   => 'products' ,
+                    'url'        => 'commission' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Cleaning & Care' ,
                     'language'   => 'distribution_hub' ,
                     'url'        => '#' ,
                     'icon'       => 'lab lab-pos' ,
@@ -116,7 +128,63 @@
                     'updated_at' => now() ,
                     'children'   => [
                         [
-                            'name'       => 'Distribution Routes' ,
+                            'name'       => 'Order Mgt Board' ,
+                            'url'        => 'orders' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'Cleaning Services' ,
+                            'url'        => 'cleaning' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] , [
+                            'name'       => 'Cleaning Settings' ,
+                            'url'        => 'settings' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ]
+                    ]
+                ] ,
+                [
+                    'name'       => 'Services' ,
+                    'language'   => 'products' ,
+                    'url'        => 'services' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Customers' ,
+                    'language'   => 'distribution_hub' ,
+                    'url'        => '#' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                    'children'   => [
+                        [
+                            'name'       => 'Customer List' ,
                             'url'        => 'distribution-routes' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
@@ -127,7 +195,7 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Truck Stock' ,
+                            'name'       => 'Loyalty / Membership' ,
                             'url'        => 'distribution-routes/truck-stock' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
@@ -140,8 +208,63 @@
                     ]
                 ] ,
                 [
-                    'name'       => 'Commission' ,
-                    'language'   => 'commission' ,
+                    'name'       => 'Inventory' ,
+                    'language'   => 'products' ,
+                    'url'        => 'inventory' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Distribution' ,
+                    'language'   => 'products' ,
+                    'url'        => 'distribution' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Stock' ,
+                    'language'   => 'products' ,
+                    'url'        => 'stock' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Warehouse & Storage' ,
+                    'language'   => 'products' ,
+                    'url'        => 'stock' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Procurement' ,
+                    'language'   => 'products' ,
+                    'url'        => 'stock' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Production / Manufacturing' ,
+                    'language'   => 'distribution_hub' ,
                     'url'        => '#' ,
                     'icon'       => 'lab lab-pos' ,
                     'priority'   => 100 ,
@@ -151,8 +274,8 @@
                     'updated_at' => now() ,
                     'children'   => [
                         [
-                            'name'       => 'Commission Rules' ,
-                            'url'        => 'distribution-routes/commission' ,
+                            'name'       => 'Raw Materials' ,
+                            'url'        => 'raw-materials' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -162,18 +285,8 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Commission Summary' ,
-                            'url'        => 'distribution-routes/commission-summary' ,
-                            'language'   => 'pos' ,
-                            'icon'       => 'lab lab-line-pos' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] , [
-                            'name'       => 'Commission Payout' ,
-                            'url'        => 'distribution-routes/commission-payout' ,
+                            'name'       => 'Production Setup' ,
+                            'url'        => 'production-setup' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -182,7 +295,119 @@
                             'created_at' => now() ,
                             'updated_at' => now()
                         ] ,
+                        [
+                            'name'       => 'Production Processes' ,
+                            'url'        => 'production-processes' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ],
+                        [
+                            'name'       => 'Production Output' ,
+                            'url'        => 'production-output' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ],
                     ]
+                ] ,
+                [
+                    'name'       => 'Projects' ,
+                    'language'   => 'distribution_hub' ,
+                    'url'        => '#' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                    'children'   => [
+                        [
+                            'name'       => 'Projects List' ,
+                            'url'        => 'projects' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'Tasks' ,
+                            'url'        => 'tasks' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'Timesheets' ,
+                            'url'        => 'timesheets' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ],
+                        [
+                            'name'       => 'Project Settings' ,
+                            'url'        => 'settings' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ],
+                    ]
+                ] ,
+                [
+                    'name'       => 'Expenses' ,
+                    'language'   => 'products' ,
+                    'url'        => 'expenses' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Branches' ,
+                    'language'   => 'products' ,
+                    'url'        => 'branches' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Asset Management' ,
+                    'language'   => 'products' ,
+                    'url'        => 'asset-management' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
                 ] ,
                 [
                     'name'       => 'Accounting' ,
@@ -231,10 +456,9 @@
                         ] ,
                     ] ,
                 ] ,
-
                 [
-                    'name'       => 'Products' ,
-                    'language'   => 'pos_and_orders' ,
+                    'name'       => 'Human Resource' ,
+                    'language'   => 'distribution_hub' ,
                     'url'        => '#' ,
                     'icon'       => 'lab lab-pos' ,
                     'priority'   => 100 ,
@@ -244,10 +468,10 @@
                     'updated_at' => now() ,
                     'children'   => [
                         [
-                            'name'       => 'Products List' ,
-                            'language'   => 'products' ,
-                            'url'        => 'products' ,
-                            'icon'       => 'lab lab-line-items' ,
+                            'name'       => 'Employee Management' ,
+                            'url'        => 'employee-management' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
@@ -255,267 +479,53 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Product Settings' ,
-                            'language'   => 'product_settings' ,
-                            'url'        => 'product' ,
-                            'icon'       => 'lab lab-line-items' ,
+                            'name'       => 'Payroll' ,
+                            'url'        => 'payroll' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
-                        ] ,
-                    ] ,
-                ] ,
-                [
-                    'name'       => 'Inventory' ,
-                    'language'   => 'pos_and_orders' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab lab-pos' ,
-                    'priority'   => 100 ,
-                    'svg'        => NULL ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
+                        ],
                         [
-                            'name'       => 'Stock' ,
-                            'url'        => 'stock' ,
-                            'language'   => 'stock' ,
-                            'icon'       => 'lab lab-line-stock' ,
+                            'name'       => 'Leave Management' ,
+                            'url'        => 'leave-management' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
-                        ] ,
+                        ],
                         [
-                            'name'       => 'Stock Reconciliation' ,
-                            'url'        => 'stock_reconciliation' ,
-                            'language'   => 'stock_reconciliation' ,
-                            'icon'       => 'lab lab-line-stock' ,
+                            'name'       => 'Recruitment' ,
+                            'url'        => 'recruitment' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
-                        ] ,
+                        ],
                         [
-                            'name'       => 'Stock Damages' ,
-                            'url'        => 'damages' ,
-                            'language'   => 'damages' ,
-                            'svg'        => NULL ,
-                            'icon'       => 'lab lab-line-addons' ,
-                            'priority'   => 100 ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                    ] ,
-                ] ,
-
-                [
-                    'name'       => 'Warehouse & Storage' ,
-                    'language'   => 'warehouse_and_storage' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab' ,
-                    'priority'   => 100 ,
-                    'svg'        => NULL ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
-                        [
-                            'name'       => 'Warehouse' ,
-                            'language'   => 'warehouses_list' ,
-                            'url'        => 'warehouses' ,
-                            'icon'       => 'lab lab-pos-orders' ,
-                            'svg'        => 'ingredient.svg' ,
-                            'priority'   => 100 ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Stock Requests' ,
-                            'url'        => 'stock_requests' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
+                            'name'       => 'Performance' ,
+                            'url'        => 'performance' ,
+                            'language'   => 'pos' ,
+                            'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Stock Transfers' ,
-                            'url'        => 'stock_transfers' ,
-                            'language'   => 'stock_transfers' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                    ] ,
-                ] ,
-
-                [
-                    'name'       => 'Production' ,
-                    'language'   => 'warehouse_and_storage' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab' ,
-                    'priority'   => 100 ,
-                    'svg'        => NULL ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
-                        [
-                            'name'       => 'Raw Materials' ,
-                            'url'        => 'ingredients_and_stock' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => 'Ingredient_purchase.svg' ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Production Setup' ,
-                            'language'   => 'warehouses_list' ,
-                            'url'        => 'production/setup' ,
-                            'icon'       => 'lab lab-pos-orders' ,
-                            'svg'        => 'ingredient.svg' ,
-                            'priority'   => 100 ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Production Processes' ,
-                            'url'        => 'production/production' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Production Results' ,
-                            'url'        => 'production/output' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                    ] ,
-                ] ,
-
-                [
-                    'name'       => 'Purchases' ,
-                    'language'   => 'purchases' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab' ,
-                    'priority'   => 100 ,
-                    'svg'        => NULL ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
-                        [
-                            'name'       => 'Suppliers' ,
-                            'language'   => 'suppliers' ,
-                            'url'        => 'suppliers' ,
-                            'icon'       => 'lab lab-line-supplier' ,
-                            'svg'        => 'ingredient.svg' ,
-                            'priority'   => 100 ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Stock Purchases' ,
-                            'url'        => 'purchase' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Raw Materials Purchases' ,
-                            'url'        => 'raw_material_purchase' ,
-                            'language'   => 'raw_material_purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => 'Ingredient_purchase.svg' ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
-                            'name'       => 'Purchase Returns' ,
-                            'url'        => 'purchase_returns' ,
-                            'language'   => 'purchase' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => 'Ingredient_purchase.svg' ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                    ] ,
-                ] ,
-
-                [
-                    'name'       => 'Expenses' ,
-                    'language'   => 'expenses' ,
-                    'url'        => '#' ,
-                    'svg'        => NULL ,
-                    'icon'       => 'lab lab-item' ,
-                    'priority'   => 100 ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
-                        [
-                            'name'       => 'Categories' ,
-                            'language'   => 'categories' ,
-                            'url'        => 'categories' ,
-                            'icon'       => 'lab lab-line-items' ,
-                            'priority'   => 100 ,
-                            'svg'        => 'expenses_category.svg' ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-
-                        ] ,
-                        [
-                            'name'       => 'Expenses' ,
-                            'url'        => 'expenses' ,
-                            'language'   => 'expenses' ,
-                            'icon'       => 'lab lab-line-add-purchase' ,
-                            'priority'   => 100 ,
-                            'svg'        => 'expenses.svg' ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
+                        ],
                     ]
                 ] ,
-
                 [
-                    'name'       => 'Users/People' ,
+                    'name'       => 'Users' ,
                     'language'   => 'users' ,
                     'url'        => '#' ,
                     'icon'       => 'lab ' ,
@@ -536,17 +546,7 @@
                             'created_at' => now() ,
                             'updated_at' => now()
                         ] ,
-                        [
-                            'name'       => 'Customers' ,
-                            'language'   => 'customers' ,
-                            'url'        => 'customers' ,
-                            'icon'       => 'lab lab-line-cunstomers' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
+
                         [
                             'name'       => 'Employees' ,
                             'language'   => 'employees' ,
@@ -560,8 +560,6 @@
                         ] ,
                     ]
                 ] ,
-
-
                 [
                     'name'       => 'Reports' ,
                     'language'   => 'reports' ,
@@ -586,9 +584,9 @@
 
                         ] ,
                         [
-                            'name'       => 'Stock Expiry Report' ,
-                            'language'   => 'stock_expiry_report' ,
-                            'url'        => 'stock-expiry-report' ,
+                            'name'       => 'Inventory Report' ,
+                            'language'   => 'sales_report' ,
+                            'url'        => 'inventory-report' ,
                             'svg'        => NULL ,
                             'icon'       => 'lab lab-line-sales-report' ,
                             'priority'   => 100 ,
@@ -597,53 +595,72 @@
                             'updated_at' => now()
                         ] ,
                         [
-                            'name'       => 'Products Report' ,
-                            'language'   => 'products_report' ,
-                            'url'        => 'products-report' ,
-                            'icon'       => 'lab lab-line-items-report' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ] ,
-                        [
                             'name'       => 'Production Report' ,
-                            'language'   => 'production_report' ,
+                            'language'   => 'sales_report' ,
                             'url'        => 'production-report' ,
-                            'icon'       => 'lab lab-line-items-report' ,
+                            'svg'        => NULL ,
+                            'icon'       => 'lab lab-line-sales-report' ,
                             'priority'   => 100 ,
                             'status'     => 1 ,
-                            'svg'        => NULL ,
                             'created_at' => now() ,
                             'updated_at' => now()
                         ] ,
-                    ]
-                ] ,
-
-                [
-                    'name'       => 'Payments' ,
-                    'language'   => 'subscriptions' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab ' ,
-                    'svg'        => NULL ,
-                    'priority'   => 100 ,
-                    'status'     => 1 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
                         [
-                            'name'       => 'Subscriptions' ,
-                            'language'   => 'subscriptions' ,
-                            'url'        => 'subscriptions' ,
-                            'icon'       => 'lab lab-line-settings' ,
-                            'priority'   => 100 ,
+                            'name'       => 'Accounting Report' ,
+                            'language'   => 'sales_report' ,
+                            'url'        => 'accounting-report' ,
                             'svg'        => NULL ,
+                            'icon'       => 'lab lab-line-sales-report' ,
+                            'priority'   => 100 ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'Expense Report' ,
+                            'language'   => 'sales_report' ,
+                            'url'        => 'expense-report' ,
+                            'svg'        => NULL ,
+                            'icon'       => 'lab lab-line-sales-report' ,
+                            'priority'   => 100 ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'HR Report' ,
+                            'language'   => 'sales_report' ,
+                            'url'        => 'hr-report' ,
+                            'svg'        => NULL ,
+                            'icon'       => 'lab lab-line-sales-report' ,
+                            'priority'   => 100 ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ] ,
+                        [
+                            'name'       => 'Item / Product Report' ,
+                            'language'   => 'sales_report' ,
+                            'url'        => 'item-report' ,
+                            'svg'        => NULL ,
+                            'icon'       => 'lab lab-line-sales-report' ,
+                            'priority'   => 100 ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
                         ]
                     ]
+                ] ,
+                [
+                    'name'       => 'Subscriptions' ,
+                    'language'   => 'products' ,
+                    'url'        => 'subscriptions' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
                 ] ,
                 [
                     'name'       => 'Activity Logs' ,
@@ -657,42 +674,51 @@
                     'updated_at' => now() ,
                     'children'   => [
                         [
-                            'name'       => 'Activity Logs' ,
+                            'name'       => 'Audit Trail' ,
                             'language'   => 'activity_logs' ,
-                            'url'        => 'activity_logs' ,
+                            'url'        => 'audit-trail' ,
                             'icon'       => 'lab lab-line-settings' ,
                             'priority'   => 100 ,
                             'svg'        => NULL ,
                             'status'     => 1 ,
                             'created_at' => now() ,
                             'updated_at' => now()
-                        ]
+                        ],
+                        [
+                            'name'       => 'Transaction Logs' ,
+                            'language'   => 'activity_logs' ,
+                            'url'        => 'transaction-logs' ,
+                            'icon'       => 'lab lab-line-settings' ,
+                            'priority'   => 100 ,
+                            'svg'        => NULL ,
+                            'status'     => 1 ,
+                            'created_at' => now() ,
+                            'updated_at' => now()
+                        ],
                     ]
                 ] ,
                 [
-                    'name'       => 'Setup' ,
-                    'language'   => 'setup' ,
-                    'url'        => '#' ,
-                    'icon'       => 'lab ' ,
+                    'name'       => 'Modules' ,
+                    'language'   => 'products' ,
+                    'url'        => 'modules' ,
+                    'icon'       => 'lab lab-pos' ,
                     'priority'   => 100 ,
                     'svg'        => NULL ,
                     'status'     => 1 ,
                     'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'children'   => [
-                        [
-                            'name'       => 'Settings' ,
-                            'language'   => 'settings' ,
-                            'url'        => 'settings' ,
-                            'icon'       => 'lab lab-line-settings' ,
-                            'priority'   => 100 ,
-                            'svg'        => NULL ,
-                            'status'     => 1 ,
-                            'created_at' => now() ,
-                            'updated_at' => now()
-                        ]
-                    ]
-                ]
+                    'updated_at' => now()
+                ] ,
+                [
+                    'name'       => 'Settings' ,
+                    'language'   => 'products' ,
+                    'url'        => 'settings' ,
+                    'icon'       => 'lab lab-pos' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
             ];
 
             Menu::insert( AppLibrary::associativeToNumericArrayBuilder( $menus ) );

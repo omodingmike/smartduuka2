@@ -11,6 +11,7 @@
          */
         public function up() : void
         {
+            Schema::dropIfExists( 'subscription_plans' );
             Schema::create( 'subscription_plans' , function (Blueprint $table) {
                 $table->id();
                 $table->string( 'name' );

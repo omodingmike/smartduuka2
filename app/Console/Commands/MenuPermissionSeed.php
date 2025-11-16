@@ -99,7 +99,6 @@
             $data[ 'MAIN_APP' ] = 'demo@smartduuka';
             $env_editor->addData( $data );
             Artisan::call( 'optimize:clear' );
-            PersonalAccessToken::truncate();
             $this->call( 'table:truncate' , [ 'table' => 'menus' ] );
             $this->call( 'db:seed' , [ '--class' => 'MenuTableSeeder' , '--force' => TRUE ] );
             $this->call( 'table:truncate' , [ 'table' => 'permissions' ] );
@@ -119,13 +118,13 @@
             Order::where( 'paid' , '=' , NULL )->update( [ 'paid' => 0 ] );
             Order::query()->update( [ 'balance' => DB::raw( 'total - paid' ) ] );
             Order::where( 'balance' , '<' , 0 )->update( [ 'balance' => 0 ] );
-            $business = Business::firstOrCreate(
-                [ 'project_id' => config( 'app.project_id' ) ] ,
-                [
-                    'business_id'   => config( 'app.business_id' ) ,
-                    'business_name' => Settings::group( 'company' )->get( 'company_name' )
-                ] );
-            $business->update( [ 'phone_number' => phoneNumber() ] );
+//            $business = Business::firstOrCreate(
+//                [ 'project_id' => config( 'app.project_id' ) ] ,
+//                [
+//                    'business_id'   => config( 'app.business_id' ) ,
+//                    'business_name' => Settings::group( 'company' )->get( 'company_name' )
+//                ] );
+//            $business->update( [ 'phone_number' => phoneNumber() ] );
             Currency::where( 'exchange_rate' , NULL )->update( [ 'exchange_rate' => 1 ] );
             $default_currency_symbol = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
             $default_currency        = Currency::where( 'symbol' , $default_currency_symbol )->first();

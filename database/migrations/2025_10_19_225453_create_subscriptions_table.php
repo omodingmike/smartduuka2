@@ -12,6 +12,7 @@
          */
         public function up() : void
         {
+            Schema::dropIfExists( 'subscriptions' );
             Schema::create( 'subscriptions' , function (Blueprint $table) {
                 $table->id();
                 $table->foreignId( 'plan_id' );

@@ -266,11 +266,12 @@
 
             Route::prefix( 'product-category' )->name( 'product-category.' )->group( function () {
                 Route::get( '/' , [ ProductCategoryController::class , 'index' ] );
+                Route::get( '/list' , [ ProductCategoryController::class , 'list' ] );
                 Route::get( '/depth-tree' , [ ProductCategoryController::class , 'depthTree' ] );
                 Route::get( '/show/{productCategory}' , [ ProductCategoryController::class , 'show' ] );
                 Route::post( '/' , [ ProductCategoryController::class , 'store' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/{productCategory}' , [ ProductCategoryController::class , 'update' ] );
-                Route::delete( '/{productCategory}' , [ ProductCategoryController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ ProductCategoryController::class , 'destroy' ] );
                 Route::get( '/ancestors-and-self/{productCategory:slug}' , [ ProductCategoryController::class , 'ancestorsAndSelf' ] );
                 Route::get( '/tree' , [ ProductCategoryController::class , 'tree' ] );
                 Route::get( '/export' , [ ProductCategoryController::class , 'export' ] );
@@ -280,10 +281,12 @@
 
             Route::prefix( 'product-brand' )->name( 'product-brand.' )->group( function () {
                 Route::get( '/' , [ ProductBrandController::class , 'index' ] );
+                Route::get( '/list' , [ ProductBrandController::class , 'list' ] );
                 Route::get( '/show/{productBrand}' , [ ProductBrandController::class , 'show' ] );
                 Route::post( '/' , [ ProductBrandController::class , 'store' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/{productBrand}' , [ ProductBrandController::class , 'update' ] );
-                Route::delete( '/{productBrand}' , [ ProductBrandController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ ProductBrandController::class , 'destroy' ] );
+//                Route::delete( '/{productBrand}' , [ ProductBrandController::class , 'destroy' ] );
             } );
 
             Route::prefix( 'supplier' )->name( 'supplier.' )->group( function () {
@@ -324,7 +327,7 @@
                 Route::get( '/show/{productAttribute}' , [ ProductAttributeController::class , 'show' ] );
                 Route::post( '/' , [ ProductAttributeController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{productAttribute}' , [ ProductAttributeController::class , 'update' ] );
-                Route::delete( '/{productAttribute}' , [ ProductAttributeController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ ProductAttributeController::class , 'destroy' ] );
             } );
 
             Route::prefix( 'product-attribute-option' )->name( 'product-attribute-option.' )->group( function () {
@@ -340,7 +343,7 @@
                 Route::get( '/show/{unit}' , [ UnitController::class , 'show' ] );
                 Route::post( '/' , [ UnitController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{unit}' , [ UnitController::class , 'update' ] );
-                Route::delete( '/{unit}' , [ UnitController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ UnitController::class , 'destroy' ] );
             } );
             Route::prefix( 'units_conversion' )->name( 'units_conversion.' )->group( function () {
                 Route::get( '/' , [ UnitConversionController::class , 'index' ] );

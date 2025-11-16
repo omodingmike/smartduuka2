@@ -28,9 +28,7 @@
         public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                $query        = Role::query();
-                $searchFields = [ 'name' ];
-                $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
+                $methods      = $this->filter( new Role(),$request , [ 'name' ]  );
                 return RoleResource::collection( $methods );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

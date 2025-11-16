@@ -10,6 +10,8 @@ use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\UnitResource;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class UnitController extends AdminController
@@ -24,10 +26,10 @@ class UnitController extends AdminController
         $this->middleware(['permission:settings'])->only('show', 'store', 'update', 'destroy');
     }
 
-    public function index(PaginateRequest $request): Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection| Application| ResponseFactory
+    public function index(PaginateRequest $request): Response| AnonymousResourceCollection| Application| ResponseFactory
     {
         try {
-            return UnitResource::collection($this->unitService->list($request));
+            return UnitResource::collection($this->filter( new Unit() , $request,['name','code','status']));
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
@@ -62,10 +64,10 @@ class UnitController extends AdminController
         }
     }
 
-    public function destroy(Unit $unit): Response| Application| ResponseFactory
+    public function destroy(Request $request): Response| Application| ResponseFactory
     {
         try {
-            $this->unitService->destroy($unit);
+            Unit::destroy($request->ids);
             return response('', 202);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

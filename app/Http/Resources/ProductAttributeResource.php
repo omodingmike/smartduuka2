@@ -20,5 +20,6 @@ class ProductAttributeResource extends JsonResource
             'name'    => $this->name,
             'options' => $this->productAttributeOptions
         ];
+
     }
 }
