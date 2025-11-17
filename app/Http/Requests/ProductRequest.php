@@ -68,6 +68,7 @@
                 'retail_price_per_base_unit' => 'sometimes|numeric' ,
                 'mid_unit_wholesale_price'   => 'sometimes|numeric' ,
                 'top_unit_wholesale_price'   => 'sometimes|numeric' ,
+                'image'   => 'sometimes|file' ,
             ];
         }
 

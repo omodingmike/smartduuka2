@@ -340,6 +340,7 @@
 
             Route::prefix( 'unit' )->name( 'unit.' )->group( function () {
                 Route::get( '/' , [ UnitController::class , 'index' ] );
+                Route::get( '/list' , [ UnitController::class , 'list' ] );
                 Route::get( '/show/{unit}' , [ UnitController::class , 'show' ] );
                 Route::post( '/' , [ UnitController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{unit}' , [ UnitController::class , 'update' ] );

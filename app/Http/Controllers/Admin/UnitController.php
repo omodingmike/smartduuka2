@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\ProductCategory;
 use Exception;
 use App\Models\Unit;
 use App\Services\UnitService;
@@ -34,6 +35,20 @@ class UnitController extends AdminController
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
+    public function list(Request $request): Response| AnonymousResourceCollection| Application| ResponseFactory
+    {
+        try {
+            $query = Unit::query();
+            $search = $request->query('query');
+            $query->when($search, function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%");
+            });
+            return UnitResource::collection($query->get());
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
 
 
     public function show(Unit $unit): Response|UnitResource| Application| ResponseFactory
@@ -73,4 +88,6 @@ class UnitController extends AdminController
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
+
+
 }
