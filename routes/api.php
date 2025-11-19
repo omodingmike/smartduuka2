@@ -53,6 +53,8 @@
     use App\Http\Controllers\Auth\RefreshTokenController;
     use App\Http\Controllers\AuthController;
     use App\Http\Controllers\ChartOfAccountGroupController;
+    use App\Http\Controllers\CleaningServiceCategoryController;
+    use App\Http\Controllers\CleaningServiceController;
     use App\Http\Controllers\CommissionController;
     use App\Http\Controllers\CommissionPayoutController;
     use App\Http\Controllers\CreditDepositPurchaseController;
@@ -145,7 +147,7 @@
         Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
     } );
 
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'auth:sanctum'  ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'auth:sanctum' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -154,6 +156,11 @@
         } );
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
+
+        Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' ] );
+        Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
+        Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
+        Route::delete( 'cleaningServices/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
 
         Route::apiResource( '/distributionRoutes' , DistributionRouteController::class );
         Route::apiResource( '/commissions' , CommissionController::class );

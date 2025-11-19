@@ -228,7 +228,8 @@
                             'updated_at' => now() ,
                         ]
                     ]
-                ] ,   [
+                ] ,
+                [
                     'title'      => 'Journal Entries' ,
                     'name'       => 'journal_entries' ,
                     'guard_name' => 'web' ,

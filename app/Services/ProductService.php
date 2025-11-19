@@ -162,16 +162,30 @@
             try {
                 DB::transaction( function () use ($request) {
                     $barcode_value = NULL;
-                    if ( $request->barcode_id === BarcodeType::EAN_13 ) {
-                        $barcode_value = str_pad( $request->sku , 12 , '0' , STR_PAD_LEFT );
-                    }
-                    if ( $request->barcode_id === BarcodeType::UPC_A ) {
-                        $barcode_value = str_pad( $request->sku , 11 , '0' , STR_PAD_LEFT );
-                    }
+                    $data          = $request->validated();
+//                    if ( $request->barcode_id === BarcodeType::EAN_13 ) {
+//                        $barcode_value = str_pad( $request->sku , 12 , '0' , STR_PAD_LEFT );
+//                    }
+//                    if ( $request->barcode_id === BarcodeType::UPC_A ) {
+//                        $barcode_value = str_pad( $request->sku , 11 , '0' , STR_PAD_LEFT );
+//                    }
 
-                    $this->product = Product::create( Arr::except( $request->validated() , [ 'tags' ] ) + [ 'slug' => Str::slug( $request->name ) , 'variation_price' =>
-                            $request->selling_price
-                        ] );
+//                    $this->product = Product::create( Arr::except( $request->validated() , [ 'tags' ] ) + [ 'slug' => Str::slug( $request->name ) , 'variation_price' =>
+//                            $request->selling_price
+//                        ] );
+
+                    $this->product = Product::create( [
+                        'name'                       => $data[ 'name' ] ,
+                        'sku'                        => $data[ 'sku' ] ,
+                        'product_category_id'        => $data[ 'product_category_id' ] ,
+                        'product_brand_id'           => $data[ 'product_brand_id' ] ,
+                        'weight'                     => $data[ 'weight' ] ,
+                        'status'                     => $data[ 'status' ] ,
+                        'can_purchasable'            => $data[ 'can_purchasable' ] ,
+                        'low_stock_quantity_warning' => $data[ 'low_stock_quantity_warning' ] ,
+                        'refundable'                 => $data[ 'refundable' ] ,
+                        'description'                => $data[ 'description' ] ,
+                    ] );
 
                     if ( $request->selling_units ) {
                         foreach ( $request->selling_units as $selling_unit ) {
@@ -179,6 +193,7 @@
                             $this->product->sellingUnits()->attach( $selling_unit );
                         }
                     }
+
                     if ( $request->tags ) {
                         $tagItems = json_decode( $request->tags , TRUE );
                         foreach ( $tagItems as $tagItem ) {
@@ -833,31 +848,31 @@
             $user = Auth::user();
             try {
                 return Product::with( [ 'media' , 'category' , 'unit' , 'taxes' , 'sellingUnits' , 'prices' ] )
-                                ->withSum( 'stockItems' , 'other_quantity' )
-                                ->withSum( [ 'stockItems' => function ($query) use ($request , $user) {
+                              ->withSum( 'stockItems' , 'other_quantity' )
+                              ->withSum( [ 'stockItems' => function ($query) use ($request , $user) {
 //                                    if ( ! $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
 //                                        $query->where( 'warehouse_id' , Warehouse::first()->id );
 //                                    }
 //                                    else if ( $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
 //                                        $query->where( 'warehouse_id' , $request->warehouse_id );
 //                                    }
-                                    if ( isDistributor() && $user ) {
-                                        $query->where( 'user_id' , $user->id );
-                                    }
-                                    else {
-                                        if ( ! $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
-                                            $query->where( 'warehouse_id' , Warehouse::first()->id );
-                                        }
-                                        else if ( $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
-                                            $query->where( 'warehouse_id' , $request->warehouse_id );
-                                        }
-                                        $query->whereNull( 'user_id' );
-                                    }
-                                }
-                                ] , 'quantity' )
-                                ->with( [ 'reviews' => fn($query) => $query->with( 'user' , 'media' )->take( $request->get( 'review_limit' , 3 ) ) ] )
-                                ->withReviewRating()
-                                ->where( [ 'id' => $product->id , 'status' => Status::ACTIVE ] )->first();
+                                  if ( isDistributor() && $user ) {
+                                      $query->where( 'user_id' , $user->id );
+                                  }
+                                  else {
+                                      if ( ! $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
+                                          $query->where( 'warehouse_id' , Warehouse::first()->id );
+                                      }
+                                      else if ( $request->has( 'warehouse_id' ) && enabledWarehouse() ) {
+                                          $query->where( 'warehouse_id' , $request->warehouse_id );
+                                      }
+                                      $query->whereNull( 'user_id' );
+                                  }
+                              }
+                              ] , 'quantity' )
+                              ->with( [ 'reviews' => fn($query) => $query->with( 'user' , 'media' )->take( $request->get( 'review_limit' , 3 ) ) ] )
+                              ->withReviewRating()
+                              ->where( [ 'id' => $product->id , 'status' => Status::ACTIVE ] )->first();
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

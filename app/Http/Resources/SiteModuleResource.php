@@ -21,17 +21,17 @@
         public function toArray(Request $request) : array
         {
             return [
-                'module_warehouse'    => (int) $this->info[ 'module_warehouse' ] ?? Ask::NO ,
-                'module_wholesale'    => (int) $this->info[ 'module_wholesale' ] ?? Activity::DISABLE ,
-                'accounting'          => (int) $this->info[ 'accounting' ] ?? Ask::NO ,
-                'production'          => (int) $this->info[ 'production' ] ?? Ask::NO ,
-                'a4_receipt'          =>  $this->info[ 'a4_receipt' ] ?? Ask::NO ,
-                'primaryColor'        => $this->info[ 'primaryColor' ] ?? NULL ,
-                'primaryLight'        => $this->info[ 'primaryLight' ] ?? NULL ,
-                'secondaryColor'      => $this->info[ 'secondaryColor' ] ?? NULL ,
-                'secondaryLight'      => $this->info[ 'secondaryLight' ] ?? NULL ,
-                Modules::COMMISSION   => (int) $this->info[ Modules::COMMISSION ] ?? Ask::NO ,
-                Modules::DISTRIBUTION => (int) $this->info[ Modules::DISTRIBUTION ] ?? Ask::NO ,
+                'module_warehouse'    => (int) data_get($this->info, 'module_warehouse', Ask::NO),
+                'module_wholesale'    => (int) data_get($this->info, 'module_wholesale', Activity::DISABLE),
+                'accounting'          => (int) data_get($this->info, 'accounting', Ask::NO),
+                'production'          => (int) data_get($this->info, 'production', Ask::NO),
+                'a4_receipt'          => data_get($this->info, 'a4_receipt', Ask::NO),
+                'primaryColor'        => data_get($this->info, 'primaryColor', NULL),
+                'primaryLight'        => data_get($this->info, 'primaryLight', NULL),
+                'secondaryColor'      => data_get($this->info, 'secondaryColor', NULL),
+                'secondaryLight'      => data_get($this->info, 'secondaryLight', NULL),
+                Modules::COMMISSION   => (int) data_get($this->info, Modules::COMMISSION, Ask::NO),
+                Modules::DISTRIBUTION => (int) data_get($this->info, Modules::DISTRIBUTION, Ask::NO),
             ];
         }
     }
