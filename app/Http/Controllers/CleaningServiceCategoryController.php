@@ -37,4 +37,6 @@
 
             return response()->json();
         }
+
+        public function list() {}
     }

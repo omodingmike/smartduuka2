@@ -5,12 +5,14 @@
     use App\Http\Requests\CleaningServiceRequest;
     use App\Http\Resources\CleaningServiceResource;
     use App\Models\CleaningService;
+    use App\Models\CleaningServiceCategory;
+    use Illuminate\Http\Request;
 
     class CleaningServiceController extends Controller
     {
         public function index()
         {
-            return CleaningServiceResource::collection( CleaningService::with('cleaningServiceCategory')->get() );
+            return CleaningServiceResource::collection( CleaningService::with( 'cleaningServiceCategory' )->get() );
         }
 
         public function store(CleaningServiceRequest $request)
@@ -44,4 +46,15 @@
 
             return response()->json();
         }
+
+        public function cleaningServicesByCategory(string $category)
+        {
+            $category = CleaningServiceCategory::find( $category );
+
+            if ( $category ) {
+                return CleaningServiceResource::collection( $category->services );
+            }
+            return CleaningServiceResource::collection( collect() );
+        }
+
     }
