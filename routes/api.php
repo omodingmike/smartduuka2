@@ -160,7 +160,7 @@
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
         Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' ] );
-        Route::get( 'cleaningServices/{category}' , [CleaningServiceController::class,'cleaningServicesByCategory'] );
+        Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
         Route::delete( 'cleaningServices/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
@@ -178,6 +178,7 @@
         Route::get( '/ledger-transactions/{ledger}' , [ LedgerController::class , 'transactions' ] );
         Route::get( '/ledgerGroups' , [ ChartOfAccountGroupController::class , 'groups' ] );
         Route::get( '/payment-methods' , [ PurchaseController::class , 'paymentMethods' ] );
+        Route::get( '/taxes' , [ PurchaseController::class , 'taxes' ] );
         Route::get( '/activityLogs' , [ ActivityLogController::class , 'index' ] );
         Route::post( '/pos-payment' , [ PurchaseController::class , 'pos' ] );
 

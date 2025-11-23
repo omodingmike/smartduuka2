@@ -17,6 +17,7 @@
                 'name'                         => $this->name ,
                 'price'                        => $this->price ,
                 'price_text'                   => AppLibrary::currencyAmountFormat( $this->price ) ,
+                'currency'                     => config( 'system.currency_symbol' ) ,
                 'description'                  => $this->description ,
                 'type'                         => $this->type ,
                 'type_text'                    => $this->type == 0 ? 'Fixed Price' : "Per Unit" ,

@@ -17,6 +17,7 @@
     use App\Http\Resources\PurchaseDetailsResource;
     use App\Http\Resources\PurchasePaymentResource;
     use App\Http\Resources\PurchaseResource;
+    use App\Http\Resources\TaxResource;
     use App\Models\Order;
     use App\Models\PaymentMethod;
     use App\Models\PosPayment;
@@ -25,6 +26,7 @@
     use App\Models\RoyaltyCustomer;
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\RoyaltyPointsLog;
+    use App\Models\Tax;
     use App\Services\ProductVariationService;
     use App\Services\PurchaseService;
     use Exception;
@@ -146,6 +148,10 @@
         public function paymentMethods()
         {
             return PaymentMethodResource::collection( PaymentMethod::all() );
+        }
+        public function taxes()
+        {
+            return TaxResource::collection( Tax::all() );
         }
 
         public function ingreidentList(PaginateRequest $request)

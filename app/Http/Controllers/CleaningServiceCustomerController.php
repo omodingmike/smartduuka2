@@ -5,12 +5,18 @@
     use App\Http\Requests\CleaningServiceCustomerRequest;
     use App\Http\Resources\CleaningServiceCustomerResource;
     use App\Models\CleaningServiceCustomer;
+    use Illuminate\Http\Request;
 
     class CleaningServiceCustomerController extends Controller
     {
-        public function index()
+        public function index(Request $request)
         {
-            return CleaningServiceCustomerResource::collection( CleaningServiceCustomer::all() );
+            $query = CleaningServiceCustomer::query();
+            $name  = $request->input( 'query' );
+            $query->when( $name , function ($query) use ($name) {
+                $query->where( 'name' , 'ilike' , "%{$name}%" );
+            } );
+            return CleaningServiceCustomerResource::collection( $query->get() );
         }
 
         public function store(CleaningServiceCustomerRequest $request)
