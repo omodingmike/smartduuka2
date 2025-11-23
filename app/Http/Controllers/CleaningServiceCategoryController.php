@@ -34,7 +34,6 @@
         public function destroy(Request $request)
         {
             CleaningServiceCategory::destroy( $request->ids );
-
             return response()->json();
         }
 

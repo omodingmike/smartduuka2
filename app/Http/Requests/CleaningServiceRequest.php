@@ -10,11 +10,12 @@
         {
             return [
                 'name'                         => [ 'required' ] ,
-                'cleaning_service_category_id' => [ 'required'  ] ,
+                'cleaning_service_category_id' => [ 'required' ] ,
                 'price'                        => [ 'required' , 'numeric' ] ,
                 'description'                  => [ 'nullable' ] ,
                 'type'                         => [ 'required' , 'integer' ] ,
                 'image'                        => [ 'sometimes' , 'image' ] ,
+                'tax_id'                       => [ 'sometimes' , 'numeric:' ] ,
             ];
         }
 

@@ -163,7 +163,7 @@
         Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
-        Route::delete( 'cleaningServices/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
+        Route::delete( 'cleaningServices/delete' , [ CleaningServiceController::class , 'destroy' ] );
 
         Route::apiResource( '/distributionRoutes' , DistributionRouteController::class );
         Route::apiResource( '/commissions' , CommissionController::class );

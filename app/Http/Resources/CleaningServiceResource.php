@@ -20,9 +20,12 @@
                 'currency'                     => config( 'system.currency_symbol' ) ,
                 'description'                  => $this->description ,
                 'type'                         => $this->type ,
+                'image'                        => $this->image ,
+                'tax_id'                       => $this->tax_id ,
                 'type_text'                    => $this->type == 0 ? 'Fixed Price' : "Per Unit" ,
                 'cleaning_service_category_id' => $this->cleaning_service_category_id ,
                 'cleaningServiceCategory'      => new CleaningServiceCategoryResource( $this->whenLoaded( 'cleaningServiceCategory' ) ) ,
+                'tax'                          => new TaxResource( $this->tax ) ,
             ];
         }
     }
