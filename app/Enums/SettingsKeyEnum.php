@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Enums;
+    namespace App\Enums;
 
-interface SettingsKeyEnum
-{
-     const APP_SETTINGS  = 'app_settings';
-}
+    interface SettingsKeyEnum
+    {
+        const APP_SETTINGS = 'app_settings';
+        const CLEANING     = 'cleaning';
+    }
