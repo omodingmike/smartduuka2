@@ -236,10 +236,10 @@
 
         public static function currencyAmountFormat($amount) : string
         {
-            if ( config( 'system.currency_position' ) == CurrencyPosition::LEFT ) {
-                return config( 'system.currency_symbol' ) . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
+            if ( config( 'system.currency_position' ) == CurrencyPosition::RIGHT ) {
+                return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . config( 'system.currency_symbol' );
             }
-            return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . config( 'system.currency_symbol' );
+            return config( 'system.currency_symbol' ) . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
         }
 
         public static function flatAmountFormat($amount) : string
