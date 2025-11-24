@@ -18,7 +18,6 @@
 
         public function toArray($request) : array
         {
-            info( $this->info );
             $keys = [
                 'show_customer_phone' ,
                 'show_service_method' ,

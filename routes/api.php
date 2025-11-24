@@ -53,6 +53,7 @@
     use App\Http\Controllers\Auth\RefreshTokenController;
     use App\Http\Controllers\AuthController;
     use App\Http\Controllers\ChartOfAccountGroupController;
+    use App\Http\Controllers\CleaningOrderController;
     use App\Http\Controllers\CleaningServiceCategoryController;
     use App\Http\Controllers\CleaningServiceController;
     use App\Http\Controllers\CleaningServiceCustomerController;
@@ -159,11 +160,13 @@
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
+        Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' ] );
         Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' ] );
         Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
         Route::delete( 'cleaningServices/delete' , [ CleaningServiceController::class , 'destroy' ] );
+        Route::delete( 'cleaningOrders/delete' , [ CleaningServiceController::class , 'destroy' ] );
 
         Route::apiResource( '/distributionRoutes' , DistributionRouteController::class );
         Route::apiResource( '/commissions' , CommissionController::class );
@@ -217,7 +220,6 @@
                     '/{method}' ,
                     [ PaymentMethodController::class , 'update' ]
                 );
-//                Route::delete( '/{method}' , [ PaymentMethodController::class , 'destroy' ] );
                 Route::delete( '/delete' , [ PaymentMethodController::class , 'deleteMethods' ] );
             } );
             Route::prefix( 'payment-gateway' )->name( 'payment-gateway.' )->group( function () {

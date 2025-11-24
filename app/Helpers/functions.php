@@ -17,8 +17,6 @@
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\User;
     use Carbon\Carbon;
-    use Illuminate\Database\Eloquent\Model;
-    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Smartisan\Settings\Facades\Settings;
 
@@ -30,32 +28,33 @@
     function numericToAssociativeArrayBuilder($array) : array
     {
         $i                 = 0;
-        $parentId          = null;
-        $parentIncrementId = null;
+        $parentId          = NULL;
+        $parentIncrementId = NULL;
         $buildArray        = [];
-        if ( count($array) ) {
+        if ( count( $array ) ) {
             foreach ( $array as $arr ) {
-                if ( ! $arr['parent'] ) {
-                    $parentId          = $arr['id'];
+                if ( ! $arr[ 'parent' ] ) {
+                    $parentId          = $arr[ 'id' ];
                     $parentIncrementId = $i;
-                    $buildArray[$i]    = $arr;
+                    $buildArray[ $i ]  = $arr;
                     $i++;
                 }
 
-                if ( $arr['parent'] == $parentId ) {
-                    $buildArray[$parentIncrementId]['children'][] = $arr;
+                if ( $arr[ 'parent' ] == $parentId ) {
+                    $buildArray[ $parentIncrementId ][ 'children' ][] = $arr;
                 }
             }
         }
         if ( $buildArray ) {
             foreach ( $buildArray as $key => $build ) {
-                if ( $build['url'] == '#' && ! isset($build['children']) ) {
-                    unset($buildArray[$key]);
+                if ( $build[ 'url' ] == '#' && ! isset( $build[ 'children' ] ) ) {
+                    unset( $buildArray[ $key ] );
                 }
             }
         }
         return $buildArray;
     }
+
     function phoneNumber() : string
     {
         $code  = Settings::group( 'company' )->get( 'company_calling_code' );
@@ -67,10 +66,11 @@
     {
         if ( $permissions ) {
             foreach ( $permissions as $permission ) {
-                if ( isset($rolePermissions[$permission->id]) ) {
-                    $permission->access = true;
-                } else {
-                    $permission->access = false;
+                if ( isset( $rolePermissions[ $permission->id ] ) ) {
+                    $permission->access = TRUE;
+                }
+                else {
+                    $permission->access = FALSE;
                 }
             }
         }
@@ -116,6 +116,11 @@
     function settingEnabled(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : bool
     {
         return Settings::group( $group )->get( $key ) == Ask::YES;
+    }
+
+    function isEnabled(string $key , string $group) : bool
+    {
+        return filter_var( Settings::group( $group )->get( $key ) ?? FALSE , FILTER_VALIDATE_BOOLEAN );
     }
 
     function settingValue(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : string | null
