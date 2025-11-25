@@ -4,11 +4,11 @@
 
 
     use App\Http\Controllers\Controller;
-    use App\Traits\HasAdvancedIndex;
+    use App\Traits\HasAdvancedFilter;
 
     class AdminController extends Controller
     {
-        use HasAdvancedIndex;
+        use HasAdvancedFilter;
 
         public function __construct() {}
     }

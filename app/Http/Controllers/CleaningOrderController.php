@@ -8,13 +8,22 @@
     use App\Http\Resources\CleaningOrderResource;
     use App\Models\CleaningOrder;
     use App\Models\CleaningOrderItem;
+    use App\Traits\HasAdvancedFilter;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
 
     class CleaningOrderController extends Controller
     {
-        public function index()
+        use HasAdvancedFilter;
+
+        public function index(Request $request)
         {
-            return CleaningOrderResource::collection( CleaningOrder::with( [ 'items.cleaningService','paymentMethod','cleaningServiceCustomer' ] )->get() );
+            $query = CleaningOrder::with( [
+                'items.cleaningService' ,
+                'paymentMethod' ,
+                'cleaningServiceCustomer'
+            ] );
+            return CleaningOrderResource::collection( $this->filter( $query , $request ) );
         }
 
         /**
@@ -22,8 +31,8 @@
          */
         public function store(CleaningOrderRequest $request)
         {
-            $data   = $request->validated();
-            info($data);
+            $data = $request->validated();
+            info( $data );
             $prefix = settingValue( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
             return DB::transaction( function () use ($prefix , $data) {
                 $order = CleaningOrder::create( [

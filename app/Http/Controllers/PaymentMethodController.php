@@ -6,12 +6,12 @@
     use App\Http\Requests\UpdatePaymentMethodRequest;
     use App\Http\Resources\PaymentMethodResource;
     use App\Models\PaymentMethod;
-    use App\Traits\HasAdvancedIndex;
+    use App\Traits\HasAdvancedFilter;
     use Illuminate\Http\Request;
 
     class PaymentMethodController extends Controller
     {
-        use HasAdvancedIndex;
+        use HasAdvancedFilter;
 
         public function index(Request $request)
         {
