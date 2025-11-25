@@ -31,8 +31,7 @@
          */
         public function store(CleaningOrderRequest $request)
         {
-            $data = $request->validated();
-            info( $data );
+            $data   = $request->validated();
             $prefix = settingValue( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
             return DB::transaction( function () use ($prefix , $data) {
                 $order = CleaningOrder::create( [
@@ -47,7 +46,7 @@
                     'payment_method_id'            => $data[ 'payment_method_id' ] ,
                     'paid'                         => $data[ 'paid' ] ,
                     'balance'                      => $data[ 'balance' ] ,
-                    'status'                       => CleaningOrderStatus::PendingAcceptance->value ,
+                    'status'                       => CleaningOrderStatus::Accepted->value ,
                 ] );
                 $items = collect( json_decode( $data[ 'items' ] , TRUE ) );
                 foreach ( $items as $value ) {
@@ -69,17 +68,18 @@
             return new CleaningOrderResource( $cleaningOrder );
         }
 
-        public function update(CleaningOrderRequest $request , CleaningOrder $cleaningOrder)
+        public function update(Request $request , CleaningOrder $cleaningOrder)
         {
-            $cleaningOrder->update( $request->validated() );
+            $cleaningOrder->update( [
+                'status' => $request->status
+            ] );
 
             return new CleaningOrderResource( $cleaningOrder );
         }
 
-        public function destroy(CleaningOrder $cleaningOrder)
+        public function destroy(Request $request)
         {
-            $cleaningOrder->delete();
-
+            CleaningOrder::destroy( $request->ids );
             return response()->json();
         }
     }

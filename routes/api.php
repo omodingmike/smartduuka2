@@ -160,13 +160,14 @@
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
-        Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' ] );
+        Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
+        Route::put( 'cleaningOrders/{cleaningOrder}' , [ CleaningOrderController::class , 'update' ] );
         Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' ] );
         Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
         Route::delete( 'cleaningServices/delete' , [ CleaningServiceController::class , 'destroy' ] );
-        Route::delete( 'cleaningOrders/delete' , [ CleaningServiceController::class , 'destroy' ] );
+        Route::delete( 'cleaningOrders/delete' , [ CleaningOrderController::class , 'destroy' ] );
 
         Route::apiResource( '/distributionRoutes' , DistributionRouteController::class );
         Route::apiResource( '/commissions' , CommissionController::class );

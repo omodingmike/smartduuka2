@@ -26,7 +26,7 @@
             'discount' ,
             'payment_method_id' ,
             'paid' ,
-            'balance' ,
+            'balance' ,'address'
         ];
 
         public function cleaningServiceCustomer() : BelongsTo

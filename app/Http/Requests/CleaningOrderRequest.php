@@ -20,6 +20,7 @@
                 'paid'                         => [ 'required' , 'numeric' ] ,
                 'balance'                      => [ 'required' , 'numeric' ] ,
                 'items'                        => [ 'required' , 'string' ] ,
+                'address'                      => [ 'sometimes' , 'string' ] ,
             ];
         }
 

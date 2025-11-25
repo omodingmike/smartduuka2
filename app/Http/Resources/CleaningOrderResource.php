@@ -17,6 +17,7 @@
                 'id'             => $this->id ,
                 'order_id'       => $this->order_id ,
                 'total'          => $this->total ,
+                'address'        => $this->address ?? '' ,
                 'total_text'     => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'subtotal'       => AppLibrary::currencyAmountFormat( $this->subtotal ) ,
                 'tax'            => AppLibrary::currencyAmountFormat( $this->tax ) ,
@@ -33,8 +34,9 @@
                 'service_method' => [
                     'value' => $this->service_method->value ,
                     'label' => $this->service_method->label() ,
+                    'steps' => $this->service_method->steps() ,
                 ] ,
-
+                'items' => CleaningOrderItemResource::collection($this->whenLoaded('items')),
                 'cleaning_service_customer_id' => $this->cleaning_service_customer_id ,
                 'cleaning_service_id'          => $this->cleaning_service_id ,
                 'payment_method_id'            => $this->payment_method_id ,
