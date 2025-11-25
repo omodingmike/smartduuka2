@@ -6,9 +6,12 @@
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\BelongsTo;
+    use Illuminate\Http\Exceptions\HttpResponseException;
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
     use Illuminate\Pagination\LengthAwarePaginator;
+    use Illuminate\Support\Facades\Schema;
     use Illuminate\Support\Str;
 
     trait HasAdvancedFilter
@@ -86,21 +89,43 @@
                         $this->applyRelationSort( $query , $relation , $column , $direction );
                     }
                     else {
-                        $query->orderByRaw( 'LOWER("' . $field . '") ' . $direction );
+                        if ( $this->isColumnNumeric( $query->getModel()->getTable() , $field ) ) {
+                            $query->orderBy( $field , $direction );
+                        }
+                        else {
+                            $query->orderByRaw( "LOWER($field) $direction" );
+                        }
                     }
                 }
-                info( $query->toRawSql() );
                 return $query->paginate( $perPage , [ '*' ] , 'page' , $page );
 
             } catch ( \Exception $exception ) {
-                return response( [
-                    'status'  => FALSE ,
-                    'message' => $exception->getMessage() ,
-                ] , 422 );
+                throw new HttpResponseException(
+                    response()->json( [
+                        'status'  => FALSE ,
+                        'message' => $exception->getMessage()
+                    ] , 422 )
+                );
             }
         }
+        // Inside trait HasAdvancedFilter
+        // Inside trait HasAdvancedFilter
 
-        private function applyFilterOperator($q , $field , $operator , $variant , $value)
+        function isColumnNumeric(string $table , string $column) : bool
+        {
+            $type = Schema::getColumnType( $table , $column );
+
+            // All numeric PostgreSQL types Laravel may return
+            $numericTypes = [
+                'integer' , 'bigint' , 'smallint' ,
+                'decimal' , 'float' , 'double' , 'real' ,
+                'numeric'
+            ];
+
+            return in_array( $type , $numericTypes , TRUE );
+        }
+
+        private function applyFilterOperator($q , $field , $operator , $variant , $value) : void
         {
             if ( in_array( $variant , [ 'dateRange' , 'date' ] ) ) {
                 $q->where( function ($subQ) use ($field , $operator , $value) {
@@ -178,17 +203,38 @@
         {
             $relationInstance = $query->getModel()->$relation();
             $relatedTable     = $relationInstance->getRelated()->getTable();
-            $localKey         = $relationInstance->getLocalKeyName();
-            $foreignKey       = $relationInstance->getForeignKeyName();
 
+            // Determine the key names based on the relationship type
+            if ( $relationInstance instanceof BelongsTo ) {
+                // For a BelongsTo relationship (e.g., Order belongs to Customer):
+                // 1. The key on the *local* table (the current model) is the Foreign Key.
+                $localKeyName = $relationInstance->getForeignKeyName();  // e.g., 'customer_id' on 'orders' table
+
+                // 2. The key on the *related* table (the parent) is the Owner/Primary Key.
+                $foreignKeyName = $relationInstance->getOwnerKeyName();  // e.g., 'id' on 'customers' table
+
+                $localTable = $relationInstance->getParent()->getTable();
+            }
+            else {
+                // For HasOne/HasMany relationships (the original logic):
+                // 1. The key on the *local* table (the current model) is the Local Key (usually 'id').
+                $localKeyName = $relationInstance->getLocalKeyName();     // e.g., 'id' on 'users' table
+
+                // 2. The key on the *related* table (the child) is the Foreign Key.
+                $foreignKeyName = $relationInstance->getForeignKeyName(); // e.g., 'user_id' on 'posts' table
+
+                $localTable = $relationInstance->getParent()->getTable();
+            }
+
+            // Perform the LEFT JOIN using the correct keys
             $query->leftJoin(
                 $relatedTable ,
-                $relationInstance->getParent()->getTable() . '.' . $localKey ,
+                $localTable . '.' . $localKeyName , // e.g., orders.customer_id
                 '=' ,
-                $relatedTable . '.' . $foreignKey
+                $relatedTable . '.' . $foreignKeyName // e.g., customers.id
             )
                   ->orderBy( $relatedTable . '.' . $column , $direction )
-                  ->select( $query->getModel()->getTable() . '.*' );
+                  ->select( $query->getModel()->getTable() . '.*' ); // This select prevents column ambiguity
         }
     }
 
