@@ -2,7 +2,9 @@
 FROM php:8.4-fpm
 
 # Set working directory
-WORKDIR /app
+#WORKDIR /app
+WORKDIR /var/www
+
 
 # Install system dependencies + Spatie recommended tools + Imagick
 RUN apt-get update && apt-get install -y \
@@ -53,7 +55,8 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" && \
     ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
 # Copy Laravel app source
-COPY . /app
+#COPY . /app
+COPY . /var/www
 
 # Install Composer dependencies
 RUN composer install --no-interaction --optimize-autoloader
