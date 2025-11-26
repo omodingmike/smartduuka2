@@ -18,7 +18,7 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])
 
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
     ->middleware('guest')
-    ->name('password.email');
+    ->name('password-auth.email');
 
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
@@ -26,12 +26,12 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
 
 Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['auth', 'signed', 'throttle:6,1'])
-    ->name('verification.verify');
+    ->name('verification-auth.verify');
 
 Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
     ->middleware(['auth', 'throttle:6,1'])
-    ->name('verification.send');
+    ->name('verification-auth.send');
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
-    ->name('logout');
+    ->name('logout-auth');

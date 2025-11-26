@@ -120,7 +120,7 @@
     Route::prefix( 'auth' )->name( 'auth.' )->namespace( 'Auth' )->group( function () {
         Route::post( '/login' , [ LoginController::class , 'login' ] );
         Route::post( 'token' , [ LoginController::class , 'token' ] );
-        Route::prefix( 'forgot-password' )->name( 'forgot-password.' )->group( function () {
+        Route::prefix( 'forgot-password' )->name( 'forgot-password-auth.' )->group( function () {
             Route::post( '/' , [ ForgotPasswordController::class , 'forgotPassword' ] );
             Route::post( '/otp-phone' , [ ForgotPasswordController::class , 'otpPhone' ] );
             Route::post( '/otp-email' , [ ForgotPasswordController::class , 'otpEmail' ] );
