@@ -31,7 +31,8 @@ RUN npm install -g svgo
 # Install PHP extensions including Redis and Imagick
 RUN apt-get update && apt-get install -y \
         libmagickwand-dev --no-install-recommends \
-    && docker-php-ext-install pdo_pgsql pgsql gd exif \
+        libzip-dev \
+    && docker-php-ext-install pdo_pgsql pgsql gd exif zip \
     && pecl install redis imagick \
     && docker-php-ext-enable redis imagick \
     && apt-get clean \
