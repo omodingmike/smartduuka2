@@ -14,29 +14,30 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'             => $this->id ,
-                'order_id'       => $this->order_id ,
-                'total'          => $this->total ,
-                'address'        => $this->address ?? '' ,
-                'total_text'     => AppLibrary::currencyAmountFormat( $this->total ) ,
-                'subtotal'       => AppLibrary::currencyAmountFormat( $this->subtotal ) ,
-                'tax'            => AppLibrary::currencyAmountFormat( $this->tax ) ,
-                'discount'       => AppLibrary::currencyAmountFormat( $this->discount ) ,
-                'paid'           => AppLibrary::currencyAmountFormat( $this->paid ) ,
-                'balance'        => AppLibrary::currencyAmountFormat( $this->balance ) ,
-                'date'           => AppLibrary::datetime2( $this->date ) ,
-                'status'         => [
+                'id'                           => $this->id ,
+                'order_id'                     => $this->order_id ,
+                'total'                        => $this->total ,
+                'address'                      => $this->address ?? '' ,
+                'total_text'                   => AppLibrary::currencyAmountFormat( $this->total ) ,
+                'subtotal'                     => AppLibrary::currencyAmountFormat( $this->subtotal ) ,
+                'tax'                          => AppLibrary::currencyAmountFormat( $this->tax ) ,
+                'discount'                     => AppLibrary::currencyAmountFormat( $this->discount ) ,
+                'paid'                         => AppLibrary::currencyAmountFormat( $this->paid ) ,
+                'balance'                      => AppLibrary::currencyAmountFormat( abs($this->balance) ) ,
+                'date'                         => AppLibrary::datetime2( $this->date ) ,
+                'created_at'                   => AppLibrary::datetime2( $this->created_at ) ,
+                'status'                       => [
                     'value'   => $this->status->value ,
                     'label'   => $this->status->label() ,
                     'color'   => $this->status->color() ,
                     'options' => CleaningOrderStatus::options()
                 ] ,
-                'service_method' => [
+                'service_method'               => [
                     'value' => $this->service_method->value ,
                     'label' => $this->service_method->label() ,
                     'steps' => $this->service_method->steps() ,
                 ] ,
-                'items' => CleaningOrderItemResource::collection($this->whenLoaded('items')),
+                'items'                        => CleaningOrderItemResource::collection( $this->whenLoaded( 'items' ) ) ,
                 'cleaning_service_customer_id' => $this->cleaning_service_customer_id ,
                 'cleaning_service_id'          => $this->cleaning_service_id ,
                 'payment_method_id'            => $this->payment_method_id ,

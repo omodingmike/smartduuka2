@@ -59,7 +59,7 @@
 
                     $order->items()->attach( $orderItem->id );
                 }
-                return new CleaningOrderResource( $order->load( [ 'items.cleaningService' ] ) );
+                return new CleaningOrderResource( $order->load( [  'items.cleaningService' , 'paymentMethod' , 'cleaningServiceCustomer' ] ) );
             } );
         }
 

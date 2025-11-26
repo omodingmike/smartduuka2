@@ -5,13 +5,21 @@
     use App\Http\Requests\CleaningServiceCategoryRequest;
     use App\Http\Resources\CleaningServiceCategoryResource;
     use App\Models\CleaningServiceCategory;
+    use App\Traits\HasAdvancedFilter;
     use Illuminate\Http\Request;
 
     class CleaningServiceCategoryController extends Controller
     {
-        public function index()
+        use HasAdvancedFilter;
+
+        public function index(Request $request)
         {
-            return CleaningServiceCategoryResource::collection( CleaningServiceCategory::all() );
+            return CleaningServiceCategoryResource::collection( $this->filter( CleaningServiceCategory::with( 'services' ) , $request ) );
+        }
+
+        public function list()
+        {
+            return CleaningServiceCategoryResource::collection( CleaningServiceCategory::with( 'services' )->get() );
         }
 
         public function store(CleaningServiceCategoryRequest $request)
@@ -37,5 +45,4 @@
             return response()->json();
         }
 
-        public function list() {}
     }

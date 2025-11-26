@@ -77,23 +77,29 @@
                 /**
                  * SORTING (Supports relations)
                  */
-                foreach ( $sorts as $s ) {
-                    $direction = ( ! empty( $s[ 'desc' ] ) && ( $s[ 'desc' ] === TRUE || $s[ 'desc' ] === 'true' ) )
-                        ? 'desc'
-                        : 'asc';
 
-                    $field = $s[ 'id' ];
+                if ( empty( $sorts ) ) {
+                    $query->orderBy( 'created_at' , 'desc' );
+                }
+                else {
+                    foreach ( $sorts as $s ) {
+                        $direction = ( ! empty( $s[ 'desc' ] ) && ( $s[ 'desc' ] === TRUE || $s[ 'desc' ] === 'true' ) )
+                            ? 'desc'
+                            : 'asc';
 
-                    if ( Str::contains( $field , '.' ) ) {
-                        [ $relation , $column ] = explode( '.' , $field , 2 );
-                        $this->applyRelationSort( $query , $relation , $column , $direction );
-                    }
-                    else {
-                        if ( $this->isColumnNumeric( $query->getModel()->getTable() , $field ) ) {
-                            $query->orderBy( $field , $direction );
+                        $field = $s[ 'id' ];
+
+                        if ( Str::contains( $field , '.' ) ) {
+                            [ $relation , $column ] = explode( '.' , $field , 2 );
+                            $this->applyRelationSort( $query , $relation , $column , $direction );
                         }
                         else {
-                            $query->orderByRaw( "LOWER($field) $direction" );
+                            if ( $this->isColumnNumeric( $query->getModel()->getTable() , $field ) ) {
+                                $query->orderBy( $field , $direction );
+                            }
+                            else {
+                                $query->orderByRaw( "LOWER($field) $direction" );
+                            }
                         }
                     }
                 }
@@ -108,20 +114,17 @@
                 );
             }
         }
-        // Inside trait HasAdvancedFilter
-        // Inside trait HasAdvancedFilter
+
 
         function isColumnNumeric(string $table , string $column) : bool
         {
-            $type = Schema::getColumnType( $table , $column );
-
-            // All numeric PostgreSQL types Laravel may return
+            $type         = Schema::getColumnType( $table , $column );
             $numericTypes = [
                 'integer' , 'bigint' , 'smallint' ,
                 'decimal' , 'float' , 'double' , 'real' ,
-                'numeric'
+                'numeric' ,
+                'date' , 'datetime' , 'timestamp' , 'time'
             ];
-
             return in_array( $type , $numericTypes , TRUE );
         }
 
