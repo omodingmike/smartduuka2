@@ -64,7 +64,8 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD-SHELL", "redis-cli -a '${REDIS_PASSWORD}' ping | grep PONG" ]
+      # Use double quotes to allow ${REDIS_PASSWORD} interpolation
+      test: [ "CMD-SHELL", "redis-cli -a \"${REDIS_PASSWORD}\" ping | grep PONG" ]
       interval: 5s
       timeout: 5s
       retries: 10
