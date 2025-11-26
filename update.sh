@@ -26,15 +26,6 @@ else
   exit 1
 fi
 
-# ----------------------------
-# BUILD AND RESTART CONTAINERS
-# ----------------------------
-echo "🐳 Rebuilding and restarting 'api' and 'queue' containers..."
-cd "$BACKEND_DIR" || {
-  echo "❌ Directory not found: $BACKEND_DIR"
-  exit 1
-}
-
 # Rebuild and recreate API container
 sudo docker-compose up -d --no-deps --force-recreate --build api
 
