@@ -106,7 +106,7 @@
     Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
     Route::match( [ 'get' , 'post' ] , '/login' , function () {
         return response()->json( [ 'errors' => 'unauthenticated' ] , 401 );
-    } )->name( 'login' );
+    } )->name( 'login_auth' );
     Route::apiResource( 'subscriptions' , SubscriptionController::class );
     Route::get( 'subscriptionPlans' , [ SubscriptionController::class , 'subscriptionPlans' ] );
     Route::get( 'has-active' , [ SubscriptionController::class , 'hasActive' ] );
