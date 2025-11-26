@@ -4,3 +4,42 @@ $query        = PaymentMethod::query();
             return PaymentMethodResource::collection( $methods );
 
               $filtered = $this->handleIndex( new PaymentMethod() , $request , [ 'name' , 'code' ] );
+
+
+              sshpass -p "8:oPaQoTM)" scp /Users/mike/Desktop/valet/smartduuka2/deploy.sh root@81.17.100.184:./deploy.sh
+              sshpass -p "8:oPaQoTM)" scp /Users/mike/Desktop/valet/smartduuka2/.env root@81.17.100.184:./root/smartduuka/backend/
+
+              chmod +x ~/deploy.sh
+
+
+Generate SSH keys for each account
+# Account One (Samwaswa69)
+ssh-keygen -t ed25519 -C "deploy-frontend" -f ~/.ssh/frontend_key
+
+# Account Two (omodingmike)
+ssh-keygen -t ed25519 -C "deploy-backend" -f ~/.ssh/backend_key
+
+Add public keys to GitHub
+
+Configure SSH aliases on the VPS
+Edit ~/.ssh/config:
+
+# Account One
+    Host github-frontend
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/frontend_key
+
+# Account Two
+   Host github-backend
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/backend_key
+
+Verify SSH connections
+ssh -T git@github-frontend
+ssh -T git@github-backend
+
+Use aliases in Git repository URLs
+REPO_FRONTEND="git@github-frontend:Samwaswa69/Straightahead_animation_studio.git"
+REPO_BACKEND="git@github-backend:omodingmike/backend-repo.git"

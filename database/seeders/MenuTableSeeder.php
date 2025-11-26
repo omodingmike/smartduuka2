@@ -140,7 +140,7 @@
                         ] ,
                         [
                             'name'       => 'Cleaning Services' ,
-                            'url'        => 'cleaning/services' ,
+                            'url'        => 'cleaning/services/services' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
