@@ -2,18 +2,14 @@
 FROM php:8.4-fpm
 
 # Set working directory
-#WORKDIR /app
 WORKDIR /var/www
 
-
-# Install system dependencies + Spatie recommended tools + Imagick
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     nano \
     gnupg \
     ca-certificates \
-    nodejs \
-    npm \
     supervisor \
     git \
     unzip \
@@ -23,58 +19,40 @@ RUN apt-get update && apt-get install -y \
     pngquant \
     gifsicle \
     libavif-bin \
-    libmagickwand-dev --no-install-recommends \
+    libmagickwand-dev \
+    libzip-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install SVGO (for SVG optimization)
-RUN npm install -g svgo
-
-# Install PHP extensions including Redis and Imagick
-RUN apt-get update && apt-get install -y \
-        libmagickwand-dev --no-install-recommends \
-        libzip-dev \
-    && docker-php-ext-install pdo_pgsql pgsql gd exif zip \
+# Install PHP extensions (Redis + Imagick included)
+RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip \
     && pecl install redis imagick \
-    && docker-php-ext-enable redis imagick \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-enable redis imagick
 
 # Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install Supercronic (for cron tasks)
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
-    SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
-    SUPERCRONIC=supercronic-linux-amd64
-
-RUN curl -fsSLO "$SUPERCRONIC_URL" && \
-    echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - && \
-    chmod +x "$SUPERCRONIC" && \
-    mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" && \
-    ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
-
-# Copy Laravel app source
-#COPY . /app
+# Copy application code
 COPY . /var/www
 
-# Install Composer dependencies
-RUN composer install --no-interaction --optimize-autoloader
+# Ensure .env exists BEFORE artisan commands
+COPY .env /var/www/.env
 
-# Generate application key and cache configs/routes/views
+# Install composer dependencies
+RUN composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
+
+# Laravel artisan commands (need vendor + .env)
 RUN php artisan key:generate --force \
+    && php artisan storage:link \
     && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
 
-# Set correct permissions for Laravel storage
+# Set correct permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Optional: install chokidar for file watching
-RUN npm install --save-dev chokidar
-
-# Copy Supervisor configuration
+# Copy Supervisor config
 COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Expose PHP-FPM port
