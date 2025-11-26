@@ -117,7 +117,7 @@ docker image prune -f
 # ----------------------------
 # BUILD AND START CONTAINERS
 # ----------------------------
-cd "$PROJECT_DIR"
+cd "$BACKEND_DIR"
 echo "🐳 Building and starting containers..."
 sudo docker compose  up -d --build
 
@@ -126,12 +126,6 @@ if ! sudo docker compose ps | grep "Up"; then
   echo "Docker containers failed to start. Check logs with 'docker-compose logs'."
   exit 1
 fi
-
-# ----------------------------
-# WAIT FOR POSTGRES TO BE READY
-# ----------------------------
-echo "⏳ Waiting for Postgres to be ready..."
-"$WAIT_SCRIPT" db:5432 --timeout=60 --strict -- echo "✅ Postgres is ready"
 
 # ----------------------------
 # INSTALL LARAVEL PACKAGES
