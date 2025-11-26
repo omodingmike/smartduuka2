@@ -49,7 +49,7 @@ services:
       - storage_data:/app/storage
       - media_data:/app/public/media
     healthcheck:
-      test: [ "CMD-SHELL", "php-fpm-healthcheck || exit 1" ]
+      test: ["CMD", "php-fpm", "-t"]
       interval: 5s
       timeout: 10s
       retries: 20
