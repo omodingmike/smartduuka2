@@ -60,4 +60,4 @@ RUN dos2unix /start.sh && chmod +x /start.sh
 EXPOSE 8000
 
 # Run Laravel app
-CMD ["bash", "/start.sh"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

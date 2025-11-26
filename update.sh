@@ -18,7 +18,7 @@ if [ -d "$BACKEND_DIR" ]; then
   cd "$BACKEND_DIR"
   # Ensure media directory exists
 
-  git reset --hard origin/main
+  git pull origin main
 else
   echo "Error: Backend directory not found at $BACKEND_DIR. Exiting."
   exit 1
