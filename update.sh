@@ -29,9 +29,6 @@ fi
 # Rebuild and recreate API container
 sudo docker-compose up -d --no-deps --force-recreate --build api
 
-# Rebuild and recreate Queue container
-sudo docker-compose up -d --no-deps --force-recreate --build queue
-
 # ----------------------------
 # WAIT FOR API CONTAINER
 # ----------------------------
