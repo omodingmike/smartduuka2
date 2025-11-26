@@ -48,16 +48,11 @@ RUN mkdir -p /app/public/media \
     && chown -R www-data:www-data /app/storage /app/bootstrap/cache /app/public/media \
     && chmod -R 775 /app/storage /app/bootstrap/cache /app/public/media
 
-
-# Remove existing start.sh before copying a new one
-RUN rm -f /start.sh
-
-# Copy and prepare startup script
-COPY start.sh /start.sh
-RUN dos2unix /start.sh && chmod +x /start.sh
-
 # Expose port
-EXPOSE 8000
+EXPOSE 9000
+
+# Copy Supervisor configuration
+COPY docker/php/supervisord.conf /etc/supervisord.conf
 
 # Run Laravel app
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

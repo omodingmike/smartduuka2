@@ -24,4 +24,5 @@ jobs:
 
       - name: Upload update.sh and run remotely
         run: |
-          ssh root@${{ secrets.SSH_HOST }} 'chmod +x ~/smartduuka/backend/update.sh && ~/smartduuka/backend/update.sh'
+          scp update.sh root@${{ secrets.SSH_HOST }}:~/update.sh
+          ssh root@${{ secrets.SSH_HOST }} 'chmod +x ~/update.sh && ~/update.sh'
