@@ -38,15 +38,15 @@ RUN npm install -g svgo
 
 # Copy project files
 COPY . /app
-COPY .env /app/.env
+COPY .env /var/www/.env
 
 # Install PHP dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 # Fix permissions for Laravel storage, cache, and media
-RUN mkdir -p /app/public/media \
-    && chown -R www-data:www-data /app/storage /app/bootstrap/cache /app/public/media \
-    && chmod -R 775 /app/storage /app/bootstrap/cache /app/public/media
+RUN mkdir -p /var/www/public/media \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/public/media \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/public/media
 
 # Expose port
 EXPOSE 9000
