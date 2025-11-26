@@ -25,7 +25,7 @@ else
 fi
 
 # Rebuild and recreate API container
-sudo docker-compose up -d --no-deps --force-recreate --build api
+sudo docker-compose up -d --no-deps --force-recreate --build
 
 # ----------------------------
 # WAIT FOR API CONTAINER
