@@ -11,6 +11,10 @@ $query        = PaymentMethod::query();
 
               chmod +x ~/deploy.sh
 
+              cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
+              chmod 600 ~/.ssh/authorized_keys
+              chmod 700 ~/.ssh
+
 
 Generate SSH keys for each account
 # Account One (Samwaswa69)
