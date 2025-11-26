@@ -21,32 +21,24 @@ RUN apt-get update && apt-get install -y \
     libavif-bin \
     libmagickwand-dev \
     libzip-dev \
-# Install commonly needed packages for Imagick dependencies and clean up
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# --- FIX 1: Install Supercronic ---
-# Download and install Supercronic for the Supervisor cron program
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64
-ENV SUPERCRONIC_SHA256=2b69c4dd7063d8194458f335043a532729a997645f7c3275727976a16087b320
-
-RUN curl -fSL "$SUPERCRONIC_URL" -o /usr/local/bin/supercronic \
-    && echo "$SUPERCRONIC_SHA256 /usr/local/bin/supercronic" | sha256sum -c - \
-    && chmod +x /usr/local/bin/supercronic
-# -----------------------------------
 
 # Install PHP extensions (Redis + Imagick included)
 RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip \
     && pecl install redis imagick \
     && docker-php-ext-enable redis imagick
 
-# --- Potential Fix for Exit Status 78 (PHP-FPM Config) ---
-# Ensure PHP-FPM configuration is set up for running with Supervisor
-# Copy the default configuration and ensure it listens on port 9000
-COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
-# NOTE: You will need to create a simple www.conf file if you don't have one
-# (See note below on what to put in www.conf)
-# -----------------------------------------------------------
+# Install Supercronic (for cron tasks)
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
+    SUPERCRONIC=supercronic-linux-amd64
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" && \
+    echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - && \
+    chmod +x "$SUPERCRONIC" && \
+    mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" && \
+    ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
