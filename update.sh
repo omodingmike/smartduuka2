@@ -18,9 +18,7 @@ if [ -d "$BACKEND_DIR" ]; then
   cd "$BACKEND_DIR"
   # Ensure media directory exists
 
-  git stash
-
-  git pull origin main
+  git reset --hard origin/main
 else
   echo "Error: Backend directory not found at $BACKEND_DIR. Exiting."
   exit 1
@@ -33,7 +31,10 @@ sudo docker-compose up -d --no-deps --force-recreate --build api
 # WAIT FOR API CONTAINER
 # ----------------------------
 echo "⏳ Waiting for API container to be ready..."
-sleep 5
+until sudo docker-compose exec -T api php artisan up; do
+  echo "Waiting for API..."
+  sleep 5
+done
 
 # ----------------------------
 # RUN MIGRATIONS & CLEAR CACHE
