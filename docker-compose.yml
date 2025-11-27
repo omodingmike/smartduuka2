@@ -4,9 +4,15 @@ services:
     container_name: nginx
     ports:
       - "8080:80"
+      - "8443:443"     # Enable HTTPS port
     volumes:
-      - .:/var/www:cached                     # Mount project root
+      - .:/var/www:cached
       - ./docker/nginx/conf.d/app.conf:/etc/nginx/conf.d/default.conf:ro
+
+      # SSL certificates (located in same path as docker-compose.yml)
+      - ./cert.pem:/etc/ssl/certs/cert.pem:ro
+      - ./key.pem:/etc/ssl/private/key.pem:ro
+
     depends_on:
       - api
     networks:
