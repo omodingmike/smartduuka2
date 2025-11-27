@@ -7,17 +7,19 @@
     use App\Http\Resources\CleaningServiceResource;
     use App\Models\CleaningService;
     use App\Models\CleaningServiceCategory;
+    use App\Traits\HasAdvancedFilter;
     use Illuminate\Http\Request;
     use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
     use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
     class CleaningServiceController extends Controller
     {
-        public function index()
+        use HasAdvancedFilter;
+
+        public function index(Request $request)
         {
-            $data = CleaningService::with( ['cleaningServiceCategory','tax'] )->get();
-            info($data);
-            return CleaningServiceResource::collection( CleaningService::with( ['cleaningServiceCategory','tax'] )->get() );
+            return CleaningServiceResource::collection(
+                $this->filter( CleaningService::with( [ 'cleaningServiceCategory' , 'tax' ] ) , $request ) );
         }
 
         /**
