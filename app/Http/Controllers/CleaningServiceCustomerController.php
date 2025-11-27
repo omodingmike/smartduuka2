@@ -19,6 +19,15 @@
             return CleaningServiceCustomerResource::collection( $query->get() );
         }
 
+        public function customer(Request $request)
+        {
+            $phone = $request->input( 'phone' );
+            info($phone);
+            $customer = CleaningServiceCustomer::where( 'phone' ,'like', "%$phone%" )->first() ;
+            info($customer);
+            return new CleaningServiceCustomerResource( $customer);
+        }
+
         public function store(CleaningServiceCustomerRequest $request)
         {
             return new CleaningServiceCustomerResource( CleaningServiceCustomer::create( $request->validated() ) );

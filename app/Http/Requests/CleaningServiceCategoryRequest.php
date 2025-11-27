@@ -9,8 +9,8 @@
         public function rules() : array
         {
             return [
-                'name'        => [ 'required' ] ,
                 'description' => [ 'nullable' ] ,
+                'name'        => [ 'required' , 'unique:cleaning_service_categories,name' ] ,
             ];
         }
 

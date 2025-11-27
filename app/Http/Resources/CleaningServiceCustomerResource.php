@@ -12,9 +12,9 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'         => $this->id ,
-                'name'       => $this->name ,
-                'phone'      => $this->phone ,
+                'id'    => $this->id ?? NULL ,
+                'name'  => $this->name ?? NULL ,
+                'phone' => $this->phone ?? NULL ,
             ];
         }
     }

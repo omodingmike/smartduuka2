@@ -10,7 +10,7 @@
         {
             return [
                 'name'  => [ 'required' ] ,
-                'phone' => [ 'required' ] ,
+                'phone' => [ 'required' , 'unique:cleaning_service_customers,phone' ] ,
             ];
         }
 

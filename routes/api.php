@@ -89,6 +89,7 @@
 
     Route::post( 'success' , [ IotecController::class , 'success' ] );
     Route::post( 'pay' , [ IotecController::class , 'pay' ] );
+    Route::get( 'cleaningServiceCustomer' , [ CleaningServiceCustomerController::class , 'customer' ] )->withoutMiddleware( 'auth');
 
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
@@ -96,6 +97,7 @@
 
     Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
     Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
+
 
     Route::get( 'coa' , function () {
 
@@ -158,6 +160,7 @@
         } );
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
+
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
         Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
