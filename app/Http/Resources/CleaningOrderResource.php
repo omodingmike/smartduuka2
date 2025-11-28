@@ -2,7 +2,7 @@
 
     namespace App\Http\Resources;
 
-    use App\Enums\CleaningOrderStatus;
+    use App\Enums\DeliveryType;
     use App\Libraries\AppLibrary;
     use App\Models\CleaningOrder;
     use Illuminate\Http\Request;
@@ -17,25 +17,25 @@
                 'id'                           => $this->id ,
                 'order_id'                     => $this->order_id ,
                 'total'                        => $this->total ,
+                'notes'                        => $this->notes ,
                 'address'                      => $this->address ?? '' ,
                 'total_text'                   => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'subtotal'                     => AppLibrary::currencyAmountFormat( $this->subtotal ) ,
                 'tax'                          => AppLibrary::currencyAmountFormat( $this->tax ) ,
                 'discount'                     => AppLibrary::currencyAmountFormat( $this->discount ) ,
                 'paid'                         => AppLibrary::currencyAmountFormat( $this->paid ) ,
-                'balance'                      => AppLibrary::currencyAmountFormat( abs($this->balance) ) ,
+                'balance'                      => AppLibrary::currencyAmountFormat( abs( $this->balance ) ) ,
                 'date'                         => AppLibrary::datetime2( $this->date ) ,
                 'created_at'                   => AppLibrary::datetime2( $this->created_at ) ,
+                'status_options'               => DeliveryType::tryFrom( $this->service_method->value )?->steps() ,
                 'status'                       => [
-                    'value'   => $this->status->value ,
-                    'label'   => $this->status->label() ,
-                    'color'   => $this->status->color() ,
-                    'options' => CleaningOrderStatus::options()
+                    'value' => $this->status->value ,
+                    'label' => $this->status->label() ,
                 ] ,
                 'service_method'               => [
                     'value' => $this->service_method->value ,
                     'label' => $this->service_method->label() ,
-                    'steps' => $this->service_method->steps() ,
+//                    'steps' => $this->service_method->steps() ,
                 ] ,
                 'items'                        => CleaningOrderItemResource::collection( $this->whenLoaded( 'items' ) ) ,
                 'cleaning_service_customer_id' => $this->cleaning_service_customer_id ,

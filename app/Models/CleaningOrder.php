@@ -4,14 +4,18 @@
 
     use App\Enums\CleaningOrderStatus;
     use App\Enums\DeliveryType;
+    use App\Enums\MediaEnum;
+    use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     use Illuminate\Database\Eloquent\SoftDeletes;
+    use Spatie\MediaLibrary\HasMedia;
 
-    class CleaningOrder extends Model
+    class CleaningOrder extends Model implements HasMedia
     {
-        use SoftDeletes;
+        use SoftDeletes , HasImageMedia;
+
 
         protected $fillable = [
             'order_id' ,
@@ -26,8 +30,13 @@
             'discount' ,
             'payment_method_id' ,
             'paid' ,
-            'balance' ,'address'
+            'balance' , 'address'
         ];
+
+        protected function getMediaCollection() : string
+        {
+            return MediaEnum::ORDERS_COLLECTION;
+        }
 
         public function cleaningServiceCustomer() : BelongsTo
         {

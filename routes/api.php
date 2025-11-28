@@ -89,7 +89,7 @@
 
     Route::post( 'success' , [ IotecController::class , 'success' ] );
     Route::post( 'pay' , [ IotecController::class , 'pay' ] );
-    Route::get( 'cleaningServiceCustomer' , [ CleaningServiceCustomerController::class , 'customer' ] )->withoutMiddleware( 'auth');
+    Route::get( 'cleaningServiceCustomer' , [ CleaningServiceCustomerController::class , 'customer' ] )->withoutMiddleware( 'auth' );
 
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
@@ -163,6 +163,8 @@
 
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
+        Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
+        Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
         Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
         Route::put( 'cleaningOrders/{cleaningOrder}' , [ CleaningOrderController::class , 'update' ] );
         Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );

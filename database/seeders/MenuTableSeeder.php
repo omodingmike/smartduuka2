@@ -36,7 +36,7 @@
                     'children'   => [
                         [
                             'name'       => 'POS' ,
-                            'url'        => 'sales/pos' ,
+                            'url'        => 'admin/sales/pos' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -129,7 +129,7 @@
                     'children'   => [
                         [
                             'name'       => 'Order Mgt Board' ,
-                            'url'        => 'cleaning/orders' ,
+                            'url'        => 'admin/cleaning/orders' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -140,7 +140,7 @@
                         ] ,
                         [
                             'name'       => 'Cleaning Services' ,
-                            'url'        => 'cleaning/services/services' ,
+                            'url'        => 'admin/cleaning/services/services' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
@@ -150,7 +150,7 @@
                             'updated_at' => now()
                         ] , [
                             'name'       => 'Cleaning Settings' ,
-                            'url'        => 'cleaning/settings' ,
+                            'url'        => 'admin/cleaning/settings' ,
                             'language'   => 'pos' ,
                             'icon'       => 'lab lab-line-pos' ,
                             'priority'   => 100 ,
