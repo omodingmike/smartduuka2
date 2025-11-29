@@ -90,10 +90,13 @@
     Route::post( 'success' , [ IotecController::class , 'success' ] );
     Route::post( 'pay' , [ IotecController::class , 'pay' ] );
     Route::get( 'cleaningServiceCustomer' , [ CleaningServiceCustomerController::class , 'customer' ] )->withoutMiddleware( 'auth' );
-
+    Route::get( 'cleaningServiceCategories' , [ CleaningServiceCategoryController::class , 'index' ] )->withoutMiddleware( 'auth' );
+    Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
+    Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
+    Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
 
     Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
     Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
@@ -163,12 +166,11 @@
 
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
-        Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
         Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
         Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
         Route::put( 'cleaningOrders/{cleaningOrder}' , [ CleaningOrderController::class , 'update' ] );
         Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
-        Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' ] );
+        Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy', ] );
         Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
