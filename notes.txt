@@ -11,6 +11,8 @@ $query        = PaymentMethod::query();
 
               chmod +x ~/deploy.sh
 
+              docker exec -it web /bin/bash
+
               cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
               chmod 600 ~/.ssh/authorized_keys
               chmod 700 ~/.ssh
