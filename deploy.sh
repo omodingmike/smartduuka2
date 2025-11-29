@@ -10,8 +10,8 @@ FRONTEND_REPO_URL="git@github-frontend:omodingmike/smartduuka-nextjs.git"
 BACKEND_REPO_URL="git@github-backend:omodingmike/smartduuka2.git"
 BACKEND_DIR="$PROJECT_DIR/backend"
 
-DOMAIN_FRONTEND="piwie.smartduuka.com"
-DOMAIN_BACKEND="api.smartduuka.com"
+DOMAIN_FRONTEND="piwie.eruditesuganda.com"
+DOMAIN_BACKEND="piwieapi.eruditesuganda.com"
 
 SWAP_SIZE="1G"
 
@@ -100,12 +100,6 @@ if [ ! -d "$BACKEND_DIR" ]; then
 else
   cd "$BACKEND_DIR" && git pull
 fi
-
-# ----------------------------
-# INSTALL & CONFIGURE NGINX
-# ----------------------------
-echo "🌐 Installing Nginx..."
-sudo apt install nginx -y
 
 # ----------------------------
 # REMOVE UNUSED DOCKER IMAGES

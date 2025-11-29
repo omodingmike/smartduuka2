@@ -6,14 +6,16 @@ $query        = PaymentMethod::query();
               $filtered = $this->handleIndex( new PaymentMethod() , $request , [ 'name' , 'code' ] );
 
 
-              sshpass -p "8:oPaQoTM)" scp /Users/mike/Desktop/valet/smartduuka2/deploy.sh root@81.17.100.184:./deploy.sh
-              sshpass -p "8:oPaQoTM)" scp /Users/mike/Desktop/valet/smartduuka2/.env root@81.17.100.184:./root/smartduuka/backend/
+              sshpass -p "smartduuka2" scp /Users/mike/Desktop/valet/smartduuka2/deploy.sh root@144.91.111.26:./deploy.sh
+              sshpass -p "smartduuka2" scp /Users/mike/Desktop/valet/smartduuka2/.env root@144.91.111.26:./root/smartduuka/backend/
 
               chmod +x ~/deploy.sh
 
               cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
               chmod 600 ~/.ssh/authorized_keys
               chmod 700 ~/.ssh
+
+              alias myssh2="sshpass -p 'smartduuka2' ssh root@144.91.111.26"
 
 
 Generate SSH keys for each account
@@ -22,6 +24,9 @@ ssh-keygen -t ed25519 -C "deploy-frontend" -f ~/.ssh/frontend_key
 
 # Account Two (omodingmike)
 ssh-keygen -t ed25519 -C "deploy-backend" -f ~/.ssh/backend_key
+
+cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
+cat  ~/.ssh/frontend_key.pub >> ~/.ssh/authorized_keys
 
 Add public keys to GitHub
 

@@ -1,23 +1,4 @@
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "8080:80"
-      - "8443:443"     # Enable HTTPS port
-    volumes:
-      - .:/var/www:cached
-      - ./docker/nginx/conf.d/app.conf:/etc/nginx/conf.d/default.conf:ro
-
-      # SSL certificates (located in same path as docker-compose.yml)
-      - ./cert.pem:/etc/ssl/certs/cert.pem:ro
-      - ./key.pem:/etc/ssl/private/key.pem:ro
-
-    depends_on:
-      - api
-    networks:
-      - smartduuka_network
-
   api:
     build:
       context: .
@@ -31,22 +12,8 @@ services:
     volumes:
       - storage_data:/var/www/storage         # Persistent storage
       - media_data:/var/www/public/media      # Media uploads
-      - vendor_data:/var/www/vendor           # Composer vendor
-    environment:
-      # Laravel environment variables
-      APP_ENV: ${APP_ENV}
-      APP_KEY: ${APP_KEY}
-      APP_DEBUG: ${APP_DEBUG}
-      DB_CONNECTION: ${DB_CONNECTION}
-      DB_HOST: db
-      DB_PORT: ${DB_PORT}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: [ "CMD", "php-fpm", "-t" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -66,7 +33,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -81,7 +48,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 10

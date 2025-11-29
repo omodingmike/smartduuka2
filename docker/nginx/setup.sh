@@ -1,3 +1,23 @@
+# ----------------------------
+# INSTALL & CONFIGURE NGINX
+# ----------------------------
+
+DOMAIN_FRONTEND="piwie.eruditesuganda.com"
+DOMAIN_BACKEND="piwieapi.eruditesuganda.com"
+APP_NAME="myapp"
+
+echo "🌐 Installing Nginx..."
+sudo apt install nginx -y
+
+# Remove old Nginx config (if it exists)
+sudo rm -f /etc/nginx/sites-available/$APP_NAME
+sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
+
+# Stop Nginx temporarily to allow Certbot to run in standalone mode
+sudo systemctl stop nginx
+
+# Create Nginx config with Cloudflare SSL
+sudo cat > /etc/nginx/sites-available/$APP_NAME <<EOL
 limit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;
 
 # ----------------------
@@ -81,3 +101,19 @@ server {
         deny all;
     }
 }
+
+EOL
+
+
+# Create symbolic link if it doesn't already exist
+sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/$APP_NAME
+
+# Test Nginx configuration
+sudo nginx -t
+if [ $? -ne 0 ]; then
+  echo "Nginx configuration test failed. Exiting."
+  exit 1
+fi
+
+# Restart Nginx to apply the new configuration
+sudo systemctl restart nginx

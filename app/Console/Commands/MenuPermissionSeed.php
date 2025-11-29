@@ -53,30 +53,30 @@
                 Settings::group( SettingsEnum::APP_SETTINGS() )->set( [ 'a4_receipt' => Ask::NO ] );
             }
             $data = [];
-            if ( config( 'app.main_app' ) ) {
-                $data[ 'ACCOUNTING_ENABLED' ] = 'true';
-            }
-            else {
-                $data[ 'ACCOUNTING_ENABLED' ] = 'false';
-                $data[ 'MAIN_APP' ]           = 'false';
-            }
-            $data[ 'APP_ENV' ]                = 'production';
-            $data[ 'IO_TEC_SECRET' ]          = 'IO-Xp9TIqAuNGDBBWgGCBbDIIyLLpabbliJ9';
-            $data[ 'IO_TEC_CLIENT_ID' ]       = 'pay-ef3f5d3f-5489-4b3b-a295-9ba483c18f4f';
-            $data[ 'IO_TEC_WALLET_ID' ]       = 'bc50d942-3890-4829-baec-3614e4297274';
-            $data[ 'TIMEZONE' ]               = 'Africa/Kampala';
-            $data[ 'CURRENCY' ]               = Settings::group( 'site' )->get( 'site_default_currency' );
-            $data[ 'CURRENCY_SYMBOL' ]        = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
-            $data[ 'CURRENCY_DECIMAL_POINT' ] = 0;
-            $data[ 'DEMO' ]                   = 'true';
-            $data[ 'MAIL_HOST' ]              = 'smtp.zoho.com';
-            $data[ 'MAIL_PORT' ]              = 465;
-            $data[ 'MAIL_USERNAME' ]          = 'services@smartduuka.com';
-            $data[ 'MAIL_PASSWORD' ]          = 'Nz0VjVhzC6Xk';
-            $data[ 'MAIL_ENCRYPTION' ]        = 'ssl';
-            $data[ 'MAIL_FROM_ADDRESS' ]      = 'services@smartduuka.com';
-            $data[ 'MAIL_FROM_NAME' ]         = 'Smart Duuka Software';
-            $data[ 'QUEUE_CONNECTION' ]       = 'database';
+//            if ( config( 'app.main_app' ) ) {
+//                $data[ 'ACCOUNTING_ENABLED' ] = 'true';
+//            }
+//            else {
+//                $data[ 'ACCOUNTING_ENABLED' ] = 'false';
+//                $data[ 'MAIN_APP' ]           = 'false';
+//            }
+//            $data[ 'APP_ENV' ]                = 'production';
+//            $data[ 'IO_TEC_SECRET' ]          = 'IO-Xp9TIqAuNGDBBWgGCBbDIIyLLpabbliJ9';
+//            $data[ 'IO_TEC_CLIENT_ID' ]       = 'pay-ef3f5d3f-5489-4b3b-a295-9ba483c18f4f';
+//            $data[ 'IO_TEC_WALLET_ID' ]       = 'bc50d942-3890-4829-baec-3614e4297274';
+//            $data[ 'TIMEZONE' ]               = 'Africa/Kampala';
+//            $data[ 'CURRENCY' ]               = Settings::group( 'site' )->get( 'site_default_currency' );
+//            $data[ 'CURRENCY_SYMBOL' ]        = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
+//            $data[ 'CURRENCY_DECIMAL_POINT' ] = 0;
+//            $data[ 'DEMO' ]                   = 'true';
+//            $data[ 'MAIL_HOST' ]              = 'smtp.zoho.com';
+//            $data[ 'MAIL_PORT' ]              = 465;
+//            $data[ 'MAIL_USERNAME' ]          = 'services@smartduuka.com';
+//            $data[ 'MAIL_PASSWORD' ]          = 'Nz0VjVhzC6Xk';
+//            $data[ 'MAIL_ENCRYPTION' ]        = 'ssl';
+//            $data[ 'MAIL_FROM_ADDRESS' ]      = 'services@smartduuka.com';
+//            $data[ 'MAIL_FROM_NAME' ]         = 'Smart Duuka Software';
+//            $data[ 'QUEUE_CONNECTION' ]       = 'database';
 
             if ( ! $env_editor->keyExists( 'PROJECT_ID' ) ) {
                 $data[ 'PROJECT_ID' ] = Str::uuid()->getHex();

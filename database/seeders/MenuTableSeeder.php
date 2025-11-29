@@ -11,17 +11,17 @@
         public function run() : void
         {
             $menus = [
-//                [
-//                    'name'       => 'Dashboard' ,
-//                    'language'   => 'dashboard' ,
-//                    'url'        => 'dashboard' ,
-//                    'icon'       => 'lab lab-line-dashboard' ,
-//                    'priority'   => 100 ,
-//                    'svg'        => NULL ,
-//                    'status'     => 1 ,
-//                    'created_at' => now() ,
-//                    'updated_at' => now()
-//                ] ,
+                [
+                    'name'       => 'Dashboard' ,
+                    'language'   => 'dashboard' ,
+                    'url'        => 'admin' ,
+                    'icon'       => 'LayoutDashboard' ,
+                    'priority'   => 100 ,
+                    'svg'        => NULL ,
+                    'status'     => 1 ,
+                    'created_at' => now() ,
+                    'updated_at' => now()
+                ] ,
 
                 [
                     'name'       => 'Sales' ,
@@ -711,7 +711,7 @@
                 [
                     'name'       => 'Modules' ,
                     'language'   => 'products' ,
-                    'url'        => 'modules' ,
+                    'url'        => 'admin/modules' ,
                     'icon'       => 'Puzzle' ,
                     'priority'   => 100 ,
                     'svg'        => NULL ,
@@ -722,7 +722,7 @@
                 [
                     'name'       => 'Settings' ,
                     'language'   => 'products' ,
-                    'url'        => 'settings' ,
+                    'url'        => 'admin/settings' ,
                     'icon'       => 'Settings' ,
                     'priority'   => 100 ,
                     'svg'        => NULL ,
