@@ -2,7 +2,9 @@
 
     namespace App\Models;
 
+    use App\Enums\CacheEnum;
     use App\Enums\MediaEnum;
+    use App\Traits\ForgetsCacheOnCRUD;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +13,7 @@
 
     class CleaningService extends Model implements HasMedia
     {
-        use SoftDeletes , HasImageMedia;
+        use SoftDeletes , HasImageMedia , ForgetsCacheOnCRUD;
 
         protected $fillable = [
             'name' ,
@@ -24,6 +26,11 @@
         public function cleaningServiceCategory() : BelongsTo
         {
             return $this->belongsTo( CleaningServiceCategory::class );
+        }
+
+        protected function getCacheKeysToForget() : string | array
+        {
+            return CacheEnum::CLEANING_SERVICES;
         }
 
         public function tax() : BelongsTo

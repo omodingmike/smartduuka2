@@ -101,7 +101,6 @@
     Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
     Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
 
-
     Route::get( 'coa' , function () {
 
         return ChartOfAccountGroupResource::collection( ChartOfAccountGroup::whereNull( 'parent_id' )

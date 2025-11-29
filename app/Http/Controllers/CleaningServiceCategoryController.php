@@ -2,11 +2,13 @@
 
     namespace App\Http\Controllers;
 
+    use App\Enums\CacheEnum;
     use App\Http\Requests\CleaningServiceCategoryRequest;
     use App\Http\Resources\CleaningServiceCategoryResource;
     use App\Models\CleaningServiceCategory;
     use App\Traits\HasAdvancedFilter;
     use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Cache;
 
     class CleaningServiceCategoryController extends Controller
     {
@@ -19,7 +21,11 @@
 
         public function list()
         {
-            return CleaningServiceCategoryResource::collection( CleaningServiceCategory::with( 'services' )->get() );
+            $categories = Cache::rememberForever( CacheEnum::CLEANING_SERVICE_CATEGORIES , function () {
+                return CleaningServiceCategory::with( 'services' )->get();
+            } );
+
+            return CleaningServiceCategoryResource::collection( $categories );
         }
 
         public function store(CleaningServiceCategoryRequest $request)
