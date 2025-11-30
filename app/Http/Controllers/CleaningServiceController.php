@@ -47,7 +47,7 @@
         {
             $cleaningService->update( $request->validated() );
 
-            $this->saveMedia( $request , $cleaningService );
+            $this->saveMedia( $request , $cleaningService, MediaEnum::SERVICES_MEDIA_COLLECTION );
 
             return new CleaningServiceResource( $cleaningService );
         }
