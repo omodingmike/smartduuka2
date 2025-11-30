@@ -30,6 +30,7 @@ services:
       - ./.env:/app/.env
       - storage_data:/app/storage         # Persistent storage
       - media_data:/app/public/media      # Media uploads
+      - ./public:/var/www/api/public:ro
     healthcheck:
       test: [ "CMD", "php-fpm", "-t" ]
       interval: 5s
