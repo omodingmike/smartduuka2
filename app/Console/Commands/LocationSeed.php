@@ -8,7 +8,7 @@
     class LocationSeed extends Command
     {
         protected $signature   = 'l:seed';
-        protected $description = 'Seed countries, states, and cities';
+        protected $description = 'Seed countries, states, and cities from CSV files';
 
         public function handle() : int
         {
@@ -27,7 +27,6 @@
             $this->info( 'Importing countries...' );
             $this->importCSV( $filePath , 'countries' , function ($data) {
                 return [
-                    'id'         => $data[ 'id' ] ,
                     'name'       => $data[ 'name' ] ,
                     'code'       => $data[ 'code' ] ?? NULL ,
                     'status'     => $data[ 'status' ] ?? 5 ,
@@ -52,7 +51,6 @@
                 }
 
                 return [
-                    'id'         => $data[ 'id' ] ,
                     'name'       => $data[ 'name' ] ,
                     'country_id' => $country->id ,
                     'status'     => $data[ 'status' ] ?? 5 ,
@@ -78,7 +76,6 @@
                 }
 
                 return [
-                    'id'         => $data[ 'id' ] ?? NULL ,
                     'name'       => $data[ 'name' ] ,
                     'state_id'   => $state->id ,
                     'status'     => $data[ 'status' ] ?? 5 ,
@@ -138,6 +135,6 @@
 
             fclose( $handle );
 
-            $this->info( "Imported into [$table], skipped: $skipped" );
+            $this->info( "Imported into [$table], skipped: $skipped records." );
         }
     }
