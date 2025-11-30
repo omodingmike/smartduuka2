@@ -39,7 +39,7 @@
                 'paymentMethod' ,
                 'cleaningServiceCustomer'
             ] )->where( 'order_id' , $order_id )->first();
-            return new CleaningOrderResource( $order ?? [] );
+            return $order? new CleaningOrderResource( $order ): response()->json(['error' => 'Order not found']);
         }
 
         /**

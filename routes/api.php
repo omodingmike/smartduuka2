@@ -97,6 +97,7 @@
         return $request->user()->load( 'roles' );
     } );
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
+    Route::get( 'site' , [ SiteController::class , 'index' ] );
     Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
 
     Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
