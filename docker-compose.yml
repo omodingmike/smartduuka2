@@ -10,7 +10,6 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
       - media_data:/var/www/api/public/media:ro
-      - media_data:/var/www/api/public:ro
     depends_on:
       - api
     networks:
@@ -32,7 +31,6 @@ services:
       - ./.env:/app/.env
       - storage_data:/app/storage         # Persistent storage
       - media_data:/app/public/media      # Media uploads
-      - media_data:/app/public     # Media uploads
       - ./public:/var/www/api/public:ro
     healthcheck:
       test: [ "CMD", "php-fpm", "-t" ]
