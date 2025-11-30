@@ -9,6 +9,8 @@ services:
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
+      - ./public:/var/www/api/public:ro
+      - media_data:/var/www/api/public/media:ro
     depends_on:
       - api
     networks:
