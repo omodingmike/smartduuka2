@@ -36,7 +36,7 @@
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => 'User does not have the right permissions.'
+                                  'message' => [ 'message' => 'User does not have the right permissions.' , 'details' => $e->getMessage() ]
                               ] , 403 );
                           } );
 
@@ -44,7 +44,7 @@
                           $exceptions->render( function (Illuminate\Database\Eloquent\ModelNotFoundException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => 'No query results for model.'
+                                  'message' => [ 'message' => 'No query results for model.' , 'details' => $e->getMessage() ]
                               ] , 404 );
                           } );
 
@@ -52,7 +52,7 @@
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => 'Method not supported for the route.'
+                                  'message' => [ 'message' => 'Method not supported for the route.' , 'details' => $e->getMessage() ]
                               ] , 405 );
                           } );
 
@@ -60,7 +60,7 @@
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => $e->getMessage()
+                                  'message' => [ 'message' => 'The specified URL cannot be found.' , 'details' => $e->getMessage() ]
                               ] , 404 );
                           } );
 
@@ -68,7 +68,7 @@
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\HttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => $e->getMessage()
+                                  'message' => [ 'message' => 'Http exception' , 'details' => $e->getMessage() ]
                               ] , 422 );
                           } );
 
@@ -76,7 +76,7 @@
                           $exceptions->render( function (Illuminate\Database\QueryException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => $e->getMessage()
+                                  'message' => [ 'message' => 'Query exception' , 'details' => $e->getMessage() ]
                               ] , 422 );
                           } );
 
