@@ -8,7 +8,7 @@ APP_DIR=~/smartduuka
 APP_NAME=smartduuka
 BACKEND_DIR="$APP_DIR/backend"
 
-echo "🚀 Starting backend deployment..."
+echo "🚀 Starting deployment for $APP_NAME..."
 
 # ----------------------------
 # PULL LATEST CHANGES
@@ -17,28 +17,30 @@ if [ -d "$BACKEND_DIR" ]; then
   echo "Pulling latest changes for backend..."
 
   cd "$BACKEND_DIR"
-  # Ensure media directory exists
-
   git pull origin main
 else
   echo "Error: Backend directory not found at $BACKEND_DIR. Exiting."
   exit 1
 fi
 
-# Rebuild and recreate API container
-sudo docker-compose up -d --no-deps --force-recreate --build api
+# ----------------------------
+# BUILD & RECREATE CONTAINERS
+# ----------------------------
+echo "🔨 Building and recreating all web services (api, nginx, frontend)..."
+
+# Rebuilds API (Laravel), Nginx (config files), and Frontend (Next.js) if their source/config changed.
+# --force-recreate ensures a fresh start, especially after file structure changes.
+sudo docker-compose up -d --build --force-recreate api nginx frontend
 
 # ----------------------------
 # WAIT FOR API CONTAINER
 # ----------------------------
 echo "⏳ Waiting for API container to be ready..."
+# Wait for the API container to accept Artisan commands (app is ready to handle traffic)
 until sudo docker-compose exec -T api php artisan up; do
   echo "Waiting for API..."
-  sleep 5
+  sleep 3
 done
-
-mkdir -p /var/www/laravel/public/media
-chown -R www-data:www-data /var/www/laravel/public/media
 
 # ----------------------------
 # RUN MIGRATIONS & CLEAR CACHE
@@ -46,15 +48,14 @@ chown -R www-data:www-data /var/www/laravel/public/media
 echo "🗄️ Running migrations..."
 sudo docker-compose exec -T api php artisan migrate --force
 
+echo "🔗 Relinking storage (if needed)..."
 sudo docker-compose exec -T api php artisan storage:link
 
-echo "🧹 Clearing caches..."
+echo "🧹 Clearing and optimizing caches..."
+# Clear all caches (safer during deployment)
 sudo docker-compose exec -T api php artisan optimize:clear
-sudo docker-compose exec -T api php artisan config:clear
-sudo docker-compose exec -T api php artisan cache:clear
-sudo docker-compose exec -T api php artisan route:clear
 
-echo "🧹 Optimizing..."
+# Re-optimize/re-cache for production performance
 sudo docker-compose exec -T api php artisan optimize
 sudo docker-compose exec -T api php artisan config:cache
 sudo docker-compose exec -T api php artisan event:cache
@@ -64,33 +65,10 @@ sudo docker-compose exec -T api php artisan view:cache
 # ----------------------------
 # CHECK STATUS
 # ----------------------------
-if ! sudo docker-compose ps | grep "api" | grep "Up"; then
-  echo "❌ API container failed to start. Check logs with 'docker-compose logs api'."
+echo "🔎 Checking container status..."
+if ! sudo docker-compose ps | grep "api" | grep "Up" && ! sudo docker-compose ps | grep "nginx" | grep "Up"; then
+  echo "❌ One or more essential containers failed to start. Check logs."
   exit 1
 fi
 
-APP_NAME=smartduuka # Set your app name
-
-# 1️⃣ Remove old Nginx config if it exists
-sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
-sudo rm -f /etc/nginx/sites-available/$APP_NAME
-
-# 2️⃣ Copy new config to sites-available
-sudo cp docker/nginx/conf.d/app.conf /etc/nginx/sites-available/$APP_NAME
-
-# 3️⃣ Enable the site by creating a symlink in sites-enabled
-sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/$APP_NAME
-
-# 4️⃣ Test Nginx configuration
-sudo nginx -t
-
-# 5️⃣ Stop Nginx temporarily to allow Certbot to run in standalone mode
-sudo systemctl stop nginx
-
-# 6️⃣ Run Certbot here if needed
-# sudo certbot certonly --standalone -d yourdomain.com
-
-# 7️⃣ Restart Nginx to apply the new configuration
-sudo systemctl restart nginx
-
-echo "✅ Backend deployment complete!"
+echo "✅ Deployment complete! New containers are running."

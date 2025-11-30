@@ -1,4 +1,19 @@
 services:
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    networks:
+      - smartduuka_network
+
   api:
     build:
       context: .
@@ -13,7 +28,6 @@ services:
         condition: service_healthy
     volumes:
       - ./.env:/app/.env
-      - ./public/media:/app/public/media
       - storage_data:/app/storage         # Persistent storage
       - media_data:/app/public/media      # Media uploads
     healthcheck:
@@ -24,9 +38,7 @@ services:
     # FIX: Run chown on mounted volumes before starting the main process
     command: >
       /bin/bash -c "
-        # Ensure correct permissions for application-writable mounted volumes
         chown -R www-data:www-data /app/storage /app/public/media &&
-        # Start the main Supervisor process
         /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
       "
     networks:
