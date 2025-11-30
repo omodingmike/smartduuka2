@@ -18,7 +18,6 @@ if [ -d "$BACKEND_DIR" ]; then
   echo "Pulling latest changes for backend..."
 
   cd "$BACKEND_DIR"
-  mkdir -p "$PROJECT_DIR"
 
   git pull origin main
 else
