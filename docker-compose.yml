@@ -20,6 +20,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    # FIX: Run chown on mounted volumes before starting the main process
+    command: >
+      /bin/bash -c "
+        # Ensure correct permissions for application-writable mounted volumes
+        chown -R www-data:www-data /app/storage /app/public/media &&
+        # Start the main Supervisor process
+        /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+      "
     networks:
       - smartduuka_network
 
