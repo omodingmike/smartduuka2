@@ -54,3 +54,10 @@ ssh -T git@github-backend
 Use aliases in Git repository URLs
 REPO_FRONTEND="git@github-frontend:Samwaswa69/Straightahead_animation_studio.git"
 REPO_BACKEND="git@github-backend:omodingmike/backend-repo.git"
+
+
+sed -e 's/`/"/g' \
+    -e 's/INSERT INTO \([^ ]*\) VALUES/INSERT INTO \1/g' \
+    -e 's/VALUES(/VALUES (/g' \
+    countries.sql | psql -U root -d smartduuka2
+
