@@ -60,7 +60,7 @@
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
-                                  'message' => 'The specified URL cannot be found.'
+                                  'message' => $e->getMessage()
                               ] , 404 );
                           } );
 
