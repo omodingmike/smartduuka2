@@ -13,6 +13,7 @@ services:
         condition: service_healthy
     volumes:
       - ./.env:/app/.env
+      - ./public/media:/app/public/media
       - storage_data:/app/storage         # Persistent storage
       - media_data:/app/public/media      # Media uploads
     healthcheck:

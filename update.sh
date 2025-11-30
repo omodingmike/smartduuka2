@@ -37,6 +37,9 @@ until sudo docker-compose exec -T api php artisan up; do
   sleep 5
 done
 
+mkdir -p /var/www/laravel/public/media
+chown -R www-data:www-data /var/www/laravel/public/media
+
 # ----------------------------
 # RUN MIGRATIONS & CLEAR CACHE
 # ----------------------------
