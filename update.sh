@@ -30,7 +30,7 @@ echo "🔨 Building and recreating all web services (api, nginx, frontend)..."
 
 # Rebuilds API (Laravel), Nginx (config files), and Frontend (Next.js) if their source/config changed.
 # --force-recreate ensures a fresh start, especially after file structure changes.
-sudo docker-compose up -d --build --force-recreate api nginx
+sudo docker-compose up -d --build --force-recreate api nginx frontend
 
 # ----------------------------
 # WAIT FOR API CONTAINER
