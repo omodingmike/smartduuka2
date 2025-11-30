@@ -61,8 +61,7 @@ RUN php artisan key:generate --force \
 #    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Set www-data ownership for all files (copied by root)
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 777 /var/www
+RUN chown -R www-data:www-data /var/www && chmod -R 777 /var/www
 
 # Copy Supervisor config
 COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
