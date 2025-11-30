@@ -10,6 +10,7 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
       - media_data:/var/www/api/public/media:ro
+      - static_data:/var/www/api/public/static:ro
     depends_on:
       - api
     networks:
@@ -31,6 +32,7 @@ services:
       - ./.env:/app/.env
       - storage_data:/app/storage         # Persistent storage
       - media_data:/app/public/media      # Media uploads
+      - static_data:/app/public/static      # Media uploads
       - ./public:/var/www/api/public:ro
     healthcheck:
       test: [ "CMD", "php-fpm", "-t" ]
@@ -87,6 +89,7 @@ volumes:
   vendor_data:
   storage_data:
   media_data:
+  static_data:
 
 networks:
   smartduuka_network:

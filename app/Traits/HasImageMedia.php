@@ -41,7 +41,7 @@
                     if ($this->hasMedia($collection)) {
                         return $this->getLastMediaUrl($collection, 'thumb');
                     }
-                    return asset('no_image.png');
+                    return asset('static/no_image.png');
                 }
             );
         }
