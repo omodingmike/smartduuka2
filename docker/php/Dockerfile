@@ -57,7 +57,13 @@ RUN php artisan key:generate --force \
     && php artisan view:cache
 
 # Set correct permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+#RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+#    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
+# New Block (Complete Ownership Fix)
+# Set www-data ownership for all files (copied by root)
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Copy Supervisor config
