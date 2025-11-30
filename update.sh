@@ -8,7 +8,7 @@ APP_DIR=~/smartduuka
 APP_NAME=smartduuka
 BACKEND_DIR="$APP_DIR/backend"
 STATIC_ASSET_DIR="$APP_DIR/backend/public/static"
-mkdir -p "$STATIC_ASSET_DIR"
+#mkdir -p "$STATIC_ASSET_DIR"
 echo "🚀 Starting deployment for $APP_NAME..."
 
 # ----------------------------
