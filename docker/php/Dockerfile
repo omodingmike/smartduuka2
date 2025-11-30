@@ -1,74 +1,74 @@
-# Use official PHP 8.4 FPM image
-FROM php:8.4-fpm
+#!/bin/bash
+set -e
 
-# Set working directory
-WORKDIR /app
+# ----------------------------
+# CONFIG
+# ----------------------------
+APP_DIR=~/smartduuka
+APP_NAME=smartduuka
+BACKEND_DIR="$APP_DIR/backend"
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    nano \
-    gnupg \
-    ca-certificates \
-    supervisor \
-    git \
-    unzip \
-    libpq-dev \
-    jpegoptim \
-    optipng \
-    pngquant \
-    gifsicle \
-    libavif-bin \
-    libmagickwand-dev \
-    libzip-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+echo "🚀 Starting deployment for $APP_NAME..."
 
-# Install PHP extensions (Redis + Imagick included)
-RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip \
-    && pecl install redis imagick \
-    && docker-php-ext-enable redis imagick
+# ----------------------------
+# PULL LATEST CHANGES
+# ----------------------------
+if [ -d "$BACKEND_DIR" ]; then
+  echo "Pulling latest changes for backend..."
 
-# Install Supercronic (for cron tasks)
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
-    SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
-    SUPERCRONIC=supercronic-linux-amd64
+  cd "$BACKEND_DIR"
+  git pull origin main
+else
+  echo "Error: Backend directory not found at $BACKEND_DIR. Exiting."
+  exit 1
+fi
 
-RUN curl -fsSLO "$SUPERCRONIC_URL" && \
-    echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - && \
-    chmod +x "$SUPERCRONIC" && \
-    mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" && \
-    ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+# ----------------------------
+# BUILD & RECREATE CONTAINERS
+# ----------------------------
+echo "🔨 Building and recreating all web services (api, nginx, frontend)..."
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Rebuilds API (Laravel), Nginx (config files), and Frontend (Next.js) if their source/config changed.
+# --force-recreate ensures a fresh start, especially after file structure changes.
+sudo docker-compose up -d --build --force-recreate api nginx frontend
 
-# Copy application code (but NOT .env)
-COPY . /app
+# ----------------------------
+# WAIT FOR API CONTAINER
+# ----------------------------
+echo "⏳ Waiting for API container to be ready..."
+# Wait for the API container to accept Artisan commands (app is ready to handle traffic)
+until sudo docker-compose exec -T api php artisan up; do
+  echo "Waiting for API..."
+  sleep 3
+done
 
-# Install composer dependencies
-RUN composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
+# ----------------------------
+# RUN MIGRATIONS & CLEAR CACHE
+# ----------------------------
+echo "🗄️ Running migrations..."
+sudo docker-compose exec -T api php artisan migrate --force
 
-# Laravel artisan commands (these use runtime env or default values)
-RUN php artisan key:generate --force \
-    && php artisan storage:link \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+echo "🔗 Relinking storage (if needed)..."
+sudo docker-compose exec -T api php artisan storage:link
 
-# Set correct permissions
-#RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-#    && chmod -R 775 /app/storage /app/bootstrap/cache
+echo "🧹 Clearing and optimizing caches..."
+# Clear all caches (safer during deployment)
+sudo docker-compose exec -T api php artisan optimize:clear
 
-# Set www-data ownership for all files (copied by root)
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-    && chmod -R 775 /app/storage /app/bootstrap/cache
+# Re-optimize/re-cache for production performance
+sudo docker-compose exec -T api php artisan optimize
+sudo docker-compose exec -T api php artisan config:cache
+sudo docker-compose exec -T api php artisan event:cache
+sudo docker-compose exec -T api php artisan route:cache
+sudo docker-compose exec -T api php artisan view:cache
 
-# Copy Supervisor config
-COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
+# ----------------------------
+# CHECK STATUS
+# ----------------------------
+echo "🔎 Checking container status..."
+if ! sudo docker-compose ps | grep "api" | grep "Up" && ! sudo docker-compose ps | grep "nginx" | grep "Up"; then
+  echo "❌ One or more essential containers failed to start. Check logs."
+  exit 1
+fi
 
-# Expose PHP-FPM port
-EXPOSE 9000
-
-# Start Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+echo "✅ Deployment complete! New containers are running."
