@@ -20,44 +20,4 @@ $query        = PaymentMethod::query();
               alias myssh2="sshpass -p 'smartduuka2' ssh root@144.91.111.26"
 
 
-Generate SSH keys for each account
-# Account One (Samwaswa69)
-ssh-keygen -t ed25519 -C "deploy-frontend" -f ~/.ssh/frontend_key
-
-# Account Two (omodingmike)
-ssh-keygen -t ed25519 -C "deploy-backend" -f ~/.ssh/backend_key
-
-cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
-cat  ~/.ssh/frontend_key.pub >> ~/.ssh/authorized_keys
-
-Add public keys to GitHub
-
-Configure SSH aliases on the VPS
-Edit ~/.ssh/config:
-
-# Account One
-    Host github-frontend
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/frontend_key
-
-# Account Two
-   Host github-backend
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/backend_key
-
-Verify SSH connections
-ssh -T git@github-frontend
-ssh -T git@github-backend
-
-Use aliases in Git repository URLs
-REPO_FRONTEND="git@github-frontend:Samwaswa69/Straightahead_animation_studio.git"
-REPO_BACKEND="git@github-backend:omodingmike/backend-repo.git"
-
-
-sed -e 's/`/"/g' \
-    -e 's/INSERT INTO \([^ ]*\) VALUES/INSERT INTO \1/g' \
-    -e 's/VALUES(/VALUES (/g' \
-    countries.sql | psql -U root -d smartduuka2
 
