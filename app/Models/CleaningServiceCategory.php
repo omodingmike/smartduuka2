@@ -34,19 +34,4 @@
                 get: fn(string $value) => ucwords( $value ) ,
             );
         }
-
-//        protected static function booted() : void
-//        {
-//            static::created( function () {
-//                Cache::forget( CacheEnum::CLEANING_SERVICE_CATEGORIES );
-//            } );
-//
-//            static::updated( function () {
-//                Cache::forget( CacheEnum::CLEANING_SERVICE_CATEGORIES );
-//            } );
-//
-//            static::deleted( function () {
-//                Cache::forget( CacheEnum::CLEANING_SERVICE_CATEGORIES );
-//            } );
-//        }
     }

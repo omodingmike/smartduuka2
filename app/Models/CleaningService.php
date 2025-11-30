@@ -30,7 +30,7 @@
 
         protected function getCacheKeysToForget() : string | array
         {
-            return CacheEnum::CLEANING_SERVICES;
+            return CacheEnum::CLEANING_SERVICE_CATEGORIES;
         }
 
         public function tax() : BelongsTo

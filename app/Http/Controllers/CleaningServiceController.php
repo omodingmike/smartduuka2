@@ -8,13 +8,14 @@
     use App\Models\CleaningService;
     use App\Models\CleaningServiceCategory;
     use App\Traits\HasAdvancedFilter;
+    use App\Traits\SaveMedia;
     use Illuminate\Http\Request;
     use Spatie\MediaLibrary\MediaCollections\Exceptions\FileDoesNotExist;
     use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
     class CleaningServiceController extends Controller
     {
-        use HasAdvancedFilter;
+        use HasAdvancedFilter , SaveMedia;
 
         public function index(Request $request)
         {
@@ -29,9 +30,7 @@
         public function store(CleaningServiceRequest $request)
         {
             $service = CleaningService::create( $request->validated() );
-            if ( $request->hasFile( 'image' ) ) {
-                $service->addMedia( $request->image )->toMediaCollection( MediaEnum::SERVICES_MEDIA_COLLECTION );
-            }
+            $this->saveMedia( $request , $service , MediaEnum::SERVICES_MEDIA_COLLECTION );
             return new CleaningServiceResource( $service );
         }
 
@@ -48,9 +47,7 @@
         {
             $cleaningService->update( $request->validated() );
 
-            if ( $request->hasFile( 'image' ) ) {
-                $cleaningService->addMedia( $request->image )->toMediaCollection( MediaEnum::SERVICES_MEDIA_COLLECTION );
-            }
+            $this->saveMedia( $request , $cleaningService );
 
             return new CleaningServiceResource( $cleaningService );
         }

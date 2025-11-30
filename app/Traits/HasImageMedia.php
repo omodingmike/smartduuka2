@@ -41,8 +41,7 @@
                     if ($this->hasMedia($collection)) {
                         return $this->getLastMediaUrl($collection, 'thumb');
                     }
-
-                    return asset('default.png');
+                    return asset('no_image.png');
                 }
             );
         }
@@ -53,7 +52,7 @@
         public function registerMediaConversions(Media $media = null): void
         {
             $this->addMediaConversion('thumb')
-                 ->focalCropAndResize(168, 180)
+                 ->focalCropAndResize(400, 400)
                  ->sharpen(10);
 
             $this->addMediaConversion('cover')

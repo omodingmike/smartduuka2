@@ -12,12 +12,13 @@
     use App\Models\CleaningOrderItem;
     use App\Models\CleaningServiceCustomer;
     use App\Traits\HasAdvancedFilter;
+    use App\Traits\SaveMedia;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
 
     class CleaningOrderController extends Controller
     {
-        use HasAdvancedFilter;
+        use HasAdvancedFilter , SaveMedia;
 
         public function index(Request $request)
         {
@@ -109,9 +110,7 @@
                     'status'                       => CleaningOrderStatus::PendingAcceptance->value ,
                 ] );
 
-                if ( $request->hasFile( 'image' ) ) {
-                    $order->addMedia( $request->image )->toMediaCollection( MediaEnum::ORDERS_COLLECTION );
-                }
+                $this->saveMedia( $request , $order , MediaEnum::ORDERS_COLLECTION );
                 if ( isset( $data[ 'address' ] ) && $data[ 'address' ] ) {
                     $order->update( [ 'address' => $data[ 'address' ] ] );
                 }
