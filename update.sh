@@ -5,6 +5,7 @@ set -e
 # CONFIG
 # ----------------------------
 APP_DIR=~/smartduuka
+APP_NAME=smartduuka
 BACKEND_DIR="$APP_DIR/backend"
 
 echo "🚀 Starting backend deployment..."
@@ -64,5 +65,29 @@ if ! sudo docker-compose ps | grep "api" | grep "Up"; then
   echo "❌ API container failed to start. Check logs with 'docker-compose logs api'."
   exit 1
 fi
+
+APP_NAME=smartduuka # Set your app name
+
+# 1️⃣ Remove old Nginx config if it exists
+sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
+sudo rm -f /etc/nginx/sites-available/$APP_NAME
+
+# 2️⃣ Copy new config to sites-available
+sudo cp docker/nginx/conf.d/app.conf /etc/nginx/sites-available/$APP_NAME
+
+# 3️⃣ Enable the site by creating a symlink in sites-enabled
+sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/$APP_NAME
+
+# 4️⃣ Test Nginx configuration
+sudo nginx -t
+
+# 5️⃣ Stop Nginx temporarily to allow Certbot to run in standalone mode
+sudo systemctl stop nginx
+
+# 6️⃣ Run Certbot here if needed
+# sudo certbot certonly --standalone -d yourdomain.com
+
+# 7️⃣ Restart Nginx to apply the new configuration
+sudo systemctl restart nginx
 
 echo "✅ Backend deployment complete!"

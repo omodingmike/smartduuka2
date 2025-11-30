@@ -2,7 +2,7 @@
 FROM php:8.4-fpm
 
 # Set working directory
-WORKDIR /var/www
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -44,7 +44,7 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" && \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy application code (but NOT .env)
-COPY . /var/www
+COPY . /app
 
 # Install composer dependencies
 RUN composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
@@ -57,11 +57,12 @@ RUN php artisan key:generate --force \
     && php artisan view:cache
 
 # Set correct permissions
-#RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
-#    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+#RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+#    && chmod -R 775 /app/storage /app/bootstrap/cache
 
 # Set www-data ownership for all files (copied by root)
-RUN chown -R www-data:www-data /var/www && chmod -R 777 /var/www
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
 
 # Copy Supervisor config
 COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf

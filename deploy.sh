@@ -142,7 +142,7 @@ docker-compose exec -T api php artisan route:clear
 # SETUP LARAVEL SCHEDULER IN CRON
 # ----------------------------
 # Define the full path to your project directory.
-# Example: /var/www/erudite-app
+# Example: /app/erudite-app
 echo "⏰ Setting up Laravel scheduler..."
 ( crontab -l 2>/dev/null; echo "* * * * * cd $PROJECT_DIR && docker-compose exec -T api php artisan schedule:run >> /dev/null 2>&1" ) | crontab -
 echo "✅ Cron job added successfully."

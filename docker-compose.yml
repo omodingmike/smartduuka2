@@ -12,9 +12,9 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./.env:/var/www/.env
-      - storage_data:/var/www/storage         # Persistent storage
-      - media_data:/var/www/public/media      # Media uploads
+      - ./.env:/app/.env
+      - storage_data:/app/storage         # Persistent storage
+      - media_data:/app/public/media      # Media uploads
     healthcheck:
       test: [ "CMD", "php-fpm", "-t" ]
       interval: 5s
