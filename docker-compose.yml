@@ -12,6 +12,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - ./.env:/var/www/.env
       - storage_data:/var/www/storage         # Persistent storage
       - media_data:/var/www/public/media      # Media uploads
     healthcheck:

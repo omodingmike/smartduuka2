@@ -43,16 +43,13 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" && \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy application code
+# Copy application code (but NOT .env)
 COPY . /var/www
-
-# Ensure .env exists BEFORE artisan commands
-COPY .env /var/www/.env
 
 # Install composer dependencies
 RUN composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
 
-# Laravel artisan commands (need vendor + .env)
+# Laravel artisan commands (these use runtime env or default values)
 RUN php artisan key:generate --force \
     && php artisan storage:link \
     && php artisan config:cache \
