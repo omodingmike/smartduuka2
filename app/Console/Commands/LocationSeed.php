@@ -13,6 +13,8 @@
         public function handle(): int
         {
             // Only importing cities here
+            $this->importCities(database_path('locations/countries.csv'));
+            $this->importCities(database_path('locations/states.csv'));
             $this->importCities(database_path('locations/cities.csv'));
 
             return self::SUCCESS;
