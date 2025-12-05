@@ -118,6 +118,9 @@ volumes:
   storage_data:
   media_data:
   static_data:
+  storage_data2:
+  media_data2:
+  static_data2:
 
 networks:
   smartduuka_network:
