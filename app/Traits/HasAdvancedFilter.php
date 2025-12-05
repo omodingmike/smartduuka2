@@ -122,7 +122,7 @@
             $numericTypes = [
                 'integer' , 'bigint' , 'smallint' ,
                 'decimal' , 'float' , 'double' , 'real' ,
-                'numeric' ,
+                'numeric' ,'int', 'int2', 'int4', 'int8',
                 'date' , 'datetime' , 'timestamp' , 'time'
             ];
             return in_array( $type , $numericTypes , TRUE );

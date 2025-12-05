@@ -11,6 +11,8 @@ services:
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
       - media_data:/var/www/api/public/media:ro
       - static_data:/var/www/api/public/static:ro
+      - media_data2:/var/www/api2/public/media:ro
+      - static_data2:/var/www/api2/public/static:ro
     depends_on:
       - api
     networks:
@@ -40,6 +42,32 @@ services:
       timeout: 5s
       retries: 20
     # FIX: Run chown on mounted volumes before starting the main process
+    command: >
+      /bin/bash -c "
+        chown -R www-data:www-data /app/storage /app/public/media &&
+        /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+      "
+    networks:
+      - smartduuka_network
+
+  api2:
+    build:
+      context: ./api2           # <-- folder containing the second project
+      dockerfile: docker/php/Dockerfile
+    container_name: api2
+    ports:
+      - "9001:9000"              # different port
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./api2/.env:/app/.env
+      - storage_data2:/app/storage
+      - media_data2:/app/public/media
+      - static_data2:/app/public/static
+      - ./api2/public:/var/www/api2/public:ro
     command: >
       /bin/bash -c "
         chown -R www-data:www-data /app/storage /app/public/media &&
