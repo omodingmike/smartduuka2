@@ -82,6 +82,11 @@ RUN chown -R www-data:www-data /app \
 COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 
 # --------------------------
+# Add OPcache Configuration (Crucial for Production Performance)
+# --------------------------
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-opcache.ini
+
+# --------------------------
 # Switch to non-root user
 # --------------------------
 USER www-data
