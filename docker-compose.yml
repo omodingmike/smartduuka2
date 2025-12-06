@@ -11,8 +11,6 @@ services:
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
       - media_data:/var/www/api/public/media:ro
       - static_data:/var/www/api/public/static:ro
-      - media_data2:/var/www/api2/public/media:ro
-      - static_data2:/var/www/api2/public/static:ro
     depends_on:
       - api
     networks:
@@ -92,9 +90,6 @@ volumes:
   storage_data:
   media_data:
   static_data:
-  storage_data2:
-  media_data2:
-  static_data2:
 
 networks:
   smartduuka_network:
