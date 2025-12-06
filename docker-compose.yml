@@ -1,7 +1,27 @@
 services:
 
+  #  nginx:
+  #    image: nginx:stable-alpine
+  #    container_name: nginx
+  #    ports:
+  #      - "80:80"
+  #      - "443:443"
+  #    volumes:
+  #      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+  #      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+  #      - media_data:/var/www/api/public/media:ro
+  #      - static_data:/var/www/api/public/static:ro
+  #      - media_data2:/var/www/api2/public/media:ro
+  #      - static_data2:/var/www/api2/public/static:ro
+  #    depends_on:
+  #      - api
+  #    networks:
+  #      - smartduuka_network
+
   nginx:
-    image: nginx:stable-alpine
+    build:
+      context: .                          # Start searching from the project root
+      dockerfile: docker/nginx/Dockerfile # Specify the path to your custom Dockerfile
     container_name: nginx
     ports:
       - "80:80"
