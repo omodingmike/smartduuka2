@@ -20,3 +20,5 @@ $query        = PaymentMethod::query();
 
               alias myssh2="sshpass -p 'smartduuka2' ssh root@144.91.111.26"
 
+              docker/nginx/conf.d/app.conf
+
