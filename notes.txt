@@ -11,6 +11,7 @@ $query        = PaymentMethod::query();
               chmod +x ~/deploy.sh
 
               docker exec -it api2 /bin/bash
+              docker exec -it nginx sh
               cd storage/logs
 
               cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
@@ -18,6 +19,4 @@ $query        = PaymentMethod::query();
               chmod 700 ~/.ssh
 
               alias myssh2="sshpass -p 'smartduuka2' ssh root@144.91.111.26"
-
-
 
