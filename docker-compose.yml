@@ -1,5 +1,23 @@
 services:
 
+#  nginx:
+#    image: nginx:stable-alpine
+#    container_name: nginx
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    volumes:
+#      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+#      - /etc/nginx/ssl:/etc/nginx/ssl:ro
+#      - media_data:/var/www/api/public/media:ro
+#      - static_data:/var/www/api/public/static:ro
+#      - media_data2:/var/www/api2/public/media:ro
+#      - static_data2:/var/www/api2/public/static:ro
+#    depends_on:
+#      - api
+#    networks:
+#      - smartduuka_network
+
   nginx:
     image: nginx:stable-alpine
     container_name: nginx
@@ -9,12 +27,20 @@ services:
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
+
+      # --- Code and Static Mounts for PIWIE API (piwieapi.eruditesuganda.com) ---
+      - ./public:/var/www/api/public:ro            # <-- ADDED: Nginx needs access to index.php
       - media_data:/var/www/api/public/media:ro
       - static_data:/var/www/api/public/static:ro
+
+      # --- Code and Static Mounts for DJ API (djapi.eruditesuganda.com) ---
+      # **ASSUMPTION:** The host path for the second app's public folder is './public2'
+      - ./public2:/var/www/api2/public:ro          # <-- ADDED: Nginx needs access to index.php
       - media_data2:/var/www/api2/public/media:ro
       - static_data2:/var/www/api2/public/static:ro
+
     depends_on:
-      - api
+      - api # Ensure the API service is running before Nginx
     networks:
       - smartduuka_network
 
