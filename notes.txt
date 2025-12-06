@@ -11,7 +11,7 @@ $query        = PaymentMethod::query();
 
               chmod +x ~/deploy.sh
 
-              docker exec -it nginx /bin/bash
+              docker exec -it api2 /bin/bash
               cd storage/logs
 
               cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
