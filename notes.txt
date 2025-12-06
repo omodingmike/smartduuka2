@@ -5,7 +5,6 @@ $query        = PaymentMethod::query();
 
               $filtered = $this->handleIndex( new PaymentMethod() , $request , [ 'name' , 'code' ] );
 
-
               sshpass -p "smartduuka2" scp /Users/mike/Desktop/valet/smartduuka2/deploy.sh root@144.91.111.26:./deploy.sh
               sshpass -p "smartduuka2" scp /Users/mike/Desktop/valet/smartduuka2/.env root@144.91.111.26:./root/smartduuka/backend/
 
