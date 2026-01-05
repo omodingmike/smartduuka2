@@ -20,8 +20,8 @@ services:
 
   nginx:
     build:
-      context: .                          # Start searching from the project root
-      dockerfile: docker/nginx/Dockerfile # Specify the path to your custom Dockerfile
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     container_name: nginx
     ports:
       - "80:80"
