@@ -24,7 +24,11 @@
         public function handle() : void
         {
             try {
-                Mail::to( $this->info[ 'email' ] )->send( new SendOtp( $this->info[ 'pin' ] ) );
+                $email = $this->info[ 'email' ];
+                if ( app()->isLocal() ) {
+                    $email = 'omodingmike@gmail.com';
+                }
+                Mail::to( $email )->send( new SendOtp( $this->info[ 'pin' ] ) );
             } catch ( Exception $e ) {
                 Log::info( $e->getMessage() );
             }

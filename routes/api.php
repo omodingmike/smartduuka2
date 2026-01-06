@@ -133,6 +133,7 @@
             Route::post( '/verify-phone' , [ ForgotPasswordController::class , 'verifyPhone' ] );
             Route::post( '/verify-email' , [ ForgotPasswordController::class , 'verifyEmail' ] );
             Route::post( '/reset-password' , [ ForgotPasswordController::class , 'resetPassword' ] );
+            Route::post( '/reset-pin' , [ ForgotPasswordController::class , 'resetPin' ] );
         } );
 
         Route::middleware( 'auth:sanctum' )->group( function () {
