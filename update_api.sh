@@ -31,7 +31,7 @@ require_cmd() {
 # --------------------------------------------------
 require_cmd git
 require_cmd docker
-require_cmd docker-compose || true
+require_cmd docker compose || true
 
 [ -d "$BACKEND_DIR" ] || fail "Backend directory not found: $BACKEND_DIR"
 
