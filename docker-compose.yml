@@ -15,7 +15,7 @@ services:
     depends_on:
       - api
     networks:
-      - washingbay_network
+      - smartduuka_network
 
   api:
     build:
@@ -45,7 +45,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - washingbay_network
+      - smartduuka_network
 
   db:
     image: postgres:latest
@@ -63,7 +63,7 @@ services:
       timeout: 5s
       retries: 20
     networks:
-      - washingbay_network
+      - smartduuka_network
 
   redis:
     image: redis:7-alpine
@@ -78,7 +78,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - washingbay_network
+      - smartduuka_network
 
 volumes:
   postgres_data:
@@ -87,6 +87,6 @@ volumes:
   # but kept in case you want to switch to named volumes later.
 
 networks:
-  washingbay_network:
-    name: washingbay_network
+  smartduuka_network:
+    name: smartduuka_network
     external: true
