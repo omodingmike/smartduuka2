@@ -1,165 +1,138 @@
 #!/bin/bash
-set -e
+set -Eeuo pipefail # Better error handling
 
 # ----------------------------
 # CONFIG
 # ----------------------------
 PROJECT_DIR=~/smartduuka
-FRONTEND_DIR="$PROJECT_DIR/frontend"
-FRONTEND_REPO_URL="git@github-frontend:omodingmike/smartduuka-nextjs.git"
-BACKEND_REPO_URL="git@github-backend:omodingmike/smartduuka2.git"
-BACKEND_DIR="$PROJECT_DIR/backend"
+WEB_DIR="$PROJECT_DIR/web"
+WEB_REPO_URL="git@kimdigitary:kimdigitary/smartduukanewfront.git"
 
-DOMAIN_FRONTEND="piwie.eruditesuganda.com"
-DOMAIN_BACKEND="piwieapi.eruditesuganda.com"
+BACKEND_DIR="$PROJECT_DIR/api"
+BACKEND_REPO_URL="git@omodingmike:omodingmike/smartduuka2.git"
 
 SWAP_SIZE="1G"
+NETWORK_NAME="smartduuka_network"
 
-echo "🚀 Starting deployment..."
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+fail() { echo "❌ $*" >&2; exit 1; }
+
+log "🚀 Starting deployment..."
 
 # ----------------------------
-# UPDATE SYSTEM
+# PRE-FLIGHT SSH CHECK
+# ----------------------------
+log "🧪 Verifying GitHub SSH Aliases..."
+ssh -T git@kimdigitary 2>&1 | grep -q "successfully authenticated" || log "⚠️ Warning: kimdigitary SSH check failed. Git clone might fail."
+ssh -T git@omodingmike 2>&1 | grep -q "successfully authenticated" || log "⚠️ Warning: omodingmike SSH check failed. Git clone might fail."
+
+# ----------------------------
+# UPDATE SYSTEM & INSTALL TOOLS
 # ----------------------------
 sudo apt-get update && sudo apt-get upgrade -y
-sudo apt-get install -y curl git unzip software-properties-common bash wget gnupg lsb-release
+sudo apt-get install -y curl git unzip software-properties-common gnupg lsb-release
 
 # ----------------------------
-# Add Swap Space (if missing)
+# Add Swap Space (Idempotent)
 # ----------------------------
-echo "🛠 Checking swap space..."
-if swapon --show | grep -q '/swapfile'; then
-  echo "✅ Swapfile already exists. Skipping..."
+if [ -f /swapfile ]; then
+  log "✅ Swapfile already exists."
 else
-  echo "➕ Creating swap space..."
+  log "➕ Creating ${SWAP_SIZE} swap space..."
   sudo fallocate -l $SWAP_SIZE /swapfile
   sudo chmod 600 /swapfile
   sudo mkswap /swapfile
   sudo swapon /swapfile
-  echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
-  echo "✅ Swapfile created and enabled."
-fi
-
-# Make swap permanent
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-
-# ----------------------------
-# INSTALL DOCKER
-# ----------------------------
-
-sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" -y
-sudo apt update
-sudo apt install docker-ce -y
-
-# ----------------------------
-# INSTALL DOCKER COMPOSE
-# ----------------------------
-sudo rm -f /usr/local/bin/docker-compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-
-# Wait for the file to be fully downloaded before proceeding
-if [ ! -f /usr/local/bin/docker-compose ]; then
-  echo "Docker Compose download failed. Exiting."
-  exit 1
-fi
-
-sudo chmod +x /usr/local/bin/docker-compose
-# Ensure Docker Compose is executable and in path
-sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-
-# Ensure Docker starts on boot and start Docker service
-sudo systemctl enable docker
-sudo systemctl start docker
-
-# Verify Docker Compose installation
-docker-compose --version
-if [ $? -ne 0 ]; then
-  echo "Docker Compose installation failed. Exiting."
-  exit 1
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 fi
 
 # ----------------------------
-# CREATE PROJECT DIRECTORIES
+# INSTALL DOCKER (Modern Method)
+# ----------------------------
+if ! command -v docker &> /dev/null; then
+  log "🐳 Installing Docker..."
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt-get update
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+fi
+
+sudo systemctl enable docker --now
+
+# ----------------------------
+# SETUP NETWORK
+# ----------------------------
+if ! sudo docker network ls --format '{{.Name}}' | grep -wq "$NETWORK_NAME"; then
+  log "🌐 Creating network '$NETWORK_NAME'..."
+  sudo docker network create "$NETWORK_NAME"
+fi
+
+# ----------------------------
+# CLONE / UPDATE REPOS
 # ----------------------------
 mkdir -p "$PROJECT_DIR"
-cd "$PROJECT_DIR"
+
+clone_or_pull() {
+  local url=$1
+  local dir=$2
+  if [ ! -d "$dir/.git" ]; then
+    log "📥 Cloning $url..."
+    git clone "$url" "$dir"
+  else
+    log "🔄 Updating $dir..."
+    cd "$dir" && git pull
+  fi
+}
+
+clone_or_pull "$WEB_REPO_URL" "$WEB_DIR"
+clone_or_pull "$BACKEND_REPO_URL" "$BACKEND_DIR"
 
 # ----------------------------
-# CLONE REPOSITORIES
+# FIX PERMISSIONS & SYMLINKS
 # ----------------------------
-if [ ! -d "$FRONTEND_DIR" ]; then
-  git clone "$FRONTEND_REPO_URL" frontend
-else
-  cd "$FRONTEND_DIR" && git pull
-fi
+log "🔐 Fixing Laravel permissions..."
+# Added .cache for Puppeteer/Chrome
+WRITABLE_DIRS=(
+  "$BACKEND_DIR/storage"
+  "$BACKEND_DIR/bootstrap/cache"
+  "$BACKEND_DIR/public/media"
+  "$BACKEND_DIR/public/static"
+  "$BACKEND_DIR/.cache"
+)
 
-if [ ! -d "$BACKEND_DIR" ]; then
-  git clone "$BACKEND_REPO_URL" backend
-else
-  cd "$BACKEND_DIR" && git pull
-fi
+for DIR in "${WRITABLE_DIRS[@]}"; do
+  mkdir -p "$DIR"
+  sudo chown -R 33:33 "$DIR"
+  sudo chmod -R 775 "$DIR"
+done
 
-# ----------------------------
-# REMOVE UNUSED DOCKER IMAGES
-# ----------------------------
-echo "🧹 Removing dangling Docker images..."
-sudo docker-compose up -d --remove-orphans
-docker image prune -f
-
-# ----------------------------
-# BUILD AND START CONTAINERS
-# ----------------------------
+log "🔗 Ensuring storage symlink..."
+# Using --relative is best practice for Docker volumes
 cd "$BACKEND_DIR"
-echo "🐳 Building and starting containers..."
-sudo docker compose  up -d --build
-
-# Check if Docker Compose started correctly
-if ! sudo docker compose ps | grep "Up"; then
-  echo "Docker containers failed to start. Check logs with 'docker-compose logs'."
-  exit 1
-fi
+# Remove if exists (to avoid nested links) and recreate
+rm -f public/storage
+ln -s ../storage/app/public public/storage
 
 # ----------------------------
-# INSTALL LARAVEL PACKAGES
+# DOCKER BUILD & START
 # ----------------------------
-echo "📦 Installing PHP dependencies with Composer..."
-docker-compose exec -T api composer install --no-dev --optimize-autoloader
+log "🔨 Building and starting containers..."
+# Use 'docker compose' (plugin version) instead of 'docker-compose'
+sudo docker compose up -d --build --force-recreate --remove-orphans
 
 # ----------------------------
-# RUN LARAVEL MIGRATIONS & CLEAR CACHE
+# LARAVEL POST-DEPLOY
 # ----------------------------
-echo "🗄️ Running migrations..."
-docker-compose exec -T api php artisan migrate --force
+log "📦 Running Laravel optimizations..."
+sudo docker compose exec -T api composer install --no-dev --optimize-autoloader
+sudo docker compose exec -T api php artisan migrate --force
+sudo docker compose exec -T api php artisan optimize:clear
+sudo docker compose exec -T api php artisan optimize
 
-echo "🧹 Clearing caches..."
-docker-compose exec -T api php artisan config:clear
-docker-compose exec -T api php artisan cache:clear
-docker-compose exec -T api php artisan route:clear
+log "🧹 Cleaning up old images..."
+sudo docker image prune -f
 
-# ----------------------------
-# SETUP LARAVEL SCHEDULER IN CRON
-# ----------------------------
-# Define the full path to your project directory.
-# Example: /app/erudite-app
-echo "⏰ Setting up Laravel scheduler..."
-( crontab -l 2>/dev/null; echo "* * * * * cd $PROJECT_DIR && docker-compose exec -T api php artisan schedule:run >> /dev/null 2>&1" ) | crontab -
-echo "✅ Cron job added successfully."
-
-# Check if the cron job already exists. If not, add it.
-if ! (crontab -l 2>/dev/null | grep -F "$CRON_JOB"); then
-  (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-  echo "✅ Cron job added successfully."
-else
-  echo "✅ Cron job already exists."
-fi
-
-
-# ----------------------------
-# DONE
-# ----------------------------
-echo "✅ Deployment complete!"
-echo "Frontend: https://$DOMAIN_FRONTEND"
-echo "Backend: https://$DOMAIN_BACKEND"
-echo "PostgreSQL credentials are stored in $BACKEND_DIR/.env"
+log "✅ Deployment complete!"
