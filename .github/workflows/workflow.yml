@@ -20,9 +20,14 @@ jobs:
 
       - name: Add server to known hosts
         run: |
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          # Added -p 7589 to keyscan to verify the custom port
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 7589 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Upload update.sh and run remotely
+      - name: Upload update_api.sh and run remotely
         run: |
-          scp update.sh root@${{ secrets.SSH_HOST }}:~/update.sh
-          ssh root@${{ secrets.SSH_HOST }} 'chmod +x ~/update.sh && ~/update.sh'
+          # Use -P for scp port and the 'deploy' user
+          scp -P 7589 update_api.sh deploy@${{ secrets.SSH_HOST }}:~/update_api.sh
+          
+          # Use -p for ssh port and the 'deploy' user
+          ssh -p 7589 deploy@${{ secrets.SSH_HOST }} 'chmod +x ~/update_api.sh && ~/update_api.sh'
