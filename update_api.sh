@@ -34,16 +34,7 @@ cd "$BACKEND_DIR"
 # --------------------------------------------------
 log "📥 Fetching latest changes from Git..."
 git fetch origin "$BRANCH"
-
-LOCAL_HASH=$(git rev-parse HEAD)
-REMOTE_HASH=$(git rev-parse "origin/$BRANCH")
-
-if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
-  log "🔄 Updating codebase..."
-  git pull --ff-only origin "$BRANCH"
-else
-  log "✔ Code already up to date."
-fi
+git pull --ff-only origin "$BRANCH"
 
 # ----------------------------
 # FIX LARAVEL PERMISSIONS (HOST)
@@ -61,25 +52,27 @@ WRITABLE_DIRS=(
 )
 
 for DIR in "${WRITABLE_DIRS[@]}"; do
-  if [ -d "$DIR" ]; then
-    echo "  → Fixing $DIR"
-    sudo chown -R 33:33 "$DIR"
-    sudo chmod -R 775 "$DIR"
-  else
-    echo "  ⚠️  $DIR does not exist, creating..."
+  if [ ! -d "$DIR" ]; then
+    echo "  ⚠️  Creating $DIR"
     mkdir -p "$DIR"
-    sudo chown -R 33:33 "$DIR"
-    sudo chmod -R 775 "$DIR"
   fi
+  # Assign to www-data (33) so the container can write
+  sudo chown -R 33:33 "$DIR"
+  sudo chmod -R 775 "$DIR"
 done
 
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
-log "📦 Bootstrapping vendor folder..."
-# This runs composer install BEFORE the main containers start.
-# This ensures artisan can find the autoloader so queue/cron don't crash.
-$COMPOSE run --rm api composer install --no-dev --optimize-autoloader --no-interaction
+log "📦 Bootstrapping vendor folder and fixing ownership..."
+# We use --user root here because only root can fix the "dubious ownership"
+# and create the vendor folder if it was previously owned by 'deploy'.
+$COMPOSE run --rm --user root api bash -c "
+    git config --global --add safe.directory /app && \
+    mkdir -p /app/vendor /app/storage /app/bootstrap/cache && \
+    chown -R www-data:www-data /app && \
+    composer install --no-dev --optimize-autoloader --no-interaction
+"
 
 # --------------------------------------------------
 # 2. BUILD & RECREATE CONTAINERS
@@ -91,11 +84,7 @@ $COMPOSE up -d --build --force-recreate api nginx
 # 3. NGINX CONFIG TEST
 # --------------------------------------------------
 log "🧪 Validating Nginx configuration..."
-if ! $COMPOSE exec -T nginx nginx -t; then
-  $COMPOSE logs --tail=100 nginx
-  fail "Nginx configuration test failed"
-fi
-log "✔ Nginx configuration is valid."
+$COMPOSE exec -T nginx nginx -t || fail "Nginx configuration test failed"
 
 # --------------------------------------------------
 # 4. WAIT FOR API TO BE READY
@@ -108,7 +97,6 @@ until $COMPOSE exec -T api php artisan --version >/dev/null 2>&1; do
   [ "$RETRY" -ge "$MAX_RETRIES" ] && fail "API container did not become ready"
   sleep 3
 done
-log "✔ API container is ready."
 
 # --------------------------------------------------
 # 5. DATABASE & POST-DEPLOY TASKS
@@ -117,11 +105,9 @@ log "🗄 Running database migrations..."
 $COMPOSE exec -T api php artisan migrate --force
 
 log "🔗 Ensuring storage symlink..."
-# Using --relative is standard practice for Docker environments
 $COMPOSE exec -T api php artisan storage:link --relative || true
 
 log "🧹 Optimizing application..."
-$COMPOSE exec -T api php artisan optimize:clear
 $COMPOSE exec -T api php artisan optimize
 
 # --------------------------------------------------
@@ -130,9 +116,8 @@ $COMPOSE exec -T api php artisan optimize
 log "🔎 Verifying container status..."
 for service in api nginx; do
   if ! $COMPOSE ps --services --filter "status=running" | grep -q "^${service}$"; then
-    log "❌ Service not running: ${service}. Printing last 20 logs:"
     $COMPOSE logs --tail=20 "$service"
-    fail "Deployment failed: ${service} is not running."
+    fail "Service not running: ${service}"
   fi
 done
 
