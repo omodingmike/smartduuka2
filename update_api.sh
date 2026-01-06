@@ -4,6 +4,7 @@ set -Eeuo pipefail
 # --------------------------------------------------
 # CONFIG
 # --------------------------------------------------
+
 APP_DIR="$HOME/smartduuka"
 APP_NAME="api"
 BACKEND_DIR="$APP_DIR/$APP_NAME"
