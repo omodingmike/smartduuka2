@@ -13,30 +13,21 @@ BRANCH="main"
 # --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
-log() {
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-}
-
-fail() {
-  echo "❌ $*" >&2
-  exit 1
-}
-
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
-}
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+fail() { echo "❌ $*" >&2; exit 1; }
+require_cmd() { command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"; }
 
 # --------------------------------------------------
 # PRE-FLIGHT CHECKS
 # --------------------------------------------------
 require_cmd git
 require_cmd docker
-require_cmd docker compose || true
+# Validates that the "compose" plugin is actually working
+$COMPOSE version >/dev/null 2>&1 || fail "Docker Compose plugin not found"
 
 [ -d "$BACKEND_DIR" ] || fail "Backend directory not found: $BACKEND_DIR"
 
 log "🚀 Starting deployment for ${APP_NAME}"
-
 cd "$BACKEND_DIR"
 
 # --------------------------------------------------
@@ -58,17 +49,16 @@ fi
 # ----------------------------
 # FIX LARAVEL PERMISSIONS (HOST)
 # ----------------------------
-echo "🔐 Fixing Laravel permissions for Docker..."
-
+log "🔐 Fixing Laravel permissions for Docker..."
 LARAVEL_PATH="$BACKEND_DIR"
 
-# Writable directories
 WRITABLE_DIRS=(
   "$LARAVEL_PATH/storage"
   "$LARAVEL_PATH/bootstrap/cache"
   "$LARAVEL_PATH/public"
   "$LARAVEL_PATH/public/media"
   "$LARAVEL_PATH/public/static"
+  "$LARAVEL_PATH/.cache"  # Added for Puppeteer/Chrome consistency
 )
 
 for DIR in "${WRITABLE_DIRS[@]}"; do
@@ -81,9 +71,6 @@ for DIR in "${WRITABLE_DIRS[@]}"; do
   fi
 done
 
-echo "✅ Laravel permissions fixed"
-
-
 # --------------------------------------------------
 # BUILD & RECREATE CONTAINERS
 # --------------------------------------------------
@@ -91,34 +78,33 @@ log "🔨 Building and recreating api & nginx containers..."
 $COMPOSE up -d --build --force-recreate api nginx
 
 # --------------------------------------------------
-# NGINX CONFIG TEST (HARD FAIL)
+# NGINX CONFIG TEST
 # --------------------------------------------------
 log "🧪 Validating Nginx configuration..."
 if ! $COMPOSE exec -T nginx nginx -t; then
   $COMPOSE logs --tail=100 nginx
   fail "Nginx configuration test failed"
 fi
-log "✔ Nginx configuration is valid."
 
 # --------------------------------------------------
 # WAIT FOR API TO BE READY
 # --------------------------------------------------
 log "⏳ Waiting for API container to become healthy..."
-
 MAX_RETRIES=20
 RETRY=0
-
 until $COMPOSE exec -T api php artisan --version >/dev/null 2>&1; do
   RETRY=$((RETRY + 1))
   [ "$RETRY" -ge "$MAX_RETRIES" ] && fail "API container did not become ready"
   sleep 3
 done
 
-log "✔ API container is ready."
-
 # --------------------------------------------------
 # DATABASE & APP TASKS
 # --------------------------------------------------
+
+log "📦 Installing PHP dependencies..."
+# Added composer install here
+$COMPOSE exec -T api composer install --no-dev --optimize-autoloader --no-interaction
 
 log "🚚 Running post-deployment Composer hooks..."
 $COMPOSE exec -T api composer dump-autoload --optimize
@@ -126,8 +112,6 @@ $COMPOSE exec -T api php artisan package:discover --ansi
 
 log "🗄 Running database migrations..."
 $COMPOSE exec -T api php artisan migrate --force
-#$COMPOSE exec -T api php artisan migrate:fresh --force
-#$COMPOSE exec -T api php artisan db:seed --force
 
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link || true
@@ -140,7 +124,6 @@ $COMPOSE exec -T api php artisan optimize
 # VERIFY CONTAINERS
 # --------------------------------------------------
 log "🔎 Verifying container status..."
-
 for service in api nginx; do
   if ! $COMPOSE ps --services --filter "status=running" | grep -q "^${service}$"; then
     fail "Service not running: ${service}"
