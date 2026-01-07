@@ -26,13 +26,13 @@ class DatabaseSeeder extends Seeder
         $this->call(MenuTemplateTableSeeder::class);
         $this->call(MenuSectionTableSeeder::class);
 //        $this->call(MailTableSeeder::class);
-        $this->call(ProductBrandTableSeeder::class);
+//        $this->call(ProductBrandTableSeeder::class);
 //        $this->call(ProductCategoryTableSeeder::class);
 //        $this->call(TaxTableSeeder::class);
 //        $this->call(UnitTableSeeder::class);
 //        $this->call(ProductAttributeTableSeeder::class);
 //        $this->call(ProductAttributeOptionTableSeeder::class);
-        $this->call(SupplierTableSeeder::class);
+//        $this->call(SupplierTableSeeder::class);
 //        $this->call(ProductTableSeeder::class);
 //        $this->call(ProductVariationTableSeeder::class);
 //        $this->call(PurchaseTableSeeder::class);
