@@ -37,7 +37,7 @@ log "📥 Fetching latest changes from Git..."
 sudo chown -R $(whoami):$(whoami) .git
 
 git fetch origin "$BRANCH"
-git pull --ff-only origin "$BRANCH"
+git reset --hard origin/"$BRANCH"
 
 # ----------------------------
 # FIX LARAVEL PERMISSIONS (HOST)
