@@ -19,8 +19,8 @@
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->api( prepend: [
                               EnsureFrontendRequestsAreStateful::class ,
-                              AfterMiddleware::class ,
-                              SubscribedMiddleware::class
+//                              AfterMiddleware::class ,
+//                              SubscribedMiddleware::class
                           ] );
 
                           $middleware->alias( [
