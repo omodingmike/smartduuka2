@@ -21,7 +21,6 @@ class UserTableSeeder extends Seeder
      */
     public function run(): void
     {
-        $envService = new EnvEditor();
         $admin      = User::create([
             'name'              => 'John Doe',
             'email'             => 'admin@example.com',

@@ -16,6 +16,7 @@ $query        = PaymentMethod::query();
 
               docker exec -it api2 /bin/bash
               docker exec -it nginx sh
+              docker exec -it smartduuka_next sh
               cd storage/logs
 
               cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys

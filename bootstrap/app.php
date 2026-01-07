@@ -25,8 +25,8 @@
 
                           $middleware->alias( [
                               'verified'   => EnsureEmailIsVerified::class ,
-                              'subscribed' => SubscribedMiddleware::class ,
-                              'after'      => AfterMiddleware::class ,
+//                              'subscribed' => SubscribedMiddleware::class ,
+//                              'after'      => AfterMiddleware::class ,
                               'permission' => PermissionMiddleware::class ,
                           ] );
 
