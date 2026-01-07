@@ -34,6 +34,8 @@ cd "$BACKEND_DIR"
 # PULL LATEST CODE
 # --------------------------------------------------
 log "📥 Fetching latest changes from Git..."
+sudo chown -R $(whoami):$(whoami) .git
+
 git fetch origin "$BRANCH"
 git pull --ff-only origin "$BRANCH"
 
