@@ -30,6 +30,11 @@ $COMPOSE version >/dev/null 2>&1 || fail "Docker Compose plugin not found"
 log "🚀 Starting deployment for ${APP_NAME}"
 cd "$BACKEND_DIR"
 
+# --- ADD THIS FIX HERE ---
+log "🔐 Reclaiming ownership for the deploy user..."
+# This ensures 'deploy' can modify/delete files during git pull
+sudo chown -R $(whoami):$(whoami) "$BACKEND_DIR"
+
 # --------------------------------------------------
 # PULL LATEST CODE
 # --------------------------------------------------
