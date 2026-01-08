@@ -13,8 +13,10 @@ $query        = PaymentMethod::query();
               ssh-keygen -t ed25519 -C "deploy@gmail.com"
 
               ssh-keygen -t ed25519 -C "bar"
+              docker exec -it db createdb -U smartduuka smartduuka_main
+              docker exec -it db psql -U smartduuka -l
 
-              docker exec -it api2 /bin/bash
+              docker exec -it api /bin/bash
               docker exec -it nginx sh
               docker exec -it smartduuka_next sh
               cd storage/logs

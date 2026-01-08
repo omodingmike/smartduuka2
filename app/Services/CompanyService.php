@@ -42,8 +42,10 @@
                 $data = $request->validated();
                 Settings::group( 'company' )->set( $data );
                 $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );
+
                 Business::where( [ 'project_id' => config( 'app.project_id' ) ] )
                         ->update( [ 'business_name' => Settings::group( 'company' )->get( 'company_name' ) , 'phone_number' => phoneNumber() ] );
+
                 UpdateConfig::dispatchAfterResponse();
                 return $this->list();
             } catch ( Exception $exception ) {
