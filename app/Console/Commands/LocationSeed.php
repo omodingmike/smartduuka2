@@ -4,19 +4,38 @@
 
     use Illuminate\Console\Command;
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Schema;
 
     class LocationSeed extends Command
     {
         protected $signature   = 'l:seed';
-        protected $description = 'Seed countries, states, and cities from CSV files';
+        protected $description = 'Truncate and seed countries, states, and cities from CSV files';
 
         public function handle() : int
         {
+            // 1. Truncate Tables in reverse order of dependency
+            $this->warn('Truncating tables...');
+            $this->truncateTables();
+
+            // 2. Import Data
             $this->importCountries( database_path( 'locations/countries.csv' ) );
             $this->importStates( database_path( 'locations/states.csv' ) );
             $this->importCities( database_path( 'locations/cities.csv' ) );
 
+            $this->info('Location seeding completed successfully!');
             return self::SUCCESS;
+        }
+
+        /**
+         * Truncate tables for PostgreSQL with sequence reset
+         */
+        private function truncateTables() : void
+        {
+            // In Postgres, 'CASCADE' handles dependent rows
+            // 'RESTART IDENTITY' resets the auto-increment counters
+            DB::statement('TRUNCATE TABLE cities, states, countries RESTART IDENTITY CASCADE');
+
+            $this->info('Tables truncated and sequences reset.');
         }
 
         /**
@@ -47,7 +66,7 @@
                 // Validate country
                 $country = DB::table( 'countries' )->where( 'id' , $data[ 'country_id' ] )->first();
                 if ( ! $country ) {
-                    return NULL; // Skip state if country missing
+                    return NULL;
                 }
 
                 return [
@@ -72,7 +91,7 @@
                 // Validate state
                 $state = DB::table( 'states' )->where( 'id' , $data[ 'state_id' ] )->first();
                 if ( ! $state ) {
-                    return NULL; // Skip city if state missing
+                    return NULL;
                 }
 
                 return [

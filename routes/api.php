@@ -221,7 +221,7 @@
         Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
             Route::prefix( 'company' )->name( 'company.' )->group( function () {
                 Route::get( '/' , [ CompanyController::class , 'index' ] );
-                Route::match( [ 'put' , 'patch' ] , '/' , [ CompanyController::class , 'update' ] );
+                Route::match( [ 'post' ,'put' , 'patch' ] , '/' , [ CompanyController::class , 'update' ] );
             } );
             Route::prefix( 'payment-methods' )->name( 'payment-methods.' )->group( function () {
                 Route::get( '/' , [ PaymentMethodController::class , 'index' ] );

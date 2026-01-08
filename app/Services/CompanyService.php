@@ -3,6 +3,7 @@
     namespace App\Services;
 
     use App\Http\Requests\CompanyRequest;
+    use App\Jobs\UpdateConfig;
     use App\Models\Business;
     use Dipokhalder\EnvEditor\EnvEditor;
     use Exception;
@@ -41,9 +42,9 @@
                 $data = $request->validated();
                 Settings::group( 'company' )->set( $data );
                 $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );
-                Artisan::call( 'optimize:clear' );
                 Business::where( [ 'project_id' => config( 'app.project_id' ) ] )
                         ->update( [ 'business_name' => Settings::group( 'company' )->get( 'company_name' ) , 'phone_number' => phoneNumber() ] );
+                UpdateConfig::dispatchAfterResponse();
                 return $this->list();
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
