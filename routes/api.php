@@ -239,7 +239,7 @@
             } );
             Route::prefix( 'site' )->name( 'site.' )->group( function () {
                 Route::get( '/' , [ SiteController::class , 'index' ] );
-                Route::match( [ 'put' , 'patch' ] , '/' , [ SiteController::class , 'update' ] );
+                Route::match( [ 'post' , 'patch' ] , '/' , [ SiteController::class , 'update' ] );
             } );
             Route::prefix( 'cleaning' )->name( 'cleaning.' )->group( function () {
                 Route::get( '/' , [ SiteController::class , 'cleaningIndex' ] );
@@ -261,7 +261,7 @@
 
             Route::prefix( 'mail' )->name( 'mail.' )->group( function () {
                 Route::get( '/' , [ MailController::class , 'index' ] );
-                Route::match( [ 'put' , 'patch' ] , '/' , [ MailController::class , 'update' ] );
+                Route::match( [ 'post' , 'patch' ] , '/' , [ MailController::class , 'update' ] );
             } );
 
             Route::prefix( 'notification' )->name( 'notification.' )->group( function () {
