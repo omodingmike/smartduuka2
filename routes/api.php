@@ -391,7 +391,6 @@
                 Route::post( '/' , [ RoleController::class , 'store' ] );
                 Route::get( '/show/{role}' , [ RoleController::class , 'show' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{role}' , [ RoleController::class , 'update' ] );
-//                Route::delete( '/{role}' , [ RoleController::class , 'destroy' ] );
                 Route::delete( '/delete' , [ RoleController::class , 'destroy' ] );
             } );
 
