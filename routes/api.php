@@ -96,6 +96,12 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
+
+    Route::prefix( 'permission' )->name( 'permission.' )->group( function () {
+        Route::get( '/{role}' , [ PermissionController::class , 'index' ] );
+        Route::match( [ 'put' , 'patch' ] , '/{role}' , [ PermissionController::class , 'update' ] );
+    } );
+
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );
     Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );

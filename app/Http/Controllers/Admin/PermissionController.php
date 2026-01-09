@@ -5,13 +5,10 @@
 
     use App\Http\Requests\PermissionRequest;
     use App\Http\Resources\RoleResource;
-    use App\Libraries\AppLibrary;
-    use App\Models\User;
     use App\Services\PermissionService;
     use Exception;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
-    use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Response;
     use Spatie\Permission\Models\Permission;
     use Spatie\Permission\Models\Role;
@@ -27,6 +24,7 @@
             $this->permissionService = $permissionService;
             $this->middleware( [ 'permission:settings' ] )->only( 'update' );
         }
+
         public function index(Role $role)
         {
             try {
@@ -36,15 +34,15 @@
                     'role_has_permissions.permission_id' ,
                     '=' ,
                     'permissions.id'
-                )->where('role_has_permissions.role_id' , $role->id)->get()->pluck('name' , 'id');
-                $permissions     = permissionWithAccess($permissions , $rolePermissions);
+                )->where( 'role_has_permissions.role_id' , $role->id )->get()->pluck( 'name' , 'id' );
+                $permissions     = permissionWithAccess( $permissions , $rolePermissions );
                 return [
                     'role'        => $role ,
-                    'permissions' => numericToAssociativeArrayBuilder($permissions->toArray()) ,
-                    'access'         => $role->permissions
+                    'permissions' => numericToAssociativeArrayBuilder( $permissions->toArray() ) ,
+                    'access'      => $role->permissions
                 ];
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
