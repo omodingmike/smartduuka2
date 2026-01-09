@@ -30,12 +30,6 @@ class TaxRequest extends FormRequest
                 'string',
                 'max:190'
             ],
-            'code'              => [
-                'required',
-                'string',
-                'max:20',
-                Rule::unique("taxes", "code")->ignore($this->route('tax.id'))
-            ],
             'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'status'   => ['required', 'numeric'],
         ];

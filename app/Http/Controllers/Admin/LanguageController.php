@@ -10,7 +10,10 @@ use App\Http\Resources\LanguageResource;
 use App\Models\Language;
 use App\Services\LanguageService;
 use Exception;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class LanguageController extends AdminController
 {
@@ -23,7 +26,7 @@ class LanguageController extends AdminController
         $this->middleware(['permission:settings'])->only('store', 'update', 'destroy', 'fileTextStore');
     }
 
-    public function index(PaginateRequest $request): \Illuminate\Http\Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function index(PaginateRequest $request): Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection| Application| ResponseFactory
     {
         try {
             return LanguageResource::collection($this->languageService->list($request));
@@ -32,7 +35,7 @@ class LanguageController extends AdminController
         }
     }
 
-    public function store(LanguageRequest $request): \Illuminate\Http\Response|LanguageResource|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function store(LanguageRequest $request): Response|LanguageResource| Application| ResponseFactory
     {
         try {
             return new LanguageResource($this->languageService->store($request));
@@ -41,7 +44,7 @@ class LanguageController extends AdminController
         }
     }
 
-    public function show(Language $language): \Illuminate\Http\Response|LanguageResource|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function show(Language $language): Response|LanguageResource| Application| ResponseFactory
     {
         try {
             return new LanguageResource($this->languageService->show($language));
@@ -50,7 +53,7 @@ class LanguageController extends AdminController
         }
     }
 
-    public function update(LanguageRequest $request, Language $language): \Illuminate\Http\Response|LanguageResource|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function update(LanguageRequest $request, Language $language): Response|LanguageResource| Application| ResponseFactory
     {
         try {
             return new LanguageResource($this->languageService->update($request, $language));
@@ -59,7 +62,7 @@ class LanguageController extends AdminController
         }
     }
 
-    public function destroy(Language $language): \Illuminate\Http\Response|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function destroy(Language $language): Response| Application| ResponseFactory
     {
         try {
             $this->languageService->destroy($language);
@@ -70,7 +73,7 @@ class LanguageController extends AdminController
     }
 
 
-    public function fileList(Language $language): \Illuminate\Http\Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function fileList(Language $language): Response|\Illuminate\Http\Resources\Json\AnonymousResourceCollection| Application| ResponseFactory
     {
         try {
             return LanguageFileListResource::collection($this->languageService->fileList($language));
@@ -95,7 +98,7 @@ class LanguageController extends AdminController
         }
     }
 
-    public function fileTextStore(Request $request): \Illuminate\Http\Response|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
+    public function fileTextStore(Request $request): Response| Application| ResponseFactory
     {
         try {
             $this->languageService->fileTextStore($request);

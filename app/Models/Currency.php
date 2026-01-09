@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Currency extends Model
 {
     protected $table = "currencies";
-    protected $fillable = ['name', 'symbol', 'code', 'is_cryptocurrency', 'exchange_rate'];
+    protected $fillable = [ 'name' , 'symbol' , 'code' , 'is_cryptocurrency' , 'exchange_rate' ,
+        'is_base'
+    ];
 
     protected $casts = [
         'id'                => 'integer',

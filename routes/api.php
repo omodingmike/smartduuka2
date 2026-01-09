@@ -271,13 +271,14 @@
 
             Route::prefix( 'otp' )->name( 'otp.' )->group( function () {
                 Route::get( '/' , [ OtpController::class , 'index' ] );
-                Route::match( [ 'put' , 'patch' ] , '/' , [ OtpController::class , 'update' ] );
+                Route::match( [ 'post' , 'patch' ] , '/' , [ OtpController::class , 'update' ] );
             } );
 
             Route::prefix( 'currency' )->name( 'currency.' )->group( function () {
                 Route::get( '/' , [ CurrencyController::class , 'index' ] );
                 Route::get( '/show/{currency}' , [ CurrencyController::class , 'show' ] );
                 Route::post( '/' , [ CurrencyController::class , 'store' ] );
+                Route::post( '/base/{currency}' , [ CurrencyController::class , 'setBase' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{currency}' , [ CurrencyController::class , 'update' ] );
                 // Route::delete( '/{currency}' , [ CurrencyController::class , 'destroy' ] );
                 Route::delete( '/delete' , [ CurrencyController::class , 'deleteMethods' ] );
@@ -288,7 +289,6 @@
                 Route::get( '/show/{tax}' , [ TaxController::class , 'show' ] );
                 Route::post( '/' , [ TaxController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{tax}' , [ TaxController::class , 'update' ] );
-//                Route::delete( '/{tax}' , [ TaxController::class , 'destroy' ] );
                 Route::delete( '/delete' , [ TaxController::class , 'deleteMethods' ] );
             } );
 
