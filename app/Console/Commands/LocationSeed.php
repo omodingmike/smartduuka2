@@ -31,10 +31,7 @@
          */
         private function truncateTables() : void
         {
-            // In Postgres, 'CASCADE' handles dependent rows
-            // 'RESTART IDENTITY' resets the auto-increment counters
             DB::statement('TRUNCATE TABLE cities, states, countries RESTART IDENTITY CASCADE');
-
             $this->info('Tables truncated and sequences reset.');
         }
 

@@ -111,6 +111,7 @@ done
 # --------------------------------------------------
 log "🗄 Running database migrations..."
 $COMPOSE exec -T api php artisan migrate --force
+$COMPOSE exec -T api php artisan db:seed --force
 
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true

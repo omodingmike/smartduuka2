@@ -1,27 +1,29 @@
 <?php
 
-namespace Database\Seeders;
+    namespace Database\Seeders;
 
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Artisan;
+    use Illuminate\Database\Seeder;
+    use Illuminate\Support\Facades\Artisan;
+    use Illuminate\Support\Facades\DB;
 
-class DatabaseSeeder extends Seeder
-{
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
+    class DatabaseSeeder extends Seeder
     {
+        /**
+         * Seed the application's database.
+         */
+        public function run() : void
+        {
 //        $this->call(CompanyTableSeeder::class);
 //        $this->call(ThemeTableSeeder::class);
 //        $this->call(SiteTableSeeder::class);
 //        $this->call(MenuTableSeeder::class);
 
 
-        $this->call(PermissionTableSeeder::class);
-        $this->call(RoleTableSeeder::class);
-        $this->call(UserTableSeeder::class);
+            DB::statement( 'TRUNCATE TABLE roles, permissions, users RESTART IDENTITY CASCADE' );
+            $this->call( PermissionTableSeeder::class );
+            $this->call( RoleTableSeeder::class );
+            $this->call( UserTableSeeder::class );
 
 //        $this->call(RolePermissionTableSeeder::class);
 //
@@ -29,9 +31,6 @@ class DatabaseSeeder extends Seeder
 //        $this->call(BarcodeTableSeeder::class);
 //        $this->call(MenuTemplateTableSeeder::class);
 //        $this->call(MenuSectionTableSeeder::class);
-
-
-
 
 
 //        $this->call(MailTableSeeder::class);
@@ -50,6 +49,6 @@ class DatabaseSeeder extends Seeder
 //        $this->call(ProductReviewTableSeeder::class);
 //        $this->call(CurrencyTableSeeder::class);
 
-        Artisan::call( 'l:seed');
+            Artisan::call( 'l:seed' );
+        }
     }
-}
