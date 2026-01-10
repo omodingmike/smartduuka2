@@ -32,16 +32,8 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function update(PermissionRequest $request , Role $role) : Role
         {
-            try {
-                return $role->syncPermissions( Permission::whereIn( 'id' , $request->validated()[ 'permissions' ] )->get() );
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
+            return $role->syncPermissions( $request->validated()[ 'permissions' ] ?? [] );
         }
     }

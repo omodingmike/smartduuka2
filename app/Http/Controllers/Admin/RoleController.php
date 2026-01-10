@@ -22,7 +22,7 @@
         {
             parent::__construct();
             $this->roleService = $roleService;
-            $this->middleware( [ 'permission:settings' ] )->only( 'show' , 'store' , 'update' , 'destroy' );
+//            $this->middleware( [ 'permission:settings' ] )->only( 'show' , 'store' , 'update' , 'destroy' );
         }
 
         public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory

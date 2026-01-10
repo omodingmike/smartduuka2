@@ -1,13 +1,9 @@
 <?php
 
-    use App\Http\Middleware\AfterMiddleware;
-    use App\Http\Middleware\EnsureEmailIsVerified;
-    use App\Http\Middleware\SubscribedMiddleware;
+    use App\Http\Middleware\PermissionMiddleware;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
-    use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
-    use Spatie\Permission\Middleware\PermissionMiddleware;
 
     return Application::configure( basePath: dirname( __DIR__ ) )
                       ->withRouting(
@@ -17,19 +13,13 @@
                           health: '/up' ,
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
-                          $middleware->api( prepend: [
-                              EnsureFrontendRequestsAreStateful::class ,
-//                              AfterMiddleware::class ,
-//                              SubscribedMiddleware::class
-                          ] );
-
+                          $middleware->statefulApi();
                           $middleware->alias( [
-                              'verified'   => EnsureEmailIsVerified::class ,
+//                              'verified'   => EnsureEmailIsVerified::class ,
 //                              'subscribed' => SubscribedMiddleware::class ,
 //                              'after'      => AfterMiddleware::class ,
                               'permission' => PermissionMiddleware::class ,
                           ] );
-
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
                           // Handle unauthorized access

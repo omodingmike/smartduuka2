@@ -97,11 +97,6 @@
         return $request->user()->load( 'roles' );
     } );
 
-    Route::prefix( 'permission' )->name( 'permission.' )->group( function () {
-        Route::get( '/{role}' , [ PermissionController::class , 'index' ] );
-        Route::match( [ 'put' , 'patch' ] , '/{role}' , [ PermissionController::class , 'update' ] );
-    } );
-
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );
     Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
@@ -161,6 +156,7 @@
         Route::match( [ 'put' , 'patch' ] , '/change-password' , [ ProfileController::class , 'changePassword' ] );
         Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
     } );
+
 
     Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'auth:sanctum' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
@@ -401,8 +397,9 @@
             } );
 
             Route::prefix( 'permission' )->name( 'permission.' )->group( function () {
-                Route::get( '/{role}' , [ PermissionController::class , 'index' ] );
-                Route::match( [ 'put' , 'patch' ] , '/{role}' , [ PermissionController::class , 'update' ] );
+                Route::get( '/{role}' , [ PermissionController::class , 'index_old' ] );
+                Route::post( '/{role}' , [ PermissionController::class , 'update' ] );
+//                Route::match( [ 'put' , 'patch' ] , '/{role}' , [ PermissionController::class , 'update' ] );
             } );
         } );
 
@@ -679,4 +676,3 @@
             Route::get( '/show/{language}' , [ FrontendLanguageController::class , 'show' ] );
         } );
     } );
-
