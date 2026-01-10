@@ -13,18 +13,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(CompanyTableSeeder::class);
-        $this->call(ThemeTableSeeder::class);
-        $this->call(SiteTableSeeder::class);
-        $this->call(MenuTableSeeder::class);
+//        $this->call(CompanyTableSeeder::class);
+//        $this->call(ThemeTableSeeder::class);
+//        $this->call(SiteTableSeeder::class);
+//        $this->call(MenuTableSeeder::class);
+
+
         $this->call(PermissionTableSeeder::class);
         $this->call(RoleTableSeeder::class);
         $this->call(UserTableSeeder::class);
-        $this->call(RolePermissionTableSeeder::class);
-        $this->call(LanguageTableSeeder::class);
-        $this->call(BarcodeTableSeeder::class);
-        $this->call(MenuTemplateTableSeeder::class);
-        $this->call(MenuSectionTableSeeder::class);
+
+//        $this->call(RolePermissionTableSeeder::class);
+//
+//        $this->call(LanguageTableSeeder::class);
+//        $this->call(BarcodeTableSeeder::class);
+//        $this->call(MenuTemplateTableSeeder::class);
+//        $this->call(MenuSectionTableSeeder::class);
+
+
+
+
+
 //        $this->call(MailTableSeeder::class);
 //        $this->call(ProductBrandTableSeeder::class);
 //        $this->call(ProductCategoryTableSeeder::class);

@@ -5,12 +5,8 @@
     use App\Http\Requests\PermissionRequest;
     use App\Http\Resources\RoleResource;
     use App\Libraries\AppLibrary;
-    use App\Models\User;
     use App\Services\PermissionService;
     use Exception;
-    use Illuminate\Contracts\Routing\ResponseFactory;
-    use Illuminate\Foundation\Application;
-    use Illuminate\Http\Response;
     use Spatie\Permission\Models\Permission;
     use Spatie\Permission\Models\Role;
 
@@ -36,15 +32,12 @@
                 )->where( 'role_has_permissions.role_id' , $role->id )->get()->pluck( 'name' , 'id' );
                 $permissions     = AppLibrary::permissionWithAccess( $permissions , $rolePermissions );
                 $permissions     = AppLibrary::buildPermissionTree( $permissions->toArray() );
-                $role->users()->each( function (User $user) {
-                    $user->tokens()->delete();
-                } );
+
                 return [
                     'data' => [
                         'role'        => $role ,
                         'permissions' => $permissions ,
                     ]
-//                    'access'      => $role->permissions
                 ];
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
@@ -85,6 +78,7 @@
             try {
                 return new RoleResource( $this->permissionService->update( $request , $role ) );
             } catch ( Exception $exception ) {
+                info($exception->getMessage());
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }

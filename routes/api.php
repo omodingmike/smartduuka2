@@ -159,6 +159,7 @@
 
 
     Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'auth:sanctum' ] )->group( function () {
+//    Route::prefix( 'admin' )->name( 'admin.' )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -167,7 +168,6 @@
         } );
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
-
 
         Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
         Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );

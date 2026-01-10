@@ -12,42 +12,42 @@
          *
          * @return void
          */
-        public function run()
+        public function run() : void
         {
             Role::insert( [
                 [
                     'name'       => 'Admin' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => 'Customer' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => 'Manager' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => 'POS Operator' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => 'Stuff' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => 'Distributor' ,
-                    'guard_name' => 'web' ,
+                    'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,

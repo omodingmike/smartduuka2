@@ -34,6 +34,7 @@
          */
         protected $table    = "users";
         protected $appends  = [ 'credits' , 'sales' ];
+
         protected $fillable = [
             'name' ,
             'email' ,
@@ -78,6 +79,10 @@
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
         ];
+        public function guardName()
+        {
+            return 'sanctum';
+        }
 
         public function getImageAttribute() : string
         {
@@ -184,8 +189,4 @@
             return $this->hasOne( Role::class , 'id' , 'myrole' );
         }
 
-        public function returnOrders()
-        {
-            $this->hasMany( ReturnOrder::class , 'user_id' , 'id' );
-        }
     }
