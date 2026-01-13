@@ -40,7 +40,7 @@ class SettingResource extends JsonResource
             'site_cash_on_delivery'                 => $this->info['site_cash_on_delivery'],
             'theme_logo'                            => $this->themeImage('theme_logo')->logo,
             'theme_footer_logo'                     => $this->themeImage('theme_footer_logo')->footerLogo,
-            'theme_favicon_logo'                    => $this->themeImage('theme_favicon_logo')->faviconLogo,
+            'theme_favicon'                    => $this->themeImage('theme_favicon')->faviconLogo,
             'notification_audio'                    => asset('/audio/notification.mp3'),
             'image_cart'                            => asset('/images/required/empty-cart.gif'),
             'image_app_store'                       => asset('/images/required/app-store.png'),

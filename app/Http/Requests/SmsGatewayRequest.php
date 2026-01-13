@@ -24,9 +24,10 @@ class SmsGatewayRequest extends FormRequest
     public function rules() : array
     {
         return [
-            'analytic_'.request()->SmsGateway                   => ['required', 'string', 'max:50'],
-            'analytic_'.request()->SmsGateway.'_description'    => ['required', 'string'],
-            'analytic_'.request()->SmsGateway.'_status'         => ['required', 'numeric'],
+            'sms_gateway' => ['required', 'string'],
+            'at_username' => ['nullable', 'string'],
+            'at_apikey'   => ['nullable', 'string'],
+            'status'      => ['nullable', 'string'],
         ];
     }
 }

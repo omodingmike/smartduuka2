@@ -18,7 +18,7 @@ class ThemeController extends AdminController
     {
         parent::__construct();
         $this->themeService = $themeService;
-        $this->middleware(['permission:settings'])->only('update');
+//        $this->middleware(['permission:settings'])->only('update');
     }
 
     public function index(): Application| Response|ThemeResource|\Illuminate\Contracts\Foundation\Application| ResponseFactory

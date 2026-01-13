@@ -45,10 +45,10 @@ class ThemeService
                 $setting->clearMediaCollection('theme-logo');
                 $setting->addMediaFromRequest('theme_logo')->toMediaCollection('theme-logo');
             }
-            if ($request->theme_favicon_logo) {
-                $setting = ThemeSetting::where('key', 'theme_favicon_logo')->first();
+            if ($request->theme_favicon) {
+                $setting = ThemeSetting::where('key', 'theme_favicon')->first();
                 $setting->clearMediaCollection('theme-favicon-logo');
-                $setting->addMediaFromRequest('theme_favicon_logo')->toMediaCollection('theme-favicon-logo');
+                $setting->addMediaFromRequest('theme_favicon')->toMediaCollection('theme-favicon-logo');
             }
             if ($request->theme_footer_logo) {
                 $setting = ThemeSetting::where('key', 'theme_footer_logo')->first();

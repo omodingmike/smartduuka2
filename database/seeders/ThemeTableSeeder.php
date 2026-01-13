@@ -16,7 +16,7 @@ class ThemeTableSeeder extends Seeder
     {
         Settings::group('theme')->set([
             'theme_logo'         => "",
-            'theme_favicon_logo' => "",
+            'theme_favicon' => "",
             'theme_footer_logo'  => "",
         ]);
     }

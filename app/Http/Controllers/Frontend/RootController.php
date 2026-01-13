@@ -10,7 +10,7 @@
     {
         public function index()
         {
-            $themeFavicon = ThemeSetting::where( [ 'key' => 'theme_favicon_logo' ] )->first();
+            $themeFavicon = ThemeSetting::where( [ 'key' => 'theme_favicon' ] )->first();
             $favIcon      = $themeFavicon->faviconLogo;
             return view( 'master' , [ 'favicon' => $favIcon ] );
         }

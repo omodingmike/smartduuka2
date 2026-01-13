@@ -40,6 +40,7 @@
     use App\Http\Controllers\Admin\SalesReportController;
     use App\Http\Controllers\Admin\SimpleUserController;
     use App\Http\Controllers\Admin\SiteController;
+    use App\Http\Controllers\Admin\SmsGatewayController;
     use App\Http\Controllers\Admin\StateController;
     use App\Http\Controllers\Admin\StockController;
     use App\Http\Controllers\Admin\SupplierController;
@@ -259,6 +260,12 @@
             Route::prefix( 'theme' )->name( 'theme.' )->group( function () {
                 Route::get( '/' , [ ThemeController::class , 'index' ] );
                 Route::post( '/' , [ ThemeController::class , 'update' ] );
+            } );
+
+            Route::prefix( 'sms-gateway' )->name( 'sms-gateway.' )->group( function () {
+                Route::get( '/' , [ SmsGatewayController::class , 'index' ] );
+                Route::post( '/' , [ SmsGatewayController::class , 'update' ] );
+                Route::post( '/test' , [ SmsGatewayController::class , 'test' ] );
             } );
 
             Route::prefix( 'mail' )->name( 'mail.' )->group( function () {

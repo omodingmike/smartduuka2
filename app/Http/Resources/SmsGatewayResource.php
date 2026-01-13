@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
-
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class SmsGatewayResource extends JsonResource
 {
+    public array $info;
+
+    public function __construct($info)
+    {
+        parent::__construct($info);
+        $this->info = $info;
+    }
 
     /**
      * Transform the resource into an array.
@@ -14,17 +20,13 @@ class SmsGatewayResource extends JsonResource
      * @param \Illuminate\Http\Request $request
      * @return array
      */
-
-    public function toArray($request) : array
+    public function toArray($request): array
     {
-
-         return [
-             'id'=> $this->id,
-             'name'=> $this->name,
-             'slug'=> $this->slug,
-             'status'=> $this->status,
-             'options'=> GatewayOptionsResource::collection($this->gatewayOptions)
-         ];
+        return [
+            'sms_gateway' => $this->info['sms_gateway'] ?? env('SMS_GATEWAY'),
+            'at_username' => $this->info['at_username'] ?? env('AT_USERNAME'),
+            'at_apikey'   => $this->info['at_apikey'] ?? env('AT_APIKEY'),
+            'status'      => $this->info['status'] ?? null,
+        ];
     }
-
 }

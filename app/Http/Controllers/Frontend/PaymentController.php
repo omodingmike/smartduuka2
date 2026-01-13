@@ -32,7 +32,7 @@ class PaymentController extends Controller
         $paymentGateways = PaymentGateway::with('gatewayOptions')->whereNotIn('id', [1])->where(['status' => Activity::ENABLE])->get();
         $company         = Settings::group('company')->all();
         $logo            = ThemeSetting::where(['key' => 'theme_logo'])->first();
-        $faviconLogo     = ThemeSetting::where(['key' => 'theme_favicon_logo'])->first();
+        $faviconLogo     = ThemeSetting::where(['key' => 'theme_favicon'])->first();
         $currency        = Currency::findOrFail(Settings::group('site')->get('site_default_currency'));
         if ($order?->user?->balance >= $order->total) {
             $credit = true;
@@ -88,7 +88,7 @@ class PaymentController extends Controller
     ): \Illuminate\Contracts\View\Factory | \Illuminate\Contracts\View\View | \Illuminate\Contracts\Foundation\Application | \Illuminate\Http\RedirectResponse {
         $company     = Settings::group('company')->all();
         $logo        = ThemeSetting::where(['key' => 'theme_logo'])->first();
-        $faviconLogo = ThemeSetting::where(['key' => 'theme_favicon_logo'])->first();
+        $faviconLogo = ThemeSetting::where(['key' => 'theme_favicon'])->first();
 
         if (!blank($order->transaction)) {
             return view('paymentSuccess', [
