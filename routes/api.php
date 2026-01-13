@@ -22,6 +22,7 @@
     use App\Http\Controllers\Admin\MenuSectionController;
     use App\Http\Controllers\Admin\MenuTemplateController;
     use App\Http\Controllers\Admin\MyOrderDetailsController;
+    use App\Http\Controllers\Admin\NotificationAlertController;
     use App\Http\Controllers\Admin\NotificationController;
     use App\Http\Controllers\Admin\OtpController;
     use App\Http\Controllers\Admin\PaymentGatewayController;
@@ -276,6 +277,12 @@
             Route::prefix( 'notification' )->name( 'notification.' )->group( function () {
                 Route::get( '/' , [ NotificationController::class , 'index' ] );
                 Route::match( [ 'put' , 'patch' ] , '/' , [ NotificationController::class , 'update' ] );
+                Route::post( '/channels' , [ NotificationController::class , 'updateChannels' ] );
+            } );
+
+            Route::prefix( 'notification' )->name( 'notification-alert.' )->group( function () {
+                Route::get( '/' , [ NotificationAlertController::class , 'index' ] );
+                Route::match( [ 'post' , 'patch' ] , '/' , [ NotificationAlertController::class , 'update' ] );
             } );
 
             Route::prefix( 'otp' )->name( 'otp.' )->group( function () {

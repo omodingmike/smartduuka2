@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\NotificationChannelRequest;
 use App\Http\Requests\NotificationRequest;
 use App\Http\Resources\NotificationResource;
 use App\Services\NotificationService;
@@ -35,6 +36,15 @@ class NotificationController extends AdminController
     ) : Response | NotificationResource | Application | ResponseFactory {
         try {
             return new NotificationResource($this->notificationService->update($request));
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    public function updateChannels(NotificationChannelRequest $request
+    ) : Response | NotificationResource | Application | ResponseFactory {
+        try {
+            return new NotificationResource($this->notificationService->updateChannels($request));
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

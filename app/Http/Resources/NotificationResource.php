@@ -25,6 +25,11 @@
          */
         public function toArray($request) : array
         {
+            $events = $this->info['events'] ?? '[]';
+            if (is_string($events)) {
+                $events = json_decode($events, true);
+            }
+
             return [
                 'notification_fcm_secret_key'          => $this->info[ 'notification_fcm_secret_key' ] ?? '' ,
                 'notification_fcm_public_vapid_key'    => $this->info[ 'notification_fcm_public_vapid_key' ] ?? '' ,
@@ -35,6 +40,9 @@
                 'notification_fcm_messaging_sender_id' => $this->info[ 'notification_fcm_messaging_sender_id' ] ?? '' ,
                 'notification_fcm_app_id'              => $this->info[ 'notification_fcm_app_id' ] ?? '' ,
                 'notification_fcm_measurement_id'      => $this->info[ 'notification_fcm_measurement_id' ] ?? '' ,
+                'admin_email'                          => $this->info[ 'admin_email' ] ?? '' ,
+                'admin_phone'                          => $this->info[ 'admin_phone' ] ?? '' ,
+                'events'                               => $events,
             ];
         }
     }

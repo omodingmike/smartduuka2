@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Resources\NotificationResource;
 use Exception;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
 use App\Services\NotificationAlertService;
 use App\Http\Resources\NotificationAlertResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class NotificationAlertController extends AdminController
 {
@@ -19,19 +23,18 @@ class NotificationAlertController extends AdminController
     }
 
     public function index(
-    ) : \Illuminate\Http\Response | \Illuminate\Http\Resources\Json\AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    ) : \Illuminate\Http\Response | NotificationResource | Application | ResponseFactory
     {
         try {
-            return NotificationAlertResource::collection($this->notificationAlertService->list());
+            return new NotificationResource($this->notificationAlertService->list());
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
 
-    public function update(Request $request
-    ) : \Illuminate\Http\Response | \Illuminate\Http\Resources\Json\AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory {
+    public function update(Request $request)  {
         try {
-            return NotificationAlertResource::collection($this->notificationAlertService->update($request));
+            return new NotificationResource($this->notificationAlertService->update($request));
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

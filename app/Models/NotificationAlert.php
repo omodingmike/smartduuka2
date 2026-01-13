@@ -9,16 +9,25 @@ class NotificationAlert extends Model
 {
     use HasFactory;
     protected $table = "notification_alerts";
-    protected $fillable = ['name', 'language', 'mail_message', 'sms_message', 'push_notification_message', 'mail', 'sms', 'push_notification'];
+    
+    protected $fillable = [
+        'event_key', 
+        'category', 
+        'label', 
+        'description', 
+        'email', 
+        'sms', 
+        'whatsapp', 
+        'system',
+        'mail_message',
+        'sms_message',
+        'push_notification_message'
+    ];
+
     protected $casts = [
-        'id'                        => 'integer',
-        'name'                      => 'string',
-        'language'                  => 'string',
-        'mail_message'              => 'string',
-        'sms_message'               => 'string',
-        'push_notification_message' => 'string',
-        'mail'                      => 'integer',
-        'sms'                       => 'integer',
-        'push_notification'         => 'integer',
+        'email'    => 'boolean',
+        'sms'      => 'boolean',
+        'whatsapp' => 'boolean',
+        'system'   => 'boolean',
     ];
 }
