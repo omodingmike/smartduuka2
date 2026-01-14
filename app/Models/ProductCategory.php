@@ -48,8 +48,8 @@ class ProductCategory extends Model implements HasMedia
 
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->crop('crop-center', 252, 183)->keepOriginalImageFormat()->sharpen(10);
-        $this->addMediaConversion('cover')->crop('crop-center', 960, 1440)->keepOriginalImageFormat()->sharpen(10);
+        $this->addMediaConversion('thumb')->focalCropAndResize(252, 183)->keepOriginalImageFormat()->sharpen(10);
+        $this->addMediaConversion('cover')->focalCropAndResize( 960, 1440)->keepOriginalImageFormat()->sharpen(10);
     }
 
     public function products(): \Illuminate\Database\Eloquent\Relations\HasMany

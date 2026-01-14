@@ -26,11 +26,14 @@
             $this->middleware( [ 'permission:settings' ] )->only( 'store' , 'update' , 'destroy' , 'show' );
         }
 
-        public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
+        public function index(Request $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                $filtered = $this->filter( new ProductBrand() , $request , [ 'name' ] );
-                return ProductBrandResource::collection( $filtered );
+                $page         = $request->input( 'page' , 1 );
+                $perPage      = $request->input( 'perPage' , 10 );
+                $query = ProductBrand::query()->with( 'products');
+                $data = $query->paginate( $perPage , [ '*' ] , 'page' , $page );
+                return ProductBrandResource::collection( $data );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

@@ -11,6 +11,7 @@ use App\Services\ProductAttributeOptionService;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -52,10 +53,11 @@ class ProductAttributeOptionController extends AdminController
         }
     }
 
-    public function destroy(ProductAttribute $productAttribute, ProductAttributeOption $productAttributeOption): Response | Application | ResponseFactory
+    public function destroy(Request $request): Response | Application | ResponseFactory
     {
         try {
-            $this->productAttributeOptionService->destroy($productAttribute, $productAttributeOption);
+            ProductAttributeOption::destroy( $request->ids );
+//            $this->productAttributeOptionService->destroy($productAttribute, $productAttributeOption);
             return response('', 202);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

@@ -98,6 +98,7 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
+    Route::get( '/att' , [ ProductCategoryController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );
@@ -379,7 +380,8 @@
                 Route::get( '/{productAttribute}/show/{productAttributeOption}' , [ ProductAttributeOptionController::class , 'show' ] );
                 Route::post( '/{productAttribute}' , [ ProductAttributeOptionController::class , 'store' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{productAttribute}/{productAttributeOption}' , [ ProductAttributeOptionController::class , 'update' ] );
-                Route::delete( '/{productAttribute}/{productAttributeOption}' , [ ProductAttributeOptionController::class , 'destroy' ] );
+//                Route::delete( '/{productAttribute}/{productAttributeOption}/delete' , [ ProductAttributeOptionController::class , 'destroy' ] );
+                Route::delete( '/delete' , [ ProductAttributeOptionController::class , 'destroy' ] );
             } );
 
             Route::prefix( 'unit' )->name( 'unit.' )->group( function () {

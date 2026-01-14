@@ -18,13 +18,15 @@
         public function toArray($request) : array
         {
             return [
-                'id'          => $this->id ,
-                'name'        => $this->name ,
-                'slug'        => $this->slug ,
-                'description' => $this->description === NULL ? '' : $this->description ,
-                'status'      => $this->status ?? Ask::NO ,
-                'thumb'       => $this->thumb ,
-                'cover'       => $this->cover
+                'id'           => $this->id ,
+                'name'         => $this->name ,
+                'products'     => $this->products->count() ,
+                'slug'         => $this->slug ,
+                'description'  => $this->description === NULL ? '' : $this->description ,
+                'status'       => $this->status ?? Ask::NO ,
+                'status_label' => statusLabel( $this->status ) ,
+                'thumb'        => $this->thumb ,
+                'cover'        => $this->cover
             ];
         }
     }

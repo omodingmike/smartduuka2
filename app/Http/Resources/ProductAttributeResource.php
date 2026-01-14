@@ -1,25 +1,28 @@
 <?php
 
-namespace App\Http\Resources;
+    namespace App\Http\Resources;
 
 
-use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProductAttributeResource extends JsonResource
-{
-    /**
-     * Transform the resource into an array.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return array
-     */
-    public function toArray($request): array
+    class ProductAttributeResource extends JsonResource
     {
-        return [
-            'id'      => $this->id,
-            'name'    => $this->name,
-            'options' => $this->productAttributeOptions
-        ];
+        /**
+         * Transform the resource into an array.
+         *
+         * @param \Illuminate\Http\Request $request
+         *
+         * @return array
+         */
+        public function toArray($request) : array
+        {
+            return [
+                'id'      => $this->id ,
+                'name'    => $this->name ,
+                'status'  => $this->status ,
+                'label'   => statusLabel( $this->status ) ,
+                'options' => $this->productAttributeOptions
+            ];
 
+        }
     }
-}

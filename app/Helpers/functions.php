@@ -7,6 +7,7 @@
     use App\Enums\PaymentStatus;
     use App\Enums\Role;
     use App\Enums\SettingsEnum;
+    use App\Enums\Status;
     use App\Models\ActivityLog;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
@@ -364,6 +365,16 @@
             $char = $matches[ 0 ];
             return $replacements[ $char ] ?? $char;
         } , $phpFormat );
+    }
+
+    function statusLabel($status) : string | null
+    {
+        return match ( $status ) {
+            Status::ACTIVE   => 'Active' ,
+            Status::INACTIVE => 'Inactive' ,
+            Status::CANCELED => 'Canceled' ,
+            default          => NULL
+        };
     }
 
 

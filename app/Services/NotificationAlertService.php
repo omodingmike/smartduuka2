@@ -33,7 +33,6 @@ class NotificationAlertService
      */
     public function update(Request $request)
     {
-        Log::info('NotificationAlertService update() request payload:', $request->all()); // Log incoming payload
         try {
             $settingsData = [];
             

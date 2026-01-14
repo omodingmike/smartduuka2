@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Status;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -41,11 +42,11 @@ class ProductBrand extends Model implements HasMedia
 
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->crop('crop-center', 72, 72)->keepOriginalImageFormat()->sharpen(10);
+        $this->addMediaConversion('thumb')->focalCropAndResize( 72, 72)->keepOriginalImageFormat()->sharpen(10);
         $this->addMediaConversion('cover')->width(300)->keepOriginalImageFormat()->sharpen(10);
     }
 
-    public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class)->where(['status' => Status::ACTIVE]);
     }

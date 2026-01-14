@@ -51,13 +51,9 @@ class ProductAttributeService
     public function store(ProductAttributeRequest $request): object
     {
         try {
-            DB::transaction(function () use ($request) {
-                $this->productAttribute = ProductAttribute::create($request->validated());
-            });
-            return $this->productAttribute;
+            return ProductAttribute::create($request->validated());
         } catch (Exception $exception) {
             Log::info($exception->getMessage());
-            DB::rollBack();
             throw new Exception($exception->getMessage(), 422);
         }
     }
