@@ -8,6 +8,7 @@
     use App\Enums\Role;
     use App\Enums\SettingsEnum;
     use App\Enums\Status;
+    use App\Enums\StockStatus;
     use App\Models\ActivityLog;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
@@ -374,6 +375,16 @@
             Status::INACTIVE => 'Inactive' ,
             Status::CANCELED => 'Canceled' ,
             default          => NULL
+        };
+    }
+
+    function stockStatusLabel($status) : string | null
+    {
+        return match ( $status ) {
+            StockStatus::OUT_OF_STOCK => 'Out of Stock' ,
+            StockStatus::LOW_STOCK    => 'Low Stock' ,
+            StockStatus::IN_STOCK     => 'In stock' ,
+            default                   => NULL
         };
     }
 

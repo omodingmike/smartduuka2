@@ -42,8 +42,8 @@
                 $table->bigInteger( 'creator_id' )->nullable();
                 $table->string( 'editor_type' )->nullable();
                 $table->bigInteger( 'editor_id' )->nullable();
-                $table->integer('is_stockable')->default(Ask::NO);
-                $table->decimal('overall_cost', 10)->default(0);
+                $table->integer( 'is_stockable' )->default( Ask::NO );
+                $table->decimal( 'overall_cost' , 10 )->default( 0 );
                 $table->softDeletes();
                 $table->timestamps();
             } );

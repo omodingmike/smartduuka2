@@ -291,6 +291,7 @@
                 Route::match( [ 'post' , 'patch' ] , '/' , [ OtpController::class , 'update' ] );
             } );
 
+
             Route::prefix( 'currency' )->name( 'currency.' )->group( function () {
                 Route::get( '/' , [ CurrencyController::class , 'index' ] );
                 Route::get( '/show/{currency}' , [ CurrencyController::class , 'show' ] );

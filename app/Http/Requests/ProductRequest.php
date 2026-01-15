@@ -35,10 +35,10 @@
                 ] ,
                 'sku'                        => [
                     'required' ,
-                    'numeric' , 'regex:/^\d{12,13}$/' ,
                     Rule::unique( 'products' , 'sku' )->whereNull( 'deleted_at' )->ignore( $this->route( 'product.id' ) )
                 ] ,
                 'barcode'                    => [ 'required' , 'numeric' , 'not_in:0' ] ,
+                'type'                       => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'product_category_id'        => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'product_brand_id'           => [ 'nullable' , 'numeric' , 'max_digits:10' ] ,
                 'weight'                     => [ 'nullable' , 'string' , 'max:100' ] ,
@@ -51,8 +51,8 @@
                 'can_purchasable'            => [ 'required' , 'numeric' , 'max:24' ] ,
                 'refundable'                 => [ 'required' , 'numeric' , 'max:24' ] ,
                 'stock_out'                  => [ 'required' , 'numeric' , 'max:24' ] ,
+                'stock'                      => [ 'sometimes' , 'numeric' ] ,
                 'low_stock_quantity_warning' => [ 'required' , 'numeric' , 'max_digits:10' ] ,
-
 
 //                'barcode_id'          => [ 'sometimes' , 'numeric' , 'not_in:0' ] ,
 
@@ -81,7 +81,6 @@
 //                'retail_price_per_base_unit' => 'sometimes|numeric' ,
 //                'mid_unit_wholesale_price'   => 'sometimes|numeric' ,
 //                'top_unit_wholesale_price'   => 'sometimes|numeric' ,
-
             ];
         }
 
