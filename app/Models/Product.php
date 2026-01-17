@@ -2,7 +2,9 @@
 
     namespace App\Models;
 
+    use App\Enums\MediaEnum;
     use App\Enums\Status;
+    use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -13,12 +15,11 @@
     use Illuminate\Database\Eloquent\SoftDeletes;
     use Illuminate\Support\Facades\Auth;
     use Spatie\MediaLibrary\HasMedia;
-    use Spatie\MediaLibrary\InteractsWithMedia;
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
     class Product extends Model implements HasMedia
     {
-        use HasFactory , InteractsWithMedia , SoftDeletes;
+        use HasFactory , SoftDeletes , HasImageMedia;
 
         protected       $table   = 'products';
         protected       $guarded = [];
@@ -50,6 +51,11 @@
             'offer_end_date'             => 'string' ,
         ];
 
+        protected function getMediaCollection() : string
+        {
+            return MediaEnum::PRODUCTS_MEDIA_COLLECTION;
+        }
+
         public function scopeActive($query , $col = 'status')
         {
             return $query->where( $col , Status::ACTIVE );
@@ -65,8 +71,8 @@
 
         public function getImageAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                return asset( $this->getFirstMediaUrl( 'product' ) );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                return asset( $this->getFirstMediaUrl( $this->getMediaCollection() ) );
             }
             return asset( 'images/default/product/thumb.png' );
         }
@@ -74,8 +80,8 @@
         public function getImagesAttribute() : array
         {
             $response = [];
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                $images = $this->getMedia( 'product' );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                $images = $this->getMedia( $this->getMediaCollection() );
                 foreach ( $images as $image ) {
                     $response[] = $image[ 'original_url' ];
                 }
@@ -85,8 +91,8 @@
 
         public function getThumbAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                $product = $this->getMedia( 'product' )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollection() )->first();
                 return $product->getUrl( 'thumb' );
             }
             return asset( 'images/default/product/thumb.png' );
@@ -94,8 +100,8 @@
 
         public function getCoverAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                $product = $this->getMedia( 'product' )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollection() )->first();
                 return $product->getUrl( 'cover' );
             }
             return asset( 'images/default/product/cover.png' );
@@ -103,8 +109,8 @@
 
         public function getPreviewAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                $product = $this->getMedia( 'product' )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollection() )->first();
                 return $product->getUrl( 'preview' );
             }
             return asset( 'images/default/product/preview.png' );
@@ -113,8 +119,8 @@
         public function getPreviewsAttribute() : array
         {
             $response = [];
-            if ( ! empty( $this->getFirstMediaUrl( 'product' ) ) ) {
-                $images = $this->getMedia( 'product' );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
+                $images = $this->getMedia( $this->getMediaCollection() );
                 foreach ( $images as $image ) {
                     $response[] = $image->getUrl( 'preview' );
                 }
@@ -132,9 +138,9 @@
 
         public function registerMediaConversions(Media $media = NULL) : void
         {
-            $this->addMediaConversion( 'thumb' )->crop( 'crop-center' , 168 , 180 )->keepOriginalImageFormat()->sharpen( 10 );
-            $this->addMediaConversion( 'cover' )->crop( 'crop-center' , 372 , 405 )->keepOriginalImageFormat()->sharpen( 10 );
-            $this->addMediaConversion( 'preview' )->crop( 'crop-center' , 768 , 768 )->keepOriginalImageFormat()->sharpen( 10 );
+            $this->addMediaConversion( 'thumb' )->crop( 168 , 180 )->keepOriginalImageFormat()->sharpen( 10 );
+            $this->addMediaConversion( 'cover' )->crop( 372 , 405 )->keepOriginalImageFormat()->sharpen( 10 );
+            $this->addMediaConversion( 'preview' )->crop( 768 , 768 )->keepOriginalImageFormat()->sharpen( 10 );
         }
 
         public function category() : BelongsTo
@@ -160,6 +166,11 @@
         public function sellingUnits() : BelongsToMany
         {
             return $this->belongsToMany( Unit::class , 'product_units' , 'product_id' , 'unit_id' );
+        }
+
+        public function wholesalePrices() : BelongsToMany
+        {
+            return $this->belongsToMany( WholeSalePrice::class );
         }
 
         public function prices() : Builder | HasMany | Product

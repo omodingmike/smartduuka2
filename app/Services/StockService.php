@@ -39,7 +39,7 @@
                 $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
-                $stocks      = Stock::with( [ 'product.sellingUnits:id,code' , 'product.unit:id,code' ] )
+                $stocks      = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' ] )
                                     ->when( isset( $requests[ 'warehouse_id' ] ) , function ($query) use ($requests) {
                                         $query->where( 'warehouse_id' , $requests[ 'warehouse_id' ] );
                                     } )->where( 'status' , StockStatus::RECEIVED )

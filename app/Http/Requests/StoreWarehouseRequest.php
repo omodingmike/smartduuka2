@@ -14,11 +14,13 @@
         public function rules() : array
         {
             return [
-                'name'         => [ 'required' , 'string' , 'max:255' ] ,
-                'phone'        => [ 'sometimes' , 'unique:warehouses' , 'max:255' ] ,
-                'email'        => [ 'sometimes' , 'email' , 'unique:warehouses' , 'max:255' ] ,
-                'location'     => [ 'sometimes' , 'string' , 'max:255' ] ,
-                'country_code' => [ 'required' , 'string' , 'max:255' ] ,
+                'name'     => [ 'required' , 'string' , 'max:255' ] ,
+                'status'   => [ 'required' , 'numeric:' ] ,
+                'phone'    => [ 'sometimes' , 'unique:warehouses' , 'max:255' ] ,
+                'email'    => [ 'sometimes' , 'email' , 'unique:warehouses' , 'max:255' ] ,
+                'location' => [ 'sometimes' , 'string' , 'max:255' ] ,
+                'manager'  => [ 'sometimes' , 'string' , 'max:255' ] ,
+                'capacity' => [ 'sometimes' , 'string' , 'max:255' ] ,
             ];
         }
     }

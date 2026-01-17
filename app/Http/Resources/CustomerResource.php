@@ -12,6 +12,7 @@
          * Transform the resource into an array.
          *
          * @param \Illuminate\Http\Request $request
+         *
          * @return array
          */
         public function toArray($request) : array
@@ -23,13 +24,19 @@
                 "name"          => $this->name ,
                 "username"      => $this->username ,
                 "email"         => $this->email ,
-                "phone"         => $this->phone === null ? '' : $this->phone ,
+                "type"          => $this->email ,
+                "phone"         => $this->phone === NULL ? '' : $this->phone ,
                 "status"        => $this->status ,
-                "credits"       => AppLibrary::currencyAmountFormat($this->credits) ,
+                "credits"       => AppLibrary::currencyAmountFormat( $this->credits ) ,
                 "show_pay"      => $this->credits > 0 ,
-                "show_pay_list" => count($this->payments) > 0 ,
+                "show_pay_list" => count( $this->payments ) > 0 ,
                 "image"         => $this->image ,
-                "country_code"  => $this->country_code ,
+                "notes"         => $this->notes ,
+                "totalSpent"    => 0 ,
+                "addresses"     => [] ,
+                "orders"        => [] ,
+                "creditProfile" => [] ,
+                "created_at"    => AppLibrary::date( $this->created_at ) ,
             ];
         }
     }

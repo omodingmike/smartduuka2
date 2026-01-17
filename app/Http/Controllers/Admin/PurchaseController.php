@@ -216,10 +216,10 @@
             }
         }
 
-        public function storeStock(PurchaseRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function storeStock(PurchaseRequest $request)
         {
             try {
-                return new PurchaseResource( $this->purchaseService->storeStock( $request ) );
+                return $this->purchaseService->storeStock( $request ) ;
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

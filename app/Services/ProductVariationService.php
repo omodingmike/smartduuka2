@@ -306,36 +306,37 @@
                                 'parent_id'                   => $parentId ,
                                 'order'                       => $order
                             ];
+
                             $productVariation      = ProductVariation::create( $productVariationArray );
                             $parentId              = $productVariation->id;
                             $collection[]          = $productVariation;
 
                             if ( $key == $variationsCount ) {
-                                $generator = new BarcodeGeneratorPNG();
-                                $barcode   = NULL;
-                                $black     = [ 0 , 0 , 0 ];
-                                if ( $product->barcode_id === BarcodeType::EAN_13 ) {
-                                    $barcode_value = str_pad( $productVariation->sku , 12 , '0' , STR_PAD_LEFT );
-                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
-                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
-                                }
-                                if ( $product->barcode_id === BarcodeType::UPC_A ) {
-                                    $barcode_value = str_pad( $productVariation->sku , 11 , '0' , STR_PAD_LEFT );
-                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
-                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
-                                }
+//                                $generator = new BarcodeGeneratorPNG();
+//                                $barcode   = NULL;
+//                                $black     = [ 0 , 0 , 0 ];
+//                                if ( $product->barcode_id === BarcodeType::EAN_13 ) {
+//                                    $barcode_value = str_pad( $productVariation->sku , 12 , '0' , STR_PAD_LEFT );
+//                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
+//                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
+//                                }
+//                                if ( $product->barcode_id === BarcodeType::UPC_A ) {
+//                                    $barcode_value = str_pad( $productVariation->sku , 11 , '0' , STR_PAD_LEFT );
+//                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
+//                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
+//                                }
 
-                                if ( $request->user_barcode ) {
-                                    $barcode_value                  = $request->user_barcode;
-                                    $productVariation->user_barcode = $barcode_value;
-                                    $productVariation->save();
-                                }
+//                                if ( $request->user_barcode ) {
+//                                    $barcode_value                  = $request->user_barcode;
+//                                    $productVariation->user_barcode = $barcode_value;
+//                                    $productVariation->save();
+//                                }
 
-                                if ( $barcode ) {
-                                    $tempFilePath = storage_path( 'app/public/barcode.png' );
-                                    file_put_contents( $tempFilePath , $barcode );
-                                    $productVariation->addMedia( $tempFilePath )->toMediaCollection( 'product-variation-barcode' );
-                                }
+//                                if ( $barcode ) {
+//                                    $tempFilePath = storage_path( 'app/public/barcode.png' );
+//                                    file_put_contents( $tempFilePath , $barcode );
+//                                    $productVariation->addMedia( $tempFilePath )->toMediaCollection( 'product-variation-barcode' );
+//                                }
                             }
                         }
 

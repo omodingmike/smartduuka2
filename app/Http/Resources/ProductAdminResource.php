@@ -2,7 +2,6 @@
 
     namespace App\Http\Resources;
 
-
     use App\Enums\Ask;
     use App\Libraries\AppLibrary;
     use App\Models\Product;
@@ -29,7 +28,10 @@
                 "id"                         => $this->id ,
                 "name"                       => $this->name ,
                 "sku"                        => $this->sku ,
+                "type"                       => $this->type ,
                 "barcode"                    => $this->barcode ,
+//                "stocks"                     => $this->stocks ,
+                "stock"                      => number_format( $this->stocks->sum( 'quantity' ) ) ,
                 "slug"                       => $this->slug ,
                 "product_category_id"        => $this->product_category_id ,
                 "barcode_id"                 => $this->barcode_id ,
@@ -68,6 +70,7 @@
                 "flat_selling_price"         => AppLibrary::currencyAmountFormat( $this->selling_price ) ,
                 "selling_price"              => $this->selling_price ,
                 "status"                     => $this->status ,
+                "status_text"                => $this->status ? 'Visible' : 'Hidden' ,
                 "other_unit_id"              => $this->other_unit_id ,
                 "can_purchasable"            => $this->can_purchasable ,
                 "show_stock_out"             => $this->show_stock_out ,
@@ -77,10 +80,15 @@
                 "refundable"                 => $this->refundable ,
                 "description"                => $this->description === NULL ? '' : $this->description ,
                 "product_tags"               => ProductTagResource::collection( $this->tags ) ,
-                "category_name"              => $this?->category?->name ,
+                "category_name"              => ucwords( $this?->category?->name ) ,
+                "brand"                      => $this?->brand?->name ,
                 "order"                      => abs( $this?->productOrders->sum( 'quantity' ) ) ,
                 'currency_price'             => AppLibrary::currencyAmountFormat( $price ) ,
                 "cover"                      => $this->cover ,
+                "thumb"                      => $this->thumb ,
+                'preview'                    => $this->preview ,
+                'image'                      => $this->preview ,
+                'images'                     => $this->previews ,
                 'flash_sale'                 => $this->add_to_flash_sale == Ask::YES ,
                 'is_offer'                   => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
                 'discounted_price'           => AppLibrary::currencyAmountFormat( $price - ( ( $price / 100 ) * $this->discount ) ) ,

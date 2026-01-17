@@ -47,6 +47,9 @@
             'email_verified_at' ,
             'commission' ,
             'branch_id' ,
+            'phone2' ,
+            'type' ,
+            'notes' ,
             'pin'
         ];
 

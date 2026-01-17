@@ -15,7 +15,9 @@
             'email' ,
             'location' ,
             'phone' ,
-            'country_code'
+            'manager',
+            'capacity',
+            'status'
         ];
         protected $casts    = [
             'deletable' => 'boolean'

@@ -22,7 +22,7 @@
                           ] );
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
-                          // Handle unauthorized access
+//                           Handle unauthorized access
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,

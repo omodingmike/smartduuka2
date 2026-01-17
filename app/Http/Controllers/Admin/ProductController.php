@@ -32,47 +32,47 @@
         {
             parent::__construct();
             $this->productService = $productService;
-            $this->middleware([ 'permission:products' ])->only('export' , 'generateSku' , 'downloadAttachment');
-            $this->middleware([ 'permission:products_create' ])->only('store' , 'uploadImage' , 'import');
-            $this->middleware([ 'permission:products_edit' ])->only('update');
-            $this->middleware([ 'permission:products_delete' ])->only('destroy' , 'deleteImage');
-            $this->middleware([ 'permission:products_show' ])->only('show' , 'downloadBarcode');
+//            $this->middleware([ 'permission:products' ])->only('export' , 'generateSku' , 'downloadAttachment');
+//            $this->middleware([ 'permission:products_create' ])->only('store' , 'uploadImage' , 'import');
+//            $this->middleware([ 'permission:products_edit' ])->only('update');
+//            $this->middleware([ 'permission:products_delete' ])->only('destroy' , 'deleteImage');
+//            $this->middleware([ 'permission:products_show' ])->only('show' , 'downloadBarcode');
         }
 
-        public function index(PaginateRequest $request) : \Illuminate\Http\Response | AnonymousResourceCollection | Application | ResponseFactory
+        public function index(Request $request)
         {
             try {
-                return ProductAdminResource::collection($this->productService->list($request));
+                return ProductAdminResource::collection( $this->productService->list( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                info($exception->getTraceAsString());
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function purchasableIngredients(PaginateRequest $request)
         {
             try {
-                return IngredientResource::collection($this->productService->purchasableIngredientsList($request));
+                return IngredientResource::collection( $this->productService->purchasableIngredientsList( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
-
 
         public function show(Product $product) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | ProductDetailsAdminResource | Application | ResponseFactory
         {
             try {
-                return new ProductDetailsAdminResource($this->productService->show($product));
+                return new ProductDetailsAdminResource( $this->productService->show( $product ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function store(ProductRequest $request) : \Illuminate\Http\Response | ProductAdminResource | Application | ResponseFactory
         {
             try {
-                return new ProductAdminResource($this->productService->store($request));
+                return new ProductAdminResource( $this->productService->store( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
@@ -80,128 +80,128 @@
         {
 
             try {
-                return new ProductAdminResource($this->productService->update($request , $product));
+                return new ProductAdminResource( $this->productService->update( $request , $product ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function destroy(Product $product) : \Illuminate\Http\Response | Application | ResponseFactory
         {
             try {
-                $this->productService->destroy($product);
-                return response('' , 202);
+                $this->productService->destroy( $product );
+                return response( '' , 202 );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function uploadImage(ChangeImageRequest $request , Product $product) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | ProductDetailsAdminResource | Application | ResponseFactory
         {
             try {
-                return new ProductDetailsAdminResource($this->productService->uploadImage($request , $product));
+                return new ProductDetailsAdminResource( $this->productService->uploadImage( $request , $product ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function deleteImage(Product $product , $index) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | ProductDetailsAdminResource | Application | ResponseFactory
         {
             try {
-                return new ProductDetailsAdminResource($this->productService->deleteImage($product , $index));
+                return new ProductDetailsAdminResource( $this->productService->deleteImage( $product , $index ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function export(PaginateRequest $request) : \Illuminate\Http\Response | \Symfony\Component\HttpFoundation\BinaryFileResponse | Application | ResponseFactory
         {
             try {
-                return Excel::download(new ProductExport($this->productService , $request) , 'Product.xlsx');
+                return Excel::download( new ProductExport( $this->productService , $request ) , 'Product.xlsx' );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function generateSku($barcodeMethod) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | Application | ResponseFactory
         {
             try {
-                return response([ 'data' => [ 'product_sku' => $this->productService->generateSku($barcodeMethod) ] ] , 200);
+                return response( [ 'data' => [ 'product_sku' => $this->productService->generateSku( $barcodeMethod ) ] ] , 200 );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function productOffer(ProductOfferRequest $request , Product $product) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | ProductAdminResource | Application | ResponseFactory
         {
             try {
-                return new ProductAdminResource($this->productService->productOffer($request , $product));
+                return new ProductAdminResource( $this->productService->productOffer( $request , $product ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function purchasableProducts() : \Illuminate\Foundation\Application | \Illuminate\Http\Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return simpleProductWithVariationCountResource::collection($this->productService->purchasableProducts());
+                return simpleProductWithVariationCountResource::collection( $this->productService->purchasableProducts() );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function simpleProducts() : \Illuminate\Foundation\Application | \Illuminate\Http\Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return simpleProductWithVariationCountResource::collection($this->productService->simpleProducts());
+                return simpleProductWithVariationCountResource::collection( $this->productService->simpleProducts() );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function posProduct(Product $product , Request $request) : SimpleProductDetailsResource | \Illuminate\Foundation\Application | \Illuminate\Http\Response | Application | ResponseFactory
         {
             try {
-                return new SimpleProductDetailsResource($this->productService->showWithRelation($product , $request));
+                return new SimpleProductDetailsResource( $this->productService->showWithRelation( $product , $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function downloadAttachment()
         {
             try {
-                return Response::download(public_path('/file/ProductImportSample.xlsx'));
+                return Response::download( public_path( '/file/ProductImportSample.xlsx' ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function import(ImportFileRequest $request)
         {
             try {
-                Excel::import(new ProductImport($request->file('file')), $request->file('file'));
-                return response('', 202);
-            } catch (Exception $exception) {
-                return response(['status' => false, 'message' => $exception->getMessage()], 422);
+                Excel::import( new ProductImport( $request->file( 'file' ) ) , $request->file( 'file' ) );
+                return response( '' , 202 );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function downloadBarcode(Product $product)
         {
             try {
-                return $this->productService->downloadBarcode($product);
+                return $this->productService->downloadBarcode( $product );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function barcodeProduct($barcode)
         {
             try {
-                return response([ 'data' => $this->productService->barcodeProduct($barcode) ]);
+                return response( [ 'data' => $this->productService->barcodeProduct( $barcode ) ] );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
     }

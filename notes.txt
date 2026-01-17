@@ -54,3 +54,8 @@ https://kaduroagro.smartduuka.com/#/admin/settings/company
 TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
 TRUNCATE TABLE permissions RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
+
+"http://localhost:8000/media/5/conversions/electronic_191-cover.jpg"
+http://localhost:8000/media/2/conversions/electronic_151-cover.jpg
+
+"http://localhost:8000/media/8/conversions/electronic_151-preview.jpg"

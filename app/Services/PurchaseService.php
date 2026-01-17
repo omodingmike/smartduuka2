@@ -527,7 +527,42 @@
             }
         }
 
-        public function storeStock(PurchaseRequest $request) : object
+        public function storeStock(PurchaseRequest $request)
+        {
+            try {
+                $warehouse_id = $request->input( 'warehouse_id' );
+                $products     = json_decode( $request->string( 'products' ) , TRUE );
+                $batch        = 'B' . time();
+                foreach ( $products as $p ) {
+                    $product = Product::find( $p[ 'product_id' ] );
+                    $total   = $p[ 'quantity' ] * $product->buying_price;
+                  $stock =  Stock::create( [
+                        'model_type'   => Product::class ,
+                        'model_id'     => $product->id ,
+                        'warehouse_id' => $warehouse_id ,
+                        'reference'    => 'S' . time() ,
+                        'item_type'    => Product::class ,
+                        'product_id'   => $product->id ,
+                        'item_id'      => $product->id ,
+                        'price'        => $product->buying_price ,
+                        'quantity'     => $p[ 'quantity' ] ,
+                        'discount'     => 0 ,
+                        'tax'          => 0 ,
+                        'batch'        => $batch ,
+                        'subtotal'     => $total ,
+                        'total'        => $total ,
+                        'sku'          => $product->sku ,
+                        'status'       => StockStatus::RECEIVED
+                    ] );
+                  info($stock);
+                }
+                return response()->json( [] );
+            } catch ( Exception $e ) {
+                throw new Exception( $e->getMessage() , 422 );
+            }
+        }
+
+        public function storeStock1(PurchaseRequest $request) : object
         {
             try {
                 DB::transaction( function () use ($request) {
@@ -693,7 +728,7 @@
                                 'subtotal'        => $product[ 'subtotal' ] ,
                                 'total'           => $product[ 'total' ] ,
                                 'sku'             => $product[ 'sku' ] ,
-                                'status'          => $is_distribution? StockStatus::RECEIVED: StockStatus::PENDING ,
+                                'status'          => $is_distribution ? StockStatus::RECEIVED : StockStatus::PENDING ,
                             ];
 
                             if ( $request->source_warehouse_id ) {

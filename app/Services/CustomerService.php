@@ -65,16 +65,20 @@
             try {
                 DB::transaction( function () use ($request) {
                     $this->user = User::create( [
+                        'username'          => $request->phone ,
                         'name'              => $request->name ,
-                        'username'          => $this->username( $request->email ) ,
+                        'type'              => $request->type ,
+                        'phone'             => $this->username( $request->phone ) ,
                         'password'          => bcrypt( 'password' ) ,
                         'email_verified_at' => now() ,
                         'status'            => $request->status ,
-                        'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
                     ] );
-                    if ( $request->phone ) {
-                        $this->user->phone = $request->phone;
+                    if ( $request->phone2 ) {
+                        $this->user->phone2 = $request->phone2;
+                    }
+                    if ( $request->notes ) {
+                        $this->user->notes = $request->notes;
                     }
                     if ( $request->email ) {
                         $this->user->email = $request->email;
@@ -98,12 +102,20 @@
             try {
                 if ( ! in_array( EnumRole::CUSTOMER , $this->blockRoles ) ) {
                     DB::transaction( function () use ($customer , $request) {
-                        $this->user               = $customer;
-                        $this->user->name         = $request->name;
-                        $this->user->email        = $request->email;
-                        $this->user->phone        = $request->phone;
-                        $this->user->status       = $request->status;
-                        $this->user->country_code = $request->country_code;
+                        $this->user         = $customer;
+                        $this->user->name   = $request->name;
+                        $this->user->type   = $request->type;
+                        $this->user->phone  = $request->phone;
+                        $this->user->status = $request->status;
+                        if ( $request->email ) {
+                            $this->user->email = $request->email;
+                        }
+                        if ( $request->notes ) {
+                            $this->user->notes = $request->notes;
+                        }
+                        if ( $request->phone2 ) {
+                            $this->user->phone2 = $request->phone2;
+                        }
                         if ( $request->password ) {
                             $this->user->password = Hash::make( $request->password );
                         }

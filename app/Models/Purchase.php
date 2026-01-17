@@ -26,7 +26,8 @@
             'note' ,
             'status' ,
             'sku' ,
-            'type' , 'warehouse_id' , 'source_warehouse_id','destination_warehouse_id','description'
+            'type' , 'warehouse_id' , 'source_warehouse_id' , 'destination_warehouse_id' , 'description' ,
+            'balance'
         ];
 
         protected $casts = [

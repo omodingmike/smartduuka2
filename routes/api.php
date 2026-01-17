@@ -98,7 +98,7 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
-    Route::get( '/att' , [ ProductCategoryController::class , 'index' ] );
+    Route::get( '/check' , [ StockController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );
@@ -540,8 +540,9 @@
             Route::get( '/' , [ WarehouseController::class , 'index' ] );
             Route::post( '/' , [ WarehouseController::class , 'store' ] );
             Route::get( '/show/{warehouse}' , [ WarehouseController::class , 'show' ] );
-            Route::match( [ 'post' , 'put' , 'patch' ] , '/{warehouse}' , [ WarehouseController::class , 'update' ] );
+            Route::match( [  'put' , 'patch' ] , '/{warehouse}' , [ WarehouseController::class , 'update' ] );
             Route::delete( '/{warehouse}' , [ WarehouseController::class , 'destroy' ] );
+            Route::delete( '/delete' , [ WarehouseController::class , 'destroy' ] );
             Route::get( '/export' , [ WarehouseController::class , 'export' ] );
         } );
 
@@ -611,6 +612,7 @@
             Route::get( '/export' , [ ProductController::class , 'export' ] );
         } );
         Route::resource( 'stockTransfer' , StockTransferController::class );
+
         Route::prefix( 'stock' )->name( 'stock.' )->group( function () {
             Route::get( '/' , [ StockController::class , 'index' ] );
             Route::get( '/expiryList' , [ StockController::class , 'expiryList' ] );

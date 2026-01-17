@@ -20,7 +20,7 @@
                 "sku"                        => $this->sku ,
                 "category"                   => $this->category?->name ,
                 "brand"                      => $this->brand?->name ,
-                "barcode"                    => $this->barcode?->name ,
+//                "barcode"                    => $this->barcode?->name ,
                 "user_barcode"               => $this->user_barcode ,
                 "tax"                        => AppLibrary::taxString($this?->taxes) ,
                 "flat_buying_price"          => AppLibrary::flatAmountFormat($this->buying_price) ,
@@ -44,11 +44,15 @@
                 "offer_start_date"           => $this->offer_start_date ,
                 "offer_end_date"             => $this->offer_end_date ,
                 'category_slug'              => $this->category?->slug ,
-                'price'                      => Carbon::now()->between($this->offer_start_date , $this->offer_end_date) ? AppLibrary::convertAmountFormat($price - ( ( $price / 100 ) * $this->discount )) : AppLibrary::convertAmountFormat($price) ,
-                'currency_price'             => AppLibrary::currencyAmountFormat(Carbon::now()->between($this->offer_start_date , $this->offer_end_date) ? AppLibrary::convertAmountFormat($price - ( ( $price / 100 ) * $this->discount )) : AppLibrary::convertAmountFormat($price)) ,
+                'price'                      =>$this->offer_start_date? Carbon::now()->between($this->offer_start_date , $this->offer_end_date) ?
+                    AppLibrary::convertAmountFormat($price - ( ( $price / 100 ) * $this->discount )) : AppLibrary::convertAmountFormat($price):null ,
+                'currency_price'             =>$this->offer_start_date? AppLibrary::currencyAmountFormat(Carbon::now()->between($this->offer_start_date ,
+                    $this->offer_end_date) ? AppLibrary::convertAmountFormat($price - ( ( $price / 100 ) * $this->discount )) :
+                    AppLibrary::convertAmountFormat($price)):NULL ,
                 'old_price'                  => AppLibrary::convertAmountFormat($price) ,
                 'old_currency_price'         => AppLibrary::currencyAmountFormat($price) ,
-                'discount'                   => Carbon::now()->between($this->offer_start_date , $this->offer_end_date) ? AppLibrary::convertAmountFormat(( $price / 100 ) * $this->discount) : 0 ,
+                'discount'                   =>$this->offer_start_date? Carbon::now()->between($this->offer_start_date , $this->offer_end_date) ?
+                    AppLibrary::convertAmountFormat(( $price / 100 ) * $this->discount) : 0:NULL ,
                 'discount_percentage'        => AppLibrary::convertAmountFormat($this->discount) ,
                 'flash_sale'                 => $this->add_to_flash_sale == Ask::YES ,
                 'is_offer'                   => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,

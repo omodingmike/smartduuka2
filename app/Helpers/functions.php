@@ -374,6 +374,7 @@
             Status::ACTIVE   => 'Active' ,
             Status::INACTIVE => 'Inactive' ,
             Status::CANCELED => 'Canceled' ,
+            Status::UNDER_MAINTENANCE => 'Under Maintenance' ,
             default          => NULL
         };
     }

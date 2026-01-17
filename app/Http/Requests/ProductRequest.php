@@ -3,7 +3,6 @@
     namespace App\Http\Requests;
 
     use App\Models\ProductVariation;
-    use App\Rules\IniAmount;
     use Illuminate\Foundation\Http\FormRequest;
     use Illuminate\Validation\Rule;
 
@@ -39,48 +38,23 @@
                 ] ,
                 'barcode'                    => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'type'                       => [ 'required' , 'numeric' , 'not_in:0' ] ,
+                'trackStock'                 => [ 'sometimes' , 'numeric' , 'not_in:0' ] ,
                 'product_category_id'        => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'product_brand_id'           => [ 'nullable' , 'numeric' , 'max_digits:10' ] ,
                 'weight'                     => [ 'nullable' , 'string' , 'max:100' ] ,
                 'weight_unit_id'             => [ 'nullable' , 'string' , 'max:100' ] ,
                 'tags'                       => [ 'nullable' , 'string' ] ,
                 'unit_pricing'               => [ 'nullable' , 'json' ] ,
+                'returnable'                 => [ 'nullable' , 'string' ] ,
                 'description'                => [ 'nullable' , 'string' , 'max:5000' ] ,
                 'image'                      => 'sometimes|file' ,
                 'status'                     => [ 'required' , 'numeric' , 'max:24' ] ,
                 'can_purchasable'            => [ 'required' , 'numeric' , 'max:24' ] ,
-                'refundable'                 => [ 'required' , 'numeric' , 'max:24' ] ,
                 'stock_out'                  => [ 'required' , 'numeric' , 'max:24' ] ,
-                'stock'                      => [ 'sometimes' , 'numeric' ] ,
-                'low_stock_quantity_warning' => [ 'required' , 'numeric' , 'max_digits:10' ] ,
-
-//                'barcode_id'          => [ 'sometimes' , 'numeric' , 'not_in:0' ] ,
-
-                'buying_price'  => [ 'required' , new IniAmount() ] ,
-                'selling_price' => [ 'sometimes' , new IniAmount() ] ,
-//                'tax_id[]'      => [ 'nullable' , 'numeric' , 'max_digits:10' ] ,
-
-//                'units_nature'               => [ 'required' , 'numeric' , 'max:24' ] ,
-
-//                'show_stock_out'             => [ 'required' , 'numeric' , 'max:24' ] ,
-
-//                'maximum_purchase_quantity'  => [ 'required' , 'numeric' , 'max_digits:10' ] ,
-
-//                'other_unit_id'              => 'required_if:units_nature,' . UnitsNature::MULTIPLE . '|numeric|not_in:0' ,
-//                'product_retail_prices'      => [ 'nullable' , 'array' ] ,
-//                'product_wholesale_prices'   => [ 'nullable' , 'array' ] ,
-//                'tags'                       => [ 'nullable' , 'json' ] ,
-
-//                'unit_id'                    => 'required|exists:units,id|not_in:0' ,
-//                'retail_unit_id'             => 'sometimes|exists:units,id|not_in:0' ,
-//                'mid_unit_id'                => 'sometimes|exists:units,id|not_in:0' ,
-//                'top_unit_id'                => 'sometimes|exists:units,id|not_in:0' ,
-//                'units_per_mid_unit'         => 'sometimes|numeric' ,
-//                'mid_units_per_top_unit'     => 'sometimes|numeric' ,
-//                'base_units_per_top_unit'    => 'sometimes|numeric' ,
-//                'retail_price_per_base_unit' => 'sometimes|numeric' ,
-//                'mid_unit_wholesale_price'   => 'sometimes|numeric' ,
-//                'top_unit_wholesale_price'   => 'sometimes|numeric' ,
+                'stock'                      => "required_if:trackStock,1" ,
+                'low_stock_quantity_warning' => "required_if:trackStock,1" ,
+//                'buying_price'               => [ 'required' , new IniAmount() ] ,
+//                'selling_prices'              => [ 'sometimes' , new IniAmount() ] ,
             ];
         }
 

@@ -4,7 +4,9 @@
 
     use App\Enums\Ask;
     use App\Enums\BarcodeType;
+    use App\Enums\MediaEnum;
     use App\Enums\Status;
+    use App\Enums\StockStatus;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductOfferRequest;
@@ -17,8 +19,10 @@
     use App\Models\ProductTag;
     use App\Models\ProductTax;
     use App\Models\ProductVariation;
-    use App\Models\RetailPrice;
+    use App\Models\Stock;
     use App\Models\Warehouse;
+    use App\Models\WholeSalePrice;
+    use App\Traits\SaveMedia;
     use Carbon\Carbon;
     use Exception;
     use Illuminate\Http\Request;
@@ -28,11 +32,11 @@
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Str;
     use Picqer\Barcode\BarcodeGeneratorJPG;
-    use Picqer\Barcode\BarcodeGeneratorPNG;
-    use Vanilla\Support\Collection;
 
     class ProductService
     {
+        use SaveMedia;
+
         public object   $product;
         protected array $productFilter = [
             'name' ,
@@ -58,56 +62,18 @@
         /**
          * @throws Exception
          */
-        public function list(PaginateRequest $request)
+        public function list(Request $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $perPage = $request->input( 'perPage' );
+                $page    = $request->input( 'page' );
+                $query   = $request->input( 'query' );
 
-                $products_query = Product::with( [ 'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'sellingUnits' , 'prices.unit' ] );
-                $user           = Auth::user();
-                if ( isDistributor() ) {
-                    $products_query->whereHas( 'stockItems' , function ($query) use ($user) {
-                        $query->where( 'user_id' , $user->id )
-                              ->where( 'quantity' , '>' , 0 );
-                    } );
-                }
-                $data = $products_query->withReviewRating()
-                                       ->where
-                                       ( function ($query) use ($requests) {
-                                           foreach ( $requests as $key => $request ) {
-                                               if ( in_array( $key , $this->productFilter ) ) {
-                                                   if ( $key == "except" ) {
-                                                       $explodes = explode( '|' , $request );
-                                                       if ( count( $explodes ) ) {
-                                                           foreach ( $explodes as $explode ) {
-                                                               $query->where( 'id' , '!=' , $explode );
-                                                           }
-                                                       }
-                                                   }
-                                                   else {
-                                                       if ( $key == "product_category_id" ) {
-                                                           $query->where( $key , $request );
-                                                       }
-                                                       elseif ( $key == "tax_id" ) {
-                                                           $query->whereHas( 'taxes' , function ($q) use ($key , $request) {
-                                                               $q->where( $key , $request );
-                                                           } );
-                                                       }
-                                                       else {
-                                                           $query->where( $key , 'like' , '%' . $request . '%' );
-                                                       }
-                                                   }
-                                               }
-                                           }
-                                       } )->orderBy( $orderColumn , $orderType )->$method(
-                        $methodValue
-                    );
-                return $data;
+                $products_query = Product::with( [ 'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'sellingUnits' , 'prices.unit','stocks' ] );
+                return $products_query->orderBy( 'created_at','desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
+
             } catch ( Exception $exception ) {
+                info( $exception->getMessage() );
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
@@ -161,87 +127,134 @@
         {
             try {
                 DB::transaction( function () use ($request) {
-                    $barcode_value = NULL;
-                    $data          = $request->validated();
-//                    if ( $request->barcode_id === BarcodeType::EAN_13 ) {
-//                        $barcode_value = str_pad( $request->sku , 12 , '0' , STR_PAD_LEFT );
-//                    }
-//                    if ( $request->barcode_id === BarcodeType::UPC_A ) {
-//                        $barcode_value = str_pad( $request->sku , 11 , '0' , STR_PAD_LEFT );
-//                    }
-
-//                    $this->product = Product::create( Arr::except( $request->validated() , [ 'tags' ] ) + [ 'slug' => Str::slug( $request->name ) , 'variation_price' =>
-//                            $request->selling_price
-//                        ] );
-
-                    $this->product = Product::create( [
+                    $data              = $request->validated();
+                    $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
+                    $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
+                    $track_stock       = $data[ 'trackStock' ];
+                    $product           = Product::create( [
                         'name'                       => $data[ 'name' ] ,
+                        'slug'                       => $data[ 'name' ] ,
+                        'track_stock'                => $track_stock ,
+                        'type'                       => $data[ 'type' ] ,
                         'sku'                        => $data[ 'sku' ] ,
+                        'barcode'                    => $data[ 'sku' ] ,
                         'product_category_id'        => $data[ 'product_category_id' ] ,
                         'product_brand_id'           => $data[ 'product_brand_id' ] ,
                         'weight'                     => $data[ 'weight' ] ,
+                        'weight_unit_id'             => $data[ 'weight_unit_id' ] ,
                         'status'                     => $data[ 'status' ] ,
                         'can_purchasable'            => $data[ 'can_purchasable' ] ,
                         'low_stock_quantity_warning' => $data[ 'low_stock_quantity_warning' ] ,
-                        'refundable'                 => $data[ 'refundable' ] ,
+                        'returnable'                 => $data[ 'returnable' ] ,
                         'description'                => $data[ 'description' ] ,
+                        'refundable'                 => Ask::YES ,
+                        'buying_price'               => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
+                        'selling_price'              => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
+                    if ( $track_stock ) {
+                        $warehouse_id = $request->input( 'warehouse_id' );
+                        if ( ! $warehouse_id ) {
+                            $warehouse    = Warehouse::find( 1 );
+                            $warehouse_id = $warehouse->id;
+                            if ( ! $warehouse ) {
+                                $warehouse    = Warehouse::firstOrCreate( [ 'id' => 1 ] , [
+                                    'name'     => 'Shop Storage' ,
+                                    'status'   => Status::ACTIVE ,
+                                    'phone'    => '0701234567' ,
+                                    'email'    => 'shop@example.com' ,
+                                    'location' => 'Kampala' ,
+                                    'manager'  => 'Manager' ,
+                                    'capacity' => '2 sqr ft' ,
+                                ] );
+                                $warehouse_id = $warehouse->id;
+                            }
+                        }
 
-                    if ( $request->selling_units ) {
-                        foreach ( $request->selling_units as $selling_unit ) {
-                            if ( ! $selling_unit ) continue;
-                            $this->product->sellingUnits()->attach( $selling_unit );
+                        $total = $retail_pricing[ 0 ][ 'buyingPrice' ] * $data[ 'stock' ];
+                        Stock::create( [
+                            'model_type'   => Product::class ,
+                            'model_id'     => $product->id ,
+                            'warehouse_id' => $warehouse_id ,
+                            'reference'    => 'S' . time() ,
+                            'item_type'    => Product::class ,
+                            'product_id'   => $product->id ,
+                            'item_id'      => $product->id ,
+                            'price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
+                            'quantity'     => $data[ 'stock' ] ,
+                            'discount'     => 0 ,
+                            'tax'          => 0 ,
+                            'subtotal'     => $total ,
+                            'total'        => $total ,
+                            'sku'          => $data[ 'sku' ] ,
+                            'status'       => StockStatus::RECEIVED
+                        ] );
+                    }
+
+                    if ( $wholesale_pricing ) {
+                        foreach ( $wholesale_pricing as $wholesale_price ) {
+                            WholeSalePrice::create( [
+                                'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
+                                'price'       => $wholesale_price[ 'price' ] ,
+                                'product_id'  => $product->id ,
+                            ] );
                         }
                     }
+
+//                    if ( $request->selling_units ) {
+//                        foreach ( $request->selling_units as $selling_unit ) {
+//                            if ( ! $selling_unit ) continue;
+//                            $this->product->sellingUnits()->attach( $selling_unit );
+//                        }
+//                    }
 
                     if ( $request->tags ) {
-                        $tagItems = json_decode( $request->tags , TRUE );
+                        $tagItems = explode( ',' , $request->tags );
                         foreach ( $tagItems as $tagItem ) {
                             ProductTag::create( [
-                                'product_id' => $this->product->id ,
-                                'name'       => $tagItem[ 'text' ]
+                                'product_id' => $product->id ,
+                                'name'       => trim( $tagItem )
                             ] );
                         }
                     }
-                    if ( $request->selling_prices ) {
-                        foreach ( $request->selling_prices as $selling_price ) {
-                            if ( ! $selling_price[ 'unit_id' ] ) continue;
-                            RetailPrice::create( [
-                                'type'       => $selling_price[ 'type' ] ,
-                                'product_id' => $this->product->id ,
-                                'unit_id'    => $selling_price[ 'unit_id' ] ,
-                                'price'      => $selling_price[ 'price' ]
-                            ] );
-                        }
-                    }
+//                    if ( $request->selling_prices ) {
+//                        foreach ( $request->selling_prices as $selling_price ) {
+//                            if ( ! $selling_price[ 'unit_id' ] ) continue;
+//                            RetailPrice::create( [
+//                                'type'       => $selling_price[ 'type' ] ,
+//                                'product_id' => $this->product->id ,
+//                                'unit_id'    => $selling_price[ 'unit_id' ] ,
+//                                'price'      => $selling_price[ 'price' ]
+//                            ] );
+//                        }
+//                    }
 
-                    if ( $request->tax_id ) {
-                        foreach ( $request->tax_id as $tax ) {
-                            ProductTax::create( [
-                                'product_id' => $this->product->id ,
-                                'tax_id'     => $tax
-                            ] );
-                        }
-                    }
+//                    if ( $request->tax_id ) {
+//                        foreach ( $request->tax_id as $tax ) {
+//                            ProductTax::create( [
+//                                'product_id' => $this->product->id ,
+//                                'tax_id'     => $tax
+//                            ] );
+//                        }
+//                    }
 
-                    $generator = new BarcodeGeneratorPNG();
-                    $black     = [ 0 , 0 , 0 ];
-                    $barcode   = NULL;
-                    if ( $this->product->barcode_id == BarcodeType::EAN_13 ) {
-                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
-                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
-                    }
-                    if ( $this->product->barcode_id == BarcodeType::UPC_A ) {
-                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
-                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
-                    }
-                    $tempFilePath = storage_path( 'app/public/barcode.png' );
-                    file_put_contents( $tempFilePath , $barcode );
-                    $this->product->addMedia( $tempFilePath )->toMediaCollection( 'product-barcode' );
+//                    $generator = new BarcodeGeneratorPNG();
+//                    $black     = [ 0 , 0 , 0 ];
+//                    $barcode   = NULL;
+//                    if ( $this->product->barcode_id == BarcodeType::EAN_13 ) {
+//                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
+//                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
+//                    }
+//                    if ( $this->product->barcode_id == BarcodeType::UPC_A ) {
+//                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
+//                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
+//                    }
+//                    $tempFilePath = storage_path( 'app/public/barcode.png' );
+//                    file_put_contents( $tempFilePath , $barcode );
+                    $this->saveMedia( $request , $product , MediaEnum::PRODUCTS_MEDIA_COLLECTION );
+                    $this->product = $product;
                 } );
                 return $this->product;
             } catch ( Exception $exception ) {
-                info( $exception->getMessage() );
                 Log::info( $exception->getMessage() );
                 DB::rollBack();
                 throw new Exception( $exception->getMessage() , 422 );
@@ -407,7 +420,7 @@
         public function uploadImage(ChangeImageRequest $request , Product $product) : Product
         {
             try {
-                $product->addMedia( $request->image )->toMediaCollection( 'product' );
+                $this->saveMedia( $request , $product , MediaEnum::PRODUCTS_MEDIA_COLLECTION );
                 return $product;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
