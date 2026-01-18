@@ -21,5 +21,12 @@
         {
             $this->addMediaCollection( $this->getMediaCollection() )->singleFile();
         }
+        public function getImageAttribute() : string
+        {
+            if ( ! empty( $this->getLastMediaUrl( $this->getMediaCollection() ) ) ) {
+                return asset( $this->getLastMediaUrl( $this->getMediaCollection() ) );
+            }
+            return asset( 'images/default/product/thumb.png' );
+        }
 
     }

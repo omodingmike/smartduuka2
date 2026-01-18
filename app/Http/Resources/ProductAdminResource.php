@@ -31,7 +31,7 @@
                 "type"                       => $this->type ,
                 "barcode"                    => $this->barcode ,
 //                "stocks"                     => $this->stocks ,
-                "stock"                      => number_format( $this->stocks->sum( 'quantity' ) ) ,
+                "stock"                      => $this->stocks->sum( 'quantity' ) ,
                 "slug"                       => $this->slug ,
                 "product_category_id"        => $this->product_category_id ,
                 "barcode_id"                 => $this->barcode_id ,

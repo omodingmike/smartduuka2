@@ -98,7 +98,7 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
-    Route::get( '/check' , [ StockController::class , 'index' ] );
+    Route::get( '/check' , [ DamageController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );
@@ -633,6 +633,7 @@
                 Route::get( '/' , 'index' )->name( 'index' );
                 Route::post( '/' , 'store' )->name( 'store' );
                 Route::get( '/show/{damage}' , 'show' );
+                Route::post( '/status/{damage}' , 'updateStatus' );
                 Route::get( '/edit/{damage}' , 'edit' );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/update/{damage}' , 'update' );
                 Route::delete( '/{damage}' , 'destroy' );

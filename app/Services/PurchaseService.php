@@ -536,7 +536,7 @@
                 foreach ( $products as $p ) {
                     $product = Product::find( $p[ 'product_id' ] );
                     $total   = $p[ 'quantity' ] * $product->buying_price;
-                  $stock =  Stock::create( [
+                    $stock   = Stock::create( [
                         'model_type'   => Product::class ,
                         'model_id'     => $product->id ,
                         'warehouse_id' => $warehouse_id ,
@@ -554,7 +554,7 @@
                         'sku'          => $product->sku ,
                         'status'       => StockStatus::RECEIVED
                     ] );
-                  info($stock);
+                    info( $stock );
                 }
                 return response()->json( [] );
             } catch ( Exception $e ) {
@@ -788,52 +788,58 @@
             try {
                 DB::transaction( function () use ($request) {
                     if ( $request->products ) {
-                        $this->purchase = Purchase::create( [
-                            'supplier_id'    => $request->supplier_id ?? Supplier::first()->id ,
-                            'date'           => now() ,
-                            'reference_no'   => time() ,
-                            'subtotal'       => 0 ,
-                            'tax'            => 0 ,
-                            'discount'       => 0 ,
-                            'total'          => 0 ,
-                            'type'           => 20 ,
-                            'note'           => $request->notes ? $request->notes : '' ,
-                            'status'         => 15 ,
-                            'payment_status' => PurchasePaymentStatus::FULLY_PAID
-                        ] );
-                        $model_id       = $this->purchase->id;
+//                        $products       = json_decode( $request->products , TRUE );
+//                        $this->purchase = Purchase::create( [
+//                            'supplier_id'    => $request->supplier_id ?? Supplier::first()->id ,
+//                            'supplier_id'    => 0 ,
+//                            'date'           => now() ,
+//                            'reference_no'   => time() ,
+//                            'subtotal'       => 0 ,
+//                            'tax'            => 0 ,
+//                            'discount'       => 0 ,
+//                            'total'          => 0 ,
+//                            'type'           => 20 ,
+//                            'note'           => $request->notes ? $request->notes : '' ,
+//                            'status'         => 15 ,
+//                            'payment_status' => PurchasePaymentStatus::FULLY_PAID
+//                        ] );
+//                        $model_id       = $this->purchase->id;
 
                         $products = json_decode( $request->products , TRUE );
                         $batch    = "B" . time();
                         $type     = $request->type;
                         foreach ( $products as $product ) {
-                            $base_product            = Product::find( $product[ 'product_id' ] );
-                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
-                            $this->stock             = Stock::create( [
+                            $base_product = Product::find( $product[ 'product_id' ] );
+//                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
+                            $stock       = $base_product->stocks->sum( 'quantity' );
+                            $difference  = $product[ 'physical_count' ] - $stock;
+                            $total = $base_product->buying_price * $difference;
+                            $this->stock = Stock::create( [
                                 'model_type'      => Purchase::class ,
-                                'model_id'        => $model_id ,
+                                'model_id'        => 1 ,
                                 'creator'         => auth()->id() ,
                                 'batch'           => $batch ,
                                 'reference'       => ( $type == 'transfer' ? 'ST' : ( $type == 'reconciliation' ? 'RST' : 'SR' ) ) . time() ,
-                                'warehouse_id'    => $request->source_warehouse_id ,
+                                'warehouse_id'    => $request->warehouse_id ,
                                 'description'     => $product[ 'notes' ] ,
-                                'item_type'       => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
+//                                'item_type'       => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
+                                'item_type'       => Product::class ,
                                 'product_id'      => $product[ 'product_id' ] ,
-                                'item_id'         => $product[ 'item_id' ] ,
-                                'system_stock'    => $product[ 'topStock' ] ,
-                                'physical_stock'  => $product[ 'quantity' ] ,
-                                'difference'      => $product[ 'difference' ] ,
-                                'unit_id'         => $product[ 'unit_id' ] ,
-                                'discrepancy'     => $product[ 'discrepancy' ] ,
-                                'classification'  => $product[ 'classification' ] ,
-                                'variation_names' => $product[ 'variation_names' ] ,
-                                'price'           => $product[ 'price' ] ,
-                                'quantity'        => $base_units_per_top_unit ? $product[ 'difference' ] * $base_units_per_top_unit : $product[ 'difference' ] ,
-                                'discount'        => $product[ 'total_discount' ] ,
-                                'tax'             => $product[ 'total_tax' ] ,
-                                'subtotal'        => $product[ 'subtotal' ] ,
-                                'total'           => $product[ 'total' ] ,
-                                'sku'             => $product[ 'sku' ] ,
+                                'item_id'         => $product[ 'product_id' ] ,
+                                'system_stock'    => $stock ,
+                                'physical_stock'  => $product[ 'physical_count' ] ,
+                                'difference'      => $difference ,
+                                'unit_id'         => 1,
+                                'discrepancy'     => 'discrepancy'  ,
+                                'classification'  =>  'classification'  ,
+                                'variation_names' =>  'variation_names'  ,
+                                'price'           => $base_product->buying_price * $difference ,
+                                'quantity'        => $difference ,
+                                'discount'        => 0 ,
+                                'tax'             => 0 ,
+                                'subtotal'        => $total ,
+                                'total'           => $total ,
+                                'sku'             => $base_product->sku ,
                                 'status'          => StockStatus::RECEIVED
                             ] );
                             activityLog( "Added stock Reconciliation for: $base_product->name" );

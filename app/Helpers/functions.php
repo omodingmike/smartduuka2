@@ -107,7 +107,8 @@
         if ( $setting == 1 ) {
             return TRUE;
         }
-        return FALSE;
+        return TRUE;
+//        return FALSE;
     }
 
     function moduleEnabled(string $key , string $group = 'module') : bool

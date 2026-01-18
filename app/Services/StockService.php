@@ -212,7 +212,7 @@
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
 
-                $stocks = Stock::with( [ 'product.sellingUnits:id,code' , 'product.unit:id,code' , 'user:id,name' ] )
+                $stocks = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' , 'user:id,name' ] )
                                ->when( isset( $requests[ 'warehouse_id' ] ) , function ($query) use ($requests) {
                                    $query->where( 'warehouse_id' , $requests[ 'warehouse_id' ] );
                                } )
