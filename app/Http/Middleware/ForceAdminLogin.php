@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpFoundation\Response;
 
 class ForceAdminLogin
@@ -16,9 +17,13 @@ class ForceAdminLogin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->isLocal() && !auth()->check()) {
+        if (app()->isLocal() && !auth('sanctum')->check()) {
             $user = User::first();
-            auth()->login($user);
+
+            if ($user) {
+                // This is the magic line for Sanctum
+                Sanctum::actingAs($user, ['*']);
+            }
         }
 
         return $next($request);

@@ -20,7 +20,7 @@
 //                              'subscribed' => SubscribedMiddleware::class ,
 //                              'after'      => AfterMiddleware::class ,
                               'permission' => PermissionMiddleware::class ,
-                              'admin'      => ForceAdminLogin::class ,
+                              'local.auth'      => ForceAdminLogin::class ,
                           ] );
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
