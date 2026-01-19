@@ -1,5 +1,6 @@
 <?php
 
+    use App\Http\Middleware\ForceAdminLogin;
     use App\Http\Middleware\PermissionMiddleware;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@
 //                              'subscribed' => SubscribedMiddleware::class ,
 //                              'after'      => AfterMiddleware::class ,
                               'permission' => PermissionMiddleware::class ,
+                              'admin'      => ForceAdminLogin::class ,
                           ] );
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
