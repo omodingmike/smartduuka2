@@ -4,7 +4,8 @@
 
     interface StockType
     {
-        const TRANSFER     = 'transfer';
-        const REQUESTS     = 'requests';
-        const DISTRIBUTION = 'distribution';
+        const TRANSFER       = 2; //transfer
+        const REQUESTS       = 3; //requests
+        const DISTRIBUTION   = 4; //distribution
+        const RECONCILIATION = 5; //reconciliation
     }

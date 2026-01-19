@@ -31,119 +31,108 @@
         /**
          * @throws Exception
          */
+
         public function list(PaginateRequest $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
-                $stocks      = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' ] )
-                                    ->when( isset( $requests[ 'warehouse_id' ] ) , function ($query) use ($requests) {
-                                        $query->where( 'warehouse_id' , $requests[ 'warehouse_id' ] );
-                                    } )->where( 'status' , StockStatus::RECEIVED )
-                                    ->whereNull( 'user_id' )
-                                    ->where( function ($query) use ($requests) {
-                                        $query->where( 'model_type' , '<>' , Ingredient::class );
-                                        foreach ( $requests as $key => $request ) {
-                                            if ( in_array( $key , $this->stockFilter ) ) {
-                                                if ( $key == 'product_name' ) {
-                                                    $query->whereHas( 'product' , function ($query) use ($request) {
-                                                        $query->where( 'name' , 'like' , '%' . $request . '%' );
-                                                    } )->get();
-                                                }
-                                                else {
-                                                    $query->where( $key , 'like' , '%' . $request . '%' );
-                                                }
-                                            }
-                                        }
-                                    } )
-                                    ->orderBy( $orderColumn , $orderType )->get();
-                if ( ! blank( $stocks ) ) {
-                    if ( enabledWarehouse() ) {
-                        $stocks->groupBy( function ($item) {
-                            return $item->product_id . '-' . $item->warehouse_id;
-                        } )->map( function ($group) {
-                            $first = $group->first();
-                            if ( $first[ 'product' ] ) {
-                                $item = [
-                                    'product_id'               => $first[ 'product_id' ] ,
-                                    'product_name'             => $first[ 'product' ][ 'name' ] ,
-                                    'unit'                     => $first[ 'product' ][ 'unit' ] ,
-                                    'other_unit'               => $first->product->otherUnit ,
-                                    'units_nature'             => $first->product->units_nature ,
-                                    'variation_names'          => $first[ 'variation_names' ] ,
-                                    'status'                   => $first[ 'product' ][ 'status' ] ,
-                                    'warehouse_id'             => $first[ 'warehouse_id' ] ,
-                                    'reference'                => $first[ 'reference' ] ,
-                                    'delivery'                 => $first[ 'delivery' ] ,
-                                    'system_stock'             => $first[ 'system_stock' ] ,
-                                    'physical_stock'           => $first[ 'physical_stock' ] ,
-                                    'difference'               => $first[ 'difference' ] ,
-                                    'discrepancy'              => $first[ 'discrepancy' ] ,
-                                    'classification'           => $first[ 'classification' ] ,
-                                    'creator'                  => $first[ 'user' ] ,
-                                    'batch'                    => $first[ 'batch' ] ,
-                                    'weight'                   => $first[ 'product' ][ 'weight' ] ,
-                                    'source_warehouse_id'      => $first[ 'source_warehouse_id' ] ,
-                                    'total'                    => $first[ 'total' ] ,
-                                    'destination_warehouse_id' => $first[ 'destination_warehouse_id' ] ,
-                                    'created_at'               => $first[ 'created_at' ] ,
-                                    'description'              => $first[ 'description' ] ,
-                                    'stock'                    => $first[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $group->sum( 'quantity' ) ,
-                                    'other_stock'              => $first[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $group->sum( 'other_quantity' ) ,
-                                ];
-                                if ( $item[ 'stock' ] > 0 ) {
-                                    $this->items[] = $item;
+                $filter      = $request->validated(); // Use validated data
+                $perPage     = $request->integer( 'per_page' , 10 );
+                $isPaginated = $request->boolean( 'paginate' );
+
+                $query = Stock::with( [
+                    'product.sellingUnits:id,short_name' ,
+                    'product.unit:id,short_name' ,
+                    'products' ,
+                    'user'
+                ] )
+                              ->where( 'status' , StockStatus::RECEIVED )
+                              ->whereNull( 'user_id' )
+                              ->where( 'model_type' , '<>' , Ingredient::class )
+                              ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
+                    // Dynamic Filters
+                              ->where( function ($q) use ($request) {
+                        foreach ( $this->stockFilter as $field ) {
+                            if ( $value = $request->get( $field ) ) {
+                                if ( $field === 'product_name' ) {
+                                    $q->whereHas( 'product' , fn($pq) => $pq->where( 'name' , 'like' , "%{$value}%" ) );
+                                }
+                                else {
+                                    $q->where( $field , 'like' , "%{$value}%" );
                                 }
                             }
-                        } );
-                    }
-                    else {
-                        $stocks->groupBy( function ($item) {
-                            return $item->product_id . '-' . $item->item_type. '-' . $item->variation_names;
-                        } )->map( function ($item) {
-                            if ( $item->first()[ 'product' ] ) {
-                                $item = [
-                                    'product_id'               => $item->first()[ 'product_id' ] ,
-                                    'product_name'             => $item->first()[ 'product' ][ 'name' ] ,
-                                    'unit'                     => $item->first()[ 'product' ][ 'unit' ] ,
-                                    'other_unit'               => $item->first()->product->otherUnit ,
-                                    'units_nature'             => $item->first()->product->units_nature ,
-                                    'variation_names'          => $item->first()[ 'variation_names' ] ,
-                                    'status'                   => $item->first()[ 'product' ][ 'status' ] ,
-                                    'warehouse_id'             => $item->first()[ 'warehouse_id' ] ,
-                                    'reference'                => $item->first()[ 'reference' ] ,
-                                    'weight'                   => $item->first()[ 'product' ][ 'weight' ] ,
-                                    'delivery'                 => $item->first()[ 'delivery' ] ,
-                                    'batch'                    => $item->first()[ 'batch' ] ,
-                                    'source_warehouse_id'      => $item->first()[ 'source_warehouse_id' ] ,
-                                    'total'                    => $item->first()[ 'total' ] ,
-                                    'destination_warehouse_id' => $item->first()[ 'destination_warehouse_id' ] ,
-                                    'created_at'               => $item->first()[ 'created_at' ] ,
-                                    'description'              => $item->first()[ 'description' ] ,
-                                    'stock'                    => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? "N/C" : $item->sum( 'quantity' ) ,
-                                    'other_stock'              => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? "N/C" : $item->sum( 'other_quantity' ) ,
-                                ];
-                                if ( $item[ 'stock' ] > 0 ) {
-                                    $this->items[] = $item;
-                                }
-                            }
-                        } );
-                    }
+                        }
+                    } )
+                              ->orderBy( $request->get( 'order_column' , 'id' ) , $request->get( 'order_type' , 'desc' ) );
+
+                // Fetch data
+                $stocks = $query->get();
+
+                if ( $stocks->isEmpty() ) {
+                    return $isPaginated ? $this->paginate( [] , $perPage ) : [];
                 }
-                else {
-                    $this->items = [];
+
+                // Grouping Logic
+                $groupCriteria = enabledWarehouse()
+                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
+                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
+
+                $processedItems = $stocks->groupBy( $groupCriteria )
+                                         ->map( fn($group) => $this->transformStockGroup( $group ) )
+                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
+                                         ->values();
+
+                if ( $isPaginated ) {
+                    return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock' ) );
                 }
-                if ( $method == 'paginate' ) {
-                    return $this->paginate( $this->items , $methodValue , NULL , URL::to( '/' ) . '/api/admin/stock' );
-                }
-                return $this->items;
+
+                return $processedItems;
+
             } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
+                Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
+        }
+
+        protected function transformStockGroup($group)
+        {
+            $first = $group->first();
+            if ( ! $first->product ) return NULL;
+
+            $isPurchasable = $first->product->can_purchasable !== Ask::NO;
+            $status        = $first->status; // This is now your Enum object
+
+            return [
+                'product_id'               => $first->product_id ,
+                'products'                 => $first->products ,
+                'stock_status'             => [
+                    'value' => $status->value ,
+                    'label' => $status->label() ,
+                ] ,
+                'product_name'             => $first->product->name ,
+                'unit'                     => $first->product->unit ,
+                'other_unit'               => $first->product->otherUnit ,
+                'units_nature'             => $first->product->units_nature ,
+                'variation_names'          => $first->variation_names ,
+                'status'                   => $first->product->status ,
+                'warehouse_id'             => $first->warehouse_id ,
+                'reference'                => $first->reference ,
+                'delivery'                 => $first->delivery ,
+                'system_stock'             => $first->system_stock ,
+                'physical_stock'           => $first->physical_stock ,
+                'difference'               => $first->difference ,
+                'discrepancy'              => $first->discrepancy ,
+                'classification'           => $first->classification ,
+                'creator'                  => $first->user ,
+                'batch'                    => $first->batch ,
+                'weight'                   => $first->product->weight ,
+                'source_warehouse_id'      => $first->source_warehouse_id ,
+                'total'                    => $first->total ,
+                'destination_warehouse_id' => $first->destination_warehouse_id ,
+                'created_at'               => $first->created_at ,
+                'description'              => $first->description ,
+                'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
+                'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+            ];
         }
 
         public function expiryList(PaginateRequest $request)
@@ -154,7 +143,7 @@
                 $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
-                $stocks      = Stock::with( [ 'product.sellingUnits:id,code' , 'product.unit:id,code' , 'warehouse:name,id' ] )
+                $stocks      = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' , 'warehouse:name,id' ] )
                                     ->when( isset( $requests[ 'warehouse_id' ] ) , function ($query) use ($requests) {
                                         $query->where( 'warehouse_id' , $requests[ 'warehouse_id' ] );
                                     } )
@@ -203,78 +192,88 @@
             }
         }
 
-        public function transfers(PaginateRequest $request)
+        public function transfers(Request $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $perPage     = $request->integer( 'per_page' , 10 );
+                $isPaginated = $request->boolean( 'paginate' );
+                $orderColumn = $request->get( 'order_column' , 'id' );
+                $orderType   = $request->get( 'order_type' , 'desc' );
 
-                $stocks = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' , 'user:id,name' ] )
-                               ->when( isset( $requests[ 'warehouse_id' ] ) , function ($query) use ($requests) {
-                                   $query->where( 'warehouse_id' , $requests[ 'warehouse_id' ] );
-                               } )
-                               ->when( $requests[ 'type' ] == 'requests' , function ($query) use ($requests) {
-                                   $query->where( 'reference' , 'like' , 'SR%' );
-                               } )
-                               ->when( isset( $requests[ 'discrepancy' ] ) , function ($query) use ($requests) {
-                                   $query->where( 'discrepancy' , $requests[ 'discrepancy' ] );
-                               } )
-                               ->when( isset( $requests[ 'classification' ] ) , function ($query) use ($requests) {
-                                   $query->where( 'classification' , $requests[ 'classification' ] );
-                               } )
-                               ->when( $requests[ 'type' ] == 'transfer' , function ($query) use ($requests) {
-                                   $query->where( 'reference' , 'like' , 'ST%' );
-                               } )->when( $requests[ 'type' ] == 'reconciliation' , function ($query) use ($requests) {
-                        $query->where( 'reference' , 'like' , 'RST%' );
+                $stocks = Stock::with( [
+                    'product.sellingUnits:id,short_name' ,
+                    'product.unit:id,short_name' ,
+                    'user:id,name' ,
+                    'products'
+                ] )
+                               ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
+                               ->when( $request->type , fn($q) => $q->where( 'type' , $request->type ) )
+                               ->when( $request->discrepancy , fn($q) => $q->where( 'discrepancy' , $request->discrepancy ) )
+                               ->when( $request->classification , fn($q) => $q->where( 'classification' , $request->classification ) )
+                    // Reference Prefixes
+                               ->when( $request->type == 'transfer' , fn($q) => $q->where( 'reference' , 'like' , 'ST%' ) )
+                               ->when( $request->type == 'reconciliation' , fn($q) => $q->where( 'reference' , 'like' , 'RST%' ) )
+                    // Search Filters
+                               ->where( function ($query) use ($request) {
+                        $query->where( 'model_type' , '<>' , Ingredient::class );
+                        foreach ( $this->stockFilter as $filterKey ) {
+                            if ( $value = $request->get( $filterKey ) ) {
+                                if ( $filterKey == 'product_name' ) {
+                                    $query->whereHas( 'product' , fn($pq) => $pq->where( 'name' , 'like' , "%{$value}%" ) );
+                                }
+                                else {
+                                    $query->where( $filterKey , 'like' , "%{$value}%" );
+                                }
+                            }
+                        }
                     } )
-                               ->where( function ($query) use ($requests) {
-                                   $query->where( 'model_type' , '<>' , Ingredient::class );
-                                   foreach ( $requests as $key => $request ) {
-                                       if ( in_array( $key , $this->stockFilter ) ) {
-                                           if ( $key == 'product_name' ) {
-                                               $query->whereHas( 'product' , function ($query) use ($request) {
-                                                   $query->where( 'name' , 'like' , '%' . $request . '%' );
-                                               } )->get();
-                                           }
-                                           else {
-                                               $query->where( $key , 'like' , '%' . $request . '%' );
-                                           }
-                                       }
-                                   }
-                               } )->orderBy( $orderColumn , $orderType )->get();
+                               ->orderBy( $orderColumn , $orderType )
+                               ->get();
 
-                if ( ! blank( $stocks ) ) {
-                    $stocks->groupBy( 'batch' )?->map( function ($item) {
-                        if ( $item->first()[ 'product' ] ) {
+                if ( $stocks->isNotEmpty() ) {
+                    // Clear items before mapping to avoid duplication if this is a class property
+                    $this->items = [];
+
+                    $stocks->groupBy( 'batch' )->each( function ($group) {
+                        $first = $group->first();
+
+                        // Ensure product exists
+                        if ( $first && $first->product ) {
+                            $status        = $first->status; // This is the StockStatus Enum instance
+                            $isPurchasable = $first->product->can_purchasable !== Ask::NO;
+
                             $this->items[] = [
-                                'product_id'               => $item->first()[ 'product_id' ] ,
-                                'product_name'             => $item->first()[ 'product' ][ 'name' ] ,
-                                'unit'                     => $item->first()[ 'product' ][ 'unit' ] ,
-                                'weight'                   => $item->first()[ 'product' ][ 'weight' ] ,
-                                'other_unit'               => $item->first()->product->otherUnit ,
-                                'units_nature'             => $item->first()->product->units_nature ,
-                                'variation_names'          => $item->first()[ 'variation_names' ] ,
-                                'status'                   => $item->first()[ 'status' ] ,
-                                'warehouse_id'             => $item->first()[ 'warehouse_id' ] ,
-                                'reference'                => $item->first()[ 'reference' ] ,
-                                'system_stock'             => $item->first()[ 'system_stock' ] ,
-                                'physical_stock'           => $item->first()[ 'physical_stock' ] ,
-                                'difference'               => $item->first()[ 'difference' ] ,
-                                'discrepancy'              => $item->first()[ 'discrepancy' ] ,
-                                'classification'           => $item->first()[ 'classification' ] ,
-                                'creator'                  => $item->first()[ 'user' ] ,
-                                'delivery'                 => $item->first()[ 'delivery' ] ,
-                                'source_warehouse_id'      => $item->first()[ 'source_warehouse_id' ] ,
-                                'batch'                    => $item->first()[ 'batch' ] ,
-                                'total'                    => $item->first()[ 'total' ] ,
-                                'destination_warehouse_id' => $item->first()[ 'destination_warehouse_id' ] ,
-                                'created_at'               => $item->first()[ 'created_at' ] ,
-                                'description'              => $item->first()[ 'description' ] ,
-                                'stock'                    => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? "N/C" : $item->sum( 'quantity' ) ,
-                                'other_stock'              => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? "N/C" : $item->sum( 'other_quantity' ) ,
+                                'product_id'               => $first->product_id ,
+                                'products'                 => $first->products ,
+                                'product_name'             => $first->product->name ,
+                                'unit'                     => $first->product->unit ,
+                                'weight'                   => $first->product->weight ,
+                                'other_unit'               => $first->product->otherUnit ,
+                                'units_nature'             => $first->product->units_nature ,
+                                'variation_names'          => $first->variation_names ,
+                                // Structured Enum Output
+                                'stock_status'             => [
+                                    'value' => $status->value ,
+                                    'label' => $status->label() ,
+                                ] ,
+                                'status'                   => $status->value , // Keeping raw value for legacy compatibility
+                                'warehouse_id'             => $first->warehouse_id ,
+                                'reference'                => $first->reference ,
+                                'system_stock'             => $first->system_stock ,
+                                'physical_stock'           => $first->physical_stock ,
+                                'difference'               => $first->difference ,
+                                'discrepancy'              => $first->discrepancy ,
+                                'classification'           => $first->classification ,
+                                'creator'                  => $first->user ,
+                                'delivery'                 => $first->delivery ,
+                                'source_warehouse_id'      => $first->source_warehouse_id ,
+                                'batch'                    => $first->batch ,
+                                'total'                    => $first->total ,
+                                'destination_warehouse_id' => $first->destination_warehouse_id ,
+                                'created_at'               => $first->created_at ,
+                                'description'              => $first->description ,
+                                'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
+                                'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
                             ];
                         }
                     } );
@@ -282,12 +281,15 @@
                 else {
                     $this->items = [];
                 }
-                if ( $method == 'paginate' ) {
-                    return $this->paginate( $this->items , $methodValue , NULL , URL::to( '/' ) . '/api/admin/stock' );
+
+                if ( $isPaginated ) {
+                    return $this->paginate( $this->items , $perPage , NULL , url( '/api/admin/stock' ) );
                 }
+
                 return $this->items;
+
             } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
+                Log::error( 'Transfer List Error: ' . $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }

@@ -8,6 +8,8 @@
     use App\Models\Unit;
     use App\Models\Warehouse;
     use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Support\Str;
+
 
     class StockResource extends JsonResource
     {
@@ -22,16 +24,20 @@
             $system_stock            = (float) $this[ 'system_stock' ];
             $difference              = $physical_stock - $system_stock;
             $discrepancy             = match ( TRUE ) {
-                $difference < 0     => 'Shortage' ,
-                $difference > 0     => 'Excess' ,
-                default             => 'Match' ,
+                $difference < 0 => 'Shortage' ,
+                $difference > 0 => 'Excess' ,
+                default         => 'Match' ,
             };
+            $status = $this['status'];
 
             return [
+                'key'             => Str::uuid()->getHex() ,
                 'product_id'      => $this[ 'product_id' ] ,
+                'products'        => ProductAdminResource::collection( $this[ 'products' ] ) ,
                 'product_name'    => $this[ 'product_name' ] ,
                 'variation_names' => $this[ 'variation_names' ] ,
                 'status'          => $this[ 'status' ] ,
+                'stock_status'    => $this[ 'stock_status' ] ,
                 'discrepancy'     => $discrepancy ,
                 'physical_stock'  => $this->when( enabledWarehouse() && isset( $this[ 'physical_stock' ] ) , fn() => $this[ 'physical_stock' ] ) ,
 //                'discrepancy'     => $this->when( enabledWarehouse() && isset( $this[ 'discrepancy' ] ) , fn() => $this[ 'discrepancy' ] ) ,

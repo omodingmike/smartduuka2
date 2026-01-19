@@ -12,6 +12,7 @@
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\Tax;
+    use App\Models\Warehouse;
     use Exception;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
@@ -78,6 +79,7 @@
         {
             try {
                 DB::transaction( function () use ($request) {
+                    $warehouse    = Warehouse::first();
                     $this->damage = Damage::create( [
                         'date'         => $request->date ,
                         'reference_no' => 'D-' . time() ,
@@ -97,12 +99,13 @@
                     Stock::create( [
                         'model_type'      => Damage::class ,
                         'model_id'        => $model_id ,
+                        'warehouse_id'    => $warehouse->id ,
                         'item_type'       => Product::class ,
                         'product_id'      => $product_id ,
                         'variation_names' => 'variation_names' ,
                         'item_id'         => $product_id ,
                         'price'           => 0 ,
-                        'quantity'        => -$request->input( 'quantity' ) ,
+                        'quantity'        => -1 * $request->input( 'quantity' ) ,
                         'discount'        => 0 ,
                         'tax'             => 0 ,
                         'subtotal'        => 0 ,

@@ -80,24 +80,4 @@
                 throw new Exception($exception->getMessage() , 422);
             }
         }
-
-        public function store(StoreStockTransferRequest $request)
-        {
-            //
-        }
-
-        public function show(StockTransfer $stockTransfer)
-        {
-            //
-        }
-
-        public function update(UpdateStockTransferRequest $request , StockTransfer $stockTransfer)
-        {
-            //
-        }
-
-        public function destroy(StockTransfer $stockTransfer)
-        {
-            //
-        }
     }

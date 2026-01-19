@@ -51,8 +51,8 @@ cat  /home/deploy/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
 
 https://kaduroagro.smartduuka.com/#/admin/settings/company
 
-TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
-TRUNCATE TABLE permissions RESTART IDENTITY CASCADE;
+TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
+TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 
 "http://localhost:8000/media/5/conversions/electronic_191-cover.jpg"

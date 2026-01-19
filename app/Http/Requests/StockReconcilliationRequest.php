@@ -18,7 +18,8 @@
             return [
                 'warehouse_id' => [ 'required' ] ,
                 'products'     => [ 'required' , 'string' ] ,
-                'date'         => [ 'required' , 'date' ]
+                'date'         => [ 'required' , 'date' ] ,
+                'type'         => [ 'required' , 'numeric:' ]
             ];
         }
 

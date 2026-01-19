@@ -29,6 +29,7 @@
                 "name"                       => $this->name ,
                 "sku"                        => $this->sku ,
                 "type"                       => $this->type ,
+                "unit"                       => $this->unit ,
                 "barcode"                    => $this->barcode ,
 //                "stocks"                     => $this->stocks ,
                 "stock"                      => $this->stocks->sum( 'quantity' ) ,

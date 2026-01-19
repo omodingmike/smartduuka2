@@ -15,9 +15,7 @@
     use App\Http\Requests\StockReconcilliationRequest;
     use App\Http\Requests\StockTransferRequest;
     use App\Libraries\QueryExceptionLibrary;
-    use App\Models\DistributionRoute;
     use App\Models\Expense;
-    use App\Models\ExpenseCategory;
     use App\Models\Ingredient;
     use App\Models\Product;
     use App\Models\ProductVariation;
@@ -648,131 +646,40 @@
         {
             try {
                 DB::transaction( function () use ($request) {
-                    if ( $request->products ) {
-                        $this->purchase = Purchase::create( [
-                            'supplier_id'    => $request->supplier_id ?? Supplier::first()->id ,
-                            'date'           => $request->date ? date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) : now() ,
-                            'reference_no'   => time() ,
-                            'subtotal'       => 0 ,
-                            'tax'            => 0 ,
-                            'discount'       => 0 ,
-                            'total'          => 0 ,
-                            'type'           => 20 ,
-                            'note'           => $request->note ? $request->note : '' ,
-                            'status'         => 15 ,
-                            'payment_status' => PurchasePaymentStatus::FULLY_PAID
+                    $products        = json_decode( $request->input( 'products' ) , TRUE );
+                    $batch           = 'B' . time();
+                    $type            = $request->type;
+                    $referencePrefix = $type === StockType::TRANSFER ? 'ST' : 'SR';
+
+                    $reference = $referencePrefix . time();
+                    foreach ( $products as $p ) {
+                        $product     = Product::find( $p[ 'product_id' ] );
+                        $total       = $product->buying_price * $p[ 'quantity' ];
+                        $this->stock = Stock::create( [
+                            'model_type'               => Purchase::class ,
+                            'model_id'                 => $product->id ,
+                            'batch'                    => $batch ,
+                            'type'                     => $type ,
+                            'reference'                => $reference ,
+                            'quantity'                 => -$p[ 'quantity' ] ,
+                            'source_warehouse_id'      => $request->source_warehouse_id ,
+                            'destination_warehouse_id' => $request->destination_warehouse_id ,
+//                            'description'     => $request->description ,
+//                            'expiry_date'     => isset( $product[ 'expiry' ] )
+//                                ? date( 'Y-m-d H:i:s' , strtotime( $product[ 'expiry' ] ) )
+//                                : NULL ,
+                            'item_type'                => Product::class ,
+                            'product_id'               => $product->id ,
+                            'item_id'                  => $product->id ,
+//                            'variation_names' => $product[ 'variation_names' ] ,
+                            'price'                    => $total ,
+                            'discount'                 => 0 ,
+                            'tax'                      => 0 ,
+                            'subtotal'                 => $total ,
+                            'total'                    => $total ,
+                            'sku'                      => $product->sku ,
+                            'status'                   => StockStatus::PENDING ,
                         ] );
-                        $model_id       = $this->purchase?->id;
-
-                        if ( $request->shipping_charges > 0 ) {
-                            $expenseCategory = ExpenseCategory::firstOrCreate( [
-                                'name'    => 'Stock fees' ,
-                                'user_id' => auth()->id()
-                            ] );
-                            $expense         = Expense::create( [
-                                'name'          => 'Stock Shipping' ,
-                                'amount'        => $request->shipping_charges ,
-                                'date'          => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
-                                'category'      => $expenseCategory->id ,
-                                'paymentMethod' => 0 ,
-                                'referenceNo'   => 'E' . time() ,
-                                'isRecurring'   => 0 ,
-                                'recurs'        => 0 ,
-                                'user_id'       => auth()->id() ,
-                                'repetitions'   => 0 ,
-                                'repeats_on'    => NULL ,
-                                'paid'          => $request->shipping_charges ,
-                                'paid_on'       => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
-                            ] );
-                            activityLog( "Created expense: $expense->name" );
-                        }
-
-                        if ( $request->destination_warehouse_id ) {
-                            $this->purchase->warehouse_id = $request->destination_warehouse_id;
-                            $this->purchase->save();
-                        }
-
-                        $products        = json_decode( $request->products , TRUE );
-                        $batch           = "B" . time();
-                        $route_value     = 0;
-                        $is_distribution = $request->type == StockType::DISTRIBUTION;
-                        foreach ( $products as $product ) {
-                            $base_product            = Product::find( $product[ 'product_id' ] );
-                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
-
-                            $referencePrefix = $request->type === 'transfer' ? 'ST' : 'SR';
-                            if ( $is_distribution ) {
-                                $referencePrefix = 'SD';
-                            }
-                            $reference = $referencePrefix . time();
-
-                            $commonData = [
-                                'model_type'      => Purchase::class ,
-                                'model_id'        => $model_id ,
-                                'batch'           => $batch ,
-                                'reference'       => $reference ,
-                                'description'     => $request->description ,
-                                'expiry_date'     => isset( $product[ 'expiry' ] )
-                                    ? date( 'Y-m-d H:i:s' , strtotime( $product[ 'expiry' ] ) )
-                                    : NULL ,
-                                'item_type'       => $product[ 'is_variation' ]
-                                    ? ProductVariation::class
-                                    : Product::class ,
-                                'product_id'      => $product[ 'product_id' ] ,
-                                'item_id'         => $product[ 'item_id' ] ,
-                                'variation_names' => $product[ 'variation_names' ] ,
-                                'price'           => $product[ 'price' ] ,
-                                'other_quantity'  => $product[ 'otherQuantity' ] ,
-                                'discount'        => $product[ 'total_discount' ] ,
-                                'tax'             => $product[ 'total_tax' ] ,
-                                'subtotal'        => $product[ 'subtotal' ] ,
-                                'total'           => $product[ 'total' ] ,
-                                'sku'             => $product[ 'sku' ] ,
-                                'status'          => $is_distribution ? StockStatus::RECEIVED : StockStatus::PENDING ,
-                            ];
-
-                            if ( $request->source_warehouse_id ) {
-                                $commonData[ 'source_warehouse_id' ] = $request->source_warehouse_id;
-                            }
-
-                            if ( $request->destination_warehouse_id ) {
-                                $commonData[ 'destination_warehouse_id' ] = $request->destination_warehouse_id;
-                            }
-
-                            $quantityBase = $base_units_per_top_unit
-                                ? $product[ 'quantity' ] * $base_units_per_top_unit
-                                : $product[ 'quantity' ];
-
-                            // Decrease stock (source warehouse)
-                            Stock::create( [
-                                ...$commonData ,
-                                'warehouse_id' => $request->source_warehouse_id ,
-                                'quantity'     => -$quantityBase ,
-                            ] );
-
-                            if ( $request->user_id ) {
-                                $commonData[ 'status' ] = StockStatus::RECEIVED;
-                            }
-                            // Increase stock (destination warehouse)
-                            $this->stock = Stock::create( [
-                                ...$commonData ,
-                                'user_id'  => $request->user_id ,
-                                'quantity' => $quantityBase ,
-                                'delivery' => $request->shipping_charges ,
-                            ] );
-
-                            $route_value += $quantityBase * $base_product->selling_price;
-
-                            activityLog( "Added stock for: $base_product->name" );
-                        }
-                        if ( $is_distribution ) {
-                            $distribution_route = DistributionRoute::create( [
-                                'user_id'     => $request->user_id ,
-                                'route_value' => $route_value ,
-                                'stock_batch' => $batch ,
-                            ] );
-                            activityLog( "Added distribution route: $distribution_route->id" );
-                        }
                     }
                 } );
                 return $this->stock;
@@ -813,13 +720,14 @@
 //                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
                             $stock       = $base_product->stocks->sum( 'quantity' );
                             $difference  = $product[ 'physical_count' ] - $stock;
-                            $total = $base_product->buying_price * $difference;
+                            $total       = $base_product->buying_price * $difference;
                             $this->stock = Stock::create( [
                                 'model_type'      => Purchase::class ,
                                 'model_id'        => 1 ,
                                 'creator'         => auth()->id() ,
                                 'batch'           => $batch ,
-                                'reference'       => ( $type == 'transfer' ? 'ST' : ( $type == 'reconciliation' ? 'RST' : 'SR' ) ) . time() ,
+                                'type'            => $type ,
+                                'reference'       => ( $type == StockType::TRANSFER ? 'ST' : ( $type == StockType::RECONCILIATION ? 'RST' : 'SR' ) ) . time() ,
                                 'warehouse_id'    => $request->warehouse_id ,
                                 'description'     => $product[ 'notes' ] ,
 //                                'item_type'       => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
@@ -829,10 +737,10 @@
                                 'system_stock'    => $stock ,
                                 'physical_stock'  => $product[ 'physical_count' ] ,
                                 'difference'      => $difference ,
-                                'unit_id'         => 1,
-                                'discrepancy'     => 'discrepancy'  ,
-                                'classification'  =>  'classification'  ,
-                                'variation_names' =>  'variation_names'  ,
+                                'unit_id'         => 1 ,
+                                'discrepancy'     => 'discrepancy' ,
+                                'classification'  => 'classification' ,
+                                'variation_names' => 'variation_names' ,
                                 'price'           => $base_product->buying_price * $difference ,
                                 'quantity'        => $difference ,
                                 'discount'        => 0 ,

@@ -98,7 +98,8 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
-    Route::get( '/check' , [ DamageController::class , 'index' ] );
+    Route::get( '/check' , [ StockController::class , 'index' ] );
+    Route::get( '/p' , [ ProductController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
     Route::get( 'site' , [ SiteController::class , 'index' ] );

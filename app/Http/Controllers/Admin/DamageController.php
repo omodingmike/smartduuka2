@@ -64,7 +64,7 @@
         {
             try {
                 $damage->update( [ 'status' => $request->input( 'status' ) ] );
-                $damage->stocks()->update( [ 'status' => Status::INACTIVE ] );
+                $damage->stocks()->update( [ 'status' => Status::ACTIVE ] );
                 return response()->json( [] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

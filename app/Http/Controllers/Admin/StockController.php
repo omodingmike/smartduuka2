@@ -104,7 +104,7 @@
             }
         }
 
-        public function stockTransfers(PaginateRequest $request)
+        public function stockTransfers(Request $request)
         {
             try {
                 return StockResource::collection($this->stockService->transfers($request));

@@ -15,9 +15,10 @@
             'email' ,
             'location' ,
             'phone' ,
-            'manager',
-            'capacity',
-            'status'
+            'manager' ,
+            'capacity' ,
+            'status' ,
+            'id'
         ];
         protected $casts    = [
             'deletable' => 'boolean'

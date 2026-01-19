@@ -69,8 +69,8 @@
                 $page    = $request->input( 'page' );
                 $query   = $request->input( 'query' );
 
-                $products_query = Product::with( [ 'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'sellingUnits' , 'prices.unit','stocks' ] );
-                return $products_query->orderBy( 'created_at','desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
+                $products_query = Product::with( [ 'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'prices.unit' , 'stocks' ] );
+                return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
 
             } catch ( Exception $exception ) {
                 info( $exception->getMessage() );
@@ -148,16 +148,16 @@
                         'returnable'                 => $data[ 'returnable' ] ,
                         'description'                => $data[ 'description' ] ,
                         'refundable'                 => Ask::YES ,
+                        'unit_id'                    => $retail_pricing[ 0 ][ 'unitId' ] ,
                         'buying_price'               => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
                         'selling_price'              => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
                     if ( $track_stock ) {
                         $warehouse_id = $request->input( 'warehouse_id' );
                         if ( ! $warehouse_id ) {
-                            $warehouse    = Warehouse::find( 1 );
-                            $warehouse_id = $warehouse->id;
-                            if ( ! $warehouse ) {
-                                $warehouse    = Warehouse::firstOrCreate( [ 'id' => 1 ] , [
+                            $warehouse    = Warehouse::firstOrCreate(
+                                [ 'id' => 1 ] ,
+                                [
                                     'name'     => 'Shop Storage' ,
                                     'status'   => Status::ACTIVE ,
                                     'phone'    => '0701234567' ,
@@ -165,9 +165,9 @@
                                     'location' => 'Kampala' ,
                                     'manager'  => 'Manager' ,
                                     'capacity' => '2 sqr ft' ,
-                                ] );
-                                $warehouse_id = $warehouse->id;
-                            }
+                                ]
+                            );
+                            $warehouse_id = $warehouse->id;
                         }
 
                         $total = $retail_pricing[ 0 ][ 'buyingPrice' ] * $data[ 'stock' ];
