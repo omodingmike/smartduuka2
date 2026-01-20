@@ -88,7 +88,7 @@
         public function takings(PaginateRequest $request)
         {
             try {
-                $filter      = $request->validated(); // Use validated data
+                $filter      = $request->validated(); // Use valida
                 $perPage     = $request->integer( 'per_page' , 10 );
                 $isPaginated = $request->boolean( 'paginate' );
                 $query       = Stock::with( [
