@@ -21,11 +21,9 @@ class ForceAdminLogin
             $user = User::first();
 
             if ($user) {
-                // This is the magic line for Sanctum
                 Sanctum::actingAs($user, ['*']);
             }
         }
-
         return $next($request);
     }
 }

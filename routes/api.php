@@ -162,8 +162,7 @@
     } );
 
 
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'auth:sanctum' ,'admin'] )->group( function () {
-//    Route::prefix( 'admin' )->name( 'admin.' )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( ['local.auth' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -616,6 +615,7 @@
 
         Route::prefix( 'stock' )->name( 'stock.' )->group( function () {
             Route::get( '/' , [ StockController::class , 'index' ] );
+            Route::get( '/takings' , [ StockController::class , 'takings' ] );
             Route::get( '/expiryList' , [ StockController::class , 'expiryList' ] );
             Route::get( '/expiryList/export' , [ StockController::class , 'expiryReportExport' ] );
             Route::get( '/transfers' , [ StockController::class , 'stockTransfers' ] );

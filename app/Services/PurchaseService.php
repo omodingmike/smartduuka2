@@ -534,7 +534,7 @@
                 foreach ( $products as $p ) {
                     $product = Product::find( $p[ 'product_id' ] );
                     $total   = $p[ 'quantity' ] * $product->buying_price;
-                    $stock   = Stock::create( [
+                    Stock::create( [
                         'model_type'   => Product::class ,
                         'model_id'     => $product->id ,
                         'warehouse_id' => $warehouse_id ,
@@ -552,7 +552,6 @@
                         'sku'          => $product->sku ,
                         'status'       => StockStatus::RECEIVED
                     ] );
-                    info( $stock );
                 }
                 return response()->json( [] );
             } catch ( Exception $e ) {

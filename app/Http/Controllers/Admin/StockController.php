@@ -95,10 +95,18 @@
         }
         }
 
-        public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function index(PaginateRequest $request)
         {
             try {
                 return StockResource::collection($this->stockService->list($request));
+            } catch ( Exception $exception ) {
+                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+            }
+        }
+        public function takings(PaginateRequest $request)
+        {
+            try {
+                return StockResource::collection($this->stockService->takings($request));
             } catch ( Exception $exception ) {
                 return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
             }
@@ -249,4 +257,5 @@
 //                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
 //            }
         }
+
     }

@@ -33,60 +33,104 @@
          */
 
         public function list(PaginateRequest $request)
+
         {
+
             try {
                 $filter      = $request->validated(); // Use validated data
                 $perPage     = $request->integer( 'per_page' , 10 );
                 $isPaginated = $request->boolean( 'paginate' );
-
-                $query = Stock::with( [
+                $query       = Stock::with( [
                     'product.sellingUnits:id,short_name' ,
                     'product.unit:id,short_name' ,
                     'products' ,
                     'user'
                 ] )
-                              ->where( 'status' , StockStatus::RECEIVED )
-                              ->whereNull( 'user_id' )
-                              ->where( 'model_type' , '<>' , Ingredient::class )
-                              ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
-                    // Dynamic Filters
-                              ->where( function ($q) use ($request) {
-                        foreach ( $this->stockFilter as $field ) {
-                            if ( $value = $request->get( $field ) ) {
-                                if ( $field === 'product_name' ) {
-                                    $q->whereHas( 'product' , fn($pq) => $pq->where( 'name' , 'like' , "%{$value}%" ) );
-                                }
-                                else {
-                                    $q->where( $field , 'like' , "%{$value}%" );
-                                }
-                            }
-                        }
-                    } )
-                              ->orderBy( $request->get( 'order_column' , 'id' ) , $request->get( 'order_type' , 'desc' ) );
+                                    ->where( 'status' , StockStatus::RECEIVED )
+                                    ->whereNull( 'user_id' )
+                                    ->where( 'model_type' , '<>' , Ingredient::class )
+                                    ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
+                                    ->where( function ($q) use ($request) {
 
-                // Fetch data
-                $stocks = $query->get();
-
+                                        foreach ( $this->stockFilter as $field ) {
+                                            if ( $value = $request->get( $field ) ) {
+                                                if ( $field === 'product_name' ) {
+                                                    $q->whereHas( 'product' , fn($pq) => $pq->where( 'name' , 'like' , "%{$value}%" ) );
+                                                }
+                                                else {
+                                                    $q->where( $field , 'like' , "%{$value}%" );
+                                                }
+                                            }
+                                        }
+                                    } )
+                                    ->orderBy( $request->get( 'order_column' , 'id' ) , $request->get( 'order_type' , 'desc' ) );
+                $stocks      = $query->get();
                 if ( $stocks->isEmpty() ) {
                     return $isPaginated ? $this->paginate( [] , $perPage ) : [];
                 }
-
-                // Grouping Logic
-                $groupCriteria = enabledWarehouse()
+                $groupCriteria  = enabledWarehouse()
                     ? fn($item) => $item->product_id . '-' . $item->warehouse_id
                     : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
-
                 $processedItems = $stocks->groupBy( $groupCriteria )
                                          ->map( fn($group) => $this->transformStockGroup( $group ) )
                                          ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
                                          ->values();
-
                 if ( $isPaginated ) {
                     return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock' ) );
                 }
-
                 return $processedItems;
+            } catch ( Exception $exception ) {
+                Log::error( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
 
+        public function takings(PaginateRequest $request)
+        {
+            try {
+                $filter      = $request->validated(); // Use validated data
+                $perPage     = $request->integer( 'per_page' , 10 );
+                $isPaginated = $request->boolean( 'paginate' );
+                $query       = Stock::with( [
+                    'product.sellingUnits:id,short_name' ,
+                    'product.unit:id,short_name' ,
+                    'products' ,
+                    'user'
+                ] )
+                                    ->where( 'status' , StockStatus::RECEIVED )
+                                    ->whereNull( 'user_id' )
+                                    ->where( 'model_type' , '<>' , Ingredient::class )
+                                    ->where( 'quantity' , '>' , 0 )
+                                    ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
+                                    ->where( function ($q) use ($request) {
+
+                                        foreach ( $this->stockFilter as $field ) {
+                                            if ( $value = $request->get( $field ) ) {
+                                                if ( $field === 'product_name' ) {
+                                                    $q->whereHas( 'product' , fn($pq) => $pq->where( 'name' , 'like' , "%{$value}%" ) );
+                                                }
+                                                else {
+                                                    $q->where( $field , 'like' , "%{$value}%" );
+                                                }
+                                            }
+                                        }
+                                    } )
+                                    ->orderBy( $request->get( 'order_column' , 'id' ) , $request->get( 'order_type' , 'desc' ) );
+                $stocks      = $query->get();
+                if ( $stocks->isEmpty() ) {
+                    return $isPaginated ? $this->paginate( [] , $perPage ) : [];
+                }
+                $groupCriteria  = enabledWarehouse()
+                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
+                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
+                $processedItems = $stocks->groupBy( $groupCriteria )
+                                         ->map( fn($group) => $this->transformStockGroup( $group ) )
+                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
+                                         ->values();
+                if ( $isPaginated ) {
+                    return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock' ) );
+                }
+                return $processedItems;
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -99,7 +143,7 @@
             if ( ! $first->product ) return NULL;
 
             $isPurchasable = $first->product->can_purchasable !== Ask::NO;
-            $status        = $first->status; // This is now your Enum object
+            $status        = $first->status;
 
             return [
                 'product_id'               => $first->product_id ,

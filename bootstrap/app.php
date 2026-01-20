@@ -14,14 +14,11 @@
                           health: '/up' ,
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
-                          $middleware->statefulApi();
                           $middleware->alias( [
-//                              'verified'   => EnsureEmailIsVerified::class ,
-//                              'subscribed' => SubscribedMiddleware::class ,
-//                              'after'      => AfterMiddleware::class ,
                               'permission' => PermissionMiddleware::class ,
-                              'local.auth'      => ForceAdminLogin::class ,
+                              'local.auth' => ForceAdminLogin::class ,
                           ] );
+                          $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
 //                           Handle unauthorized access
