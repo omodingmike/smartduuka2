@@ -96,9 +96,9 @@
     Route::get( 'cleaningServiceCategories' , [ CleaningServiceCategoryController::class , 'index' ] )->withoutMiddleware( 'auth' );
     Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
     Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
-    Route::middleware( [ 'local.auth' ] )->get( '/user' , function (Request $request) {
-        //        return $request->user()->load( 'roles' );
-        return User::first();
+    Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
+                return $request->user()->load( 'roles' );
+//        return User::first();
     } );
     Route::get( '/check' , [ StockController::class , 'index' ] );
     Route::get( '/p' , [ ProductController::class , 'index' ] );
