@@ -23,7 +23,7 @@
                 self::LOW_STOCK          => 'Low Stock' ,
                 self::IN_STOCK           => 'In Stock' ,
                 self::IN_TRANSIT         => 'In Transit' ,
-                self::RECEIVED           => 'Received' ,
+                self::RECEIVED           => 'Received' , //Only increment for this case
                 self::APPROVED           => 'Approved' ,
                 self::PARTIALLY_RECEIVED => 'Partially Received' ,
                 self::REJECTED           => 'Rejected' ,

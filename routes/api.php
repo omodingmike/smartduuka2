@@ -85,6 +85,7 @@
     use App\Http\Controllers\WhatsAppController;
     use App\Http\Resources\ChartOfAccountGroupResource;
     use App\Models\ChartOfAccountGroup;
+    use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
@@ -95,8 +96,9 @@
     Route::get( 'cleaningServiceCategories' , [ CleaningServiceCategoryController::class , 'index' ] )->withoutMiddleware( 'auth' );
     Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
     Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
-    Route::middleware( [ 'local.auth','auth:sanctum' ] )->get( '/user' , function (Request $request) {
-        return $request->user()->load( 'roles' );
+    Route::middleware( [ 'local.auth' ] )->get( '/user' , function (Request $request) {
+        //        return $request->user()->load( 'roles' );
+        return User::first();
     } );
     Route::get( '/check' , [ StockController::class , 'index' ] );
     Route::get( '/p' , [ ProductController::class , 'index' ] );
@@ -162,7 +164,7 @@
     } );
 
 
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( ['local.auth' ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -177,7 +179,7 @@
         Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
         Route::put( 'cleaningOrders/{cleaningOrder}' , [ CleaningOrderController::class , 'update' ] );
         Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
-        Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy', ] );
+        Route::apiResource( 'cleaningServiceCategories' , CleaningServiceCategoryController::class )->except( [ 'destroy' , ] );
         Route::get( 'cleaningServices/{category}' , [ CleaningServiceController::class , 'cleaningServicesByCategory' ] );
         Route::apiResource( 'cleaningServices' , CleaningServiceController::class )->except( [ 'destroy' ] );
         Route::delete( 'cleaningServiceCategories/delete' , [ CleaningServiceCategoryController::class , 'destroy' ] );
@@ -226,7 +228,7 @@
         Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
             Route::prefix( 'company' )->name( 'company.' )->group( function () {
                 Route::get( '/' , [ CompanyController::class , 'index' ] );
-                Route::match( [ 'post' ,'put' , 'patch' ] , '/' , [ CompanyController::class , 'update' ] );
+                Route::match( [ 'post' , 'put' , 'patch' ] , '/' , [ CompanyController::class , 'update' ] );
             } );
             Route::prefix( 'payment-methods' )->name( 'payment-methods.' )->group( function () {
                 Route::get( '/' , [ PaymentMethodController::class , 'index' ] );
@@ -540,7 +542,7 @@
             Route::get( '/' , [ WarehouseController::class , 'index' ] );
             Route::post( '/' , [ WarehouseController::class , 'store' ] );
             Route::get( '/show/{warehouse}' , [ WarehouseController::class , 'show' ] );
-            Route::match( [  'put' , 'patch' ] , '/{warehouse}' , [ WarehouseController::class , 'update' ] );
+            Route::match( [ 'put' , 'patch' ] , '/{warehouse}' , [ WarehouseController::class , 'update' ] );
             Route::delete( '/{warehouse}' , [ WarehouseController::class , 'destroy' ] );
             Route::delete( '/delete' , [ WarehouseController::class , 'destroy' ] );
             Route::get( '/export' , [ WarehouseController::class , 'export' ] );
