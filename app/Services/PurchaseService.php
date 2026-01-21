@@ -22,6 +22,7 @@
     use App\Models\Purchase;
     use App\Models\PurchasePayment;
     use App\Models\Stock;
+    use App\Models\StockProduct;
     use App\Models\StockTax;
     use App\Models\Supplier;
     use App\Models\Tax;
@@ -525,6 +526,54 @@
             }
         }
 
+        public function storeStock3(PurchaseRequest $request)
+        {
+            try {
+                $warehouse_id = $request->input( 'warehouse_id' );
+                $products     = json_decode( $request->string( 'products' ) , TRUE );
+                $batch        = 'B' . time();
+
+                $stock = Stock::create( [
+                    'model_type'   => Product::class ,
+                    'model_id'     => 1 ,
+                    'warehouse_id' => $warehouse_id ,
+                    'reference'    => 'S' . time() ,
+                    'item_type'    => Product::class ,
+                    'product_id'   => 1 ,
+                    'item_id'      => 1 ,
+                    'price'        => 0 ,
+                    'quantity'     => 0 ,
+                    'discount'     => 0 ,
+                    'tax'          => 0 ,
+                    'batch'        => $batch ,
+                    'subtotal'     => 0 ,
+                    'total'        => 0 ,
+                    'sku'          => 'sku' ,
+                    'status'       => StockStatus::RECEIVED
+                ] );
+                foreach ( $products as $p ) {
+                    $product = Product::find( $p[ 'product_id' ] );
+                    $total   = $p[ 'quantity' ] * $product->buying_price;
+                    StockProduct::create( [
+                        'item_type'   => Product::class ,
+                        'item_id'     => $product->id ,
+                        'stock_id'    => $stock->id ,
+                        'quantity'    => $p[ 'quantity' ] ,
+                        'weight'      => $p[ 'weight' ] ,
+                        'serial'      => $p[ 'serial' ] ,
+                        'expiry_date' => $p[ 'expiry' ] ,
+                        'subtotal'    => $total ,
+                        'total'       => $total ,
+                        'unit_id'     => $product->unit_id ,
+                    ] );
+
+                }
+                return response()->json( [] );
+            } catch ( Exception $e ) {
+                throw new Exception( $e->getMessage() , 422 );
+            }
+        }
+
         public function storeStock(PurchaseRequest $request)
         {
             try {
@@ -645,9 +694,12 @@
         {
             try {
                 DB::transaction( function () use ($request) {
+
                     $products        = json_decode( $request->input( 'products' ) , TRUE );
                     $batch           = 'B' . time();
                     $type            = $request->type;
+                    $driver          = $request->driver;
+                    $number_plate    = $request->number_plate;
                     $referencePrefix = $type === StockType::TRANSFER ? 'ST' : 'SR';
 
                     $reference = $referencePrefix . time();
@@ -679,6 +731,9 @@
                             'sku'                      => $product->sku ,
                             'status'                   => StockStatus::PENDING ,
                         ] );
+                        if ( $driver && $number_plate ) {
+                            $this->stock->update( [ 'driver' => $driver , 'number_plate' => $number_plate ] );
+                        }
                     }
                 } );
                 return $this->stock;
@@ -753,7 +808,7 @@
                         }
                     }
                 } );
-                return $this->stock;
+                return response()->json( [] );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();

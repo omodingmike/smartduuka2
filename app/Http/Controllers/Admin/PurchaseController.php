@@ -149,6 +149,7 @@
         {
             return PaymentMethodResource::collection( PaymentMethod::all() );
         }
+
         public function taxes()
         {
             return TaxResource::collection( Tax::all() );
@@ -219,7 +220,7 @@
         public function storeStock(PurchaseRequest $request)
         {
             try {
-                return $this->purchaseService->storeStock( $request ) ;
+                return $this->purchaseService->storeStock( $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -234,10 +235,10 @@
             }
         }
 
-        public function reconcileStock(StockReconcilliationRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function reconcileStock(StockReconcilliationRequest $request)
         {
             try {
-                return new PurchaseResource( $this->purchaseService->reconcileStock( $request ) );
+                return $this->purchaseService->reconcileStock( $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

@@ -53,7 +53,6 @@
     use App\Http\Controllers\Auth\ForgotPasswordController;
     use App\Http\Controllers\Auth\LoginController;
     use App\Http\Controllers\Auth\RefreshTokenController;
-    use App\Http\Controllers\AuthController;
     use App\Http\Controllers\ChartOfAccountGroupController;
     use App\Http\Controllers\CleaningOrderController;
     use App\Http\Controllers\CleaningServiceCategoryController;
@@ -85,7 +84,6 @@
     use App\Http\Controllers\WhatsAppController;
     use App\Http\Resources\ChartOfAccountGroupResource;
     use App\Models\ChartOfAccountGroup;
-    use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
@@ -97,10 +95,9 @@
     Route::get( 'cleaningServiceCategories/list' , [ CleaningServiceCategoryController::class , 'list' ] );
     Route::post( 'clientCleaningOrders' , [ CleaningOrderController::class , 'storeClient' ] );
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
-                return $request->user()->load( 'roles' );
-//        return User::first();
+        return $request->user()->load( 'roles' );
     } );
-    Route::get( '/check' , [ StockController::class , 'index' ] );
+    Route::get( '/check' , [ StockController::class , 'takings' ] );
     Route::get( '/p' , [ ProductController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
@@ -164,7 +161,7 @@
     } );
 
 
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );

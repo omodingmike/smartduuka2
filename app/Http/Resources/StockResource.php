@@ -28,7 +28,6 @@
                 $difference > 0 => 'Excess' ,
                 default         => 'Match' ,
             };
-            $status = $this['status'];
 
             return [
                 'key'             => Str::uuid()->getHex() ,
@@ -37,10 +36,10 @@
                 'product_name'    => $this[ 'product_name' ] ,
                 'variation_names' => $this[ 'variation_names' ] ,
                 'status'          => $this[ 'status' ] ,
+
                 'stock_status'    => $this[ 'stock_status' ] ,
                 'discrepancy'     => $discrepancy ,
                 'physical_stock'  => $this->when( enabledWarehouse() && isset( $this[ 'physical_stock' ] ) , fn() => $this[ 'physical_stock' ] ) ,
-//                'discrepancy'     => $this->when( enabledWarehouse() && isset( $this[ 'discrepancy' ] ) , fn() => $this[ 'discrepancy' ] ) ,
                 'difference'      => $this->when( enabledWarehouse() && isset( $this[ 'difference' ] ) , fn() => $this[ 'difference' ] ) ,
                 'system_stock'    => $this->when( enabledWarehouse() && isset( $this[ 'system_stock' ] ) , fn() => $this[ 'system_stock' ] ) ,
                 'classification'  => $this->when( enabledWarehouse() && isset( $this[ 'classification' ] ) , fn() => $this[ 'classification' ] ) ,

@@ -15,6 +15,7 @@
         case PENDING            = 10;
         case CANCELED           = 15;
         case EXPIRED            = 20;
+        case ORDERED            = 21;
 
         public function label() : string
         {
@@ -30,6 +31,7 @@
                 self::PENDING            => 'Pending' ,
                 self::CANCELED           => 'Canceled' ,
                 self::EXPIRED            => 'Expired' ,
+                self::ORDERED            => 'Ordered' ,
             };
         }
 

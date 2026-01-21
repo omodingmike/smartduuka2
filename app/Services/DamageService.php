@@ -13,6 +13,7 @@
     use App\Models\StockTax;
     use App\Models\Tax;
     use App\Models\Warehouse;
+    use App\Traits\SaveMedia;
     use Exception;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
@@ -20,6 +21,7 @@
 
     class DamageService
     {
+        use SaveMedia;
 
         public object   $damage;
         protected array $damageFilter = [
@@ -114,7 +116,8 @@
                         'status'          => Status::INACTIVE
                     ] );
                     if ( $request->image ) {
-                        $this->damage->addMediaFromRequest( 'image' )->toMediaCollection( MediaEnum::DAMAGES );
+                        $this->saveMedia( $request , $this->damage , MediaEnum::DAMAGES );
+//                        $this->damage->addMediaFromRequest( 'image' )->toMediaCollection( MediaEnum::DAMAGES );
                     }
                 } );
                 return $this->damage;

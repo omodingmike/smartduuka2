@@ -3,6 +3,7 @@
     namespace App\Http\Resources;
 
     use App\Enums\Ask;
+    use App\Enums\StockStatus;
     use App\Libraries\AppLibrary;
     use App\Models\Product;
     use App\Models\Unit;
@@ -24,6 +25,7 @@
             $base_units_per_top_unit = $product->base_units_per_top_unit;
             $units_per_mid_unit      = $product->units_per_mid_unit;
             $price                   = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
+            $stock                   = $this->stocks()->where( 'status' , StockStatus::RECEIVED )->sum( 'quantity' );
             return [
                 "id"                         => $this->id ,
                 "name"                       => $this->name ,
@@ -31,8 +33,8 @@
                 "type"                       => $this->type ,
                 "unit"                       => $this->unit ,
                 "barcode"                    => $this->barcode ,
-//                "stocks"                     => $this->stocks ,
-                "stock"                      => $this->stocks->sum( 'quantity' ) ,
+                "stock"                      => $stock ,
+                "stock_text"                 => number_format( $stock ) ,
                 "slug"                       => $this->slug ,
                 "product_category_id"        => $this->product_category_id ,
                 "barcode_id"                 => $this->barcode_id ,

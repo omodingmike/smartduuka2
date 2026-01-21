@@ -11,6 +11,9 @@
     use App\Http\Requests\StoreIngredientStockRequest;
     use App\Http\Resources\ExpiryStockResource;
     use App\Http\Resources\IngredientStockResource;
+    use App\Http\Resources\ProductStockResource;
+    use App\Http\Resources\RawStockResource;
+    use App\Http\Resources\StockProductResource;
     use App\Http\Resources\StockResource;
     use App\Http\Resources\StockTransferResource;
     use App\Models\Ingredient;
@@ -106,7 +109,7 @@
         public function takings(PaginateRequest $request)
         {
             try {
-                return StockResource::collection($this->stockService->takings($request));
+                return RawStockResource::collection($this->stockService->takings($request));
             } catch ( Exception $exception ) {
                 return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
             }
@@ -115,7 +118,8 @@
         public function stockTransfers(Request $request)
         {
             try {
-                return StockResource::collection($this->stockService->transfers($request));
+//                return $this->stockService->transfers($request);
+                return RawStockResource::collection($this->stockService->transfers($request));
             } catch ( Exception $exception ) {
                 return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
             }

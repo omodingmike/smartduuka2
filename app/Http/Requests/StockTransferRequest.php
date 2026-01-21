@@ -18,6 +18,8 @@
                 'source_warehouse_id'      => [ enabledWarehouse() ? 'required' : 'nullable' ] ,
                 'destination_warehouse_id' => [ enabledWarehouse() ? 'required' : 'nullable' ] ,
                 'products'                 => [ 'required' , 'string' ] ,
+                'driver'                   => [ 'sometimes' , 'string' ] ,
+                'number_plate'             => [ 'sometimes' , 'string' ] ,
             ];
         }
     }

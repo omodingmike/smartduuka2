@@ -81,6 +81,11 @@
             return $this->hasMany( Product::class , 'id' , 'product_id' )->withTrashed();
         }
 
+        public function stockProducts() : Stock | Builder | HasMany
+        {
+            return $this->hasMany( StockProduct::class , 'stock_id' , 'id' );
+        }
+
         public function ingredient() : BelongsTo
         {
             return $this->belongsTo( Ingredient::class , 'product_id' , 'id' )->withTrashed();
