@@ -12,7 +12,7 @@
     {
         public function toArray($request) : array
         {
-            $status = $this[ 'status' ];
+            $status = $this->status;
             return [
                 'id'                       => $this->id ,
                 'product_id'               => $this->product_id ,
@@ -21,9 +21,9 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => config( 'system.currency_symbol' ) ,
                 'products'                 => ProductAdminResource::collection( $this->products ) ,
-                'location'                 => new WarehouseResource( Warehouse::find( $this[ 'warehouse_id' ] ) ) ,
-                'from'                     => new WarehouseResource( Warehouse::find( $this[ 'source_warehouse_id' ] ) ) ,
-                'to'                       => new WarehouseResource( Warehouse::find( $this[ 'destination_warehouse_id' ] ) ) ,
+                'location'                 => new WarehouseResource( Warehouse::find( $this->warehouse_id) ) ,
+                'from'                     => new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) ,
+                'to'                       => new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) ) ,
                 'model_id'                 => $this->model_id ,
                 'item_type'                => $this->item_type ,
                 'item_id'                  => $this->item_id ,
@@ -35,8 +35,8 @@
                 'quantity_text'            => number_format( abs( $this->quantity ) ) ,
                 'discount'                 => $this->discount ,
                 'subtotal'                 => $this->subtotal ,
-                'total'                    => AppLibrary::currencyAmountFormat( $this[ 'total' ] ) ,
-                'created_at'               => AppLibrary::datetime2( $this[ 'created_at' ] ) ,
+                'total'                    => AppLibrary::currencyAmountFormat( $this->total ) ,
+                'created_at'               => AppLibrary::datetime2( $this->created_at ) ,
                 'tax'                      => $this->tax ,
                 'status'                   => [
                     'value' => $status->value ,

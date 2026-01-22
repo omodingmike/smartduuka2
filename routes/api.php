@@ -160,8 +160,8 @@
         Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
     } );
 
-
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
+//    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -620,6 +620,8 @@
             Route::get( '/transfers' , [ StockController::class , 'stockTransfers' ] );
             Route::get( '/reconciliations' , [ StockController::class , 'stockReconciliations' ] );
             Route::post( '/transfer/cancelOrAccept' , [ StockController::class , 'cancelOrAccept' ] );
+            Route::post( '/transfer/approve' , [ StockController::class , 'approveStockRequest' ] );
+            Route::post( '/transfer/receive' , [ StockController::class , 'receiveStockRequest' ] );
             Route::get( '/transfer/show' , [ StockController::class , 'showStockTransfer' ] );
             Route::get( '/export' , [ StockController::class , 'export' ] );
             Route::post( '/ingredients' , [ StockController::class , 'storeIngredientStock' ] );

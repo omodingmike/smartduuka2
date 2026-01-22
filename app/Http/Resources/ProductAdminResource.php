@@ -3,10 +3,7 @@
     namespace App\Http\Resources;
 
     use App\Enums\Ask;
-    use App\Enums\StockStatus;
     use App\Libraries\AppLibrary;
-    use App\Models\Product;
-    use App\Models\Unit;
     use Carbon\Carbon;
     use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,11 +18,7 @@
          */
         public function toArray($request) : array
         {
-            $product                 = Product::find( $this->id );
-            $base_units_per_top_unit = $product->base_units_per_top_unit;
-            $units_per_mid_unit      = $product->units_per_mid_unit;
-            $price                   = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
-            $stock                   = $this->stocks()->where( 'status' , StockStatus::RECEIVED )->sum( 'quantity' );
+            $price = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
             return [
                 "id"                         => $this->id ,
                 "name"                       => $this->name ,
@@ -33,26 +26,15 @@
                 "type"                       => $this->type ,
                 "unit"                       => $this->unit ,
                 "barcode"                    => $this->barcode ,
-                "stock"                      => $stock ,
-                "stock_text"                 => number_format( $stock ) ,
+                'quantity'                   => abs($this->transfer_quantity) ?? 0 ,
+                'quantity_text'              => number_format( abs($this->transfer_quantity )?? 0 ) ,
+                "stock"                      => $this->stock ,
+                "stock_text"                 => number_format( $this->stock ) ,
                 "slug"                       => $this->slug ,
                 "product_category_id"        => $this->product_category_id ,
                 "barcode_id"                 => $this->barcode_id ,
                 "product_brand_id"           => $this->product_brand_id ,
-                'retail_unit_id'             => $this->retail_unit_id ,
-                'retail_unit'                => $this->retail_unit_id ? new UnitResource( Unit::find( $this->retail_unit_id ) ) : NULL ,
-                'mid_unit'                   => $this->retail_unit_id ? new UnitResource( Unit::find( $this->mid_unit_id ) ) : NULL ,
-                'top_unit'                   => $this->top_unit_id ? new UnitResource( Unit::find( $this->top_unit_id ) ) : NULL ,
-                'mid_unit_id'                => $this->mid_unit_id ,
-                'top_unit_id'                => $this->top_unit_id ,
-                'units_per_mid_unit'         => $this->units_per_mid_unit ,
-                'mid_units_per_top_unit'     => $this->mid_units_per_top_unit ,
-                'base_units_per_top_unit'    => $this->base_units_per_top_unit ,
-                'mid_unit_wholesale_price'   => $this->mid_unit_wholesale_price ,
-                'top_unit_wholesale_price'   => $this->top_unit_wholesale_price ,
-                'retail_price_per_base_unit' => $this->retail_price_per_base_unit ,
                 "unit_id"                    => $this->unit_id ,
-                "units_nature"               => $this->units_nature ,
                 "prices"                     => $this->prices->map( function ($price) {
                     return [
                         'id'         => $price->id ,
@@ -84,20 +66,12 @@
                 "description"                => $this->description === NULL ? '' : $this->description ,
                 "product_tags"               => ProductTagResource::collection( $this->tags ) ,
                 "category_name"              => ucwords( $this?->category?->name ) ,
-                "brand"                      => $this?->brand?->name ,
+                "brand"                      => $this?->brand ,
                 "order"                      => abs( $this?->productOrders->sum( 'quantity' ) ) ,
                 'currency_price'             => AppLibrary::currencyAmountFormat( $price ) ,
                 "cover"                      => $this->cover ,
                 "thumb"                      => $this->thumb ,
-                'preview'                    => $this->preview ,
                 'image'                      => $this->preview ,
-                'images'                     => $this->previews ,
-                'flash_sale'                 => $this->add_to_flash_sale == Ask::YES ,
-                'is_offer'                   => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
-                'discounted_price'           => AppLibrary::currencyAmountFormat( $price - ( ( $price / 100 ) * $this->discount ) ) ,
-                'rating_star'                => $this->rating_star ,
-                'rating_star_count'          => $this->rating_star_count ,
-                "barcode_image"              => $this->barcodeImage ,
             ];
         }
     }

@@ -4,6 +4,7 @@
 
     use App\Enums\MediaEnum;
     use App\Enums\Status;
+    use App\Enums\StockStatus;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,6 +24,7 @@
 
         protected       $table   = 'products';
         protected       $guarded = [];
+        protected       $appends = [ 'stock' ];
         protected array $dates   = [ 'deleted_at' ];
         protected       $casts   = [
             'id'                         => 'integer' ,
@@ -59,6 +61,13 @@
         public function scopeActive($query , $col = 'status')
         {
             return $query->where( $col , Status::ACTIVE );
+        }
+
+        public function getStockAttribute() : float
+        {
+            return (float) $this->stocks()
+                                ->where( 'status' , StockStatus::RECEIVED )
+                                ->sum( 'quantity' );
         }
 
         public function scopeRandAndLimitOrOrderBy($query , $rand = 0 , $orderColumn = 'id' , $orderType = 'asc')
