@@ -10,6 +10,7 @@ use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\BranchResource;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -72,10 +73,9 @@ class BranchController extends AdminController
         }
     }
 
-    public function destroy(Branch $branch
-    ) : Response | Application | ResponseFactory {
+    public function destroy(Request $request) {
         try {
-            $this->branchService->destroy($branch);
+            Branch::destroy($request->ids);
             return response('', 202);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

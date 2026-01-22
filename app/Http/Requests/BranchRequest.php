@@ -1,46 +1,43 @@
 <?php
 
-namespace App\Http\Requests;
+    namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+    // Ensure this matches your actual Enum namespace
+    use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Foundation\Http\FormRequest;
+    use Illuminate\Validation\Rule;
 
-class BranchRequest extends FormRequest
-{
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize(): bool
+    class BranchRequest extends FormRequest
     {
-        return true;
-    }
+        public function authorize() : bool
+        {
+            return TRUE;
+        }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules(): array
-    {
+        public function rules() : array
+        {
+            $branchId = $this->route( 'branch' ) instanceof Model
+                ? $this->route( 'branch' )->id
+                : $this->route( 'branch' );
 
-        return [
-            'name'      => [
-                'required',
-                'string',
-                'max:190',
-                Rule::unique("branches", "name")->ignore($this->route('branch.id'))
-            ],
-            'email'     => ['nullable', 'email', 'max:190'],
-            'phone'     => ['nullable', 'string', 'max:20'],
-            'latitude'  => ['nullable', 'max:190'],
-            'longitude' => ['nullable', 'max:190'],
-//            'city'      => ['required', 'string', 'max:190'],
-            'state'     => ['required', 'string', 'max:190'],
-//            'zip_code'  => ['required', 'string'],
-            'address'   => ['required', 'string', 'max:500'],
-            'status'    => ['required', 'numeric', 'max:24'],
-        ];
+            return [
+                'name'     => [
+                    'required' ,
+                    'string' ,
+                    'max:190' ,
+                    Rule::unique( 'branches' , 'name' )->ignore( $branchId )
+                ] ,
+                'code'     => [
+                    'required' ,
+                    'string' ,
+                    'max:50' ,
+                    Rule::unique( 'branches' , 'code' )->ignore( $branchId )
+                ] ,
+                'location' => [ 'required' , 'string' , 'max:500' ] ,
+                'manager'  => [ 'required' , 'string' , 'max:190' ] ,
+                'phone'    => [ 'required' , 'string' , 'max:20' ] ,
+                'email'    => [ 'nullable' , 'email' , 'max:190' ] ,
+                'status'   => [ 'nullable' , 'numeric:' , 'max:190' ] ,
+            ];
+        }
     }
-}

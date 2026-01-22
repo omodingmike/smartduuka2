@@ -161,12 +161,15 @@
     } );
 
 //    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth','auth:sanctum' ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
         Route::prefix( 'branches' )->name( 'branches.' )->group( function () {
             Route::get( '/' , [ BranchController::class , 'branches' ] );
+            Route::post( '/' , [ BranchController::class , 'store' ] );
+            Route::put( '/{branch}' , [ BranchController::class , 'update' ] );
+            Route::delete( '/delete' , [ BranchController::class , 'destroy' ] );
         } );
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
