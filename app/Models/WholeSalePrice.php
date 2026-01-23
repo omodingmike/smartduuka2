@@ -8,6 +8,7 @@
     class WholeSalePrice extends Model
     {
         public $timestamps = FALSE;
+        protected $table ='whole_sale_prices';
 
         protected $fillable = [
             'minQuantity' ,

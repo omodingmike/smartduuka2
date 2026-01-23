@@ -50,11 +50,9 @@
                 'image'                      => 'sometimes|file' ,
                 'status'                     => [ 'required' , 'numeric' , 'max:24' ] ,
                 'can_purchasable'            => [ 'required' , 'numeric' , 'max:24' ] ,
-                'stock_out'                  => [ 'required' , 'numeric' , 'max:24' ] ,
+                'stock_out'                  => [ 'sometimes' , 'numeric' , 'max:24' ] ,
                 'stock'                      => "required_if:trackStock,1" ,
                 'low_stock_quantity_warning' => "required_if:trackStock,1" ,
-//                'buying_price'               => [ 'required' , new IniAmount() ] ,
-//                'selling_prices'              => [ 'sometimes' , new IniAmount() ] ,
             ];
         }
 

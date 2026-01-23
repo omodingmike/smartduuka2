@@ -2,9 +2,7 @@
 
     namespace App\Http\Resources;
 
-    use App\Enums\Ask;
     use App\Libraries\AppLibrary;
-    use Carbon\Carbon;
     use Illuminate\Http\Resources\Json\JsonResource;
 
     class ProductAdminResource extends JsonResource
@@ -26,8 +24,8 @@
                 "type"                       => $this->type ,
                 "unit"                       => $this->unit ,
                 "barcode"                    => $this->barcode ,
-                'quantity'                   => abs($this->transfer_quantity) ?? 0 ,
-                'quantity_text'              => number_format( abs($this->transfer_quantity )?? 0 ) ,
+                'quantity'                   => abs( $this->transfer_quantity ) ?? 0 ,
+                'quantity_text'              => number_format( abs( $this->transfer_quantity ) ?? 0 ) ,
                 "stock"                      => $this->stock ,
                 "stock_text"                 => number_format( $this->stock ) ,
                 "slug"                       => $this->slug ,
@@ -35,20 +33,25 @@
                 "barcode_id"                 => $this->barcode_id ,
                 "product_brand_id"           => $this->product_brand_id ,
                 "unit_id"                    => $this->unit_id ,
-                "prices"                     => $this->prices->map( function ($price) {
-                    return [
-                        'id'         => $price->id ,
-                        'product_id' => $price->product_id ,
-                        'unit_id'    => $price->unit_id ,
-                        'price'      => AppLibrary::currencyAmountFormat( $price->price ) ,
-                        'unit'       => new UnitResource( $price->unit ) ,
-                    ];
-                } ) ,
-                "retail_prices"              => $this->prices->filter( fn($price) => $price->type == 0 )->values() ,
-                "wholesale_prices"           => $this->prices->filter( fn($price) => $price->type == 1 )->values() ,
-                "other_units_detailed"       => UnitResource::collection( $this->sellingUnits ) ,
-                "selling_units"              => UnitResource::collection( $this->sellingUnits ) ,
-                "selling_units_flat"         => $this->sellingUnits->map( fn($unit) => [ $unit->id ] )->flatten() ,
+                "wholesalePrices"            => $this->wholesalePrices ,
+                "retailPrices"               => $this->retailPrices ,
+                "track_stock"                => $this->track_stock ,
+                "returnable"                 => $this->returnable ,
+                "weight_unit_id"             => $this->weight_unit_id ,
+//                "prices"                     => $this->prices->map( function ($price) {
+//                    return [
+//                        'id'         => $price->id ,
+//                        'product_id' => $price->product_id ,
+//                        'unit_id'    => $price->unit_id ,
+//                        'price'      => AppLibrary::currencyAmountFormat( $price->price ) ,
+//                        'unit'       => new UnitResource( $price->unit ) ,
+//                    ];
+//                } ) ,
+//                "retail_prices"              => $this->prices->filter( fn($price) => $price->type == 0 )->values() ,
+//                "wholesale_prices"           => $this->prices->filter( fn($price) => $price->type == 1 )->values() ,
+//                "other_units_detailed"       => UnitResource::collection( $this->sellingUnits ) ,
+//                "selling_units"              => UnitResource::collection( $this->sellingUnits ) ,
+//                "selling_units_flat"         => $this->sellingUnits->map( fn($unit) => [ $unit->id ] )->flatten() ,
                 "tax_id"                     => ProductTaxResource::collection( $this->taxes ) ,
                 "flat_buying_price"          => AppLibrary::currencyAmountFormat( $this->buying_price ) ,
                 "buying_price"               => $this->buying_price ,
@@ -64,7 +67,7 @@
                 "weight"                     => $this->weight ,
                 "refundable"                 => $this->refundable ,
                 "description"                => $this->description === NULL ? '' : $this->description ,
-                "product_tags"               => ProductTagResource::collection( $this->tags ) ,
+                "tags"                       => $this->tags->pluck( 'name' )->implode( ',' ) ,
                 "category_name"              => ucwords( $this?->category?->name ) ,
                 "brand"                      => $this?->brand ,
                 "order"                      => abs( $this?->productOrders->sum( 'quantity' ) ) ,

@@ -177,14 +177,18 @@
             return $this->belongsToMany( Unit::class , 'product_units' , 'product_id' , 'unit_id' );
         }
 
-        public function wholesalePrices() : BelongsToMany
+        public function wholesalePrices() : HasMany | Product
         {
-            return $this->belongsToMany( WholeSalePrice::class );
+            return $this->hasMany( WholeSalePrice::class );
         }
 
-        public function prices() : Builder | HasMany | Product
+//        public function prices() : Builder | HasMany | Product
+//        {
+//            return $this->hasMany( RetailPrice::class , 'product_id' , 'id' );
+//        }
+        public function retailPrices(): MorphMany
         {
-            return $this->hasMany( RetailPrice::class , 'product_id' , 'id' );
+            return $this->morphMany(RetailPrice::class, 'item');
         }
 
         public function commissionTargets() : Builder | HasMany | Product

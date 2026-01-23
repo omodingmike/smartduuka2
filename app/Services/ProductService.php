@@ -69,7 +69,10 @@
                 $page    = $request->input( 'page' );
                 $query   = $request->input( 'query' );
 
-                $products_query = Product::with( [ 'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'prices.unit' , 'stocks' ] );
+                $products_query = Product::with(
+                    [
+                        'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+                    ] );
                 return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
 
             } catch ( Exception $exception ) {
@@ -130,28 +133,34 @@
                     $data              = $request->validated();
                     $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
                     $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
-                    $track_stock       = $data[ 'trackStock' ];
-                    $product           = Product::create( [
-                        'name'                       => $data[ 'name' ] ,
-                        'slug'                       => $data[ 'name' ] ,
-                        'track_stock'                => $track_stock ,
-                        'type'                       => $data[ 'type' ] ,
-                        'sku'                        => $data[ 'sku' ] ,
-                        'barcode'                    => $data[ 'sku' ] ,
-                        'product_category_id'        => $data[ 'product_category_id' ] ,
-                        'product_brand_id'           => $data[ 'product_brand_id' ] ,
-                        'weight'                     => $data[ 'weight' ] ,
-                        'weight_unit_id'             => $data[ 'weight_unit_id' ] ,
-                        'status'                     => $data[ 'status' ] ,
-                        'can_purchasable'            => $data[ 'can_purchasable' ] ,
-                        'low_stock_quantity_warning' => $data[ 'low_stock_quantity_warning' ] ,
-                        'returnable'                 => $data[ 'returnable' ] ,
-                        'description'                => $data[ 'description' ] ,
-                        'refundable'                 => Ask::YES ,
-                        'unit_id'                    => $retail_pricing[ 0 ][ 'unitId' ] ,
-                        'buying_price'               => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
-                        'selling_price'              => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
+
+                    $product = Product::create( [
+                        'name'                => $data[ 'name' ] ,
+                        'slug'                => $data[ 'name' ] ,
+                        'type'                => $data[ 'type' ] ,
+                        'sku'                 => $data[ 'sku' ] ,
+                        'barcode'             => $data[ 'barcode' ] ,
+                        'product_category_id' => $data[ 'product_category_id' ] ,
+                        'product_brand_id'    => $data[ 'product_brand_id' ] ,
+                        'weight'              => $data[ 'weight' ] ,
+                        'weight_unit_id'      => $data[ 'weight_unit_id' ] ,
+                        'status'              => $data[ 'status' ] ,
+                        'can_purchasable'     => $data[ 'can_purchasable' ] ,
+                        'returnable'          => $data[ 'returnable' ] ,
+                        'description'         => $data[ 'description' ] ,
+                        'refundable'          => Ask::YES ,
+                        'unit_id'             => $retail_pricing[ 0 ][ 'unitId' ] ,
+                        'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
+                        'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
+
+                    $track_stock = 0;
+                    if ( isset( $data[ 'trackStock' ] ) ) {
+                        $track_stock                         = $data[ 'trackStock' ];
+                        $product->track_stock                = $track_stock;
+                        $product->low_stock_quantity_warning = $data[ 'low_stock_quantity_warning' ];
+                    }
+
                     if ( $track_stock ) {
                         $warehouse_id = $request->input( 'warehouse_id' );
                         if ( ! $warehouse_id ) {
@@ -199,13 +208,15 @@
                             ] );
                         }
                     }
-
-//                    if ( $request->selling_units ) {
-//                        foreach ( $request->selling_units as $selling_unit ) {
-//                            if ( ! $selling_unit ) continue;
-//                            $this->product->sellingUnits()->attach( $selling_unit );
-//                        }
-//                    }
+                    if ( $retail_pricing ) {
+                        foreach ( $retail_pricing as $retail_price ) {
+                            $product->retailPrices()->create( [
+                                'unit_id'       => $retail_price[ 'unitId' ] ,
+                                'buying_price'  => $retail_price[ 'buyingPrice' ] ,
+                                'selling_price' => $retail_price[ 'sellingPrice' ] ,
+                            ] );
+                        }
+                    }
 
                     if ( $request->tags ) {
                         $tagItems = explode( ',' , $request->tags );
@@ -216,40 +227,6 @@
                             ] );
                         }
                     }
-//                    if ( $request->selling_prices ) {
-//                        foreach ( $request->selling_prices as $selling_price ) {
-//                            if ( ! $selling_price[ 'unit_id' ] ) continue;
-//                            RetailPrice::create( [
-//                                'type'       => $selling_price[ 'type' ] ,
-//                                'product_id' => $this->product->id ,
-//                                'unit_id'    => $selling_price[ 'unit_id' ] ,
-//                                'price'      => $selling_price[ 'price' ]
-//                            ] );
-//                        }
-//                    }
-
-//                    if ( $request->tax_id ) {
-//                        foreach ( $request->tax_id as $tax ) {
-//                            ProductTax::create( [
-//                                'product_id' => $this->product->id ,
-//                                'tax_id'     => $tax
-//                            ] );
-//                        }
-//                    }
-
-//                    $generator = new BarcodeGeneratorPNG();
-//                    $black     = [ 0 , 0 , 0 ];
-//                    $barcode   = NULL;
-//                    if ( $this->product->barcode_id == BarcodeType::EAN_13 ) {
-//                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
-//                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
-//                    }
-//                    if ( $this->product->barcode_id == BarcodeType::UPC_A ) {
-//                        $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
-//                        $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
-//                    }
-//                    $tempFilePath = storage_path( 'app/public/barcode.png' );
-//                    file_put_contents( $tempFilePath , $barcode );
                     $this->saveMedia( $request , $product , MediaEnum::PRODUCTS_MEDIA_COLLECTION );
                     $this->product = $product;
                 } );
@@ -265,6 +242,93 @@
          * @throws Exception
          */
         public function update(ProductRequest $request , Product $product) : object
+        {
+            try {
+                DB::transaction( function () use ($request , $product) {
+                    $data              = $request->validated();
+                    $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
+                    $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
+
+                    // 1. Update Product attributes exactly as per store() method logic
+                    $product->update( [
+                        'name'                => $data[ 'name' ] ,
+                        'slug'                => $data[ 'name' ] ,
+                        'type'                => $data[ 'type' ] ,
+                        'sku'                 => $data[ 'sku' ] ,
+                        'barcode'             => $data[ 'barcode' ] ,
+                        'product_category_id' => $data[ 'product_category_id' ] ,
+                        'product_brand_id'    => $data[ 'product_brand_id' ] ,
+                        'weight'              => $data[ 'weight' ] ,
+                        'weight_unit_id'      => $data[ 'weight_unit_id' ] ,
+                        'status'              => $data[ 'status' ] ,
+                        'can_purchasable'     => $data[ 'can_purchasable' ] ,
+                        'returnable'          => $data[ 'returnable' ] ,
+                        'description'         => $data[ 'description' ] ,
+                        'refundable'          => Ask::YES ,
+                        'unit_id'             => $retail_pricing[ 0 ][ 'unitId' ] ,
+                        'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
+                        'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
+                    ] );
+
+                    if ( isset( $data[ 'trackStock' ] ) ) {
+                        $track_stock                         = $data[ 'trackStock' ];
+                        $product->track_stock                = $track_stock;
+                        $product->low_stock_quantity_warning = $data[ 'low_stock_quantity_warning' ];
+                    }
+
+                    // 2. Sync Wholesale Pricing (Referencing store logic)
+                    if ( $wholesale_pricing ) {
+                        $product->wholesalePrices()->delete();
+                        foreach ( $wholesale_pricing as $wholesale_price ) {
+                            WholeSalePrice::create( [
+                                'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
+                                'price'       => $wholesale_price[ 'price' ] ,
+                                'product_id'  => $product->id ,
+                            ] );
+                        }
+                    }
+
+                    // 3. Sync Polymorphic Retail Prices
+                    if ( $retail_pricing ) {
+                        $product->retailPrices()->delete();
+                        foreach ( $retail_pricing as $retail_price ) {
+                            $product->retailPrices()->create( [
+                                'unit_id'       => $retail_price[ 'unitId' ] ,
+                                'buying_price'  => $retail_price[ 'buyingPrice' ] ,
+                                'selling_price' => $retail_price[ 'sellingPrice' ] ,
+                            ] );
+                        }
+                    }
+
+                    // 4. Update Tags (Referencing store logic)
+                    if ( $request->tags ) {
+                        $product->tags()->delete();
+                        $tagItems = explode( ',' , $request->tags );
+                        foreach ( $tagItems as $tagItem ) {
+                            ProductTag::create( [
+                                'product_id' => $product->id ,
+                                'name'       => trim( $tagItem )
+                            ] );
+                        }
+                    }
+
+                    // 5. Media handling (Referencing store logic)
+                    $this->saveMedia( $request , $product , MediaEnum::PRODUCTS_MEDIA_COLLECTION );
+
+                    $this->product = $product;
+                } );
+                return $this->product;
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                DB::rollBack();
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        /**
+         * @throws Exception
+         */
+        public function update1(ProductRequest $request , Product $product) : object
         {
             try {
                 DB::transaction( function () use ($request , $product) {
