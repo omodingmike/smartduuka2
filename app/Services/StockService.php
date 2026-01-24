@@ -36,11 +36,15 @@
         public function list(Request $request)
         {
             try {
-                $perPage     = $request->integer( 'per_page' , 10 );
-                $isPaginated = $request->boolean( 'paginate' );
-                $stocks      = $this->stockQuery( $request )
-                                    ->where( 'status' , StockStatus::RECEIVED )
-                                    ->get();
+                $perPage      = $request->integer( 'per_page' , 10 );
+                $isPaginated  = $request->boolean( 'paginate' );
+                $warehouse_id = $request->warehouse_id;
+
+                $stocks       = $this->stockQuery( $request )
+                                     ->where( 'status' , StockStatus::RECEIVED )
+                                     ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                                     ->get();
+
                 if ( $stocks->isEmpty() ) {
                     return $isPaginated ? $this->paginate( [] , $perPage ) : [];
                 }

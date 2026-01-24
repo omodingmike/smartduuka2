@@ -5,7 +5,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 
-    class WarehouseResource extends JsonResource
+    class SimpleWarehouseResource extends JsonResource
     {
         public function toArray(Request $request) : array
         {
@@ -14,9 +14,6 @@
                 'name'         => $this->name ,
                 'email'        => $this->email ,
                 'location'     => $this->location ,
-                'stocks'       => StockResource::collection( $this->stocks ) ,
-//                'default_warehouse_id' => Warehouse::first()->id ,
-//                'deletable'            => $this->deletable ,
                 'phone'        => $this->phone ,
                 'manager'      => $this->manager ,
                 'capacity'     => $this->capacity ,

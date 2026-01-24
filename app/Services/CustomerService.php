@@ -6,6 +6,7 @@
     use App\Enums\OrderType;
     use App\Enums\PaymentStatus;
     use App\Enums\Role as EnumRole;
+    use App\Enums\Status;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\CustomerPaymentRequest;
     use App\Http\Requests\CustomerRequest;
@@ -64,6 +65,7 @@
         {
             try {
                 DB::transaction( function () use ($request) {
+                    $status     = $request->status;
                     $this->user = User::create( [
                         'username'          => $request->phone ,
                         'name'              => $request->name ,
@@ -71,7 +73,7 @@
                         'phone'             => $this->username( $request->phone ) ,
                         'password'          => bcrypt( 'password' ) ,
                         'email_verified_at' => now() ,
-                        'status'            => $request->status ,
+                        'status'            => $status ? $request->status : Status::ACTIVE ,
                         'is_guest'          => Ask::NO ,
                     ] );
                     if ( $request->phone2 ) {
