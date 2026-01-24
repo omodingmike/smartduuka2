@@ -274,122 +274,15 @@
         public function transfers(Request $request)
         {
             try {
-                $perPage = $request->integer('per_page', 10);
-                $isPaginated = $request->boolean('paginate');
-                $type = $request->type;
-                $stocks = $this->stockQuery($request)
-                               ->when($type, fn($q) => $q->where('type', $type))
-                               ->get();
-
-                $processedItems = $stocks->groupBy('batch')
-                                         ->map(fn($group,$batch) => $this->groupedStock($group, $batch))
-                                         ->values();
-
-                if ($isPaginated) {
-                    return $this->paginate($processedItems, $perPage, null, url('/api/admin/stock/transfers'));
-                }
-
-                return $processedItems;
-            } catch (Exception $exception) {
-                Log::error('Transfer List Error: ' . $exception->getMessage());
-                throw new Exception($exception->getMessage(), 422);
-            }
-        }
-
-        private function groupedStock ($group, $batch) {
-            $first = $group->first();
-
-            $productsWithQuantity = $group->map(function ($stock) {
-                $product = $stock->product;
-                if ($product) {
-                    $product->transfer_quantity = $stock->quantity;
-                }
-                return $product;
-            })->filter()->values();
-
-            return (object) [
-                'id'                       => $first->id,
-                'batch'                    => $batch,
-                'reference'                => $first->reference,
-                'products'                 => $productsWithQuantity,
-                'user'                     => $first->user,
-                'warehouse_id'             => $first->warehouse_id,
-                'source_warehouse_id'      => $first->source_warehouse_id,
-                'destination_warehouse_id' => $first->destination_warehouse_id,
-                'price'                    => $group->sum('price'),
-                'quantity'                 => $group->sum('quantity'),
-                'discount'                 => $group->sum('discount'),
-                'tax'                      => $group->sum('tax'),
-                'subtotal'                 => $group->sum('subtotal'),
-                'total'                    => $group->sum('total'),
-                'delivery'                 => $group->sum('delivery'),
-                'status'                   => $first->status,
-                'type'                     => $first->type,
-                'distribution_status'      => $first->distribution_status,
-                'created_at'               => $first->created_at,
-                'updated_at'               => $first->updated_at,
-                'description'              => $first->description,
-                'expiry_date'              => $first->expiry_date,
-                'system_stock'             => $first->system_stock,
-                'physical_stock'           => $first->physical_stock,
-                'difference'               => $first->difference,
-                'discrepancy'              => $first->discrepancy,
-                'classification'           => $first->classification,
-                'product_id'               => $first->product_id,
-                'model_type'               => $first->model_type,
-                'model_id'                 => $first->model_id,
-                'item_type'                => $first->item_type,
-                'item_id'                  => $first->item_id,
-                'sku'                      => $first->sku,
-                'variation_names'          => $first->variation_names,
-                'variation_id'             => $first->variation_id,
-                'unit_id'                  => $first->unit_id,
-                'rate'                     => $first->rate,
-                'purchase_quantity'        => $first->purchase_quantity,
-                'fractional_quantity'      => $first->fractional_quantity,
-                'other_quantity'           => $first->other_quantity,
-                'sold'                     => $group->sum('sold'),
-                'returned'                 => $group->sum('returned'),
-                'creator'                  => $first->creator,
-                'user_id'                  => $first->user_id,
-                'driver'                   => $first->driver ?? null,
-                'number_plate'             => $first->number_plate ?? null,
-            ];
-        }
-
-        public function transfers_old(Request $request)
-        {
-            try {
                 $perPage     = $request->integer( 'per_page' , 10 );
                 $isPaginated = $request->boolean( 'paginate' );
                 $type        = $request->type;
-
-                $stocks = $this->stockQuery( $request )
-                               ->when( $type , fn($q) => $q->where( 'type' , $type ) )
-                               ->get();
+                $stocks      = $this->stockQuery( $request )
+                                    ->when( $type , fn($q) => $q->where( 'type' , $type ) )
+                                    ->get();
 
                 $processedItems = $stocks->groupBy( 'batch' )
-                                         ->map( function ($group , $batch) {
-                                             $first = $group->first();
-                                             return [
-                                                 'batch'                    => $batch ,
-                                                 'reference'                => $first->reference ,
-                                                 'created_at'               => $first->created_at ,
-                                                 'source_warehouse_id'      => $first->source_warehouse_id ,
-                                                 'destination_warehouse_id' => $first->destination_warehouse_id ,
-                                                 'creator'                  => $first->user ,
-                                                 'products'                 => $group->map( function ($stock) {
-                                                     return [
-                                                         'product_id'      => $stock->product_id ,
-                                                         'product_name'    => $stock->product?->name ,
-                                                         'variation_names' => $stock->variation_names ,
-                                                         'quantity'        => $stock->quantity ,
-                                                         'price'           => $stock->price ,
-                                                         'total'           => $stock->total ,
-                                                     ];
-                                                 } )->values()
-                                             ];
-                                         } )
+                                         ->map( fn($group , $batch) => $this->groupedStock( $group , $batch ) )
                                          ->values();
 
                 if ( $isPaginated ) {
@@ -403,30 +296,70 @@
             }
         }
 
-        public function transfers1(Request $request)
+        private function groupedStock($group , $batch)
         {
-            try {
-                $perPage     = $request->integer( 'per_page' , 10 );
-                $isPaginated = $request->boolean( 'paginate' );
-                $type        = $request->type;
+            $first = $group->first();
 
-                $stocks = $this->stockQuery( $request )
-                               ->when( $type , fn($q) => $q->where( 'type' , $type ) )
-                               ->get();
+            $productsWithQuantity = $group->map( function ($stock) {
+                $product = $stock->product;
+                if ( $product ) {
+                    $product->transfer_quantity = $stock->quantity;
+                    $product->request_quantity  = $stock->request_quantity;
+                    $product->approve_quantity  = $stock->approve_quantity;
+                }
+                return $product;
+            } )->filter()->values();
 
-//                $groupCriteria = enabledWarehouse()
-//                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
-//                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
-
-                $processedItems = $stocks->groupBy( 'batch' )
-                                         ->map( fn($group) => $this->transformStockGroup( $group ) )
-                                         ->values();
-
-                return $processedItems;
-            } catch ( Exception $exception ) {
-                Log::error( 'Transfer List Error: ' . $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
+            return (object) [
+                'id'                       => $first->id ,
+                'batch'                    => $batch ,
+                'reference'                => $first->reference ,
+                'products'                 => $productsWithQuantity ,
+                'user'                     => $first->user ,
+                'warehouse_id'             => $first->warehouse_id ,
+                'source_warehouse_id'      => $first->source_warehouse_id ,
+                'destination_warehouse_id' => $first->destination_warehouse_id ,
+                'price'                    => $group->sum( 'price' ) ,
+                'quantity'                 => $group->sum( 'quantity' ) ,
+                'request_quantity'         => $group->sum( 'request_quantity' ) ,
+                'approve_quantity'         => $group->sum( 'approve_quantity' ) ,
+                'discount'                 => $group->sum( 'discount' ) ,
+                'tax'                      => $group->sum( 'tax' ) ,
+                'subtotal'                 => $group->sum( 'subtotal' ) ,
+                'total'                    => $group->sum( 'total' ) ,
+                'delivery'                 => $group->sum( 'delivery' ) ,
+                'status'                   => $first->status ,
+                'type'                     => $first->type ,
+                'distribution_status'      => $first->distribution_status ,
+                'created_at'               => $first->created_at ,
+                'updated_at'               => $first->updated_at ,
+                'description'              => $first->description ,
+                'expiry_date'              => $first->expiry_date ,
+                'system_stock'             => $first->system_stock ,
+                'physical_stock'           => $first->physical_stock ,
+                'difference'               => $first->difference ,
+                'discrepancy'              => $first->discrepancy ,
+                'classification'           => $first->classification ,
+                'product_id'               => $first->product_id ,
+                'model_type'               => $first->model_type ,
+                'model_id'                 => $first->model_id ,
+                'item_type'                => $first->item_type ,
+                'item_id'                  => $first->item_id ,
+                'sku'                      => $first->sku ,
+                'variation_names'          => $first->variation_names ,
+                'variation_id'             => $first->variation_id ,
+                'unit_id'                  => $first->unit_id ,
+                'rate'                     => $first->rate ,
+                'purchase_quantity'        => $first->purchase_quantity ,
+                'fractional_quantity'      => $first->fractional_quantity ,
+                'other_quantity'           => $first->other_quantity ,
+                'sold'                     => $group->sum( 'sold' ) ,
+                'returned'                 => $group->sum( 'returned' ) ,
+                'creator'                  => $first->creator ,
+                'user_id'                  => $first->user_id ,
+                'driver'                   => $first->driver ?? NULL ,
+                'number_plate'             => $first->number_plate ?? NULL ,
+            ];
         }
 
         public function transfer(Request $request)

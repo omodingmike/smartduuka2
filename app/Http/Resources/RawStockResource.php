@@ -21,7 +21,7 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => config( 'system.currency_symbol' ) ,
                 'products'                 => ProductAdminResource::collection( $this->products ) ,
-                'location'                 => new WarehouseResource( Warehouse::find( $this->warehouse_id) ) ,
+                'location'                 => new WarehouseResource( Warehouse::find( $this->warehouse_id ) ) ,
                 'from'                     => new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) ,
                 'to'                       => new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) ) ,
                 'model_id'                 => $this->model_id ,

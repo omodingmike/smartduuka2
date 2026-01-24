@@ -44,7 +44,7 @@
             try {
                 return ProductAdminResource::collection( $this->productService->list( $request ) );
             } catch ( Exception $exception ) {
-                info($exception->getTraceAsString());
+                info( $exception->getTraceAsString() );
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
@@ -86,10 +86,10 @@
             }
         }
 
-        public function destroy(Product $product) : \Illuminate\Http\Response | Application | ResponseFactory
+        public function destroy(Request $request)
         {
             try {
-                $this->productService->destroy( $product );
+                Product::destroy( $request->ids );
                 return response( '' , 202 );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

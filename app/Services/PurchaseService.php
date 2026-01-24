@@ -694,10 +694,11 @@
         {
             try {
                 DB::transaction( function () use ($request) {
-
                     $products        = json_decode( $request->input( 'products' ) , TRUE );
                     $batch           = 'B' . time();
-                    $type            = $request->type;
+                    $type            =(int) $request->type;
+                    $status          = $type === StockType::TRANSFER ? StockStatus::IN_TRANSIT : StockStatus::PENDING;
+
                     $driver          = $request->driver;
                     $number_plate    = $request->number_plate;
                     $referencePrefix = $type === StockType::TRANSFER ? 'ST' : 'SR';
@@ -713,23 +714,19 @@
                             'type'                     => $type ,
                             'reference'                => $reference ,
                             'quantity'                 => -$p[ 'quantity' ] ,
+                            'request_quantity'         => $p[ 'quantity' ] ,
                             'source_warehouse_id'      => $request->source_warehouse_id ,
                             'destination_warehouse_id' => $request->destination_warehouse_id ,
-//                            'description'     => $request->description ,
-//                            'expiry_date'     => isset( $product[ 'expiry' ] )
-//                                ? date( 'Y-m-d H:i:s' , strtotime( $product[ 'expiry' ] ) )
-//                                : NULL ,
                             'item_type'                => Product::class ,
                             'product_id'               => $product->id ,
                             'item_id'                  => $product->id ,
-//                            'variation_names' => $product[ 'variation_names' ] ,
                             'price'                    => $total ,
                             'discount'                 => 0 ,
                             'tax'                      => 0 ,
                             'subtotal'                 => $total ,
                             'total'                    => $total ,
                             'sku'                      => $product->sku ,
-                            'status'                   => StockStatus::PENDING ,
+                            'status'                   => $status->value,
                         ] );
                         if ( $driver && $number_plate ) {
                             $this->stock->update( [ 'driver' => $driver , 'number_plate' => $number_plate ] );

@@ -162,8 +162,9 @@
                     $products = json_decode( $request->products , TRUE );
                     foreach ( $products as $product ) {
                         Stock::where( [ 'batch' => $request->batch , 'product_id' => $product[ 'product_id' ] ] )->update( [
-                            'status'   => StockStatus::APPROVED ,
-                            'quantity' => -$product[ 'quantity' ]
+                            'status'           => StockStatus::APPROVED ,
+                            'approve_quantity' => $product[ 'quantity' ] ,
+                            'quantity'         => -$product[ 'quantity' ] ,
                         ] );
                     }
                 } );
@@ -180,9 +181,10 @@
                     foreach ( $products as $product ) {
                         $stock = Stock::where( [ 'batch' => $request->batch , 'product_id' => $product[ 'product_id' ] ] )->first();
                         $stock->update( [
-                            'status'       => StockStatus::RECEIVED ,
-                            'quantity'     => $product[ 'quantity' ] ,
-                            'warehouse_id' => $stock->destination_warehouse_id
+                            'status'           => StockStatus::RECEIVED ,
+                            'quantity'         => $product[ 'quantity' ] ,
+                            'approve_quantity' => $product[ 'quantity' ] ,
+                            'warehouse_id'     => $stock->destination_warehouse_id
                         ] );
                         Stock::where( [ 'warehouse_id' => $stock->source_warehouse_id , 'product_id' => $product[ 'product_id' ] ] )
                              ->decrement( 'quantity' , $product[ 'quantity' ] );
