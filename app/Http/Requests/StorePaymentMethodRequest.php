@@ -8,7 +8,7 @@
     {
         public function authorize() : bool
         {
-            return true;
+            return TRUE;
         }
 
         public function rules() : array
@@ -16,6 +16,7 @@
             return [
                 'name'          => 'required|string' ,
                 'merchant_code' => 'sometimes|string' ,
+                'image'         => 'sometimes|file' ,
             ];
         }
     }

@@ -5,7 +5,6 @@
     use App\Enums\Constants;
     use App\Enums\OrderStatus;
     use App\Enums\PaymentStatus;
-    use App\Enums\Status;
     use App\Exports\PurchasesExport;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PurchasePaymentRequest;
@@ -29,6 +28,7 @@
     use App\Models\Tax;
     use App\Services\ProductVariationService;
     use App\Services\PurchaseService;
+    use App\Traits\SaveMedia;
     use Exception;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
@@ -41,6 +41,7 @@
 
     class PurchaseController extends AdminController
     {
+        use SaveMedia;
         public PurchaseService         $purchaseService;
         public ProductVariationService $productVariationService;
         protected array                $purchaseFilter = [
@@ -58,11 +59,11 @@
             parent::__construct();
             $this->purchaseService         = $purchaseService;
             $this->productVariationService = $productVariationService;
-            $this->middleware( [ 'permission:purchase' ] )->only( 'export' , 'downloadAttachment' );
-            $this->middleware( [ 'permission:purchase_create' ] )->only( 'store' );
-            $this->middleware( [ 'permission:purchase_edit' ] )->only( 'edit' , 'update' );
-            $this->middleware( [ 'permission:purchase_delete' ] )->only( 'destroy' );
-            $this->middleware( [ 'permission:purchase_show' ] )->only( 'show' );
+//            $this->middleware( [ 'permission:purchase' ] )->only( 'export' , 'downloadAttachment' );
+//            $this->middleware( [ 'permission:purchase_create' ] )->only( 'store' );
+//            $this->middleware( [ 'permission:purchase_edit' ] )->only( 'edit' , 'update' );
+//            $this->middleware( [ 'permission:purchase_delete' ] )->only( 'destroy' );
+//            $this->middleware( [ 'permission:purchase_show' ] )->only( 'show' );
         }
 
         public function storeIngredient(PurchaseRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
@@ -127,7 +128,6 @@
                     $checkPosPayment = PosPayment::where( 'order_id' , $order->id )->sum( 'amount' );
 
                     if ( $checkPosPayment == $order->total ) {
-                        $order->diningTable()->update( [ 'status' => Status::AVAILABLE ] );
                         $order->payment_status = PaymentStatus::PAID;
                         $order->status         = OrderStatus::COMPLETED;
                     }

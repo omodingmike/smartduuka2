@@ -2,16 +2,18 @@
 
     namespace App\Http\Controllers;
 
+    use App\Enums\MediaEnum;
     use App\Http\Requests\StorePaymentMethodRequest;
     use App\Http\Requests\UpdatePaymentMethodRequest;
     use App\Http\Resources\PaymentMethodResource;
     use App\Models\PaymentMethod;
     use App\Traits\HasAdvancedFilter;
+    use App\Traits\SaveMedia;
     use Illuminate\Http\Request;
 
     class PaymentMethodController extends Controller
     {
-        use HasAdvancedFilter;
+        use HasAdvancedFilter , SaveMedia;
 
         public function index(Request $request)
         {
@@ -20,10 +22,9 @@
         }
 
         public function store(StorePaymentMethodRequest $request)
-//        public function store(Request $request)
         {
-//            info($request->all());
             $method = PaymentMethod::create( $request->validated() );
+            $this->saveMedia( $request , $method , MediaEnum::IMAGES_COLLECTION );
             activityLog( "Created Payment Method: $method->name" );
             return PaymentMethodResource::collection( PaymentMethod::all() );
         }
@@ -31,6 +32,7 @@
         public function update(UpdatePaymentMethodRequest $request , PaymentMethod $method)
         {
             $method->update( $request->validated() );
+            $this->saveMedia( $request , $method , MediaEnum::IMAGES_COLLECTION );
             activityLog( "Updated Payment Method: $method->name" );
             return PaymentMethodResource::collection( PaymentMethod::all() );
         }
