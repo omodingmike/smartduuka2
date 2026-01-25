@@ -55,7 +55,43 @@ TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
 TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 
-"http://localhost:8000/media/5/conversions/electronic_191-cover.jpg"
-http://localhost:8000/media/2/conversions/electronic_151-cover.jpg
+FormData {
+  items: '[{"cartId":1769327689313,"name":"Noah Mckee","quantity":1,"unitPrice":"2500","unitCostPrice":"1000.00","warehouse":"Main Warehouse","item_id":2}]',
+  total: '2950',
+  subtotal: '2500',
+  tax: '450',
+  customer_id: '4',
+  status: 'completed',
+  method: 'cash',
+  received: '3000',
+  change: '50',
+  payments: '[{"id":1769328568390,"method":"cash","methodName":"cash","amount":3000}]',
+  reference: ''
+}
 
-"http://localhost:8000/media/8/conversions/electronic_151-preview.jpg"
+FormData {
+  items: '[{"cartId":1769327689313,"name":"Noah Mckee","quantity":1,"unitPrice":"2500","unitCostPrice":"1000.00","warehouse":"Main Warehouse","item_id":2}]',
+  total: '2950',
+  subtotal: '2500',
+  tax: '450',
+  status: 'completed',
+  method: '2',
+  received: '2950',
+  change: '0',
+  payments: '[{"id":1769329497143,"method":2,"methodName":"Cassidy Cruz","amount":2950,"reference":"wqewqewqeq"}]',
+  reference: 'wqewqewqeq'
+}
+
+FormData {
+  items: '[{"product_id":2,"quantity":1}]',
+  total: '2950',
+  subtotal: '2500',
+  tax: '450',
+  customer_id: '2',
+  warehouse_id: '1',
+  status: 'credit',
+  received: '2000',
+  change: '0',
+  debt_amount: '950',
+  payments: '[{"id":1,"amount":2000}]'
+}

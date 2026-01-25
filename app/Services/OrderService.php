@@ -26,7 +26,6 @@
     use App\Models\StockTax;
     use App\Models\Unit;
     use App\Models\User;
-    use App\Models\Warehouse;
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -247,176 +246,80 @@
         {
             try {
                 DB::transaction( function () use ($request , $commissionCalculator) {
+                    $status        = $request->status;
+                    $paymentStatus = match ( $status ) {
+                        OrderType::COMPLETED => PaymentStatus::PAID ,
+                        OrderType::DEPOSIT   => PaymentStatus::PARTIALLY_PAID ,
+                        default              => PaymentStatus::UNPAID
+                    };
+
+                    if ( ( $status == OrderType::CREDIT || $status == OrderType::DEPOSIT ) && $request->received > 0 ) {
+                        $paymentStatus = PaymentStatus::PARTIALLY_PAID;
+                    }
+
                     $order = Order::create(
                         $request->validated() + [
-                            'paid'           => $request->initial_amount ?? 0 ,
+                            'paid'           => $request->received ?? 0 ,
                             'user_id'        => $request->customer_id ,
-                            'original_type'  => $request->order_type == PaymentMethodEnum::QUOTATION ? OrderType::QUOTATION : NULL ,
-                            'due_date'       => $request->order_type == PaymentMethodEnum::QUOTATION ? now()->addDays( 30 ) : NULL ,
-                            'status'         => $request->order_type == PaymentMethodEnum::QUOTATION ? OrderStatus::PENDING : OrderStatus::CONFIRMED ,
-                            'payment_status' => $request->initial_amount ? PaymentStatus::PARTIALLY_PAID : PaymentStatus::UNPAID ,
-                            'order_datetime' => $request->date ?? date( 'Y-m-d H:i:s' )
+                            'original_type'  => PaymentMethodEnum::TAKE_AWAY ,
+                            'due_date'       => now()->addDays( 30 ) ,
+                            'status'         => $status ,
+                            'change'         => $request->change ,
+                            'payment_status' => $paymentStatus ,
+                            'order_datetime' => now()
                         ]
                     );
 
                     $this->order = $order;
-                    $user        = Auth::user();
 
-                    $products = json_decode( $request->products );
-                    if ( ! blank( $products ) ) {
-                        foreach ( $products as $product ) {
-                            if ( $request->order_type != PaymentMethodEnum::QUOTATION ) {
-                                if ( $product->variation_id ) {
-                                    $available_stock = ProductVariation::withSum( 'stockItems' , 'quantity' )
-                                                                       ->where( [ 'id' => $product->variation_id ] )->first()?->stock_items_sum_quantity ?? 0;
-                                }
-                                else {
-                                    $available_stock = Product::withSum( 'stockItems' , 'quantity' )
-                                                              ->where( [ 'id' => $product->product_id ] )->first()?->stock_items_sum_quantity ?? 0;
-                                }
-                                if ( $available_stock < $product->quantity ) {
-                                    throw new Exception( "Product $product->name out of stock" );
-                                }
-                            }
+                    $payments = json_decode( $request->payments , TRUE );
 
-                            $order_product = Product::find( $product->product_id );
-                            $base_unit     = Unit::find( $order_product->unit_id );
-                            $selling_unit  = $product->sellingUnit ?? $product->unit_id ?? $base_unit?->id;
-                            $mid_unit_id   = $order_product->mid_unit_id;
-                            $top_unit_id   = $order_product->top_unit_id;
-
-                            if ( $order_product->base_units_per_top_unit && $order_product->mid_units_per_top_unit ) {
-                                $quantity = match ( $selling_unit ) {
-                                    $mid_unit_id => ( $product->quantity * $order_product->units_per_mid_unit ) ,
-                                    $top_unit_id => ( $product->quantity * $order_product->base_units_per_top_unit ) ,
-                                    default      => $product->quantity
-                                };
-                            }
-                            else {
-                                $quantity = $product->quantity;
-                            }
-
-                            $stock = Stock::create( [
-                                'product_id'          => $product->product_id ,
-                                'unit_id'             => $product->sellingUnit ?? $product->unit_id ?? $base_unit->id ,
-                                'other_quantity'      => $product->quantity ,
-                                'purchase_quantity'   => $product->quantity ,
-                                'model_type'          => Order::class ,
-                                'model_id'            => $this->order->id ,
-                                'variation_id'        => $product->variation_id ,
-                                'item_type'           => $product->variation_id ? ProductVariation::class : Product::class ,
-                                'item_id'             => $product->variation_id ?: $product->product_id ,
-                                'variation_names'     => $product->variation_names ,
-                                'sku'                 => $product->sku ,
-                                'price'               => $product->price ,
-                                'quantity'            => -$quantity ,
-                                'fractional_quantity' => $quantity ,
-                                'discount'            => clean_amount( $product->discount ) ,
-                                'delivery'            => $product->delivery ?? 0 ,
-                                'tax'                 => number_format( $product->total_tax , 2 , '.' , '' ) ,
-                                'subtotal'            => $product->subtotal ,
-                                'total'               => $product->total ,
-                                'status'              => Status::ACTIVE ,
-                                'creator'             => $user->id ,
+                    foreach ( $payments as $payment ) {
+                        $amount = $payment[ 'amount' ];
+                        if ( $payment[ 'amount' ] > 0 ) {
+                            PosPayment::create( [
+                                'order_id'       => $order->id ,
+                                'date'           => now() ,
+                                'reference_no'   => $payment[ 'reference' ] ?? time() ,
+                                'amount'         => $amount ,
+                                'payment_method' => $payment[ 'id' ] ,
                             ] );
-
-                            $commission = $commissionCalculator->calculateForPosStock( $stock );
-                            $user->increment( 'commission' , $commission );
-
-                            if ( isDistributor() ) {
-                                $stock->update( [ 'user_id' => $user->id ] );
-                            }
-
-                            if ( isset( $product->warehouse_id ) && enabledWarehouse() ) {
-                                $stock->warehouse_id = $product->warehouse_id;
-                            }
-                            else {
-                                if ( enabledWarehouse() ) {
-                                    $stock->warehouse_id = Warehouse::first()?->id;
-                                }
-                            }
-                            $stock->save();
-                            if ( $product->otherQuantity && $product->otherQuantity > 0 ) {
-                                $stock->other_quantity = $product->otherQuantity;
-                                $stock->save();
-                            }
-                            $j               = 0;
-                            $productTaxArray = [];
-                            if ( isset( $product?->taxes ) ) {
-                                foreach ( $product->taxes as $tax_item ) {
-                                    $productTaxArray[ $j ] = [
-                                        'stock_id'   => $stock->id ,
-                                        'product_id' => $product->product_id ,
-                                        'tax_id'     => $tax_item->id ,
-                                        'name'       => $tax_item->name ,
-                                        'code'       => $tax_item->code ,
-                                        'tax_rate'   => $tax_item->tax_rate ,
-                                        'tax_amount' => $tax_item->tax_amount ?? ( $tax_item->tax_rate * $product->price ) ,
-                                        'created_at' => now() ,
-                                        'updated_at' => now()
-                                    ];
-                                    $j++;
-                                }
-                            }
-
-                            StockTax::insert( $productTaxArray );
-
-                            $order          = $this->order;
-                            $payment_method = PaymentMethod::find( $request->pos_payment_method );
-                            $amount         = $request->initial_amount;
-                            if ( $request->order_type != OrderType::QUOTATION && $request->order_type != OrderType::CREDIT ) {
-                                PosPayment::create( [
-                                    'order_id'       => $order->id ,
-                                    'date'           => date( 'Y-m-d H:i:s' , time() ) ,
-                                    'reference_no'   => time() ,
-                                    'amount'         => $amount ,
-                                    'payment_method' => $payment_method->id ,
-                                ] );
-                                $order->order_type = $request->pos_purchase_method;
-                            }
-                            if ( $request->payment_method ) {
-                                $order->payment_method = $request->payment_method;
-                            }
-                            $order->change   = $request->change;
-                            $checkPosPayment = PosPayment::where( 'order_id' , $order->id )->sum( 'amount' );
-                            if ( $checkPosPayment === $order->total ) {
-                                $order->payment_status = PaymentStatus::PAID;
-                                $order->status         = OrderStatus::COMPLETED;
-                            }
-                            if ( $checkPosPayment < $order->total ) {
-                                $order->payment_status = PaymentStatus::UNPAID;
-                            }
                         }
                     }
-                    $this->order->shipping_charge = $request->delivery;
+
+                    $products = json_decode( $request->products , TRUE );
+
+                    if ( ! blank( $products ) ) {
+                        foreach ( $products as $product ) {
+                            $stock = Stock::where( [
+                                'item_id'      => $product[ 'product_id' ] ,
+                                'item_type'    => Product::class ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $request->warehouse_id
+                            ] )->first();
+                            $stock->decrement( 'quantity' , $product[ 'quantity' ] );
+                        }
+                    }
                     $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
                     $this->order->save();
 
-                    if ( in_array( $request->order_type , [ OrderType::CREDIT , OrderType::DEPOSIT ] ) ) {
+                    if ( in_array( $status , [ OrderType::CREDIT , OrderType::DEPOSIT ] ) ) {
                         $credit           = new CreditDepositPurchase();
                         $credit->user_id  = $request->customer_id;
                         $credit->order_id = $this->order->id;
-                        $credit->paid     = $request->initial_amount ?? 0;
-                        if ( $request->order_type == OrderType::CREDIT ) {
-                            $credit->balance = $this->order->total - ( $request->initial_amount ?? 0 );
-                            $credit->type    = 'credit';
+                        $credit->paid     = $request->received ?? 0;
+                        if ( $status == OrderType::CREDIT ) {
+                            $credit->balance = $this->order->total - ( $request->received ?? 0 );
+                            $credit->type    = OrderType::CREDIT;
                         }
-                        elseif ( $request->order_type == OrderType::DEPOSIT ) {
+                        elseif ( $status == OrderType::DEPOSIT ) {
                             $credit->balance = $this->order->total - ( $request->initial_amount ?? 0 );
-                            $credit->type    = 'deposit';
+                            $credit->type    = OrderType::DEPOSIT;
                         }
                         $credit->save();
                     }
                 } );
-                if ( $request->initial_amount && ( $request->initial_amount >= $this->order->total ) ) {
-                    $this->order->payment_status = PaymentStatus::PAID;
-                }
-                else if ( $request->initial_amount && ( $request->initial_amount < $this->order->total ) ) {
-                    $this->order->payment_status = PaymentStatus::PARTIALLY_PAID;
-                }
-                else {
-                    $this->order->payment_status = PaymentStatus::UNPAID;
-                }
+
                 $this->order->save();
                 return $this->order;
             } catch ( Exception $exception ) {

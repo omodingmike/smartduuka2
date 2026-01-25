@@ -32,7 +32,8 @@
             'reason' ,
             'source' ,
             'pos_payment_method' ,
-            'pos_payment_note' , 'original_type' , 'due_date','balance'
+            'pos_payment_note' , 'original_type' , 'due_date' , 'balance' ,
+            'change'
         ];
 
         protected $casts = [

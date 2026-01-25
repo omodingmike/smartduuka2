@@ -2,7 +2,6 @@
 
     namespace App\Http\Requests;
 
-    use App\Rules\ValidJsonOrder;
     use Illuminate\Foundation\Http\FormRequest;
 
     class PosOrderRequest extends FormRequest
@@ -14,7 +13,7 @@
          */
         public function authorize() : bool
         {
-            return true;
+            return TRUE;
         }
 
         /**
@@ -27,14 +26,13 @@
             return [
                 'customer_id'        => [ 'required' , 'numeric' ] ,
                 'subtotal'           => [ 'required' , 'numeric' ] ,
-                'discount'           => [ 'nullable' , 'numeric' ] ,
                 'tax'                => [ 'required' , 'numeric' ] ,
                 'total'              => [ 'required' , 'numeric' ] ,
-                'order_type'         => [ 'required' , 'numeric' ] ,
-                'source'             => [ 'required' , 'numeric' ] ,
-                'products'           => [ 'required' , 'json' , new ValidJsonOrder ] ,
-                'pos_payment_method' => [ 'nullable' , 'numeric' ] ,
-                'pos_payment_note'   => [ 'nullable' , 'string' ]
+                'items'              => [ 'required' , 'string' ] ,
+                'received'           => [ 'required' , 'numeric:' ] ,
+                'debt_amount'        => [ 'sometimes' , 'numeric:' ] ,
+                'change'             => [ 'required' , 'numeric:' ] ,
+                'payments'           => [ 'required' , 'string:' ] ,
             ];
         }
     }
