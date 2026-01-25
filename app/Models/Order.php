@@ -59,26 +59,31 @@
 
         public function orderProducts() : HasMany
         {
-            return $this->hasMany(OrderProduct::class);
+            return $this->hasMany( OrderProduct::class );
         }
 
         public function stocks() : MorphMany
         {
-            return $this->morphMany(Stock::class , 'model');
+            return $this->morphMany( Stock::class , 'model' );
         }
 
         public function paymentMethod() : HasOne
         {
-            return $this->hasOne(PaymentMethod::class , 'id' , 'payment_method');
+            return $this->hasOne( OrderPaymentMethod::class , 'order_id' , 'id' );
         }
 
         public function user() : BelongsTo
         {
-            return $this->belongsTo(User::class);
+            return $this->belongsTo( User::class );
         }
 
         public function creditDepositPurchases() : Order | Builder | HasMany
         {
-            return $this->hasMany(CreditDepositPurchase::class , 'order_id')->whereNotNull('payment_method_id')->latest();
+            return $this->hasMany( CreditDepositPurchase::class , 'order_id' )->whereNotNull( 'payment_method_id' )->latest();
+        }
+
+        public function posPayments() : HasMany
+        {
+            return $this->hasMany( PosPayment::class );
         }
     }

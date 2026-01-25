@@ -18,7 +18,9 @@
     use App\Models\CreditDepositPurchase;
     use App\Models\Ingredient;
     use App\Models\Order;
+    use App\Models\OrderPaymentMethod;
     use App\Models\OrderProduct;
+    use App\Models\PaymentMethod;
     use App\Models\PosPayment;
     use App\Models\Product;
     use App\Models\ProductVariation;
@@ -274,15 +276,22 @@
 
                     $payments = json_decode( $request->payments , TRUE );
 
-                    foreach ( $payments as $payment ) {
-                        $amount = $payment[ 'amount' ];
-                        if ( $payment[ 'amount' ] > 0 ) {
+                    foreach ( $payments as $p ) {
+                        $amount = $p[ 'amount' ];
+                        if ( $amount > 0 ) {
+                            $payment = PaymentMethod::find( $p[ 'id' ] );
+                            $payment->increment( 'balance' , $amount );
+                            OrderPaymentMethod::create( [
+                                'order_id'          => $order->id ,
+                                'amount'            => $amount ,
+                                'payment_method_id' => $p[ 'id' ]
+                            ] );
                             PosPayment::create( [
                                 'order_id'       => $order->id ,
                                 'date'           => now() ,
-                                'reference_no'   => $payment[ 'reference' ] ?? time() ,
+                                'reference_no'   => $p[ 'reference' ] ?? time() ,
                                 'amount'         => $amount ,
-                                'payment_method' => $payment[ 'id' ] ,
+                                'payment_method' => $p[ 'id' ] ,
                             ] );
                         }
                     }
@@ -294,7 +303,6 @@
                             OrderProduct::create( [
                                 'order_id'   => $this->order->id ,
                                 'item_id'    => $product[ 'item_id' ] ,
-//                                'item_type'  => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
                                 'item_type'  => Product::class ,
                                 'quantity'   => $product[ 'quantity' ] ,
                                 'total'      => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
