@@ -82,4 +82,8 @@
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
+
+        public function index(Order $order) {
+            return new OrderDetailsResource($order);
+        }
     }

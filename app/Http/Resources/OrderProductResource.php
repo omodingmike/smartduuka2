@@ -44,13 +44,13 @@
 //                'unit'                    => $this->product->unit ,
                 'unit'                    => new UnitResource($this->unit) ,
                 'rate'                    => $this->rate ,
-                'other_unit'              => $this->product->otherUnit ,
-                'variation_names'         => $this->variation_names ,
-                'product_user_review'     => $this?->product?->userReview ? true : false ,
-                'product_user_review_id'  => $this?->product?->userReview?->id ,
-                'is_refundable'           => $this?->product?->refundable === Ask::YES ? true : false ,
-                'has_variation'           => $this->item_type == ProductVariation::class ? true : false ,
-                'variation_id'            => $this->item_type == ProductVariation::class ? $this->product_id : ''
+//                'other_unit'              => $this->product->otherUnit ,
+//                'variation_names'         => $this->variation_names ,
+//                'product_user_review'     => $this?->product?->userReview ? true : false ,
+//                'product_user_review_id'  => $this?->product?->userReview?->id ,
+//                'is_refundable'           => $this?->product?->refundable === Ask::YES ? true : false ,
+//                'has_variation'           => $this->item_type == ProductVariation::class ? true : false ,
+//                'variation_id'            => $this->item_type == ProductVariation::class ? $this->product_id : ''
             ];
         }
     }

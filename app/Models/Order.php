@@ -57,9 +57,9 @@
             'pos_payment_note'   => 'string'
         ];
 
-        public function orderProducts() : morphMany
+        public function orderProducts() : HasMany
         {
-            return $this->morphMany(Stock::class , 'model');
+            return $this->hasMany(OrderProduct::class);
         }
 
         public function stocks() : MorphMany

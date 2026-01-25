@@ -67,4 +67,9 @@ class ProductVariation extends Model implements HasMedia
     {
         return $this->stocks()->where('status', Status::ACTIVE);
     }
+
+    public function orderProducts() : MorphMany
+    {
+        return $this->morphMany( OrderProduct::class , 'item' );
+    }
 }

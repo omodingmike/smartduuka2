@@ -683,7 +683,7 @@
         } );
 
         Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
-            Route::get( '/' , [ PosController::class , 'store' ] );
+            Route::get( '/{order}' , [ PosController::class , 'index' ] );
             Route::post( '/' , [ PosController::class , 'store' ] );
             Route::post( '/update' , [ PosController::class , 'update' ] );
             Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );

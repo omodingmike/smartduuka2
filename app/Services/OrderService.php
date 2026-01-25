@@ -18,7 +18,7 @@
     use App\Models\CreditDepositPurchase;
     use App\Models\Ingredient;
     use App\Models\Order;
-    use App\Models\PaymentMethod;
+    use App\Models\OrderProduct;
     use App\Models\PosPayment;
     use App\Models\Product;
     use App\Models\ProductVariation;
@@ -287,12 +287,21 @@
                         }
                     }
 
-                    $products = json_decode( $request->products , TRUE );
+                    $products = json_decode( $request->items , TRUE );
 
                     if ( ! blank( $products ) ) {
                         foreach ( $products as $product ) {
+                            OrderProduct::create( [
+                                'order_id'   => $this->order->id ,
+                                'item_id'    => $product[ 'item_id' ] ,
+//                                'item_type'  => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
+                                'item_type'  => Product::class ,
+                                'quantity'   => $product[ 'quantity' ] ,
+                                'total'      => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price' => $product[ 'unitPrice' ] ,
+                            ] );
                             $stock = Stock::where( [
-                                'item_id'      => $product[ 'product_id' ] ,
+                                'item_id'      => $product[ 'item_id' ] ,
                                 'item_type'    => Product::class ,
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $request->warehouse_id

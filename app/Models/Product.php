@@ -279,4 +279,9 @@
         {
             return $this->hasOne( ProductReview::class , 'product_id' , 'id' )->where( 'user_id' , Auth::user()->id );
         }
+
+        public function orderProducts() : MorphMany
+        {
+            return $this->morphMany( OrderProduct::class , 'item' );
+        }
     }
