@@ -233,6 +233,7 @@
             Route::prefix( 'payment-methods' )->name( 'payment-methods.' )->group( function () {
                 Route::get( '/' , [ PaymentMethodController::class , 'index' ] );
                 Route::post( '/' , [ PaymentMethodController::class , 'store' ] );
+                Route::post( '/transfer' , [ PaymentMethodController::class , 'transfer' ] );
                 Route::match(
                     [ 'put' , 'patch' ] ,
                     '/{method}' ,
@@ -248,10 +249,7 @@
                 Route::get( '/' , [ SiteController::class , 'index' ] );
                 Route::match( [ 'post' , 'patch' ] , '/' , [ SiteController::class , 'update' ] );
             } );
-            Route::prefix( 'cleaning' )->name( 'cleaning.' )->group( function () {
-                Route::get( '/' , [ SiteController::class , 'cleaningIndex' ] );
-                Route::match( [ 'put' , 'patch' ] , '/' , [ SiteController::class , 'updateCleaning' ] );
-            } );
+
             Route::prefix( 'module' )->name( 'module.' )->group( function () {
                 Route::get( '/' , [ ModuleController::class , 'index' ] );
                 Route::match( [ 'put' , 'patch' ] , '/' , [ ModuleController::class , 'update' ] );

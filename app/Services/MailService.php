@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Requests\MailRequest;
+use App\Jobs\UpdateConfig;
 use Dipokhalder\EnvEditor\EnvEditor;
 use Exception;
 use Illuminate\Support\Facades\Artisan;
@@ -48,7 +49,7 @@ class MailService
                 'MAIL_FROM_ADDRESS' => $request->mail_from_email,
                 'MAIL_FROM_NAME'    => $request->mail_from_name
             ]);
-            Artisan::call('optimize:clear');
+            UpdateConfigJob::dispatch();
             return $this->list();
         } catch (Exception $exception) {
             Log::info($exception->getMessage());

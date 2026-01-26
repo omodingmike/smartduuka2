@@ -3,10 +3,12 @@
     namespace App\Http\Controllers;
 
     use App\Enums\MediaEnum;
+    use App\Http\Requests\FundsTransferRequest;
     use App\Http\Requests\StorePaymentMethodRequest;
     use App\Http\Requests\UpdatePaymentMethodRequest;
     use App\Http\Resources\PaymentMethodResource;
     use App\Models\PaymentMethod;
+    use App\Models\PaymentMethodTransaction;
     use App\Traits\HasAdvancedFilter;
     use App\Traits\SaveMedia;
     use Illuminate\Http\Request;
@@ -17,8 +19,7 @@
 
         public function index(Request $request)
         {
-            $filtered = $this->filter( new PaymentMethod() , $request , [ 'name' , 'code' ] );
-            return PaymentMethodResource::collection( $filtered );
+            return PaymentMethodResource::collection( PaymentMethod::with( 'transactions' )->get() );
         }
 
         public function store(StorePaymentMethodRequest $request)
@@ -47,5 +48,22 @@
         public function deleteMethods(Request $request)
         {
             PaymentMethod::destroy( $request->get( 'ids' ) );
+        }
+
+        public function transfer(FundsTransferRequest $request)
+        {
+            PaymentMethodTransaction::create( [
+                'amount'            => -$request->input( 'amount' ) ,
+                'charge'            => $request->input( 'charge' ) ,
+                'description'       => $request->input( 'description' ) ,
+                'payment_method_id' => $request->input( 'from_method_id' ) ,
+            ] );
+
+            PaymentMethodTransaction::create( [
+                'amount'            => $request->input( 'amount' ) ,
+                'charge'            => 0 ,
+                'description'       => $request->input( 'description' ) ,
+                'payment_method_id' => $request->input( 'to_method_id' ) ,
+            ] );
         }
     }

@@ -9,6 +9,7 @@
     use App\Enums\SettingsEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Libraries\AppLibrary;
     use App\Models\ActivityLog;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
@@ -260,6 +261,20 @@
         return (int) preg_replace( '/\D/' , '' , $value );
     }
 
+    function currency($value) : string
+    {
+        return AppLibrary::currencyAmountFormat( $value );
+    }
+
+    function datetime($value) : string
+    {
+        return AppLibrary::datetime2( $value );
+    }
+    function siteDate($value) : string
+    {
+        return AppLibrary::date( $value );
+    }
+
     function transformGroup($group)
     {
         return [
@@ -372,11 +387,11 @@
     function statusLabel($status) : string | null
     {
         return match ( $status ) {
-            Status::ACTIVE   => 'Active' ,
-            Status::INACTIVE => 'Inactive' ,
-            Status::CANCELED => 'Canceled' ,
+            Status::ACTIVE            => 'Active' ,
+            Status::INACTIVE          => 'Inactive' ,
+            Status::CANCELED          => 'Canceled' ,
             Status::UNDER_MAINTENANCE => 'Under Maintenance' ,
-            default          => NULL
+            default                   => NULL
         };
     }
 

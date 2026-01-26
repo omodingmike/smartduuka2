@@ -21,6 +21,7 @@
     use App\Models\OrderPaymentMethod;
     use App\Models\OrderProduct;
     use App\Models\PaymentMethod;
+    use App\Models\PaymentMethodTransaction;
     use App\Models\PosPayment;
     use App\Models\Product;
     use App\Models\ProductVariation;
@@ -248,14 +249,16 @@
         {
             try {
                 DB::transaction( function () use ($request , $commissionCalculator) {
-                    $status        = $request->status;
-                    $paymentStatus = match ( $status ) {
-                        OrderType::COMPLETED => PaymentStatus::PAID ,
-                        OrderType::DEPOSIT   => PaymentStatus::PARTIALLY_PAID ,
-                        default              => PaymentStatus::UNPAID
+                    $status = $request->status;
+                    $change = $request->change;
+
+                    $paymentStatus = match ( (int) $status ) {
+                        OrderType::COMPLETED->value => PaymentStatus::PAID ,
+                        OrderType::DEPOSIT->value   => PaymentStatus::PARTIALLY_PAID ,
+                        default                     => PaymentStatus::UNPAID
                     };
 
-                    if ( ( $status == OrderType::CREDIT || $status == OrderType::DEPOSIT ) && $request->received > 0 ) {
+                    if ( ( $status == OrderType::CREDIT->value || $status == OrderType::DEPOSIT->value ) && $request->received > 0 ) {
                         $paymentStatus = PaymentStatus::PARTIALLY_PAID;
                     }
 
@@ -267,31 +270,41 @@
                             'due_date'       => now()->addDays( 30 ) ,
                             'status'         => $status ,
                             'change'         => $request->change ,
-                            'payment_status' => $paymentStatus ,
+                            'payment_status' => $paymentStatus->value ,
                             'order_datetime' => now()
                         ]
                     );
 
                     $this->order = $order;
+                    $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
+                    $this->order->save();
 
                     $payments = json_decode( $request->payments , TRUE );
 
                     foreach ( $payments as $p ) {
-                        $amount = $p[ 'amount' ];
+                        $amount     = $p[ 'amount' ];
+                        $net_amount = $amount - $change;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            $payment->increment( 'balance' , $amount );
                             OrderPaymentMethod::create( [
                                 'order_id'          => $order->id ,
-                                'amount'            => $amount ,
+                                'amount'            => $net_amount ,
                                 'payment_method_id' => $p[ 'id' ]
                             ] );
+
                             PosPayment::create( [
                                 'order_id'       => $order->id ,
                                 'date'           => now() ,
                                 'reference_no'   => $p[ 'reference' ] ?? time() ,
-                                'amount'         => $amount ,
+                                'amount'         => $net_amount ,
                                 'payment_method' => $p[ 'id' ] ,
+                            ] );
+
+                            PaymentMethodTransaction::create( [
+                                'amount'            => $net_amount ,
+                                'charge'            => 0 ,
+                                'description'       => 'Order Payment #' . $this->order->order_serial_no ,
+                                'payment_method_id' => $payment->id ,
                             ] );
                         }
                     }
@@ -317,7 +330,6 @@
                             $stock->decrement( 'quantity' , $product[ 'quantity' ] );
                         }
                     }
-                    $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
                     $this->order->save();
 
                     if ( in_array( $status , [ OrderType::CREDIT , OrderType::DEPOSIT ] ) ) {
@@ -683,7 +695,9 @@
                         return $order;
                     }
                     else {
-                        return [];
+                        $order->payment_status = $request->payment_status;
+                        $order->save();
+                        return $order;
                     }
                 }
                 else {

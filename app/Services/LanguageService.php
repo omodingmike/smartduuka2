@@ -55,21 +55,21 @@ class LanguageService
     public function store(LanguageRequest $request)
     {
         try {
-            if (!file_exists(base_path("resources/js/languages/{$request->code}.json"))) {
-                copy(base_path("resources/js/languages/en.json"), base_path("resources/js/languages/{$request->code}.json"));
-            }
+//            if (!file_exists(base_path("resources/js/languages/{$request->code}.json"))) {
+//                copy(base_path("resources/js/languages/en.json"), base_path("resources/js/languages/{$request->code}.json"));
+//            }
 
-            if (!file_exists(base_path("lang/{$request->code}"))) {
-                mkdir(base_path("lang/{$request->code}"), 0755);
-                $files = scandir(base_path("lang/en"));
-                if (count($files) > 2) {
-                    foreach ($files as $file) {
-                        if ($file != '.' && $file != '..') {
-                            copy(base_path("lang/en/{$file}"), base_path("lang/{$request->code}/{$file}"));
-                        }
-                    }
-                }
-            }
+//            if (!file_exists(base_path("lang/{$request->code}"))) {
+//                mkdir(base_path("lang/{$request->code}"), 0755);
+//                $files = scandir(base_path("lang/en"));
+//                if (count($files) > 2) {
+//                    foreach ($files as $file) {
+//                        if ($file != '.' && $file != '..') {
+//                            copy(base_path("lang/en/{$file}"), base_path("lang/{$request->code}/{$file}"));
+//                        }
+//                    }
+//                }
+//            }
 
             $language = Language::create($request->validated());
             if ($request->image) {

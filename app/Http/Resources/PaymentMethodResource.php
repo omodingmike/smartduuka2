@@ -12,11 +12,20 @@
         {
 
             return [
-                'id'            => $this->id ,
-                'name'          => $this->name ,
-                'image'         => $this->image ,
-                'merchant_code' => $this->merchant_code ,
-                'balance'       => AppLibrary::currencyAmountFormat( $this->balance )
+                'id'               => $this->id ,
+                'name'             => $this->name ,
+                'image'            => $this->image ,
+                'merchant_code'    => $this->merchant_code ,
+                'balance'          => $this->balance ,
+                'transactions'     => $this->when(
+                    $this->relationLoaded( 'transactions' ) ,
+                    function () {
+                        return PaymentMethodTransactionResource::collection( $this->transactions->take( 5 ) );
+                    }
+                ) ,
+                'total_in'         => currency( $this->total_in ) ,
+                'total_out'        => currency( abs( $this->total_out ) ) ,
+                'balance_currency' => AppLibrary::currencyAmountFormat( $this->balance )
             ];
         }
     }
