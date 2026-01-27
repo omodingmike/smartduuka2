@@ -275,7 +275,7 @@
                         ]
                     );
 
-                    $this->order = $order;
+                    $this->order                  = $order;
                     $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
                     $this->order->save();
 

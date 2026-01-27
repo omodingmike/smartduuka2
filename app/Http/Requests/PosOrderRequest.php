@@ -24,15 +24,16 @@
         public function rules() : array
         {
             return [
-                'customer_id'        => [ 'required' , 'numeric' ] ,
-                'subtotal'           => [ 'required' , 'numeric' ] ,
-                'tax'                => [ 'required' , 'numeric' ] ,
-                'total'              => [ 'required' , 'numeric' ] ,
-                'items'              => [ 'required' , 'string' ] ,
-                'received'           => [ 'required' , 'numeric:' ] ,
-                'debt_amount'        => [ 'sometimes' , 'numeric:' ] ,
-                'change'             => [ 'required' , 'numeric:' ] ,
-                'payments'           => [ 'required' , 'string:' ] ,
+                'customer_id' => [ 'required' , 'numeric' ] ,
+                'subtotal'    => [ 'required' , 'numeric' ] ,
+                'tax'         => [ 'required' , 'numeric' ] ,
+                'total'       => [ 'required' , 'numeric' ] ,
+                'items'       => [ 'required' , 'string' ] ,
+                'received'    => [ 'required' , 'numeric:' ] ,
+                'debt_amount' => [ 'sometimes' , 'numeric:' ] ,
+                'change'      => [ 'required' , 'numeric:' ] ,
+                'discount'    => [ 'sometimes' , 'numeric:' ] ,
+                'payments'    => [ 'required' , 'string:' ] ,
             ];
         }
     }

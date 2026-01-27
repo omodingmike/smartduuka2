@@ -17,6 +17,7 @@
          */
         public function toArray($request) : array
         {
+            $balance = $this->total - $this->paid;
             return [
                 'id'                             => $this->id ,
                 'order_serial_no'                => $this->order_serial_no ,
@@ -36,7 +37,8 @@
                 'due_date'                       => $this->due_date ? AppLibrary::date( $this->due_date ) : NULL ,
                 'order_time'                     => AppLibrary::time( $this->order_datetime ) ,
                 'order_datetime'                 => AppLibrary::datetime( $this->order_datetime ) ,
-                'balance'                        => ( $this->total - $this->paid ) < 0 ? 0 : AppLibrary::currencyAmountFormat( $this->total - $this->paid ) ,
+                'balance'                        => max( $balance , 0 ) ,
+                'balance_currency'               => AppLibrary::currencyAmountFormat( max( $balance , 0 ) ) ,
                 'payment_method'                 => $this->payment_method ,
                 'payment_method_name'            => $this->paymentMethod?->name ,
                 'payment_status'                 => $this->payment_status ,
@@ -50,9 +52,10 @@
                 'reason'                         => $this->reason ,
                 'source'                         => $this->source ,
                 'unit'                           => new UnitResource ( $this->unit ) ,
-                'discount'                       => AppLibrary::currencyAmountFormat( $this->discount ) ,
+                'discount'                       => $this->discount ,
                 'paid'                           => AppLibrary::currencyAmountFormat( $this->paid ) ,
                 'change'                         => AppLibrary::currencyAmountFormat( $this->change ) ,
+                'change_currency'                => AppLibrary::currencyAmountFormat( $this->change ) ,
                 'active'                         => $this->active ,
                 'user'                           => new UserResource( $this->user ) ,
                 'order_products'                 => OrderProductResourceNew::collection( $this->orderProducts ) ,
