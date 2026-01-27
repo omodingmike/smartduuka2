@@ -34,6 +34,7 @@
                 'change'      => [ 'required' , 'numeric:' ] ,
                 'discount'    => [ 'sometimes' , 'numeric:' ] ,
                 'payments'    => [ 'required' , 'string:' ] ,
+                'order_type'  => [ 'required' , 'numeric::' ] ,
             ];
         }
     }

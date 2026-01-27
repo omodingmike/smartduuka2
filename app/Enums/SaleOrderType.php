@@ -2,21 +2,19 @@
 
     namespace App\Enums;
 
-    enum OrderType : int
+    enum SaleOrderType : int
     {
-        case IN_STORE = 1;
-        case DELIVERY = 2;
-        case PICKUP   = 3;
-        case ONLINE   = 4;
+        case CREDIT = 20;
+        case DEPOSIT = 25;
+        case COMPLETED = 40;
 
 
         public function label() : string
         {
             return match ( $this ) {
-                self::IN_STORE => 'In Store' ,
-                self::DELIVERY => 'Delivery' ,
-                self::PICKUP   => 'Pickup' ,
-                self::ONLINE   => 'Online' ,
+                self::CREDIT    => 'Credit' ,
+                self::DEPOSIT   => 'Deposit' ,
+                self::COMPLETED => 'Completed' ,
             };
         }
 

@@ -172,10 +172,11 @@
             );
         }
 
-        public function changeStatus(Order $order , OrderStatusRequest $request) : Response | OrderDetailsResource | Application | ResponseFactory
+        public function changeStatus(Order $order , OrderStatusRequest $request)
         {
             try {
-                return new OrderDetailsResource($this->orderService->changeStatus($order , $request , false));
+//                return new OrderDetailsResource($this->orderService->changeStatus($order , $request , false));
+                return $this->orderService->updateStatus($order , $request);
             } catch ( Exception $exception ) {
                 return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
             }

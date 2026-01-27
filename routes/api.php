@@ -674,7 +674,7 @@
             Route::get( 'show/{order}' , [ PosOrderController::class , 'show' ] );
             Route::delete( '/{order}' , [ PosOrderController::class , 'destroy' ] );
             Route::get( '/export' , [ PosOrderController::class , 'export' ] );
-            Route::post( '/change-status/{order}' , [ PosOrderController::class , 'changeStatus' ] );
+            Route::put( '/change-status/{order}' , [ PosOrderController::class , 'changeStatus' ] );
             Route::post( '/change-payment-status/{order}' , [ PosOrderController::class , 'changePaymentStatus' ] );
             Route::get( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'index' ] );
             Route::post( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'updateBalance' ] );

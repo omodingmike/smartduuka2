@@ -8,6 +8,7 @@
     use App\Enums\OrderType;
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
+    use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
     use App\Http\Requests\OrderStatusRequest;
@@ -68,20 +69,20 @@
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_by' ) ?? 'desc';
 
-                return Order::with( 'orderProducts' )
-                            ->whereIn( 'order_type' , [ 10 , OrderType::POS ] )
-                            ->when( ( $requests[ 'from_date' ] && $requests[ 'to_date' ] ) , function ($query) use ($requests) {
-                                $first_date = Date( 'Y-m-d' , strtotime( $requests[ 'from_date' ] ) );
-                                $last_date  = Date( 'Y-m-d' , strtotime( $requests[ 'to_date' ] ) );
-                                $query->whereBetween( 'order_datetime' , [ $first_date , $last_date ] );
-                            } )
+                return Order::with( [ 'orderProducts.item' , 'user' , 'creator' ] )
+//                            ->whereIn( 'order_type' , [ 10 , OrderType::POS ] )
+//                            ->when( ( $requests[ 'from_date' ] && $requests[ 'to_date' ] ) , function ($query) use ($requests) {
+//                                $first_date = Date( 'Y-m-d' , strtotime( $requests[ 'from_date' ] ) );
+//                                $last_date  = Date( 'Y-m-d' , strtotime( $requests[ 'to_date' ] ) );
+//                                $query->whereBetween( 'order_datetime' , [ $first_date , $last_date ] );
+//                            } )
                             ->where( function ($query) use ($requests) {
-                                foreach ( $requests as $key => $request ) {
-                                    if ( in_array( $key , $this->orderFilter ) ) {
-                                        $query->where( $key , 'like' , '%' . $request . '%' );
-                                    }
-                                }
-                            } )->orderBy( $orderColumn , $orderType )->$method(
+                        foreach ( $requests as $key => $request ) {
+                            if ( in_array( $key , $this->orderFilter ) ) {
+                                $query->where( $key , 'like' , '%' . $request . '%' );
+                            }
+                        }
+                    } )->orderBy( $orderColumn , $orderType )->$method(
                         $methodValue
                     );
             } catch ( Exception $exception ) {
@@ -249,16 +250,17 @@
         {
             try {
                 DB::transaction( function () use ($request , $commissionCalculator) {
-                    $status = $request->status;
-                    $change = $request->change;
+                    $status           = $request->integer( 'status' );
+                    $change           = $request->change;
+                    $delivery_address = $request->delivery_address;
+                    $delivery_fee     = $request->delivery_fee;
 
-                    $paymentStatus = match ( (int) $status ) {
-                        OrderType::COMPLETED->value => PaymentStatus::PAID ,
-                        OrderType::DEPOSIT->value   => PaymentStatus::PARTIALLY_PAID ,
-                        default                     => PaymentStatus::UNPAID
+                    $paymentStatus = match ( $status ) {
+                        SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
+                        default                         => PaymentStatus::UNPAID
                     };
 
-                    if ( ( $status == OrderType::CREDIT->value || $status == OrderType::DEPOSIT->value ) && $request->received > 0 ) {
+                    if ( $status == SaleOrderType::DEPOSIT->value ) {
                         $paymentStatus = PaymentStatus::PARTIALLY_PAID;
                     }
 
@@ -268,14 +270,22 @@
                             'user_id'        => $request->customer_id ,
                             'original_type'  => PaymentMethodEnum::TAKE_AWAY ,
                             'due_date'       => now()->addDays( 30 ) ,
-                            'status'         => $status ,
+                            'status'         => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
                             'change'         => $request->change ,
+                            'creator_id'     => auth()->id() ,
+                            'creator_type'   => User::class ,
                             'payment_status' => $paymentStatus->value ,
                             'order_datetime' => now()
                         ]
                     );
 
-                    $this->order                  = $order;
+                    $this->order = $order;
+                    if ( $delivery_address ) {
+                        $this->order->delivery_address = $delivery_address;
+                    }
+                    if ( $delivery_fee ) {
+                        $this->order->delivery_fee = $delivery_fee;
+                    }
                     $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
                     $this->order->save();
 
@@ -332,18 +342,18 @@
                     }
                     $this->order->save();
 
-                    if ( in_array( $status , [ OrderType::CREDIT , OrderType::DEPOSIT ] ) ) {
+                    if ( in_array( $status , [ SaleOrderType::CREDIT->value , SaleOrderType::DEPOSIT->value ] ) ) {
                         $credit           = new CreditDepositPurchase();
                         $credit->user_id  = $request->customer_id;
                         $credit->order_id = $this->order->id;
                         $credit->paid     = $request->received ?? 0;
-                        if ( $status == OrderType::CREDIT ) {
+                        if ( $status == SaleOrderType::CREDIT->value ) {
                             $credit->balance = $this->order->total - ( $request->received ?? 0 );
-                            $credit->type    = OrderType::CREDIT;
+                            $credit->type    = 'credit';
                         }
-                        elseif ( $status == OrderType::DEPOSIT ) {
+                        else {
                             $credit->balance = $this->order->total - ( $request->initial_amount ?? 0 );
-                            $credit->type    = OrderType::DEPOSIT;
+                            $credit->type    = 'deposit';
                         }
                         $credit->save();
                     }
@@ -784,6 +794,18 @@
                 $salesReportArray[ 'total_discounts' ] = AppLibrary::currencyAmountFormat( $orders->sum( 'discount' ) );
 
                 return $salesReportArray;
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function updateStatus(Order $order ,Request $request) : object
+        {
+            try {
+                $order->status = $request->status;
+                $order->save();
+                return response()->json();
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
