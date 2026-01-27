@@ -11,17 +11,19 @@
     {
         use HasFactory;
 
-        public    $timestamps = false;
+        public    $timestamps = FALSE;
         protected $guarded    = [];
         protected $casts      = [
-            'price' => 'integer'
+            'price' => 'decimal'
         ];
-        public function item(): MorphTo
+
+        public function item() : MorphTo
         {
             return $this->morphTo();
         }
+
         public function unit() : BelongsTo
         {
-            return $this->belongsTo(Unit::class , 'unit_id' , 'id');
+            return $this->belongsTo( Unit::class , 'unit_id' , 'id' );
         }
-}
+    }
