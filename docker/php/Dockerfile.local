@@ -1,0 +1,58 @@
+FROM php:8.4-fpm
+
+WORKDIR /app
+
+ENV HOME=/var/www
+ENV CHROME_CRASHPAD_DATABASE_DIR=/tmp/crashpad
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl nano gnupg ca-certificates supervisor git unzip libpq-dev \
+    jpegoptim optipng pngquant gifsicle libavif-bin libmagickwand-dev libzip-dev \
+    libx11-xcb1 libxcomposite1 libxshmfence1 libglu1 libnss3 libasound2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip \
+    && pecl install redis imagick \
+    && docker-php-ext-enable redis imagick
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# --------------------------
+# Copy application code
+# --------------------------
+COPY . /app
+
+# Install composer dependencies
+RUN composer install --no-interaction --no-progress --no-dev --prefer-dist --optimize-autoloader --ignore-platform-reqs --no-scripts
+
+# --------------------------
+# Permissions & Path Cleanup
+# --------------------------
+USER root
+
+# 1. Create necessary Laravel folders
+# 2. DELETE stale host-side cache files (Removes the Mac-specific path error)
+# 3. Set ownership and broad permissions for local dev
+RUN mkdir -p /app/storage/logs \
+             /app/storage/framework/sessions \
+             /app/storage/framework/views \
+             /app/storage/framework/cache \
+             /app/bootstrap/cache \
+    && rm -f /app/bootstrap/cache/*.php \
+    && chmod -R 777 /app/storage /app/bootstrap/cache \
+    && chown -R www-data:www-data /app
+
+COPY docker/php/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
+RUN chmod -R 1777 /tmp
+
+USER www-data
+
+EXPOSE 9000
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

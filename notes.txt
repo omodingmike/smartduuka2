@@ -95,3 +95,6 @@ FormData {
   debt_amount: '950',
   payments: '[{"id":1,"amount":2000}]'
 }
+docker compose exec api php artisan migrate
+docker compose exec api php artisan db:seed
+docker compose exec db psql -U root -d postgres -c "CREATE DATABASE smartduuka_main;"

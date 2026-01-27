@@ -1,0 +1,80 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile.local
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - smartduuka_network
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.local
+    container_name: api
+    restart: unless-stopped
+    # Internal port only; Nginx handles external traffic
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "php-fpm -t" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartduuka_network
+
+  db:
+    image: postgres:latest
+    container_name: db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - smartduuka_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: >
+      sh -c "if [ -z \"${REDIS_PASSWORD}\" ]; then
+        redis-server;
+      else
+        redis-server --requirepass ${REDIS_PASSWORD};
+      fi"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smartduuka_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  smartduuka_network:
+    name: smartduuka_network
+    external: false # Set to false so Docker creates it automatically
