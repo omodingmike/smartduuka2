@@ -35,6 +35,8 @@
                 'discount'    => [ 'sometimes' , 'numeric:' ] ,
                 'payments'    => [ 'required' , 'string:' ] ,
                 'order_type'  => [ 'required' , 'numeric::' ] ,
+                'paymentType' => [ 'required' , 'numeric::' ] ,
+                'channel'     => [ 'required' , 'numeric::' ] ,
             ];
         }
     }

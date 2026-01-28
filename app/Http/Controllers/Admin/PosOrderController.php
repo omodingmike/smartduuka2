@@ -34,83 +34,83 @@
         {
             parent::__construct();
             $this->orderService = $order;
-            $this->middleware([ 'permission:pos-orders' ])->only('index' , 'show' , 'destroy' , 'export' , 'changeStatus' , 'changePaymentStatus');
+            $this->middleware( [ 'permission:pos-orders' ] )->only( 'index' , 'show' , 'destroy' , 'export' , 'changeStatus' , 'changePaymentStatus' );
         }
 
         public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return OrderResource::collection($this->orderService->list($request));
+                return OrderResource::collection( $this->orderService->list( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function indexCredit(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return OrderResource::collection($this->orderService->listCredits($request));
+                return OrderResource::collection( $this->orderService->listCredits( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function indexQuotations(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return OrderResource::collection($this->orderService->listQuotations($request));
+                return OrderResource::collection( $this->orderService->listQuotations( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function indexDeposit(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return OrderResource::collection($this->orderService->listDeposits($request));
+                return OrderResource::collection( $this->orderService->listDeposits( $request ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function show(Order $order) : Response | OrderDetailsResource | Application | ResponseFactory
         {
             try {
-                return new OrderDetailsResource($this->orderService->show($order , false));
+                return new OrderDetailsResource( $this->orderService->show( $order , FALSE ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function pdf(Request $request , Order $order)
         {
             $pdfExportService = new PdfExportService();
-            return $pdfExportService->exportOrder($request->merge([ 'id' => $order->id ]) , true);
+            return $pdfExportService->exportOrder( $request->merge( [ 'id' => $order->id ] ) , TRUE );
         }
 
-        public function destroy(Order $order) : Response | Application | ResponseFactory
+        public function destroy(Request $request) : Response | Application | ResponseFactory
         {
             try {
-                $this->orderService->destroy($order);
-                return response('' , 202);
+                Order::destroy( $request->ids );
+                return response( '' , 202 );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function export(PaginateRequest $request) : Response | BinaryFileResponse | Application | ResponseFactory
         {
             try {
-                return Excel::download(new OrderExport($this->orderService , $request) , 'Pos-Order.xlsx');
+                return Excel::download( new OrderExport( $this->orderService , $request ) , 'Pos-Order.xlsx' );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function exportOrder(Request $request)
         {
             $pdfExportService = new PdfExportService();
-            return $pdfExportService->exportOrder($request);
+            return $pdfExportService->exportOrder( $request );
         }
 
         /**
@@ -118,42 +118,42 @@
          */
         public function storePDF(string $html , $name)
         {
-            $path = storage_path("/app/reports");
-            if ( ! File::exists($path) ) {
-                File::makeDirectory($path , 0777 , true);
+            $path = storage_path( "/app/reports" );
+            if ( ! File::exists( $path ) ) {
+                File::makeDirectory( $path , 0777 , TRUE );
             }
-            $browserShot = Browsershot::html($html)
+            $browserShot = Browsershot::html( $html )
                                       ->showBackground()
-                                      ->format('A4');
+                                      ->format( 'A4' );
 
-            if ( ! config('app.dev') ) {
-                $browserShot->setChromePath(config('app.chrome_path'));
+            if ( ! config( 'app.dev' ) ) {
+                $browserShot->setChromePath( config( 'app.chrome_path' ) );
             }
 
-            $browserShot->savePdf(storage_path("/app/reports/$name.pdf"));
+            $browserShot->savePdf( storage_path( "/app/reports/$name.pdf" ) );
         }
 
         public function mailQuotation(Request $request)
         {
             try {
                 $pdfExportService = new PdfExportService();
-                $html             = $pdfExportService->renderHtml($request);
-                $order            = Order::find($request->id);
-                $this->storePDF($html , orderName($order));
-                SendInvoiceMailJob::dispatchAfterResponse($order);
-                return response([ 'data' => [ 'message' => 'Failed to send email' ] ] , 202);
+                $html             = $pdfExportService->renderHtml( $request );
+                $order            = Order::find( $request->id );
+                $this->storePDF( $html , orderName( $order ) );
+                SendInvoiceMailJob::dispatchAfterResponse( $order );
+                return response( [ 'data' => [ 'message' => 'Failed to send email' ] ] , 202 );
             } catch ( Exception $e ) {
-                return response([ 'status' => false , 'message' => $e->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
             }
         }
 
         public function updateCssVariables(Request $request)
         {
             try {
-                $this->updateColors($request);
-                return response('' , 204);
+                $this->updateColors( $request );
+                return response( '' , 204 );
             } catch ( Exception $e ) {
-                return response([ 'status' => false , 'message' => $e->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
             }
         }
 
@@ -163,7 +163,7 @@
             $primaryLight   = $request->primaryLight;
             $secondaryColor = $request->secondaryColor;
             $secondaryLight = $request->secondaryLight;
-            Settings::group(SettingsEnum::APP_SETTINGS())->set(
+            Settings::group( SettingsEnum::APP_SETTINGS() )->set(
                 [ 'primaryColor'   => $primaryColor ,
                   'primaryLight'   => $primaryLight ,
                   'secondaryColor' => $secondaryColor ,
@@ -176,18 +176,18 @@
         {
             try {
 //                return new OrderDetailsResource($this->orderService->changeStatus($order , $request , false));
-                return $this->orderService->updateStatus($order , $request);
+                return $this->orderService->updateStatus( $order , $request );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function changePaymentStatus(Order $order , PaymentStatusRequest $request) : Response | OrderDetailsResource | Application | ResponseFactory
         {
             try {
-                return new OrderDetailsResource($this->orderService->changePaymentStatus($order , $request , false));
+                return new OrderDetailsResource( $this->orderService->changePaymentStatus( $order , $request , FALSE ) );
             } catch ( Exception $exception ) {
-                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
     }

@@ -2,15 +2,16 @@
 
     namespace App\Models;
 
+    use App\Enums\OrderChannel;
     use App\Enums\OrderStatus;
     use App\Enums\OrderType;
     use App\Enums\PaymentStatus;
+    use App\Enums\PaymentType;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
-    use Illuminate\Database\Eloquent\Relations\HasOne;
     use Illuminate\Database\Eloquent\Relations\morphMany;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -39,7 +40,9 @@
             'pos_payment_note' , 'original_type' , 'due_date' , 'balance' ,
             'change' ,
             'creator_id' ,
-            'creator_type'
+            'creator_type' ,
+            'payment_type' ,
+            'channel'
         ];
 
         protected $casts = [
@@ -57,6 +60,8 @@
             'payment_method'     => 'integer' ,
             'payment_status'     => PaymentStatus::class ,
             'status'             => OrderStatus::class ,
+            'payment_type'       => PaymentType::class ,
+            'channel'            => OrderChannel::class ,
             'reason'             => 'string' ,
             'source'             => 'integer' ,
             'pos_payment_method' => 'integer' ,
@@ -73,9 +78,10 @@
             return $this->morphMany( Stock::class , 'model' );
         }
 
-        public function paymentMethod() : HasOne
+        public function paymentMethods()
         {
-            return $this->hasOne( OrderPaymentMethod::class , 'order_id' , 'id' );
+            return $this->hasMany( PosPayment::class , 'order_id' , 'id' );
+//            return $this->hasMany( OrderPaymentMethod::class , 'order_id' , 'id' );
         }
 
         public function user() : BelongsTo

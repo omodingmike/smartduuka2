@@ -9,11 +9,12 @@
     {
         use HasFactory;
 
-        protected $fillable = [ 'date' , 'reference_no' , 'amount' , 'order_id' , 'payment_method' ];
+        protected $fillable = [ 'date' , 'reference_no' , 'amount' , 'order_id' , 'payment_method' , 'payment_method_id'
+        ];
         protected $casts    = [
             'id'             => 'integer' ,
             'order_id'       => 'integer' ,
-            'date'           => 'string' ,
+            'date'           => 'datetime' ,
             'reference_no'   => 'string' ,
             'amount'         => 'decimal:6' ,
             'payment_method' => 'integer'
@@ -27,8 +28,8 @@
             }
         }
 
-        public function paymenMethod()
+        public function paymentMethod()
         {
-            return $this->belongsTo(PaymentMethod::class , 'payment_method');
+            return $this->belongsTo(PaymentMethod::class , 'payment_method_id');
         }
     }

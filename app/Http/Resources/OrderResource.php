@@ -24,12 +24,13 @@
                 'user_id'              => $this->user_id ,
                 "total_amount_price"   => AppLibrary::flatAmountFormat( $this->total ) ,
                 "total_currency_price" => AppLibrary::currencyAmountFormat( $this->total ) ,
-                'status'               => [ 'label' => $this->status->label() , 'value' => $this->status->value ] ,
-                'order_type'           => [ 'label' => $this->order_type->label() , 'value' => $this->order_type->value ] ,
-                'payment_status'       => [ 'label' => $this->payment_status->label() , 'value' => $this->payment_status->value ] ,
+                'status'               => [ 'label' => $this->status?->label() , 'value' => $this->status?->value ] ,
+                'order_type'           => [ 'label' => $this->order_type?->label() , 'value' => $this->order_type?->value ] ,
+                'payment_status'       => [ 'label' => $this->payment_status?->label() , 'value' => $this->payment_status?->value ] ,
                 'label'                => orderLabel( Order::find( $this->id ) ) ,
                 'discount'             => AppLibrary::currencyAmountFormat( $this->discount ) ,
-                'paid'                 => AppLibrary::currencyAmountFormat( $this->paid ) ,
+                'paid'                 => $this->paid ,
+                'paid_currency'        => AppLibrary::currencyAmountFormat( $this->paid ) ,
                 'change'               => AppLibrary::currencyAmountFormat( $this->change ) ,
                 'balance'              => $this->total - $this->paid < 0 ? 0 : AppLibrary::currencyAmountFormat( $this->total - $this->paid ) ,
                 'shipping_charge'      => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
@@ -40,6 +41,7 @@
                 'orderProducts'        => OrderProductResource::collection( $this->orderProducts ) ,
 //                'orderProducts'        => $this->orderProducts ,
                 'delivery_address'     => $this->delivery_address ,
+                'paymentMethods'       => PosPaymentResource::collection( $this->paymentMethods ) ,
             ];
         }
     }

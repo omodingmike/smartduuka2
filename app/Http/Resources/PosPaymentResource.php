@@ -2,9 +2,7 @@
 
     namespace App\Http\Resources;
 
-    use App\Models\Order;
-    use App\Models\PaymentMethod;
-    use App\Models\PosPayment;
+    use App\Libraries\AppLibrary;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,13 +10,13 @@
     {
         public function toArray(Request $request) : array
         {
-            $purchasePaymentAmount = floatval(PosPayment::where('order_id' , $this->id)->sum('amount'));
-            $due_payment           = (float) $this->total - $purchasePaymentAmount;
             return [
-                'due_payment'     => $due_payment ,
-                'required_points' => $due_payment / royaltyPointsExchangeRate() ,
-                'payment_methods' => PaymentMethod::all() ,
-                'order'           => new OrderResource(Order::find($this->id)) ,
+                'date'            => AppLibrary::datetime2( $this->date ) ,
+                'reference_no'    => $this->reference_no ,
+                'amount'          => $this->amount ,
+                'order'           => $this->order_id ,
+                'amount_currency' => AppLibrary::currencyAmountFormat( $this->amount ) ,
+                'payment_method'  => new PaymentMethodResource( $this->paymentMethod ) ,
             ];
         }
     }

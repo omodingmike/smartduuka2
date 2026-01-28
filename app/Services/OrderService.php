@@ -2,12 +2,12 @@
 
     namespace App\Services;
 
-
     use App\Enums\Ask;
     use App\Enums\OrderStatus;
     use App\Enums\OrderType;
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
+    use App\Enums\PaymentType;
     use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
@@ -67,52 +67,18 @@
                 $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
                 $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_by' ) ?? 'desc';
+                $orderBy     = $request->get( 'order_by' ) ?? 'desc';
+                $type        = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
-                return Order::with( [ 'orderProducts.item' , 'user' , 'creator' ] )
-//                            ->whereIn( 'order_type' , [ 10 , OrderType::POS ] )
-//                            ->when( ( $requests[ 'from_date' ] && $requests[ 'to_date' ] ) , function ($query) use ($requests) {
-//                                $first_date = Date( 'Y-m-d' , strtotime( $requests[ 'from_date' ] ) );
-//                                $last_date  = Date( 'Y-m-d' , strtotime( $requests[ 'to_date' ] ) );
-//                                $query->whereBetween( 'order_datetime' , [ $first_date , $last_date ] );
-//                            } )
+                return Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
+                            ->where( 'payment_type' , $type )
                             ->where( function ($query) use ($requests) {
                         foreach ( $requests as $key => $request ) {
                             if ( in_array( $key , $this->orderFilter ) ) {
                                 $query->where( $key , 'like' , '%' . $request . '%' );
                             }
                         }
-                    } )->orderBy( $orderColumn , $orderType )->$method(
-                        $methodValue
-                    );
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
-
-        public function listCredits(PaginateRequest $request)
-        {
-            try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_by' ) ?? 'desc';
-
-                return Order::with( [ 'orderProducts' ] )
-                            ->where( 'order_type' , PaymentMethodEnum::CREDIT )
-                            ->where( function ($query) use ($requests) {
-                                if ( isset( $requests[ 'from_date' ] ) && isset( $requests[ 'to_date' ] ) ) {
-                                    $first_date = Date( 'Y-m-d' , strtotime( $requests[ 'from_date' ] ) );
-                                    $last_date  = Date( 'Y-m-d' , strtotime( $requests[ 'to_date' ] ) );
-                                    $query->whereDate( 'order_datetime' , '>=' , $first_date )->whereDate(
-                                        'order_datetime' ,
-                                        '<=' ,
-                                        $last_date
-                                    );
-                                }
-                            } )->orderBy( $orderColumn , $orderType )->$method(
+                    } )->orderBy( $orderColumn , $orderBy )->$method(
                         $methodValue
                     );
             } catch ( Exception $exception ) {
@@ -272,6 +238,8 @@
                             'due_date'       => now()->addDays( 30 ) ,
                             'status'         => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
                             'change'         => $request->change ,
+                            'payment_type'   => $request->paymentType ,
+                            'channel'        => $request->channel ,
                             'creator_id'     => auth()->id() ,
                             'creator_type'   => User::class ,
                             'payment_status' => $paymentStatus->value ,
@@ -303,11 +271,11 @@
                             ] );
 
                             PosPayment::create( [
-                                'order_id'       => $order->id ,
-                                'date'           => now() ,
-                                'reference_no'   => $p[ 'reference' ] ?? time() ,
-                                'amount'         => $net_amount ,
-                                'payment_method' => $p[ 'id' ] ,
+                                'order_id'          => $order->id ,
+                                'date'              => now() ,
+                                'reference_no'      => $p[ 'reference' ] ?? time() ,
+                                'amount'            => $net_amount ,
+                                'payment_method_id' => $p[ 'id' ] ,
                             ] );
 
                             PaymentMethodTransaction::create( [
@@ -340,6 +308,7 @@
                             $stock->decrement( 'quantity' , $product[ 'quantity' ] );
                         }
                     }
+
                     $this->order->save();
 
                     if ( in_array( $status , [ SaleOrderType::CREDIT->value , SaleOrderType::DEPOSIT->value ] ) ) {
@@ -800,7 +769,7 @@
             }
         }
 
-        public function updateStatus(Order $order ,Request $request) : object
+        public function updateStatus(Order $order , Request $request) : object
         {
             try {
                 $order->status = $request->status;
