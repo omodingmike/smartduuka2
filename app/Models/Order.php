@@ -20,6 +20,7 @@
         use HasFactory;
 
         protected $table    = "orders";
+        protected $appends  = [ 'net_paid' ];
         protected $fillable = [
             'order_serial_no' ,
             'user_id' ,
@@ -78,10 +79,19 @@
             return $this->morphMany( Stock::class , 'model' );
         }
 
+        public function getNetPaidAttribute()
+        {
+            return $this->posPayments()->sum( 'amount' );
+        }
+
+        public function getBalanceAttribute()
+        {
+            return $this->total - $this->posPayments()->sum( 'amount' );
+        }
+
         public function paymentMethods()
         {
             return $this->hasMany( PosPayment::class , 'order_id' , 'id' );
-//            return $this->hasMany( OrderPaymentMethod::class , 'order_id' , 'id' );
         }
 
         public function user() : BelongsTo

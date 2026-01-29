@@ -19,7 +19,6 @@
     use App\Models\CreditDepositPurchase;
     use App\Models\Ingredient;
     use App\Models\Order;
-    use App\Models\OrderPaymentMethod;
     use App\Models\OrderProduct;
     use App\Models\PaymentMethod;
     use App\Models\PaymentMethodTransaction;
@@ -73,12 +72,12 @@
                 return Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
                             ->where( 'payment_type' , $type )
                             ->where( function ($query) use ($requests) {
-                        foreach ( $requests as $key => $request ) {
-                            if ( in_array( $key , $this->orderFilter ) ) {
-                                $query->where( $key , 'like' , '%' . $request . '%' );
-                            }
-                        }
-                    } )->orderBy( $orderColumn , $orderBy )->$method(
+                                foreach ( $requests as $key => $request ) {
+                                    if ( in_array( $key , $this->orderFilter ) ) {
+                                        $query->where( $key , 'like' , '%' . $request . '%' );
+                                    }
+                                }
+                            } )->orderBy( $orderColumn , $orderBy )->$method(
                         $methodValue
                     );
             } catch ( Exception $exception ) {
@@ -264,11 +263,6 @@
                         $net_amount = $amount - $change;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            OrderPaymentMethod::create( [
-                                'order_id'          => $order->id ,
-                                'amount'            => $net_amount ,
-                                'payment_method_id' => $p[ 'id' ]
-                            ] );
 
                             PosPayment::create( [
                                 'order_id'          => $order->id ,
@@ -308,24 +302,7 @@
                             $stock->decrement( 'quantity' , $product[ 'quantity' ] );
                         }
                     }
-
                     $this->order->save();
-
-                    if ( in_array( $status , [ SaleOrderType::CREDIT->value , SaleOrderType::DEPOSIT->value ] ) ) {
-                        $credit           = new CreditDepositPurchase();
-                        $credit->user_id  = $request->customer_id;
-                        $credit->order_id = $this->order->id;
-                        $credit->paid     = $request->received ?? 0;
-                        if ( $status == SaleOrderType::CREDIT->value ) {
-                            $credit->balance = $this->order->total - ( $request->received ?? 0 );
-                            $credit->type    = 'credit';
-                        }
-                        else {
-                            $credit->balance = $this->order->total - ( $request->initial_amount ?? 0 );
-                            $credit->type    = 'deposit';
-                        }
-                        $credit->save();
-                    }
                 } );
 
                 $this->order->save();
