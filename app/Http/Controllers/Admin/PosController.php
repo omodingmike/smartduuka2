@@ -3,13 +3,16 @@
     namespace App\Http\Controllers\Admin;
 
     use App\Enums\OrderStatus;
+    use App\Enums\RegisterStatus;
     use App\Enums\StockStatus;
     use App\Http\Requests\CustomerRequest;
     use App\Http\Requests\PosOrderRequest;
     use App\Http\Resources\CustomerResource;
     use App\Http\Resources\OrderDetailsResource;
     use App\Http\Resources\OrderResource;
+    use App\Http\Resources\RegisterResource;
     use App\Models\Order;
+    use App\Models\Register;
     use App\Services\CommissionCalculator;
     use App\Services\CustomerService;
     use App\Services\OrderService;
@@ -33,11 +36,10 @@
             $this->middleware( [ 'permission:pos' ] )->only( 'store' );
         }
 
-        public function store(PosOrderRequest $request )
+        public function store(PosOrderRequest $request)
         {
             try {
-//                return new OrderDetailsResource( $this->orderService->posOrderStore( $request , $commissionCalculator ) );
-                return new OrderResource( $this->orderService->posOrderStore( $request  ) );
+                return new OrderResource( $this->orderService->posOrderStore( $request ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -52,10 +54,53 @@
             }
         }
 
-        public function makeSale(Request $request,CommissionCalculator $commissionCalculator)
+        public function openRegister(Request $request)
+        {
+            Register::create( [
+                'opening_float' => $request->integer( 'amount' ) ,
+                'status'        => RegisterStatus::OPEN ,
+                'user_id'       => auth()->id()
+            ] );
+        }
+
+        public function closeRegister(Request $request)
+        {
+            $register = auth()->user()->openRegister();
+
+            $sales = $register->posPayments();
+
+            $expectedFloat = ( $register->opening_float + $sales->sum( 'amount' ) );
+
+            $difference = $request->closing_amount - $expectedFloat;
+
+            $register->update( [
+                'expected_float' => $expectedFloat ,
+                'closing_float'  => $request->closing_amount ,
+                'difference'     => $difference ,
+                'status'         => RegisterStatus::CLOSED->value ,
+                'closed_at'      => now() ,
+            ] );
+
+            if ( $request->notes ) {
+                $register->update( [
+                    'notes' => $request->notes
+                ] );
+            }
+
+            return response()->json( [
+                'message' => 'Register closed successfully' ,
+                'audit'   => [
+                    'expected'    => $expectedFloat ,
+                    'actual'      => $request->closing_float ,
+                    'discrepancy' => $difference
+                ]
+            ] );
+        }
+
+        public function makeSale(Request $request , CommissionCalculator $commissionCalculator)
         {
             try {
-                return new OrderDetailsResource( $this->orderService->posOrderMakeSale( $request,$commissionCalculator ) );
+                return new OrderDetailsResource( $this->orderService->posOrderMakeSale( $request , $commissionCalculator ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -84,7 +129,17 @@
             }
         }
 
-        public function index(Order $order) {
-            return new OrderDetailsResource($order);
+        public function index(Order $order)
+        {
+            return new OrderDetailsResource( $order );
+        }
+
+        public function registerDetails()
+        {
+            $register = auth()->user()->openRegister();
+            if (!$register) {
+                return response()->json(['message' => 'No open register found'], 404);
+            }
+            return new RegisterResource($register->load( ['user','posPayments']));
         }
     }

@@ -58,6 +58,7 @@
                             'reference_no'      => $p[ 'reference' ] ?? time() ,
                             'amount'            => $net_amount ,
                             'payment_method_id' => $p[ 'id' ] ,
+                            'register_id'       => auth()->user()->openRegister()->id
                         ] );
 
                         PaymentMethodTransaction::create( [

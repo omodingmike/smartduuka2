@@ -9,7 +9,8 @@
     {
         use HasFactory;
 
-        protected $fillable = [ 'date' , 'reference_no' , 'amount' , 'order_id' , 'payment_method' , 'payment_method_id'
+        protected $fillable = [ 'date' , 'reference_no' , 'amount' , 'order_id' , 'payment_method' , 'payment_method_id' ,
+            'register_id'
         ];
         protected $casts    = [
             'id'             => 'integer' ,

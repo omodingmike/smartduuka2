@@ -60,3 +60,7 @@ TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 3. docker compose exec api php artisan db:seed
 3. docker compose exec api php artisan app:app-seed
 4. docker compose exec db psql -U root -d postgres -c "CREATE DATABASE smartduuka_main;"
+
+show close reminder of register 24 hours since last opened,
+gross is total sales - cost of goods
+net profit = gross - expenses

@@ -160,8 +160,8 @@
         Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
     } );
 
-//    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
-    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
+    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
+//    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
         Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
             Route::get( '/' , [ TimezoneController::class , 'index' ] );
         } );
@@ -677,16 +677,19 @@
             Route::put( '/change-status/{order}' , [ PosOrderController::class , 'changeStatus' ] );
             Route::post( '/change-payment-status/{order}' , [ PosOrderController::class , 'changePaymentStatus' ] );
             Route::get( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'index' ] );
-            Route::post( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'updateBalance' ] );
+            Route::post( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'updateBalance' ] )->middleware( 'register' );
         } );
 
         Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
-            Route::get( '/{order}' , [ PosController::class , 'index' ] );
-            Route::post( '/' , [ PosController::class , 'store' ] );
+            Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
             Route::post( '/update' , [ PosController::class , 'update' ] );
+            Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
+            Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );
+            Route::post( '/close-register' , [ PosController::class , 'closeRegister' ] );
             Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
             Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
             Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
+            Route::get( '/{order}' , [ PosController::class , 'index' ] );
         } );
     } );
 

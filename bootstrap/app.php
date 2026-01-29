@@ -1,5 +1,7 @@
 <?php
 
+    use App\Http\Middleware\AddCurrencySymbol;
+    use App\Http\Middleware\CheckActiveRegister;
     use App\Http\Middleware\ForceAdminLogin;
     use App\Http\Middleware\PermissionMiddleware;
     use Illuminate\Foundation\Application;
@@ -17,11 +19,14 @@
                           $middleware->alias( [
                               'permission' => PermissionMiddleware::class ,
                               'local.auth' => ForceAdminLogin::class ,
+                              'register'   => CheckActiveRegister::class ,
+                          ] );
+                          $middleware->append( [
+                              AddCurrencySymbol::class
                           ] );
                           $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
-//                           Handle unauthorized access
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,

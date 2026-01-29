@@ -32,8 +32,8 @@
          *
          * @var array<int, string>
          */
-        protected $table    = "users";
-        protected $appends  = [ 'credits' , 'sales' ];
+        protected $table   = "users";
+        protected $appends = [ 'credits' , 'sales' ];
 
         protected $fillable = [
             'name' ,
@@ -82,9 +82,15 @@
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
         ];
-        public function guardName()
+
+        public function guardName() : string
         {
             return 'sanctum';
+        }
+
+        public function registers() : User | HasMany
+        {
+            return $this->hasMany( Register::class , 'user_id' , 'id' );
         }
 
         public function getImageAttribute() : string
@@ -93,6 +99,11 @@
                 return asset( $this->getFirstMediaUrl( 'profile' ) );
             }
             return asset( 'images/required/profile.png' );
+        }
+
+        public function openRegister()
+        {
+            return $this->registers()->whereNull( 'closed_at' )->latest()->first();
         }
 
         public function commissions() : HasManyThrough | Builder | User

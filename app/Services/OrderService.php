@@ -211,10 +211,10 @@
         /**
          * @throws Exception
          */
-        public function posOrderStore(PosOrderRequest $request ) : object
+        public function posOrderStore(PosOrderRequest $request) : object
         {
             try {
-                DB::transaction( function () use ($request ) {
+                DB::transaction( function () use ($request) {
                     $status           = $request->integer( 'status' );
                     $change           = $request->change;
                     $delivery_address = $request->delivery_address;
@@ -270,6 +270,7 @@
                                 'reference_no'      => $p[ 'reference' ] ?? time() ,
                                 'amount'            => $net_amount ,
                                 'payment_method_id' => $p[ 'id' ] ,
+                                'register_id'       => auth()->user()->openRegister()->id
                             ] );
 
                             PaymentMethodTransaction::create( [
