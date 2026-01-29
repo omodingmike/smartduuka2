@@ -211,10 +211,10 @@
         /**
          * @throws Exception
          */
-        public function posOrderStore(PosOrderRequest $request , CommissionCalculator $commissionCalculator) : object
+        public function posOrderStore(PosOrderRequest $request ) : object
         {
             try {
-                DB::transaction( function () use ($request , $commissionCalculator) {
+                DB::transaction( function () use ($request ) {
                     $status           = $request->integer( 'status' );
                     $change           = $request->change;
                     $delivery_address = $request->delivery_address;

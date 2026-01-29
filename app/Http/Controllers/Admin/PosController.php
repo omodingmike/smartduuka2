@@ -33,10 +33,11 @@
             $this->middleware( [ 'permission:pos' ] )->only( 'store' );
         }
 
-        public function store(PosOrderRequest $request , CommissionCalculator $commissionCalculator)
+        public function store(PosOrderRequest $request )
         {
             try {
-                return new OrderDetailsResource( $this->orderService->posOrderStore( $request , $commissionCalculator ) );
+//                return new OrderDetailsResource( $this->orderService->posOrderStore( $request , $commissionCalculator ) );
+                return new OrderResource( $this->orderService->posOrderStore( $request  ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

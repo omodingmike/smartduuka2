@@ -58,7 +58,7 @@
                 'change_currency'                => AppLibrary::currencyAmountFormat( $this->change ) ,
                 'active'                         => $this->active ,
                 'user'                           => new UserResource( $this->user ) ,
-                'orderProducts'                 => OrderProductResourceNew::collection( $this->orderProducts ) ,
+                'order_products'                 => OrderProductResourceNew::collection( $this->orderProducts ) ,
                 'pos_payment_method'             => $this->pos_payment_method ,
                 'pos_payment_method_name'        => trans( "posPaymentMethod." . $this->pos_payment_method ) ,
                 'pos_payment_note'               => $this->pos_payment_note ,
