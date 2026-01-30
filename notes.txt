@@ -1,12 +1,3 @@
-$query        = PaymentMethod::query();
-            $searchFields = [ 'name' , 'code' ];
-            $methods      = $this->handleIndex( $request , $query , [] , $searchFields );
-            return PaymentMethodResource::collection( $methods );
-
-              $filtered = $this->handleIndex( new PaymentMethod() , $request , [ 'name' , 'code' ] );
-
-
-              sshpass -p "smartduuka2" scp /Users/mike/Desktop/valet/smartduuka2/.env root@144.91.111.26:./root/smartduuka/backend/
 
               chmod +x ~/deploy.sh && ./deploy.sh
 
@@ -25,41 +16,13 @@ $query        = PaymentMethod::query();
               chmod 600 ~/.ssh/authorized_keys
               chmod 700 ~/.ssh
 
-              alias myssh2="sshpass -p 'smartduuka2' ssh root@144.91.111.26"
-
-              docker/nginx/conf.d/app.conf
-
-              Erudites
-              45.151.122.187
-              g6jTfC3mn@2elBtt
-
-            sshpass -p "g6jTfC3mn@2elBtt" scp /Users/mike/Desktop/valet/smartduuka2/deploy.sh root@45.151.122.187:./deploy.sh
-            sshpass -p "g6jTfC3mn@2elBtt" scp -p 7589 /Users/mike/Desktop/valet/smartduuka2/setup.sh root@45.151.122.187:./setup.sh
-
-scp -P 7589 -i /Users/mike/.ssh/erudite /Users/mike/Desktop/valet/smartduuka2/deploy.sh deploy@45.151.122.187:~/deploy.sh
+https://medium.com/@zulfikarditya/using-php-enums-in-laravel-12-a-comprehensive-guide-af75689f88e8
 
  chmod +x ~/setup.sh && ./setup.sh
-
- ssh -i /Users/mike/.ssh/erudite -p 7589 deploy@45.151.122.187
- systemctl restart ssh
- deploy password.
-ssh -o IdentitiesOnly=yes -i ~/.ssh/erudite -p 7589 deploy@45.151.122.187
-
-ssh -p 7589 root@45.151.122.187
-ssh-keygen -t ed25519 -C "deploy@gmail.com"
-cat  /home/deploy/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
-
-https://kaduroagro.smartduuka.com/#/admin/settings/company
 
 TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
 TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
-
-1. docker compose -f docker-compose.local.yml up -d --build
-2. docker compose exec api php artisan migrate:fresh
-3. docker compose exec api php artisan db:seed
-3. docker compose exec api php artisan app:app-seed
-4. docker compose exec db psql -U root -d postgres -c "CREATE DATABASE smartduuka_main;"
 
 show close reminder of register 24 hours since last opened,
 gross is total sales - cost of goods

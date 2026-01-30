@@ -13,7 +13,7 @@
         protected $table    = "addresses";
         protected $fillable = [ 'full_name' , 'country_id' , 'state_id' , 'city_id' , 'email' , 'country_code' , 'phone' , 'country' , 'address' , 'user_id' , 'state' ,
             'city' , 'zip_code' ,
-            'latitude' , 'longitude'
+            'latitude' , 'longitude', 'address_line', 'is_default', 'type'
         ];
         protected $casts    = [
             'id'           => 'integer' ,
@@ -32,6 +32,9 @@
             'city_id'      => 'integer' ,
             'latitude'     => 'string' ,
             'longitude'    => 'string' ,
+            'address_line' => 'string',
+            'is_default'   => 'integer',
+            'type'         => 'string',
         ];
 
         public function user() : BelongsTo

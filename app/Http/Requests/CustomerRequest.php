@@ -7,36 +7,37 @@
 
     class CustomerRequest extends FormRequest
     {
-        /**
-         * Determine if the user is authorized to make this request.
-         *
-         * @return bool
-         */
         public function authorize() : bool
         {
             return TRUE;
         }
 
-        /**
-         * Get the validation rules that apply to the request.
-         *
-         * @return array
-         */
         public function rules()
         {
+            // Get the customer ID from the route for the unique ignore rule
+            // Assuming your route is /customers/{customer}
+            $customerId = $this->route( 'customer' ) ? $this->route( 'customer' )->id : NULL;
+
             return [
                 'name'   => [ 'required' , 'string' , 'max:190' ] ,
-                'phone'  => [ 'required' , 'string' , 'max:190' ] ,
-                'phone2' => [ 'sometimes' , 'string' , 'max:190' ] ,
-                'type'   => [ 'sometimes' , 'string' , 'max:190' ] ,
-                'notes'  => [ 'sometimes' , 'string' , 'max:255' ] ,
+                'phone'  => [
+                    'required' ,
+                    'string' ,
+                    'max:190' ,
+                    // Added unique check for phone while ignoring the current user
+                    Rule::unique( 'users' , 'phone' )->ignore( $customerId )
+                ] ,
+                'phone2' => [ 'nullable' , 'string' , 'max:190' ] ,
+                'type'   => [ 'required' , 'string' , 'max:190' ] , // Changed to required to prevent null in state
+                'notes'  => [ 'nullable' , 'string' , 'max:255' ] ,
                 'email'  => [
-                    'sometimes' ,
+                    'nullable' ,
                     'email' ,
                     'max:190' ,
-                    Rule::unique( "users" , "email" )->ignore( $this->route( 'customer.id' ) )
+                    // Use the $customerId to ignore the current record during updates
+                    Rule::unique( 'users' , 'email' )->ignore( $customerId )
                 ] ,
-                'status'       => [ 'sometimes' , 'numeric' , 'max:24' ] ,
+                'status' => [ 'sometimes' , 'numeric' , 'max:24' ] ,
             ];
         }
     }

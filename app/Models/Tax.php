@@ -15,7 +15,7 @@ class Tax extends Model
         'name'     => 'string',
         'code'     => 'string',
         'tax_rate' => 'string',
-        'status'   => 'integer',
+        'status'   => Status::class,
     ];
 
     public function productTaxes():HasMany

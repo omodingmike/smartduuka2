@@ -19,7 +19,7 @@
                 $table->id();
                 $table->string( 'order_serial_no' )->nullable();
                 $table->foreignId( 'user_id' )->constrained( 'users' );
-                $table->decimal( 'subtotal' , 20  );
+                $table->decimal( 'subtotal' , 20 );
                 $table->decimal( 'tax' , 13 , 6 )->nullable()->default( 0 );
                 $table->decimal( 'discount' , 13 , 6 )->nullable()->default( 0 );
                 $table->decimal( 'shipping_charge' , 13 , 6 )->nullable()->default( 0 );
@@ -32,8 +32,8 @@
                 $table->tinyInteger( 'active' )->default( ASK::NO );
                 $table->text( 'reason' )->nullable();
                 $table->string( 'user_type' )->nullable()->after( 'user_id' )->default( User::class );
-                $table->tinyInteger('pos_payment_method')->after('payment_status')->nullable();
-                $table->string('pos_payment_note', 200)->after('pos_payment_method')->nullable();
+                $table->tinyInteger( 'pos_payment_method' )->after( 'payment_status' )->nullable();
+                $table->string( 'pos_payment_note' , 200 )->after( 'pos_payment_method' )->nullable();
                 $table->string( 'source' )->nullable();
                 $table->integer( 'paid' )->nullable();
                 $table->integer( 'change' )->nullable();

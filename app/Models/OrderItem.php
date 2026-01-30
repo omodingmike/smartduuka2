@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderItemStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -59,7 +60,8 @@ class OrderItem extends Model
         'editor_type'          => 'string',
         'editor_id'            => 'integer',
         'created_at'           => 'datetime',
-        'updated_at'           => 'datetime'
+        'updated_at'           => 'datetime',
+        'status'               => OrderItemStatus::class
     ];
 
     public function order() : BelongsTo

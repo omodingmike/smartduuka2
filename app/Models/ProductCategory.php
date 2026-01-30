@@ -23,7 +23,7 @@ class ProductCategory extends Model implements HasMedia
         'name'        => 'string',
         'slug'        => 'string',
         'description' => 'string',
-        'status'      => 'integer',
+        'status'      => Status::class,
         'parent_id'   => 'integer',
     ];
     protected $appends = array('cover');

@@ -45,7 +45,7 @@
             'is_featured'      => 'integer' ,
             'description'      => 'string' ,
             'caution'          => 'string' ,
-            'status'           => 'integer' ,
+            'status'           => Status::class ,
             'order'            => 'integer' ,
             'buying_price'     => 'integer' ,
         ];

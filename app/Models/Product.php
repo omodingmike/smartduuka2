@@ -38,7 +38,7 @@
             'buying_price'               => 'integer' ,
             'selling_price'              => 'integer' ,
             'variation_price'            => 'decimal:6' ,
-            'status'                     => 'integer' ,
+            'status'                     => Status::class ,
             'order'                      => 'integer' ,
             'can_purchasable'            => 'integer' ,
             'show_stock_out'             => 'integer' ,

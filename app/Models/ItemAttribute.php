@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,6 @@ class ItemAttribute extends Model
     protected $casts = [
         'id'     => 'integer',
         'name'   => 'string',
-        'status' => 'integer',
+        'status' => Status::class,
     ];
 }

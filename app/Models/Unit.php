@@ -12,9 +12,9 @@
         use HasFactory;
 
         protected $table    = "units";
-        protected $fillable = [ 'name' , 'short_name' , 'status' , 'conversion_factor', 'base_unit_id' ];
+        protected $fillable = [ 'name' , 'short_name' , 'status' , 'conversion_factor' , 'base_unit_id' ];
         protected $casts    = [
-            'status'            => 'integer' ,
+            'status'            => Status::class ,
             'conversion_factor' => 'integer' ,
         ];
 
@@ -25,6 +25,6 @@
 
         public function getLabelAttribute()
         {
-            return statusLabel( $this->status);
+            return statusLabel( $this->status );
         }
     }

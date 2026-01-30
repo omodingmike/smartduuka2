@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\Status;
     use App\Services\CommissionCalculator;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -78,7 +79,7 @@
             'phone'             => 'string' ,
             'country_code'      => 'string' ,
             'is_guest'          => 'integer' ,
-            'status'            => 'integer' ,
+            'status'            => Status::class ,
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
         ];

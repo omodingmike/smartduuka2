@@ -49,7 +49,7 @@
                             $query->where( $key , 'like' , '%' . $request . '%' );
                         }
                     }
-                } )->orderBy( $orderColumn , $orderType )->$method(
+                } )->orderBy( 'created_at' , 'desc' )->$method(
                     $methodValue
                 );
             } catch ( Exception $exception ) {
@@ -99,39 +99,48 @@
         /**
          * @throws Exception
          */
-        public function update(CustomerRequest $request , User $customer)
+        public function update(CustomerRequest $request, User $customer)
         {
             try {
-                if ( ! in_array( EnumRole::CUSTOMER , $this->blockRoles ) ) {
-                    DB::transaction( function () use ($customer , $request) {
-                        $this->user         = $customer;
+                if (!in_array(EnumRole::CUSTOMER, $this->blockRoles)) {
+                    DB::transaction(function () use ($customer, $request) {
+                        $this->user = $customer;
+
+                        // Core fields matching store logic
                         $this->user->name   = $request->name;
                         $this->user->type   = $request->type;
                         $this->user->phone  = $request->phone;
                         $this->user->status = $request->status;
-                        if ( $request->email ) {
+
+                        // Conditional fields matching store logic
+                        if ($request->email) {
                             $this->user->email = $request->email;
                         }
-                        if ( $request->notes ) {
+
+                        if ($request->notes) {
                             $this->user->notes = $request->notes;
                         }
-                        if ( $request->phone2 ) {
+
+                        if ($request->phone2) {
                             $this->user->phone2 = $request->phone2;
                         }
-                        if ( $request->password ) {
-                            $this->user->password = Hash::make( $request->password );
+
+                        // Password handling (specific to update)
+                        if ($request->password) {
+                            $this->user->password = Hash::make($request->password);
                         }
+
                         $this->user->save();
-                    } );
+                    });
+
                     return $this->user;
+                } else {
+                    throw new Exception(trans('all.message.permission_denied'), 422);
                 }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
-            } catch ( Exception $exception ) {
+            } catch (Exception $exception) {
                 DB::rollBack();
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+                Log::info($exception->getMessage());
+                throw new Exception($exception->getMessage(), 422);
             }
         }
 

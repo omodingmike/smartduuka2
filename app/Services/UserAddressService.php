@@ -6,7 +6,6 @@
     use App\Models\Address;
     use App\Models\User;
     use Exception;
-    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
 
     class UserAddressService
@@ -50,18 +49,7 @@
         public function store($request , User $user) : Address
         {
             try {
-                DB::transaction( function () use ($request , $user) {
-//                    $country           = Country::find( $request->get( 'country' ) );
-//                    $city              = City::find( $request->get( 'city' ) );
-//                    $state             = State::find( $request->get( 'state' ) );
-                    $data                  = $request->validated();
-                    $data[ 'type' ]        = $request->type;
-                    $data[ 'city' ]        = $request->city;
-                    $data[ 'addressLine' ] = $request->addressLine;
-                    $data[ 'isDefault' ]   = $request->isDefault;
-                    $this->address         = Address::create( $data + [ 'user_id' => $user->id ] );
-                } );
-                return $this->address;
+                return $user->addresses()->create( $request->validated() );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

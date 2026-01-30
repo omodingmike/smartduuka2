@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\Status;
     use App\Libraries\AppLibrary;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -31,7 +32,7 @@
             'name'              => 'string' ,
             'price'             => 'decimal:6' ,
             'caution'           => 'string' ,
-            'status'            => 'integer' ,
+            'status'            => Status::class ,
         ];
 
         public function item()

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -17,7 +18,7 @@ class Language extends Model implements HasMedia
         'name'         => 'string',
         'code'         => 'string',
         'display_mode' => 'integer',
-        'status'       => 'integer',
+        'status'       => Status::class,
     ];
 
     public function getImageAttribute(): string

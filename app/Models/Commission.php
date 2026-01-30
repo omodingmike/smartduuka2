@@ -19,6 +19,7 @@
 
         protected $casts = [
             'condition_json' => 'array' ,
+            'is_active'      => Status::class ,
         ];
 
         public function targets()

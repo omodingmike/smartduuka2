@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\Status;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,5 +25,6 @@
             'unit'           => 'string' ,
             'quantity'       => 'decimal:2' ,
             'quantity_alert' => 'decimal:2' ,
+            'status'         => Status::class ,
         ];
     }

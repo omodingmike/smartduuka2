@@ -19,7 +19,7 @@ class ProductBrand extends Model implements HasMedia
         'name'        => 'string',
         'slug'        => 'string',
         'description' => 'string',
-        'status'      => 'integer',
+        'status'      => Status::class,
     ];
 
     public function getThumbAttribute(): string

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -19,7 +20,7 @@ class PaymentGateway extends Model implements HasMedia
         'name'   => 'string',
         'slug'   => 'string',
         'misc'   => 'string',
-        'status' => 'integer',
+        'status' => Status::class,
     ];
 
     public function gatewayOptions()

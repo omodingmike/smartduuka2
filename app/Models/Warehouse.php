@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\Status;
     use App\Http\Requests\PaginateRequest;
     use App\Services\StockService;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,7 +26,8 @@
             'id'
         ];
         protected $casts    = [
-            'deletable' => 'boolean'
+            'deletable' => 'boolean',
+            'status'    => Status::class,
         ];
 
         public function getStocksAttribute()

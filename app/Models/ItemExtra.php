@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Status;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ class ItemExtra extends Model
         'id'      => 'integer',
         'product_id' => 'integer',
         'name'    => 'string',
-        'status'  => 'integer',
+        'status'  => Status::class,
         'price'   => 'integer',
     ];
 

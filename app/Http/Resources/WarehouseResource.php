@@ -15,8 +15,6 @@
                 'email'        => $this->email ,
                 'location'     => $this->location ,
                 'stocks'       => StockResource::collection( $this->stocks ) ,
-//                'default_warehouse_id' => Warehouse::first()->id ,
-//                'deletable'            => $this->deletable ,
                 'phone'        => $this->phone ,
                 'manager'      => $this->manager ,
                 'capacity'     => $this->capacity ,

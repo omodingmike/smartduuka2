@@ -13,6 +13,7 @@
     use App\Http\Resources\RegisterResource;
     use App\Models\Order;
     use App\Models\Register;
+    use App\Models\User;
     use App\Services\CommissionCalculator;
     use App\Services\CustomerService;
     use App\Services\OrderService;
@@ -129,6 +130,17 @@
             }
         }
 
+        public function updateCustomer(CustomerRequest $request , User $customer
+        ) : Response | CustomerResource | Application | ResponseFactory
+        {
+            try {
+                $customer = $this->customerService->update( $request , $customer );
+                return new CustomerResource( $customer );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function index(Order $order)
         {
             return new OrderDetailsResource( $order );
@@ -137,9 +149,9 @@
         public function registerDetails()
         {
             $register = auth()->user()->openRegister();
-            if (!$register) {
-                return response()->json(['message' => 'No open register found'], 404);
+            if ( ! $register ) {
+                return response()->json( [ 'message' => 'No open register found' ] , 404 );
             }
-            return new RegisterResource($register->load( ['user','posPayments','orders.orderProducts.item']));
+            return new RegisterResource( $register->load( [ 'user' , 'posPayments' , 'orders.orderProducts.item' ] ) );
         }
     }

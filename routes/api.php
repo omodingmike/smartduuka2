@@ -174,7 +174,6 @@
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
 
-        Route::apiResource( 'cleaningServiceCustomer' , CleaningServiceCustomerController::class )->except( [ 'destroy' ] );
         Route::get( 'cleaningOrder' , [ CleaningOrderController::class , 'order' ] );
         Route::apiResource( 'cleaningOrders' , CleaningOrderController::class )->except( [ 'destroy' , 'update' ] );
         Route::put( 'cleaningOrders/{cleaningOrder}' , [ CleaningOrderController::class , 'update' ] );
@@ -522,8 +521,8 @@
             Route::get( '/credits/{customer}' , [ CustomerController::class , 'credits' ] );
             Route::post( '/payment/{customer}' , [ CustomerController::class , 'payment' ] );
             Route::get( '/payments/{customer}' , [ CustomerPaymentController::class , 'index' ] );
-            Route::match( [ 'post' , 'put' , 'patch' ] , '/{customer}' , [ CustomerController::class , 'update' ] );
-            Route::delete( '/{customer}' , [ CustomerController::class , 'destroy' ] );
+            Route::match( [ 'post' , 'put' , 'patch' ] , '/{customer}' , [ PosController::class , 'updateCustomer' ] );
+            Route::delete( 'delete' , [ CustomerController::class , 'destroy' ] );
             Route::get( '/export' , [ CustomerController::class , 'export' ] );
             Route::post( '/change-password/{customer}' , [ CustomerController::class , 'changePassword' ] );
             Route::post( '/change-image/{customer}' , [ CustomerController::class , 'changeImage' ] );
@@ -689,6 +688,7 @@
             Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
             Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
             Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
+            Route::put( '/customer/{customer}' , [ PosController::class , 'updateCustomer' ] );
             Route::get( '/{order}' , [ PosController::class , 'index' ] );
         } );
     } );
