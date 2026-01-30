@@ -8,6 +8,7 @@ use App\Http\Requests\SupplierRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\SupplierResource;
 use App\Models\Supplier;
+use Illuminate\Http\Request;
 
 class SupplierController extends AdminController
 {
@@ -47,10 +48,11 @@ class SupplierController extends AdminController
         }
     }
 
-    public function destroy(Supplier $supplier): \Illuminate\Http\Response | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    public function destroy(Request $request): \Illuminate\Http\Response | \Illuminate\Contracts\Foundation\Application |
+    \Illuminate\Contracts\Routing\ResponseFactory
     {
         try {
-            $this->supplierService->destroy($supplier);
+            Supplier::destroy( $request->ids);
             return response('', 202);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

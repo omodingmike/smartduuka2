@@ -55,7 +55,13 @@
                 "weight"                     => $this->weight ,
                 "refundable"                 => $this->refundable ,
                 "description"                => $this->description === NULL ? '' : $this->description ,
-                "tags"                       => $this->tags->pluck( 'name' )->implode( ',' ) ,
+//                "tags"                       => $this->tags->pluck( 'name' )->implode( ',' ) ,
+                "tags"                       => $this->tags->map( function ($tag) {
+                    return [
+                        'id'   => $tag->id ,
+                        'name' => $tag->name ,
+                    ];
+                } ) ,
                 "category_name"              => ucwords( $this?->category?->name ) ,
                 "brand"                      => $this?->brand ,
                 "order"                      => abs( $this?->productOrders->sum( 'quantity' ) ) ,

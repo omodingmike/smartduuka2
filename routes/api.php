@@ -224,6 +224,14 @@
             Route::get( '/gross-profit' , [ DashboardController::class , 'grossProfit' ] );
         } );
 
+        Route::prefix( 'supplier' )->name( 'supplier.' )->group( function () {
+            Route::get( '/' , [ SupplierController::class , 'index' ] );
+            Route::get( '/show/{supplier}' , [ SupplierController::class , 'show' ] );
+            Route::post( '/' , [ SupplierController::class , 'store' ] );
+            Route::match( [ 'post' , 'put' , 'patch' ] , '/{supplier}' , [ SupplierController::class , 'update' ] );
+            Route::delete( '/delete' , [ SupplierController::class , 'destroy' ] );
+        } );
+
         Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
             Route::prefix( 'company' )->name( 'company.' )->group( function () {
                 Route::get( '/' , [ CompanyController::class , 'index' ] );
@@ -333,15 +341,6 @@
                 Route::delete( '/delete' , [ ProductBrandController::class , 'destroy' ] );
 //                Route::delete( '/{productBrand}' , [ ProductBrandController::class , 'destroy' ] );
             } );
-
-            Route::prefix( 'supplier' )->name( 'supplier.' )->group( function () {
-                Route::get( '/' , [ SupplierController::class , 'index' ] );
-                Route::get( '/show/{supplier}' , [ SupplierController::class , 'show' ] );
-                Route::post( '/' , [ SupplierController::class , 'store' ] );
-                Route::match( [ 'post' , 'put' , 'patch' ] , '/{supplier}' , [ SupplierController::class , 'update' ] );
-                Route::delete( '/{supplier}' , [ SupplierController::class , 'destroy' ] );
-            } );
-
 
             Route::prefix( 'language' )->name( 'language.' )->group( function () {
                 Route::get( '/' , [ LanguageController::class , 'index' ] );

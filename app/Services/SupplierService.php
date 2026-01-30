@@ -72,26 +72,8 @@ class SupplierService
     public function update(SupplierRequest $request, Supplier $supplier): object
     {
         try {
-            DB::transaction(function () use ($supplier, $request) {
-                $this->supplier               = $supplier;
-                $this->supplier->company      = $request->company;
-                $this->supplier->name         = $request->name;
-                $this->supplier->email        = $request->email;
-                $this->supplier->phone        = $request->phone;
-                $this->supplier->country_code = $request->country_code;
-                $this->supplier->address      = $request->address;
-                $this->supplier->country      = $request->country;
-                $this->supplier->state        = $request->state;
-                $this->supplier->city         = $request->city;
-                $this->supplier->zip_code     = $request->zip_code;
-                $this->supplier->save();
-
-                if ($request->image) {
-                    $this->supplier->clearMediaCollection('supplier');
-                    $this->supplier->addMediaFromRequest('image')->toMediaCollection('supplier');
-                }
-            });
-            return $this->supplier;
+            $supplier->update($request->validated());
+            return $supplier;
         } catch (Exception $exception) {
             DB::rollBack();
             Log::info($exception->getMessage());
