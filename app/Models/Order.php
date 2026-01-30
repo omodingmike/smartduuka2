@@ -43,7 +43,8 @@
             'creator_id' ,
             'creator_type' ,
             'payment_type' ,
-            'channel'
+            'channel' ,
+            'register_id'
         ];
 
         protected $casts = [

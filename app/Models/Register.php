@@ -5,6 +5,7 @@
     use App\Enums\RegisterStatus;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
+    use Illuminate\Database\Eloquent\Relations\HasMany;
 
     class Register extends Model
     {
@@ -28,6 +29,11 @@
         public function getExpectedFloatAttribute()
         {
             return $this->opening_float + $this->posPayments()->sum( 'amount' );
+        }
+
+        public function orders() : HasMany | Register
+        {
+            return $this->hasMany( Order::class,'register_id','id');
         }
 
         public function user() : BelongsTo

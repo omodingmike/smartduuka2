@@ -17,6 +17,7 @@
     use App\Models\Order;
     use App\Models\PaymentAccount;
     use App\Models\PaymentMethod;
+    use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\User;
     use Carbon\Carbon;
@@ -139,6 +140,11 @@
             'user_type' => User::class ,
             'action'    => $action ,
         ] );
+    }
+
+    function register() : Register
+    {
+        return auth()->user()->openRegister();
     }
 
     function orderLabel(Order $order) : string
@@ -270,6 +276,7 @@
     {
         return AppLibrary::datetime2( $value );
     }
+
     function siteDate($value) : string
     {
         return AppLibrary::date( $value );

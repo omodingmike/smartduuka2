@@ -242,7 +242,8 @@
                             'creator_id'     => auth()->id() ,
                             'creator_type'   => User::class ,
                             'payment_status' => $paymentStatus->value ,
-                            'order_datetime' => now()
+                            'order_datetime' => now() ,
+                            'register_id'    => register()->id
                         ]
                     );
 
@@ -270,7 +271,7 @@
                                 'reference_no'      => $p[ 'reference' ] ?? time() ,
                                 'amount'            => $net_amount ,
                                 'payment_method_id' => $p[ 'id' ] ,
-                                'register_id'       => auth()->user()->openRegister()->id
+                                'register_id'       => register()->id
                             ] );
 
                             PaymentMethodTransaction::create( [
