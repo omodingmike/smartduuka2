@@ -5,6 +5,7 @@
     use App\Enums\Status;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\HasMany;
     use Spatie\MediaLibrary\HasMedia;
     use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -37,8 +38,8 @@
             return asset( 'images/required/profile.png' );
         }
 
-        public function purchases() : \Illuminate\Database\Eloquent\Relations\HasMany
+        public function purchases() : HasMany
         {
-            $this->hasMany( Purchases::class , 'supplier_id' , 'id' );
+            return $this->hasMany( Purchase::class , 'supplier_id' , 'id' );
         }
     }

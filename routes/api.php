@@ -97,7 +97,7 @@
     Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
         return $request->user()->load( 'roles' );
     } );
-    Route::get( '/check' , [ StockController::class , 'takings' ] );
+    Route::get( '/check' , [ PurchaseController::class , 'index' ] );
     Route::get( '/p' , [ ProductController::class , 'index' ] );
 
     Route::get( 'company' , [ CompanyController::class , 'index' ] );
@@ -596,7 +596,7 @@
             Route::get( '/export' , [ PurchaseController::class , 'export' ] );
             Route::get( '/download-attachment/{purchase}' , [ PurchaseController::class , 'downloadAttachment' ] );
             Route::get( '/payment/{type}/{purchase}' , [ PurchaseController::class , 'paymentHistory' ] );
-            Route::post( '/payment/{purchase}' , [ PurchaseController::class , 'payment' ] );
+            Route::post( '/payment/{purchase}' , [ PurchaseController::class , 'payment' ] )->middleware('register');
             Route::get( '/payment/download-attachment/{purchasePayment}' , [ PurchaseController::class , 'paymentDownloadAttachment' ] );
             Route::delete( '/payment/{type}/{purchase}/{purchasePayment}' , [ PurchaseController::class , 'paymentDestroy' ] );
         } );

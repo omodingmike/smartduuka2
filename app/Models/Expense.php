@@ -12,7 +12,12 @@
     {
         use HasFactory , InteractsWithMedia;
 
-        protected $fillable = [ 'name' , 'amount' , 'date' , 'category' , 'note' , 'paymentMethod' , 'referenceNo' , 'attachment' , 'recurs' , 'isRecurring' , 'user_id' , 'repetitions' , 'paid' , 'paid_on' , 'repeats_on' , 'registerMediaConversionsUsingModelInstance' , 'count' ];
+        protected $fillable = [ 'name' , 'amount' , 'date' , 'category' , 'note' , 'paymentMethod' , 'referenceNo' , 'attachment' , 'recurs' , 'isRecurring' , 'user_id' , 'repetitions' , 'paid' , 'paid_on' , 'repeats_on' , 'registerMediaConversionsUsingModelInstance' , 'count' , 'register_id' ,
+            'expense_category_id' ,
+            'payment_method_id' ,
+            'reference_no' ,
+            'is_recurring'
+        ];
         protected $casts    = [
             'date'   => 'datetime' ,
             'paid_on'   => 'datetime' ,

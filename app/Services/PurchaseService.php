@@ -16,6 +16,7 @@
     use App\Http\Requests\StockTransferRequest;
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\Expense;
+    use App\Models\ExpenseCategory;
     use App\Models\Ingredient;
     use App\Models\Product;
     use App\Models\ProductVariation;
@@ -26,6 +27,7 @@
     use App\Models\StockTax;
     use App\Models\Supplier;
     use App\Models\Tax;
+    use App\Models\Warehouse;
     use Exception;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
@@ -56,8 +58,8 @@
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
 
-                return Purchase::with( 'supplier' )->where( function ($query) use ($requests) {
-                    $query->where( 'type' , PurchaseType::ITEM );
+                return Purchase::with( [ 'supplier' , 'creator' , 'stocks.product' , 'purchasePayments' ] )->where( function ($query) use ($requests) {
+//                    $query->where( 'type' , PurchaseType::ITEM );
                     foreach ( $requests as $key => $request ) {
                         if ( in_array( $key , $this->purchaseFilter ) ) {
                             if ( $key == "except" ) {
@@ -227,79 +229,45 @@
         {
             try {
                 DB::transaction( function () use ($request) {
+                    $warehouse_id   = Warehouse::first()->id;
                     $this->purchase = Purchase::create( [
                         'supplier_id'    => $request->supplier_id ,
-                        'date'           => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
+                        'date'           => $request->date ,
                         'reference_no'   => $request->reference_no ,
                         'subtotal'       => $request->subtotal ,
-                        'tax'            => $request->tax ,
-                        'discount'       => $request->discount ,
-                        'balance'        => $request->amount ? $request->amount : $request->total ,
                         'total'          => $request->total ,
-                        'note'           => $request->note ? $request->note : "" ,
+                        'notes'          => $request->note ? $request->note : "" ,
                         'status'         => $request->status ,
-                        'type'           => $request->purchase_type ,
-                        'payment_status' => PurchasePaymentStatus::PENDING
+                        'shipping'       => $request->shipping ?? 0 ,
+                        'payment_status' => PurchasePaymentStatus::PENDING ,
+                        'warehouse_id'   => $warehouse_id
                     ] );
 
-                    if ( $request->warehouse_id ) {
-                        $this->purchase->warehouse_id = $request->warehouse_id;
-                        $this->purchase->save();
-                    }
-
-                    if ( $request->products ) {
+                    if ( $request->items ) {
                         $model_id = $this->purchase->id;
-                        $products = json_decode( $request->products , TRUE );
-                        $taxes    = Tax::all()->keyBy( 'id' );
+                        $products = json_decode( $request->items , TRUE );
 
                         foreach ( $products as $product ) {
-                            $base_product            = Product::find( $product[ 'product_id' ] );
-                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
-                            $stock                   = Stock::create( [
+                            Stock::create( [
                                 'model_type'      => Purchase::class ,
                                 'reference'       => "S" . time() ,
                                 'model_id'        => $model_id ,
-                                'expiry_date'     => isset( $product[ 'expiry' ] ) ? date( 'Y-m-d H:i:s' , strtotime( $product[ 'expiry' ] ) ) : NULL ,
-                                'item_type'       => $product[ 'is_variation' ] ? ProductVariation::class : Product::class ,
+                                'expiry_date'     => $product[ 'expiry' ] ?? NULL ,
+                                'item_type'       => Product::class ,
                                 'product_id'      => $product[ 'product_id' ] ,
-                                'item_id'         => $product[ 'item_id' ] ,
-                                'variation_names' => $product[ 'variation_names' ] ,
+                                'item_id'         => $product[ 'product_id' ] ,
+                                'variation_names' => 'variation_names' ,
                                 'price'           => $product[ 'price' ] ,
-//                                'quantity'        => $product['quantity'] ,
-                                'quantity'        => $base_units_per_top_unit ? $product[ 'quantity' ] * $base_units_per_top_unit : $product[ 'quantity' ] ,
-                                'discount'        => $product[ 'total_discount' ] ,
-                                'tax'             => $product[ 'total_tax' ] ,
-                                'subtotal'        => $product[ 'subtotal' ] ,
-                                'total'           => $product[ 'total' ] ,
-                                'sku'             => $product[ 'sku' ] ,
-                                'status'          => $request->status == PurchaseStatus::RECEIVED ? Status::ACTIVE : Status::INACTIVE
+                                'quantity'        => $product[ 'quantity' ] ,
+                                'discount'        => 0 ,
+                                'tax'             => 0 ,
+                                'subtotal'        => $product[ 'price' ] ,
+                                'total'           => $product[ 'price' ] ,
+                                'sku'             => 'sku' ,
+                                'warehouse_id'    => $warehouse_id ,
+                                'status'          => $request->status == PurchaseStatus::RECEIVED ? StockStatus::RECEIVED : StockStatus::IN_TRANSIT
                             ] );
-                            if ( $request->warehouse_id ) {
-                                $stock->warehouse_id = $request->warehouse_id;
-                                $stock->save();
-                            }
-
-                            if ( isset( $product[ 'tax_id' ] ) && count( $product[ 'tax_id' ] ) > 0 ) {
-                                foreach ( $product[ 'tax_id' ] as $tax_id ) {
-                                    if ( isset( $taxes[ $tax_id ] ) ) {
-                                        $tax = $taxes[ $tax_id ];
-                                        StockTax::create( [
-                                            'stock_id'   => $stock->id ,
-                                            'product_id' => $product[ 'product_id' ] ,
-                                            'tax_id'     => $tax->id ,
-                                            'name'       => $tax->name ,
-                                            'code'       => $tax->code ,
-                                            'tax_rate'   => $tax->tax_rate ,
-                                            'tax_amount' => ( $tax->tax_rate * ( $product[ 'price' ] * $product[ 'quantity' ] ) ) / 100 ,
-                                        ] );
-                                    }
-                                }
-                            }
                         }
-                    }
-
-                    if ( $request->file ) {
-                        $this->purchase->addMediaFromRequest( 'file' )->toMediaCollection( 'purchase' );
                     }
                 } );
                 return $this->purchase;
@@ -468,41 +436,47 @@
                 DB::transaction( function () use ($request , $purchase) {
                     $purchasePayment = PurchasePayment::create( [
                         'purchase_id'    => $purchase->id ,
-                        'date'           => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
+                        'date'           => $request->date ,
                         'reference_no'   => $request->reference_no ,
                         'amount'         => $request->amount ,
-                        'purchase_type'  => $request->purchase_type ,
                         'payment_method' => $request->payment_method ,
+                        'register_id'    => register()->id
+                    ] );
+
+                    $expense_category = ExpenseCategory::firstOrCreate( [ 'name' => 'Expense Category' ] , [
+                        'description' => 'description' ,
+                        'name'        => 'Expense Category' ,
+                        'status'      => Status::ACTIVE
                     ] );
 
                     Expense::create( [
-                        'name'          => 'Raw materials / Item purchases' ,
-                        'amount'        => $request->amount ,
-                        'date'          => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
-                        'category'      => 0 ,
-                        'paymentMethod' => $request->payment_method ,
-                        'referenceNo'   => $request->reference_no ,
-                        'isRecurring'   => 0 ,
-                        'recurs'        => 0 ,
-                        'user_id'       => auth()->id() ,
-                        'repetitions'   => 0 ,
-                        'repeats_on'    => NULL ,
-                        'paid'          => $request->amount ,
-                        'paid_on'       => NULL ,
+                        'name'                => 'Stock Purchase payment' ,
+                        'amount'              => $request->amount ,
+                        'date'                => $request->date ,
+                        'expense_category_id' => $expense_category->id ,
+                        'payment_method_id'   => $request->payment_method ,
+                        'reference_no'        => $request->reference_no ,
+                        'is_recurring'        => 0 ,
+                        'recurs'              => 0 ,
+                        'repetitions'         => 0 ,
+                        'repeats_on'          => NULL ,
+                        'paid'                => $request->amount ,
+                        'paid_on'             => NULL ,
+                        'register_id'         => register()->id
                     ] );
 
                     if ( $request->file ) {
                         $purchasePayment->addMediaFromRequest( 'file' )->toMediaCollection( 'purchase_payment' );
                     }
 
-                    $paid = PurchasePayment::where( [ 'purchase_id' => $purchase->id , 'purchase_type' => $request->purchase_type ] )->sum( 'amount' );
+//                    $paid = PurchasePayment::where( [ 'purchase_id' => $purchase->id , 'purchase_type' => $request->purchase_type ] )->sum( 'amount' );
 
-                    if ( $paid == $purchase->total ) {
+                    if ( $purchase->paid == $purchase->total ) {
                         $purchase->payment_status = PurchasePaymentStatus::FULLY_PAID;
                         $purchase->save();
                     }
 
-                    if ( $paid < $purchase->total ) {
+                    if ( $purchase->paid < $purchase->total ) {
                         $purchase->payment_status = PurchasePaymentStatus::PARTIAL_PAID;
                         $purchase->save();
                     }
@@ -694,10 +668,10 @@
         {
             try {
                 DB::transaction( function () use ($request) {
-                    $products        = json_decode( $request->input( 'products' ) , TRUE );
-                    $batch           = 'B' . time();
-                    $type            =(int) $request->type;
-                    $status          = $type === StockType::TRANSFER ? StockStatus::IN_TRANSIT : StockStatus::PENDING;
+                    $products = json_decode( $request->input( 'products' ) , TRUE );
+                    $batch    = 'B' . time();
+                    $type     = (int) $request->type;
+                    $status   = $type === StockType::TRANSFER ? StockStatus::IN_TRANSIT : StockStatus::PENDING;
 
                     $driver          = $request->driver;
                     $number_plate    = $request->number_plate;
@@ -726,7 +700,7 @@
                             'subtotal'                 => $total ,
                             'total'                    => $total ,
                             'sku'                      => $product->sku ,
-                            'status'                   => $status->value,
+                            'status'                   => $status->value ,
                         ] );
                         if ( $driver && $number_plate ) {
                             $this->stock->update( [ 'driver' => $driver , 'number_plate' => $number_plate ] );

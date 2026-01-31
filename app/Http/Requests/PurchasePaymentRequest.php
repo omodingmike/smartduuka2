@@ -28,7 +28,7 @@
                 'date'           => [ 'required' , 'string' ] ,
                 'reference_no'   => [ 'nullable' , 'string' ] ,
                 'amount'         => [ 'required' , 'numeric' ] ,
-                'purchase_type'  => [ 'required' , 'numeric' ] ,
+                'purchase_type'  => [ 'sometimes' , 'numeric' ] ,
                 'payment_method' => [ 'required' , 'not_in:0' , 'not_in:null' ] ,
                 'file'           => [ 'nullable' , 'file' , 'mimes:jpg,jpeg,png,pdf' , 'max:2048' ] ,
             ];

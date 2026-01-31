@@ -18,12 +18,13 @@
             'reference_no' ,
             'amount' ,
             'payment_method' ,
-            'purchase_type'
+            'purchase_type' ,
+            'register_id'
         ];
         protected $casts    = [
             'id'             => 'integer' ,
             'purchase_id'    => 'integer' ,
-            'date'           => 'string' ,
+            'date'           => 'datetime' ,
             'reference_no'   => 'string' ,
             'amount'         => 'decimal:6' ,
             'payment_method' => 'integer'
@@ -35,5 +36,10 @@
                 $product = $this->getMedia('purchase_payment')->first();
                 return $product->getUrl();
             }
+        }
+
+        public function paymentMethod()
+        {
+            return $this->belongsTo(PaymentMethod::class , 'payment_method');
         }
     }

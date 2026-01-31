@@ -38,7 +38,7 @@ class PurchaseDetailsResource extends JsonResource
             'created_at'              => AppLibrary::datetime($this->created_at),
             'file'                    => $this->file,
             'products'                => ProductWithVariationResource::collection($this->stocks),
-            'due_payment'             => (floatval($this->total) - floatval($this?->purchasePayment?->sum('amount'))),
+            'due_payment'             => (floatval($this->total) - floatval($this?->purchasePayments?->sum('amount'))),
         ];
     }
 }

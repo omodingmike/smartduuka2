@@ -20,6 +20,7 @@
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\User;
+    use App\Models\Warehouse;
     use Carbon\Carbon;
     use Illuminate\Support\Facades\Auth;
     use Smartisan\Settings\Facades\Settings;
