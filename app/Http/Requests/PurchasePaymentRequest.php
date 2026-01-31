@@ -33,26 +33,4 @@
                 'file'           => [ 'nullable' , 'file' , 'mimes:jpg,jpeg,png,pdf' , 'max:2048' ] ,
             ];
         }
-
-        public function withValidator($validator)
-        {
-            $validator->after(function ($validator) {
-                $status  = false;
-                $message = '';
-
-                $purchasePaymentAmount = PurchasePayment::where('purchase_id' , request('purchase_id'))->sum('amount');
-                $purchase              = Purchase::findOrFail(request('purchase_id'));
-
-                $paymentDue = (float) $purchase->total - (float) $purchasePaymentAmount;
-
-                if ( $paymentDue < request('amount') ) {
-                    $status  = true;
-                    $message = trans('all.message.price_total_invalid');
-                }
-
-                if ( $status ) {
-                    $validator->errors()->add('global' , $message);
-                }
-            });
-        }
     }

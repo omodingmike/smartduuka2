@@ -582,6 +582,8 @@
         Route::prefix( 'purchase' )->name( 'purchase.' )->group( function () {
             Route::get( '/' , [ PurchaseController::class , 'index' ] );
             Route::post( '/' , [ PurchaseController::class , 'store' ] );
+            Route::post( '/receive' , [ PurchaseController::class , 'receive' ] );
+            Route::delete( '/delete' , [ PurchaseController::class , 'destroy' ] );
             Route::get( '/ingredients' , [ PurchaseController::class , 'indexIngredients' ] );
             Route::post( '/ingredient' , [ PurchaseController::class , 'storeIngredient' ] );
             Route::post( '/store-stock' , [ PurchaseController::class , 'storeStock' ] );
@@ -592,7 +594,7 @@
             Route::get( '/show/{purchase}' , [ PurchaseController::class , 'show' ] );
             Route::get( '/edit/{purchase}' , [ PurchaseController::class , 'edit' ] );
             Route::match( [ 'post' , 'put' , 'patch' ] , '/update/{purchase}' , [ PurchaseController::class , 'update' ] );
-            Route::delete( '/{purchase}' , [ PurchaseController::class , 'destroy' ] );
+//            Route::delete( '/{purchase}' , [ PurchaseController::class , 'destroy' ] );
             Route::get( '/export' , [ PurchaseController::class , 'export' ] );
             Route::get( '/download-attachment/{purchase}' , [ PurchaseController::class , 'downloadAttachment' ] );
             Route::get( '/payment/{type}/{purchase}' , [ PurchaseController::class , 'paymentHistory' ] );

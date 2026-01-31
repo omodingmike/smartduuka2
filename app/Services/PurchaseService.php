@@ -29,6 +29,7 @@
     use App\Models\Tax;
     use App\Models\Warehouse;
     use Exception;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
 
@@ -249,28 +250,52 @@
 
                         foreach ( $products as $product ) {
                             Stock::create( [
-                                'model_type'      => Purchase::class ,
-                                'reference'       => "S" . time() ,
-                                'model_id'        => $model_id ,
-                                'expiry_date'     => $product[ 'expiry' ] ?? NULL ,
-                                'item_type'       => Product::class ,
-                                'product_id'      => $product[ 'product_id' ] ,
-                                'item_id'         => $product[ 'product_id' ] ,
-                                'variation_names' => 'variation_names' ,
-                                'price'           => $product[ 'price' ] ,
-                                'quantity'        => $product[ 'quantity' ] ,
-                                'discount'        => 0 ,
-                                'tax'             => 0 ,
-                                'subtotal'        => $product[ 'price' ] ,
-                                'total'           => $product[ 'price' ] ,
-                                'sku'             => 'sku' ,
-                                'warehouse_id'    => $warehouse_id ,
-                                'status'          => $request->status == PurchaseStatus::RECEIVED ? StockStatus::RECEIVED : StockStatus::IN_TRANSIT
+                                'model_type'       => Purchase::class ,
+                                'reference'        => "S" . time() ,
+                                'model_id'         => $model_id ,
+                                'expiry_date'      => $product[ 'expiry' ] ?? NULL ,
+                                'item_type'        => Product::class ,
+                                'product_id'       => $product[ 'product_id' ] ,
+                                'item_id'          => $product[ 'product_id' ] ,
+                                'variation_names'  => 'variation_names' ,
+                                'price'            => $product[ 'price' ] ,
+                                'quantity'         => 0 ,
+                                'quantity_ordered' => $product[ 'quantity' ] ,
+                                'discount'         => 0 ,
+                                'tax'              => 0 ,
+                                'subtotal'         => $product[ 'price' ] ,
+                                'total'            => $product[ 'price' ] ,
+                                'sku'              => 'sku' ,
+                                'warehouse_id'     => $warehouse_id ,
+                                'status'           => $request->status == PurchaseStatus::RECEIVED ? StockStatus::RECEIVED : StockStatus::IN_TRANSIT
                             ] );
                         }
                     }
                 } );
                 return $this->purchase;
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                DB::rollBack();
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function receive(Request $request) : array
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    if ( $request->items ) {
+                        $products = json_decode( $request->items , TRUE );
+
+                        foreach ( $products as $product ) {
+                            $stock = Stock::find( $product[ 'stock_id' ] );
+                            $stock->increment( 'quantity_received' , $product[ 'quantity_received' ] );
+                            $stock->increment( 'quantity' , $product[ 'quantity_received' ] );
+                            $stock->update( [ 'status' => StockStatus::RECEIVED ] );
+                        }
+                    }
+                } );
+                return [];
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();

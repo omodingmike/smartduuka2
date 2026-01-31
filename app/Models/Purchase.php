@@ -108,4 +108,11 @@
                 return $purchase->balance;
             } );
         }
+
+        protected static function booted() : void
+        {
+            static::deleting( function ($purchase) {
+                $purchase->stocks()->delete();
+            } );
+        }
     }

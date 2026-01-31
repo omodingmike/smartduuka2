@@ -3,7 +3,6 @@
     namespace App\Http\Resources;
 
     use App\Libraries\AppLibrary;
-    use App\Models\PurchasePayment;
     use App\Models\Stock;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
@@ -27,26 +26,28 @@
                 'status'               => $this->status ,
                 'payment_status'       => $this->payment_status ,
                 'total'                => $this->total ,
-                'total_words'          => ucwords( Number::spell( (int) $this->total ) ) ,
+                'total_words'          => ucwords( Number::spell( (int) $this->total ) ).' Shillings Only' ,
                 'paid'                 => $this->paid ,
                 'type'                 => $this->type ,
                 'shipping'             => $this->shipping ,
                 'balance'              => $this->balance ,
                 'purchasePayments'     => PurchasePaymentResource::collection( $this->purchasePayments ) ,
-                'paymentMethods' => $this->purchasePayments
-                    ->pluck('paymentMethod.name')
+                'paymentMethods'       => $this->purchasePayments
+                    ->pluck( 'paymentMethod.name' )
                     ->unique()
-                    ->implode(', '),
+                    ->implode( ', ' ) ,
                 'products'             => $this->stocks->map( function (Stock $stock) {
                     return [
-                        'product_id'     => $stock->product_id ,
-                        'product_name'   => $stock->product->name ,
-                        'price'          => $stock->price ,
-                        'currency_price' => AppLibrary::currencyAmountFormat( $stock->price ) ,
-                        'total'          => $stock->total ,
-                        'total_currency' => AppLibrary::currencyAmountFormat( $stock->total ) ,
-                        'quantity'       => $stock->quantity ,
-                        'unit'           => $stock->product->unit->short_name ,
+                        'stock_id'         => $stock->id ,
+                        'product_id'       => $stock->product_id ,
+                        'product_name'     => $stock->product->name ,
+                        'price'            => $stock->price ,
+                        'quantity_ordered' => $stock->quantity_ordered ,
+                        'currency_price'   => AppLibrary::currencyAmountFormat( $stock->price ) ,
+                        'total'            => $stock->total ,
+                        'total_currency'   => AppLibrary::currencyAmountFormat( $stock->total ) ,
+                        'quantity'         => $stock->quantity ,
+                        'unit'             => $stock->product->unit->short_name ,
                     ];
                 } ) ,
                 'creator'              => new UserResource ( $this->creator ) ,

@@ -32,6 +32,7 @@
     use Exception;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
+    use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
     use Illuminate\Support\Facades\DB;
@@ -42,6 +43,7 @@
     class PurchaseController extends AdminController
     {
         use SaveMedia;
+
         public PurchaseService         $purchaseService;
         public ProductVariationService $productVariationService;
         protected array                $purchaseFilter = [
@@ -252,6 +254,14 @@
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
+        public function receive(Request $request)
+        {
+            try {
+                return $this->purchaseService->receive( $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
 
         public function show(Purchase $purchase) : Application | Response | PurchaseDetailsResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
@@ -289,10 +299,10 @@
             }
         }
 
-        public function destroy(Purchase $purchase) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function destroy(Request $request) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                $this->purchaseService->destroy( $purchase );
+                Purchase::destroy( $request->ids );
                 return response( '' , 202 );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
