@@ -14,13 +14,13 @@
         public function rules() : array
         {
             return [
-                'supplier_id' => [ 'required' , 'numeric' ] ,
-                'date'        => [ 'required' , 'string' ] ,
+//                'supplier_id' => [ 'required' , 'numeric' ] ,
+//                'date'        => [ 'required' , 'string' ] ,
                 'refNo'       => [ 'sometimes' , 'string' ] ,
                 'shipping'    => [ 'sometimes' , 'numeric:' ] ,
                 'notes'       => [ 'sometimes' , 'string:' ] ,
-                'status'      => [ 'required' , 'numeric' ] ,
-                'items'       => [ 'required' , 'string' ] ,
+//                'status'      => [ 'required' , 'numeric' ] ,
+//                'items'       => [ 'required' , 'string' ] ,
             ];
         }
     }
