@@ -77,6 +77,7 @@
     use App\Http\Controllers\ProductionController;
     use App\Http\Controllers\ProductionProcessController;
     use App\Http\Controllers\ProductionSetupController;
+    use App\Http\Controllers\PurchaseReturnController;
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\SubscriptionController;
     use App\Http\Controllers\UnitConversionController;
@@ -171,6 +172,7 @@
             Route::put( '/{branch}' , [ BranchController::class , 'update' ] );
             Route::delete( '/delete' , [ BranchController::class , 'destroy' ] );
         } );
+        Route::apiResource( 'returns' , PurchaseReturnController::class )->except( 'destroy' );
 
         Route::get( '/menu' , [ LoginController::class , 'menu' ] );
 
@@ -227,6 +229,7 @@
         Route::prefix( 'supplier' )->name( 'supplier.' )->group( function () {
             Route::get( '/' , [ SupplierController::class , 'index' ] );
             Route::get( '/show/{supplier}' , [ SupplierController::class , 'show' ] );
+            Route::get( '/{supplier}/purchases' , [ SupplierController::class , 'purchases' ] );
             Route::post( '/' , [ SupplierController::class , 'store' ] );
             Route::match( [ 'post' , 'put' , 'patch' ] , '/{supplier}' , [ SupplierController::class , 'update' ] );
             Route::delete( '/delete' , [ SupplierController::class , 'destroy' ] );
@@ -601,7 +604,7 @@
             Route::get( '/export' , [ PurchaseController::class , 'export' ] );
             Route::get( '/download-attachment/{purchase}' , [ PurchaseController::class , 'downloadAttachment' ] );
             Route::get( '/payment/{type}/{purchase}' , [ PurchaseController::class , 'paymentHistory' ] );
-            Route::post( '/payment/{purchase}' , [ PurchaseController::class , 'payment' ] )->middleware('register');
+            Route::post( '/payment/{purchase}' , [ PurchaseController::class , 'payment' ] )->middleware( 'register' );
             Route::get( '/payment/download-attachment/{purchasePayment}' , [ PurchaseController::class , 'paymentDownloadAttachment' ] );
             Route::delete( '/payment/{type}/{purchase}/{purchasePayment}' , [ PurchaseController::class , 'paymentDestroy' ] );
         } );

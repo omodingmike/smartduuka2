@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PurchaseStatus;
+use App\Http\Resources\PurchaseResource;
+use App\Models\Purchase;
 use Exception;
 use App\Services\SupplierService;
 use App\Http\Requests\SupplierRequest;
@@ -58,11 +61,23 @@ class SupplierController extends AdminController
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
+    
 
     public function show(Supplier $supplier): \Illuminate\Http\Response | SupplierResource | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
     {
         try {
             return new SupplierResource($this->supplierService->show($supplier));
+        } catch (Exception $exception) {
+            return response(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+    }
+
+    public function purchases(Supplier $supplier)
+    {
+        try {
+            return PurchaseResource::collection(Purchase::where('supplier_id', $supplier->id)
+//                                                        ->where('status', PurchaseStatus::ORDERED)
+                                                        ->get());
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

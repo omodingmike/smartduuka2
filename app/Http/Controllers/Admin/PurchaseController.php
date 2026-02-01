@@ -79,6 +79,7 @@
 //            $this->middleware( [ 'permission:purchase_show' ] )->only( 'show' );
         }
 
+
         public function storeIngredient(PurchaseRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
