@@ -582,6 +582,9 @@
         Route::prefix( 'purchase' )->name( 'purchase.' )->group( function () {
             Route::get( '/' , [ PurchaseController::class , 'index' ] );
             Route::post( '/' , [ PurchaseController::class , 'store' ] );
+            Route::post( '/request' , [ PurchaseController::class , 'request' ] );
+            Route::put( '/request/change-status/{purchase}' , [ PurchaseController::class , 'changeRequestStatus' ] );
+            Route::get( '/request' , [ PurchaseController::class , 'listRequest' ] );
             Route::post( '/receive' , [ PurchaseController::class , 'receive' ] );
             Route::delete( '/delete' , [ PurchaseController::class , 'destroy' ] );
             Route::get( '/ingredients' , [ PurchaseController::class , 'indexIngredients' ] );

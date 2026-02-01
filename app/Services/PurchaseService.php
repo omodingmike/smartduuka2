@@ -12,6 +12,7 @@
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PurchasePaymentRequest;
     use App\Http\Requests\PurchaseRequest;
+    use App\Http\Requests\StockPurchaseRequestRequest;
     use App\Http\Requests\StockReconcilliationRequest;
     use App\Http\Requests\StockTransferRequest;
     use App\Libraries\QueryExceptionLibrary;
@@ -24,6 +25,7 @@
     use App\Models\PurchasePayment;
     use App\Models\Stock;
     use App\Models\StockProduct;
+    use App\Models\StockPurchaseRequest;
     use App\Models\StockTax;
     use App\Models\Supplier;
     use App\Models\Tax;
@@ -60,6 +62,49 @@
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
 
                 return Purchase::with( [ 'supplier' , 'creator' , 'stocks.product' , 'purchasePayments' ] )->where( function ($query) use ($requests) {
+//                    $query->where( 'type' , PurchaseType::ITEM );
+                    foreach ( $requests as $key => $request ) {
+                        if ( in_array( $key , $this->purchaseFilter ) ) {
+                            if ( $key == "except" ) {
+                                $explodes = explode( '|' , $request );
+                                if ( count( $explodes ) ) {
+                                    foreach ( $explodes as $explode ) {
+                                        $query->where( 'id' , '!=' , $explode );
+                                    }
+                                }
+                            }
+                            else {
+                                if ( $key == "supplier_id" || $key == 'status' ) {
+                                    $query->where( $key , $request );
+                                }
+                                else if ( $key == "date" && ! empty( $request ) ) {
+                                    $date_start = date( 'Y-m-d 00:00:00' , strtotime( $request ) );
+                                    $date_end   = date( 'Y-m-d 23:59:59' , strtotime( $request ) );
+                                    $query->where( $key , '>=' , $date_start )->where( $key , '<=' , $date_end );
+                                }
+                                else {
+                                    $query->where( $key , 'like' , '%' . $request . '%' );
+                                }
+                            }
+                        }
+                    }
+                } )->orderBy( $orderColumn , $orderType )->$method( $methodValue );
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function listRequest(PaginateRequest $request)
+        {
+            try {
+                $requests    = $request->all();
+                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
+                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
+                $orderColumn = $request->get( 'order_column' ) ?? 'id';
+                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+
+                return StockPurchaseRequest::with( [ 'stocks.product' ] )->where( function ($query) use ($requests) {
 //                    $query->where( 'type' , PurchaseType::ITEM );
                     foreach ( $requests as $key => $request ) {
                         if ( in_array( $key , $this->purchaseFilter ) ) {
@@ -273,6 +318,55 @@
                     }
                 } );
                 return $this->purchase;
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                DB::rollBack();
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function request(StockPurchaseRequestRequest $request) : array
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    $warehouse_id     = Warehouse::first()->id;
+                    $purchase_request = StockPurchaseRequest::create( [
+                        'reason'         => $request->reason ,
+                        'reference'      => 'PR' . time() ,
+                        'requester_name' => $request->requester_name ,
+                        'date'           => now() ,
+                        'department'     => $request->department ,
+                        'priority'       => $request->priority ,
+                        'supplier_id'    => $request->supplier_id ,
+                    ] );
+
+                    if ( $request->items ) {
+                        $products = json_decode( $request->items , TRUE );
+                        foreach ( $products as $product ) {
+                            Stock::create( [
+                                'model_type'       => StockPurchaseRequest::class ,
+                                'reference'        => "S" . time() ,
+                                'model_id'         => $purchase_request->id ,
+                                'expiry_date'      => $product[ 'expiry' ] ?? NULL ,
+                                'item_type'        => Product::class ,
+                                'product_id'       => $product[ 'product_id' ] ,
+                                'item_id'          => $product[ 'product_id' ] ,
+                                'variation_names'  => 'variation_names' ,
+                                'price'            => $product[ 'price' ] ,
+                                'quantity'         => 0 ,
+                                'quantity_ordered' => $product[ 'quantity' ] ,
+                                'discount'         => 0 ,
+                                'tax'              => 0 ,
+                                'subtotal'         => $product[ 'price' ] ,
+                                'total'            => $product[ 'price' ] ,
+                                'sku'              => 'sku' ,
+                                'warehouse_id'     => $warehouse_id ,
+                                'status'           => StockStatus::IN_TRANSIT
+                            ] );
+                        }
+                    }
+                } );
+                return [];
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();

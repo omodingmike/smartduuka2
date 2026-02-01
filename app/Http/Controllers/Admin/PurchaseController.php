@@ -5,10 +5,15 @@
     use App\Enums\Constants;
     use App\Enums\OrderStatus;
     use App\Enums\PaymentStatus;
+    use App\Enums\PurchasePaymentStatus;
+    use App\Enums\PurchaseRequestStatus;
+    use App\Enums\PurchaseStatus;
+    use App\Enums\StockStatus;
     use App\Exports\PurchasesExport;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PurchasePaymentRequest;
     use App\Http\Requests\PurchaseRequest;
+    use App\Http\Requests\StockPurchaseRequestRequest;
     use App\Http\Requests\StockReconcilliationRequest;
     use App\Http\Requests\StockTransferRequest;
     use App\Http\Requests\StorePosPaymentRequest;
@@ -16,16 +21,22 @@
     use App\Http\Resources\PurchaseDetailsResource;
     use App\Http\Resources\PurchasePaymentResource;
     use App\Http\Resources\PurchaseResource;
+    use App\Http\Resources\StockPurchaseRequestResource;
     use App\Http\Resources\TaxResource;
+    use App\Libraries\AppLibrary;
     use App\Models\Order;
     use App\Models\PaymentMethod;
     use App\Models\PosPayment;
+    use App\Models\Product;
     use App\Models\Purchase;
     use App\Models\PurchasePayment;
     use App\Models\RoyaltyCustomer;
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\RoyaltyPointsLog;
+    use App\Models\Stock;
+    use App\Models\StockPurchaseRequest;
     use App\Models\Tax;
+    use App\Models\Warehouse;
     use App\Services\ProductVariationService;
     use App\Services\PurchaseService;
     use App\Traits\SaveMedia;
@@ -219,6 +230,15 @@
             }
         }
 
+        public function listRequest(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        {
+            try {
+                return StockPurchaseRequestResource::collection( $this->purchaseService->listRequest( $request ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function storeStock(PurchaseRequest $request)
         {
             try {
@@ -254,6 +274,85 @@
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
+
+        public function request(StockPurchaseRequestRequest $request)
+        {
+            try {
+                return $this->purchaseService->request( $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function changeRequestStatus(Request $request , StockPurchaseRequest $purchase)
+        {
+            try {
+                DB::transaction( function () use ($purchase , $request) {
+                    $purchase->update( [ 'status' => $request->status ] );
+                    if ( $request->status == PurchaseRequestStatus::ORDERED->value ) {
+                        $warehouse_id = Warehouse::first()->id;
+                        $products     = $purchase->stocks->map( function (Stock $stock) {
+                            return [
+                                'stock_id'         => $stock->id ,
+                                'product_id'       => $stock->product_id ,
+                                'product_name'     => $stock->product->name ,
+                                'price'            => $stock->price ,
+                                'quantity_ordered' => $stock->quantity_ordered ,
+                                'currency_price'   => AppLibrary::currencyAmountFormat( $stock->price ) ,
+                                'total'            => $stock->total ,
+                                'total_currency'   => AppLibrary::currencyAmountFormat( $stock->total ) ,
+                                'quantity'         => $stock->quantity ,
+                                'unit'             => $stock->product->unit->short_name ,
+                            ];
+                        } );
+
+                        $total = $products->sum('total');
+
+                        $p     = Purchase::create( [
+                            'date'           => now() ,
+                            'reference_no'   => 'PO' . time() ,
+                            'subtotal'       => $total ,
+                            'total'          => $total ,
+                            'notes'          => $purchase->reason ,
+                            'status'         => PurchaseStatus::PENDING ,
+                            'shipping'       => 0 ,
+                            'payment_status' => PurchasePaymentStatus::PENDING ,
+                            'warehouse_id'   => $warehouse_id ,
+                            'supplier_id'    => $purchase->supplier_id
+                        ] );
+
+                        info( $products );
+
+                        foreach ( $products as $product ) {
+                            Stock::create( [
+                                'model_type'       => Purchase::class ,
+                                'reference'        => 'S' . time() ,
+                                'model_id'         => $p->id ,
+                                'expiry_date'      => NULL ,
+                                'item_type'        => Product::class ,
+                                'product_id'       => $product[ 'product_id' ] ,
+                                'item_id'          => $product[ 'product_id' ] ,
+                                'variation_names'  => 'variation_names' ,
+                                'price'            => $product[ 'price' ] ,
+                                'quantity'         => 0 ,
+                                'quantity_ordered' => $product[ 'quantity_ordered' ] ,
+                                'discount'         => 0 ,
+                                'tax'              => 0 ,
+                                'subtotal'         => $product[ 'total' ] ,
+                                'total'            => $product[ 'total' ] ,
+                                'sku'              => 'sku' ,
+                                'warehouse_id'     => $warehouse_id ,
+                                'status'           => StockStatus::IN_TRANSIT
+                            ] );
+                        }
+                    }
+                } );
+                return [];
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function receive(Request $request)
         {
             try {
