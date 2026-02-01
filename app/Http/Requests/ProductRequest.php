@@ -38,7 +38,7 @@
                 ] ,
                 'barcode'                    => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'type'                       => [ 'required' , 'numeric' , 'not_in:0' ] ,
-                'trackStock'                 => [ 'sometimes' , 'numeric' , 'not_in:0' ] ,
+                'trackStock'                 => [ 'sometimes' , 'numeric'   ] ,
                 'product_category_id'        => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'product_brand_id'           => [ 'nullable' , 'numeric' , 'max_digits:10' ] ,
                 'weight'                     => [ 'nullable' , 'string' , 'max:100' ] ,
