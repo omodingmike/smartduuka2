@@ -12,6 +12,7 @@ services:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
       - /home/deploy/smartduuka/api:/app:ro
+      - php_socket:/var/run/php
     depends_on:
       - api
     networks:
@@ -24,8 +25,8 @@ services:
     container_name: api
     restart: unless-stopped
     # Exposing 9000 is optional if Nginx is on the same network, but kept per your req
-    ports:
-      - "9000:9000"
+#    ports:
+#      - "9000:9000"
     volumes:
       # Use the local project directory to map the whole app
       - ./:/app
@@ -33,6 +34,7 @@ services:
       - /home/deploy/smartduuka/api/storage:/app/storage
       - /home/deploy/smartduuka/api/public/static:/app/public/static
       - /home/deploy/smartduuka/api/public/media:/app/public/media
+      - php_socket:/var/run/php
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +42,8 @@ services:
         condition: service_healthy
     healthcheck:
       # PHP-FPM check (using cgi-fcgi is more reliable if installed, but this works)
-      test: ["CMD-SHELL", "php-fpm -t"]
+#      test: ["CMD-SHELL", "php-fpm -t"]
+      test: ["CMD", "test", "-S", "/var/run/php/php-fpm.sock"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,8 +86,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  # These are currently unused because you are using host paths (absolute paths)
-  # but kept in case you want to switch to named volumes later.
+  php_socket:
+    external: true
+    name: washingbay_php_socket
 
 networks:
   smartduuka_network:
