@@ -257,20 +257,20 @@
                         'sku'                 => $data[ 'sku' ] ,
                         'barcode'             => $data[ 'barcode' ] ,
                         'product_category_id' => $data[ 'product_category_id' ] ,
-                        'product_brand_id'    => $data[ 'product_brand_id' ] ,
-                        'weight'              => $data[ 'weight' ] ,
-                        'weight_unit_id'      => $data[ 'weight_unit_id' ] ,
+                        'product_brand_id'    => $data[ 'product_brand_id' ] ?? NULL ,
+                        'weight'              => $data[ 'weight' ] ?? NULL ,
+                        'weight_unit_id'      => $data[ 'weight_unit_id' ] ?? NULL ,
                         'status'              => $data[ 'status' ] == 1 ? Status::ACTIVE : Status::INACTIVE ,
                         'can_purchasable'     => $data[ 'can_purchasable' ] ,
                         'returnable'          => $data[ 'returnable' ] ,
-                        'description'         => $data[ 'description' ] ,
+                        'description'         => $data[ 'description' ] ?? NULL ,
                         'refundable'          => Ask::YES ,
                         'unit_id'             => $retail_pricing[ 0 ][ 'unitId' ] ,
                         'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
                         'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
 
-                    if ( isset( $data[ 'trackStock' ] ) ) {
+                    if ( isset( $data[ 'trackStock' ] ) && $data[ 'trackStock' ] == 1 ) {
                         $track_stock                         = $data[ 'trackStock' ];
                         $product->track_stock                = $track_stock;
                         $product->low_stock_quantity_warning = $data[ 'low_stock_quantity_warning' ];

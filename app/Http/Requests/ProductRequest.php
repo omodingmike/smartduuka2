@@ -56,24 +56,24 @@
             ];
         }
 
-        public function attributes() : array
-        {
-            return [
-                'product_category_id' => strtolower( trans( 'all.label.product_category_id' ) ) ,
-                'product_brand_id'    => strtolower( trans( 'all.label.product_brand_id' ) ) ,
-                'barcode_id'          => strtolower( trans( 'all.label.barcode_id' ) ) ,
-                'unit_id'             => strtolower( trans( 'all.label.unit_id' ) ) ,
-                'tax_id'              => strtolower( trans( 'all.label.tax_id' ) ) ,
-            ];
-        }
-
-        public function withValidator($validator) : void
-        {
-            $validator->after( function ($validator) {
-                $sku = ProductVariation::where( 'sku' , $this->sku )->first();
-                if ( $sku ) {
-                    $validator->getMessageBag()->add( 'sku' , trans( 'all.message.sku_exist' ) );
-                }
-            } );
-        }
+//        public function attributes() : array
+//        {
+//            return [
+//                'product_category_id' => strtolower( trans( 'all.label.product_category_id' ) ) ,
+//                'product_brand_id'    => strtolower( trans( 'all.label.product_brand_id' ) ) ,
+//                'barcode_id'          => strtolower( trans( 'all.label.barcode_id' ) ) ,
+//                'unit_id'             => strtolower( trans( 'all.label.unit_id' ) ) ,
+//                'tax_id'              => strtolower( trans( 'all.label.tax_id' ) ) ,
+//            ];
+//        }
+//
+//        public function withValidator($validator) : void
+//        {
+//            $validator->after( function ($validator) {
+//                $sku = ProductVariation::where( 'sku' , $this->sku )->first();
+//                if ( $sku ) {
+//                    $validator->getMessageBag()->add( 'sku' , trans( 'all.message.sku_exist' ) );
+//                }
+//            } );
+//        }
     }
