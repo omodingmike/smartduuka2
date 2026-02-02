@@ -21,7 +21,7 @@
                 'port'              => $this->port ,
                 'path'              => $this->path ,
                 'bluetooth_address' => $this->bluetooth_address ,
-                'printJobs'         => $this->printJobs ,
+                'printJobs'         => [] ,
             ];
         }
     }
