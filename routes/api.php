@@ -74,6 +74,7 @@
     use App\Http\Controllers\PaymentAccountController;
     use App\Http\Controllers\PaymentController;
     use App\Http\Controllers\PaymentMethodController;
+    use App\Http\Controllers\PrinterController;
     use App\Http\Controllers\ProductionController;
     use App\Http\Controllers\ProductionProcessController;
     use App\Http\Controllers\ProductionSetupController;
@@ -237,6 +238,8 @@
         } );
 
         Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
+            Route::apiResource( 'printers' , PrinterController::class )->except( 'destroy');
+            Route::delete( 'printers/delete' , [PrinterController::class,'destroy'] );
             Route::prefix( 'company' )->name( 'company.' )->group( function () {
                 Route::get( '/' , [ CompanyController::class , 'index' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/' , [ CompanyController::class , 'update' ] );

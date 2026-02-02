@@ -66,6 +66,7 @@
                 'NON_PURCHASE_QUANTITY'  => $request->site_non_purchase_product_maximum_quantity
             ] );
 
+            Artisan::call( 'config:clear' );
             Artisan::call( 'config:cache' );
             return $this->list();
         }
