@@ -51,7 +51,9 @@
             'type' ,
             'notes' ,
             'pin',
-            'last_login_date'
+            'last_login_date',
+            'department',
+            'force_reset'
         ];
 
         /**
@@ -83,6 +85,7 @@
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
             'last_login_date'   => 'datetime',
+            'force_reset'       => 'boolean',
         ];
 
         public function guardName() : string

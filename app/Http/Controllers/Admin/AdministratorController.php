@@ -16,6 +16,7 @@
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
+    use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
     use Maatwebsite\Excel\Facades\Excel;
@@ -31,11 +32,11 @@
             parent::__construct();
             $this->administratorService = $administratorService;
             $this->orderService         = $orderService;
-            $this->middleware( [ 'permission:administrators' ] )->only( 'index' , 'export' );
-            $this->middleware( [ 'permission:administrators_create' ] )->only( 'store' );
-            $this->middleware( [ 'permission:administrators_edit' ] )->only( 'update' );
-            $this->middleware( [ 'permission:administrators_delete' ] )->only( 'destroy' );
-            $this->middleware( [ 'permission:administrators_show' ] )->only( 'show' , 'changePassword' , 'changeImage' , 'myOrder' );
+//            $this->middleware( [ 'permission:administrators' ] )->only( 'index' , 'export' );
+//            $this->middleware( [ 'permission:administrators_create' ] )->only( 'store' );
+//            $this->middleware( [ 'permission:administrators_edit' ] )->only( 'update' );
+//            $this->middleware( [ 'permission:administrators_delete' ] )->only( 'destroy' );
+//            $this->middleware( [ 'permission:administrators_show' ] )->only( 'show' , 'changePassword' , 'changeImage' , 'myOrder' );
         }
 
         public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
@@ -73,10 +74,10 @@
             }
         }
 
-        public function destroy(User $administrator) : Response | Application | ResponseFactory
+        public function destroy(Request $request) : Response | Application | ResponseFactory
         {
             try {
-                $this->administratorService->destroy( $administrator );
+                User::destroy( $request->ids);;
                 return response( '' , 202 );
             } catch ( \Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

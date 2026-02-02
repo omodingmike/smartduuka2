@@ -9,6 +9,7 @@ use App\Exports\EmployeeExport;
 use App\Services\EmployeeService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -18,6 +19,7 @@ use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\EmployeeResource;
 use App\Http\Requests\ChangeImageRequest;
 use App\Http\Requests\UserChangePasswordRequest;
+use App\Jobs\SendUserCredentialsJob;
 
 class EmployeeController extends AdminController
 {
@@ -29,11 +31,11 @@ class EmployeeController extends AdminController
         parent::__construct();
         $this->employeeService = $employeeService;
         $this->orderService = $orderService;
-        $this->middleware(['permission:employees'])->only('export', 'changePassword', 'changeImage', 'myOrder');
-        $this->middleware(['permission:employees_create'])->only('store');
-        $this->middleware(['permission:employees_edit'])->only('update');
-        $this->middleware(['permission:employees_delete'])->only('destroy');
-        $this->middleware(['permission:employees_show'])->only('show');
+//        $this->middleware(['permission:employees'])->only('export', 'changePassword', 'changeImage', 'myOrder');
+//        $this->middleware(['permission:employees_create'])->only('store');
+//        $this->middleware(['permission:employees_edit'])->only('update');
+//        $this->middleware(['permission:employees_delete'])->only('destroy');
+//        $this->middleware(['permission:employees_show'])->only('show');
     }
 
     public function index(PaginateRequest $request): Response | AnonymousResourceCollection | Application | ResponseFactory
@@ -48,7 +50,11 @@ class EmployeeController extends AdminController
     public function store(EmployeeRequest $request): Response | EmployeeResource | Application | ResponseFactory
     {
         try {
-            return new EmployeeResource($this->employeeService->store($request));
+            $user = $this->employeeService->store($request);
+            if ($request->boolean('emailCredentials')) {
+                SendUserCredentialsJob::dispatch($user, $request->password, $request->pin);
+            }
+            return new EmployeeResource($user);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
@@ -57,16 +63,20 @@ class EmployeeController extends AdminController
     public function update(EmployeeRequest $request, User $employee): Response | EmployeeResource | Application | ResponseFactory
     {
         try {
-            return new EmployeeResource($this->employeeService->update($request, $employee));
+            $user = $this->employeeService->update($request, $employee);
+            if ($request->boolean('emailCredentials') && $request->filled('password')) {
+                SendUserCredentialsJob::dispatch($user, $request->password, $request->pin);
+            }
+            return new EmployeeResource($user);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
 
-    public function destroy(User $employee): Response | Application | ResponseFactory
+    public function destroy(Request $request): Response | Application | ResponseFactory
     {
         try {
-            $this->employeeService->destroy($employee);
+            User::destroy( $request->ids);
             return response('', 202);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

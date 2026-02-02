@@ -469,7 +469,8 @@
             Route::get( '/show/{administrator}' , [ AdministratorController::class , 'show' ] );
             Route::post( '/' , [ AdministratorController::class , 'store' ] );
             Route::match( [ 'post' , 'put' , 'patch' ] , '/{administrator}' , [ AdministratorController::class , 'update' ] );
-            Route::delete( '/{administrator}' , [ AdministratorController::class , 'destroy' ] );
+//            Route::delete( '/{administrator}' , [ AdministratorController::class , 'destroy' ] );
+            Route::delete( '/delete' , [ AdministratorController::class , 'destroy' ] );
             Route::get( '/export' , [ AdministratorController::class , 'export' ] );
             Route::post( '/change-password/{administrator}' , [ AdministratorController::class , 'changePassword' ] );
             Route::post( '/change-image/{administrator}' , [ AdministratorController::class , 'changeImage' ] );
@@ -553,7 +554,8 @@
             Route::post( '/' , [ EmployeeController::class , 'store' ] );
             Route::get( '/show/{employee}' , [ EmployeeController::class , 'show' ] );
             Route::match( [ 'put' , 'patch' ] , '/{employee}' , [ EmployeeController::class , 'update' ] );
-            Route::delete( '/{employee}' , [ EmployeeController::class , 'destroy' ] );
+//            Route::delete( '/{employee}' , [ EmployeeController::class , 'destroy' ] );
+            Route::delete( 'delete' , [ EmployeeController::class , 'destroy' ] );
             Route::get( '/export' , [ EmployeeController::class , 'export' ] );
             Route::post( '/change-password/{employee}' , [ EmployeeController::class , 'changePassword' ] );
             Route::post( '/change-image/{employee}' , [ EmployeeController::class , 'changeImage' ] );
