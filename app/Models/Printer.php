@@ -17,4 +17,8 @@
             'bluetooth_address' ,
             'printJobs' ,
         ];
+
+        protected $casts = [
+            'printJobs' => 'array' ,
+        ];
     }
