@@ -49,7 +49,7 @@ class MailService
                 'MAIL_FROM_ADDRESS' => $request->mail_from_email,
                 'MAIL_FROM_NAME'    => $request->mail_from_name
             ]);
-            UpdateConfigJob::dispatch();
+            Artisan::call( 'config:cache');
             return $this->list();
         } catch (Exception $exception) {
             Log::info($exception->getMessage());

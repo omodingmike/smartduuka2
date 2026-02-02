@@ -9,9 +9,6 @@
 
     class DatabaseSeeder extends Seeder
     {
-        /**
-         * Seed the application's database.
-         */
         public function run() : void
         {
 //        $this->call(CompanyTableSeeder::class);
@@ -50,6 +47,6 @@
 //        $this->call(ProductReviewTableSeeder::class);
 //        $this->call(CurrencyTableSeeder::class);
 
-            Artisan::call( 'l:seed' );
+//            Artisan::call( 'l:seed' );
         }
     }
