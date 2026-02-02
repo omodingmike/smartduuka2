@@ -19,7 +19,6 @@
     use Spatie\Permission\Models\Role;
     use Spatie\Permission\Traits\HasRoles;
 
-
     class User extends Authenticatable implements HasMedia
     {
         use InteractsWithMedia;
@@ -34,7 +33,7 @@
          * @var array<int, string>
          */
         protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales','register' ];
+        protected $appends = [ 'credits' , 'sales','register', 'total_revenue', 'average_order_value' ];
 
         protected $fillable = [
             'name' ,
@@ -51,7 +50,8 @@
             'phone2' ,
             'type' ,
             'notes' ,
-            'pin'
+            'pin',
+            'last_login_date'
         ];
 
         /**
@@ -82,6 +82,7 @@
             'status'            => Status::class ,
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
+            'last_login_date'   => 'datetime',
         ];
 
         public function guardName() : string
@@ -170,21 +171,6 @@
             );
         }
 
-//        protected function commission() : Attribute
-//        {
-//            return Attribute::make(
-//                get: function () {
-//                    $calculator = resolve( CommissionCalculator::class );
-//                    return $this->stocks()
-//                                ->where( 'sold' , '>' , 0 )
-//                                ->get()
-//                                ->sum( function (Stock $stock) use ($calculator) {
-//                                    return $calculator->calculateForStock( $stock );
-//                                } );
-//                }
-//            );
-//        }
-
         public function payments() : HasMany
         {
             return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' );
@@ -209,6 +195,20 @@
         public function getrole() : HasOne
         {
             return $this->hasOne( Role::class , 'id' , 'myrole' );
+        }
+
+        protected function totalRevenue(): Attribute
+        {
+            return Attribute::make(
+                get: fn () => $this->orders()->sum('total')
+            );
+        }
+
+        protected function averageOrderValue(): Attribute
+        {
+            return Attribute::make(
+                get: fn () => $this->orders()->avg('total') ?? 0
+            );
         }
 
     }

@@ -46,7 +46,6 @@ class AdministratorRequest extends FormRequest
                 Rule::unique("users", "phone")->ignore($this->route('administrator.id'))
             ],
             'status'                => ['required', 'numeric', 'max:24'],
-            'country_code'          => ['required', 'string', 'max:20'],
         ];
     }
 }

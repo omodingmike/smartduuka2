@@ -83,6 +83,9 @@
             $user->tokens()->delete();
             $token = $user->createToken( 'auth_token' )->plainTextToken;
 
+            // Update last login date
+            $user->update(['last_login_date' => now()]);
+
             return new JsonResponse( [
                 'message'           => trans( 'all.message.login_success' ) ,
                 'token'             => $token ,
