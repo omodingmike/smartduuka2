@@ -1,39 +1,40 @@
 <?php
 
-namespace App\Http\Resources;
+    namespace App\Http\Resources;
 
 
-use App\Models\ThemeSetting;
-use Illuminate\Http\Resources\Json\JsonResource;
+    use App\Models\ThemeSetting;
+    use Illuminate\Http\Resources\Json\JsonResource;
 
-class ThemeResource extends JsonResource
-{
-
-    public array $info;
-
-    public function __construct($info)
+    class ThemeResource extends JsonResource
     {
-        parent::__construct($info);
-        $this->info = $info;
-    }
 
-    /**
-     * Transform the resource into an array.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return array
-     */
-    public function toArray($request): array
-    {
-        return [
-            "theme_logo"         => $this->themeImage('theme_logo')->logo,
-            "theme_favicon" => $this->themeImage('theme_favicon')->faviconLogo,
-            "theme_footer_logo"  => $this->themeImage('theme_footer_logo')->footerLogo,
-        ];
-    }
+        public array $info;
 
-    public function themeImage($key)
-    {
-        return ThemeSetting::where(['key' => $key])->first();
+        public function __construct($info)
+        {
+            parent::__construct( $info );
+            $this->info = $info;
+        }
+
+        /**
+         * Transform the resource into an array.
+         *
+         * @param \Illuminate\Http\Request $request
+         *
+         * @return array
+         */
+        public function toArray($request) : array
+        {
+            return [
+                "theme_logo"    => $this->themeImage( 'theme_logo' )->logo ,
+                "theme_favicon" => $this->themeImage( 'theme_favicon' )->faviconLogo ,
+//                "theme_footer_logo" => $this->themeImage( 'theme_footer_logo' )->footerLogo ,
+            ];
+        }
+
+        public function themeImage($key)
+        {
+            return ThemeSetting::where( [ 'key' => $key ] )->first();
+        }
     }
-}

@@ -114,6 +114,7 @@
                                                                            ->with( [ 'childrenRecursive' , 'ledgers' ] )
                                                                            ->get() );
     } );
+    Route::get( 'theme' , [ ThemeController::class , 'index' ] );
     Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
     Route::match( [ 'get' , 'post' ] , '/login' , function () {
         return response()->json( [ 'errors' => 'unauthenticated' ] , 401 );
@@ -462,7 +463,6 @@
             Route::get( '/children-variation/{productVariation}' , [ ProductVariationController::class , 'childrenVariation' ] );
             Route::get( '/ancestors-and-self-id/{productVariation}' , [ ProductVariationController::class , 'ancestorsAndSelfId' ] );
         } );
-
 
         Route::prefix( 'administrator' )->name( 'administrator.' )->group( function () {
             Route::get( '/' , [ AdministratorController::class , 'index' ] );
