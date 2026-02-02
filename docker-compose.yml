@@ -88,7 +88,7 @@ volumes:
   redis_data:
   php_socket:
     external: true
-    name: washingbay_php_socket
+    name: smartduuka_php_socket
 
 networks:
   smartduuka_network:
