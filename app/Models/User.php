@@ -34,7 +34,7 @@
          * @var array<int, string>
          */
         protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales' ];
+        protected $appends = [ 'credits' , 'sales','register' ];
 
         protected $fillable = [
             'name' ,
@@ -87,6 +87,13 @@
         public function guardName() : string
         {
             return 'sanctum';
+        }
+
+        protected function register() : Attribute
+        {
+            return Attribute::make(
+                get: fn() => $this->openRegister() ,
+            );
         }
 
         public function registers() : User | HasMany
