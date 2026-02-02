@@ -13,6 +13,7 @@ services:
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
 #      - /home/deploy/smartduuka/api:/app:ro
       - php_socket:/var/run/php
+      - assets_media:/app/public/media:ro
     depends_on:
       - api
     networks:
