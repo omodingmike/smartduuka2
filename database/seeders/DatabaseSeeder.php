@@ -20,11 +20,11 @@
 //        $this->call(MenuTableSeeder::class);
 
 
-            DB::statement( 'TRUNCATE TABLE roles, permissions, users RESTART IDENTITY CASCADE' );
-            $this->call( PermissionTableSeeder::class );
-            $this->call( RoleTableSeeder::class );
-            $this->call( UserTableSeeder::class );
-            $this->call( PaymentMethodSeeder::class );
+//            DB::statement( 'TRUNCATE TABLE roles, permissions, users RESTART IDENTITY CASCADE' );
+//            $this->call( PermissionTableSeeder::class );
+//            $this->call( RoleTableSeeder::class );
+//            $this->call( UserTableSeeder::class );
+//            $this->call( PaymentMethodSeeder::class );
 
 //        $this->call(RolePermissionTableSeeder::class);
 //
