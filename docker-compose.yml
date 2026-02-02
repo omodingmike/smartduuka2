@@ -10,7 +10,7 @@ services:
       - "443:443"
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
-      - /home/deploy/ssl:/etc/nginx/ssl:ro
+      - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
       - /home/deploy/smartduuka/api:/app:ro
     depends_on:
       - api
