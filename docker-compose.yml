@@ -9,9 +9,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+#      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
-      - /home/deploy/smartduuka/api:/app:ro
+#      - /home/deploy/smartduuka/api:/app:ro
       - php_socket:/var/run/php
     depends_on:
       - api
@@ -29,11 +29,14 @@ services:
 #      - "9000:9000"
     volumes:
       # Use the local project directory to map the whole app
-      - ./:/app
+#      - ./:/app
       # Ensure specific writable volumes are mapped correctly
-      - /home/deploy/smartduuka/api/storage:/app/storage
-      - /home/deploy/smartduuka/api/public/static:/app/public/static
-      - /home/deploy/smartduuka/api/public/media:/app/public/media
+#      - /home/deploy/smartduuka/api/storage:/app/storage
+#      - /home/deploy/smartduuka/api/public/static:/app/public/static
+#      - /home/deploy/smartduuka/api/public/media:/app/public/media
+      - app_storage:/app/storage
+      - assets_static:/app/public/static
+      - assets_media:/app/public/media
       - php_socket:/var/run/php
     depends_on:
       db:
@@ -86,6 +89,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  app_storage:
+  assets_static:
+  assets_media:
   php_socket:
     external: true
     name: smartduuka_php_socket
