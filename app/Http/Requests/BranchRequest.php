@@ -33,7 +33,7 @@
                     'max:50' ,
                     Rule::unique( 'branches' , 'code' )->ignore( $branchId )
                 ] ,
-                'location' => [ 'required' , 'string' , 'max:500' ] ,
+                'address' => [ 'required' , 'string' , 'max:500' ] ,
                 'manager'  => [ 'required' , 'string' , 'max:190' ] ,
                 'phone'    => [ 'required' , 'string' , 'max:20' ] ,
                 'email'    => [ 'nullable' , 'email' , 'max:190' ] ,

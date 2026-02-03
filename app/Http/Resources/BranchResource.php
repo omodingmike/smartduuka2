@@ -21,7 +21,7 @@
                 "name"       => $this->name ,
                 "email"      => $this->email === NULL ? '' : $this->email ,
                 "phone"      => $this->phone === NULL ? '' : $this->phone ,
-                "location"   => $this->address ,
+                "address"   => $this->address ,
                 "staffCount" => 0 ,
                 "code"       => $this->code ,
                 "manager"    => $this->manager ,

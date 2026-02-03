@@ -17,7 +17,7 @@
                 'name'                         => $this->name ,
                 'price'                        => $this->price ,
                 'price_text'                   => AppLibrary::currencyAmountFormat( $this->price ) ,
-                'currency'                     => config( 'system.currency_symbol' ) ,
+                'currency'                     => currencySymbol() ,
                 'description'                  => $this->description ,
                 'type'                         => $this->type ,
                 'image'                        => $this->image ,

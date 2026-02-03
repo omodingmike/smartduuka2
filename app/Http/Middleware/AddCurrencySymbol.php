@@ -16,9 +16,8 @@
             if ( $response instanceof JsonResponse ) {
                 $data = $response->getData( TRUE );
                 if ( is_array( $data ) ) {
-                    $user                 = auth()->user();
-                    $data[ 'currency' ]   = config( 'system.currency_symbol' );
-                    $data[ 'currency_2' ] = env( 'CURRENCY_SYMBOL' );
+                    $user               = auth()->user();
+                    $data[ 'currency' ] = currencySymbol();
                     if ( $user ) {
                         $data[ 'has_open_register' ] = $user->registers()->whereNull( 'closed_at' )->latest()->exists();;
                     }

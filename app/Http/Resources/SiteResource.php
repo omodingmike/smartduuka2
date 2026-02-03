@@ -30,7 +30,7 @@
                 'site_email_verification'        => (int) $this->info[ 'site_email_verification' ] ?? 0 ,
                 'site_phone_verification'        => (int) $this->info[ 'site_phone_verification' ] ?? 0 ,
                 'site_online_payment_gateway'    => (int) $this->info[ 'site_online_payment_gateway' ] ?? 0 ,
-                'currency'                       => config( 'system.currency_symbol' ) ,
+                'currency'                       => currencySymbol() ,
 
 //                'site_default_currency_symbol'               => $this->info[ 'site_default_currency_symbol' ] ?? 'UGX' ,
 //                'site_currency_position'                     => $this->info[ 'site_currency_position' ] ?? 5 ,

@@ -96,60 +96,62 @@
             return $buildArray;
         }
 
-        public static function recursiveFlattenPermissions($array, &$buildArray = [], &$i = 1, $parentId = 0): array
+        public static function recursiveFlattenPermissions($array , &$buildArray = [] , &$i = 1 , $parentId = 0) : array
         {
-            foreach ($array as $arr) {
+            foreach ( $array as $arr ) {
                 // Capture children if they exist (supporting both 'items' or 'children' keys)
-                $children = $arr['items'] ?? $arr['children'] ?? [];
+                $children = $arr[ 'items' ] ?? $arr[ 'children' ] ?? [];
 
                 // Clean the current item so it can be inserted into the DB
-                unset($arr['items'], $arr['children']);
+                unset( $arr[ 'items' ] , $arr[ 'children' ] );
 
-                $currentId = $i;
-                $arr['id'] = $currentId; // We manually assign ID to link parents/children
-                $arr['parent'] = $parentId;
+                $currentId       = $i;
+                $arr[ 'id' ]     = $currentId; // We manually assign ID to link parents/children
+                $arr[ 'parent' ] = $parentId;
 
-                $buildArray[$currentId] = $arr;
+                $buildArray[ $currentId ] = $arr;
                 $i++;
 
                 // If children exist, recurse deeper
-                if (!empty($children)) {
-                    self::recursiveFlattenPermissions($children, $buildArray, $i, $currentId);
+                if ( ! empty( $children ) ) {
+                    self::recursiveFlattenPermissions( $children , $buildArray , $i , $currentId );
                 }
             }
             return $buildArray;
         }
 
-        public static function buildPermissionTree(array $array): array
+        public static function buildPermissionTree(array $array) : array
         {
-            $tree = [];
+            $tree        = [];
             $indexedData = [];
 
             // 1. Index every item by its actual database ID
-            foreach ($array as $item) {
-                $item['children'] = [];
-                $indexedData[$item['id']] = $item;
+            foreach ( $array as $item ) {
+                $item[ 'children' ]           = [];
+                $indexedData[ $item[ 'id' ] ] = $item;
             }
 
             // 2. Loop again to link children to parents
-            foreach ($indexedData as $id => &$item) {
-                $parentId = (int)$item['parent'];
+            foreach ( $indexedData as $id => &$item ) {
+                $parentId = (int) $item[ 'parent' ];
 
-                if ($parentId === 0) {
+                if ( $parentId === 0 ) {
                     // No parent, this is a root node
                     $tree[] = &$item;
-                } else {
+                }
+                else {
                     // If the parent ID exists in our list, attach as child
-                    if (isset($indexedData[$parentId])) {
-                        $indexedData[$parentId]['children'][] = &$item;
-                    } else {
+                    if ( isset( $indexedData[ $parentId ] ) ) {
+                        $indexedData[ $parentId ][ 'children' ][] = &$item;
+                    }
+                    else {
                         // If parent ID is not found, keep it at the root so it's not lost
                         $tree[] = &$item;
                     }
                 }
             }
 
-            return array_values($tree);
+            return array_values( $tree );
         }
 
         public static function numericToAssociativeArrayBuilder($array) : array
@@ -293,9 +295,9 @@
         public static function currencyAmountFormat($amount) : string
         {
             if ( config( 'system.currency_position' ) == CurrencyPosition::RIGHT ) {
-                return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . config( 'system.currency_symbol' );
+                return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . currencySymbol();
             }
-            return config( 'system.currency_symbol' ) . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
+            return currencySymbol() . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
         }
 
         public static function flatAmountFormat($amount) : string

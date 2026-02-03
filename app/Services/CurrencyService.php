@@ -3,12 +3,12 @@
     namespace App\Services;
 
 
+    use App\Enums\CacheEnum;
     use App\Http\Requests\CurrencyRequest;
     use App\Http\Requests\PaginateRequest;
-    use App\Jobs\UpdateConfig;
-    use App\Jobs\UpdateConfigJob;
     use App\Models\Currency;
     use Exception;
+    use Illuminate\Support\Facades\Cache;
     use Illuminate\Support\Facades\Log;
     use Smartisan\Settings\Facades\Settings;
 
@@ -69,6 +69,7 @@
         {
             try {
                 $currency->update( $request->validated() );
+                Cache::forget( CacheEnum::CURRENCY_SYMBOL );
                 return $currency;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );

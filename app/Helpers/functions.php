@@ -2,6 +2,7 @@
 
     use App\Enums\Ask;
     use App\Enums\BarcodeType;
+    use App\Enums\CacheEnum;
     use App\Enums\Constants;
     use App\Enums\OrderStatus;
     use App\Enums\PaymentStatus;
@@ -20,9 +21,9 @@
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
     use App\Models\User;
-    use App\Models\Warehouse;
     use Carbon\Carbon;
     use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\Cache;
     use Smartisan\Settings\Facades\Settings;
 
     function project()
@@ -271,6 +272,14 @@
     function currency($value) : string
     {
         return AppLibrary::currencyAmountFormat( $value );
+    }
+
+    function currencySymbol() : string
+    {
+        return Cache::rememberForever( CacheEnum::CURRENCY_SYMBOL , function () {
+            $currency = Currency::find( Settings::group( 'site' )->get( CacheEnum::CURRENCY_SYMBOL ) );
+            return $currency->symbol ?? 'UGX';
+        } );
     }
 
     function datetime($value) : string
