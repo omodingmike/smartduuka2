@@ -33,7 +33,7 @@
          * @var array<int, string>
          */
         protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales','register', 'total_revenue', 'average_order_value' ];
+        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value', 'credit_orders' ];
 
         protected $fillable = [
             'name' ,
@@ -50,9 +50,9 @@
             'phone2' ,
             'type' ,
             'notes' ,
-            'pin',
-            'last_login_date',
-            'department',
+            'pin' ,
+            'last_login_date' ,
+            'department' ,
             'force_reset'
         ];
 
@@ -84,8 +84,8 @@
             'status'            => Status::class ,
             'email_verified_at' => 'datetime' ,
             'credits'           => 'decimal' ,
-            'last_login_date'   => 'datetime',
-            'force_reset'       => 'boolean',
+            'last_login_date'   => 'datetime' ,
+            'force_reset'       => 'boolean' ,
         ];
 
         public function guardName() : string
@@ -200,17 +200,26 @@
             return $this->hasOne( Role::class , 'id' , 'myrole' );
         }
 
-        protected function totalRevenue(): Attribute
+        protected function totalRevenue() : Attribute
         {
             return Attribute::make(
-                get: fn () => $this->orders()->sum('total')
+                get: fn() => $this->orders()->sum( 'total' )
             );
         }
 
-        protected function averageOrderValue(): Attribute
+        protected function averageOrderValue() : Attribute
         {
             return Attribute::make(
-                get: fn () => $this->orders()->avg('total') ?? 0
+                get: fn() => $this->orders()->avg( 'total' ) ?? 0
+            );
+        }
+
+        protected function creditOrders(): Attribute
+        {
+            return Attribute::make(
+                get: fn () => $this->orders->filter(function ($order) {
+                    return $order->balance > 0;
+                })
             );
         }
 

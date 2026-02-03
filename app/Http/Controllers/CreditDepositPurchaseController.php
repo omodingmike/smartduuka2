@@ -81,4 +81,41 @@
                 return response()->json( [ 'message' => 'Balance updated successfully' ] );
             } );
         }
+
+        public function payDebt(Request $request , Order $order)
+        {
+            DB::transaction( function () use ($order , $request) {
+                $amount     = $request->integer( 'amount' );
+                $net_amount = $amount;
+                if ( $amount > 0 ) {
+                    $payment = PaymentMethod::find( $request->integer( 'payment_method' ) );
+
+                    PosPayment::create( [
+                        'order_id'          => $order->id ,
+                        'date'              => now() ,
+                        'reference_no'      => time() ,
+                        'amount'            => $net_amount ,
+                        'payment_method_id' => $payment->id ,
+                        'register_id'       => auth()->user()->openRegister()->id
+                    ] );
+
+                    PaymentMethodTransaction::create( [
+                        'amount'            => $net_amount ,
+                        'charge'            => 0 ,
+                        'description'       => 'Order Payment #' . $order->order_serial_no ,
+                        'payment_method_id' => $payment->id ,
+                    ] );
+                }
+
+
+                if ( $order->balance <= 0 ) {
+                    $order->update( [
+                        'payment_status' => PaymentStatus::PAID ,
+                        'payment_type'   => PaymentType::CASH ,
+                    ] );
+                }
+
+                return response()->json( [ 'message' => 'Balance updated successfully' ] );
+            } );
+        }
     }

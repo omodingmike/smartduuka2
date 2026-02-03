@@ -42,16 +42,20 @@
                 $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $query       = $request->get( 'query' ) ?? NULL;
 
-                return User::with( [ 'media' , 'addresses' ] )->role( EnumRole::CUSTOMER )->where( function ($query) use ($requests) {
-                    foreach ( $requests as $key => $request ) {
-                        if ( in_array( $key , $this->userFilter ) ) {
-                            $query->where( $key , 'like' , '%' . $request . '%' );
+                return User::with( [ 'media' , 'addresses' ] )->role( EnumRole::CUSTOMER )
+                           ->when( $query , function ($q) use ($query) {
+                               $q->where( 'name' , 'ilike' , "%" . $query . "%" );
+                           } )->where( function ($query) use ($requests) {
+                        foreach ( $requests as $key => $request ) {
+                            if ( in_array( $key , $this->userFilter ) ) {
+                                $query->where( $key , 'like' , '%' . $request . '%' );
+                            }
                         }
-                    }
-                } )->orderBy( 'created_at' , 'desc' )->$method(
-                    $methodValue
-                );
+                    } )->orderBy( 'created_at' , 'desc' )->$method(
+                        $methodValue
+                    );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -99,11 +103,11 @@
         /**
          * @throws Exception
          */
-        public function update(CustomerRequest $request, User $customer)
+        public function update(CustomerRequest $request , User $customer)
         {
             try {
-                if (!in_array(EnumRole::CUSTOMER, $this->blockRoles)) {
-                    DB::transaction(function () use ($customer, $request) {
+                if ( ! in_array( EnumRole::CUSTOMER , $this->blockRoles ) ) {
+                    DB::transaction( function () use ($customer , $request) {
                         $this->user = $customer;
 
                         // Core fields matching store logic
@@ -113,34 +117,35 @@
                         $this->user->status = $request->status;
 
                         // Conditional fields matching store logic
-                        if ($request->email) {
+                        if ( $request->email ) {
                             $this->user->email = $request->email;
                         }
 
-                        if ($request->notes) {
+                        if ( $request->notes ) {
                             $this->user->notes = $request->notes;
                         }
 
-                        if ($request->phone2) {
+                        if ( $request->phone2 ) {
                             $this->user->phone2 = $request->phone2;
                         }
 
                         // Password handling (specific to update)
-                        if ($request->password) {
-                            $this->user->password = Hash::make($request->password);
+                        if ( $request->password ) {
+                            $this->user->password = Hash::make( $request->password );
                         }
 
                         $this->user->save();
-                    });
+                    } );
 
                     return $this->user;
-                } else {
-                    throw new Exception(trans('all.message.permission_denied'), 422);
                 }
-            } catch (Exception $exception) {
+                else {
+                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
+                }
+            } catch ( Exception $exception ) {
                 DB::rollBack();
-                Log::info($exception->getMessage());
-                throw new Exception($exception->getMessage(), 422);
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
             }
         }
 

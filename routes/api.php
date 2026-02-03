@@ -689,6 +689,7 @@
             Route::post( '/change-payment-status/{order}' , [ PosOrderController::class , 'changePaymentStatus' ] );
             Route::get( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'index' ] );
             Route::post( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'updateBalance' ] )->middleware( 'register' );
+            Route::post( '/debt/payment/{order}' , [ CreditDepositPurchaseController::class , 'payDebt' ] )->middleware( 'register' );
         } );
 
         Route::prefix( 'pos' )->name( 'pos.' )->group( function () {

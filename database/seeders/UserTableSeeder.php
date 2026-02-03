@@ -42,7 +42,6 @@ class UserTableSeeder extends Seeder
             'email_verified_at' => now(),
             'password'          => bcrypt('123456'),
             'status'            => Status::ACTIVE,
-            'country_code'      => '+880',
             'is_guest'          => Ask::NO
         ]);
         $customer->assignRole(Role::find(EnumRole::CUSTOMER));
