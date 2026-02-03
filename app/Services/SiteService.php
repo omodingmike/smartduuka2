@@ -6,10 +6,10 @@
     use App\Enums\SettingsKeyEnum;
     use App\Http\Requests\CleaningSettingRequest;
     use App\Http\Requests\SiteRequest;
+    use App\Jobs\UpdateConfigJob;
     use App\Models\Currency;
     use Dipokhalder\EnvEditor\EnvEditor;
     use Exception;
-    use Illuminate\Support\Facades\Artisan;
     use Illuminate\Support\Facades\Log;
     use Smartisan\Settings\Facades\Settings;
 
@@ -66,8 +66,7 @@
                 'NON_PURCHASE_QUANTITY'  => $request->site_non_purchase_product_maximum_quantity
             ] );
 
-            Artisan::call( 'config:clear' );
-            Artisan::call( 'config:cache' );
+            UpdateConfigJob::dispatchAfterResponse();
             return $this->list();
         }
 

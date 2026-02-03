@@ -15,7 +15,6 @@
         public function handle() : void
         {
             Artisan::call( 'config:cache' );
-            \Log::info( 'Config Cache Output: ' . Artisan::output() );
             Artisan::call( 'queue:restart' );
         }
     }
