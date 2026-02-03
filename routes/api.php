@@ -115,7 +115,7 @@
                                                                            ->with( [ 'childrenRecursive' , 'ledgers' ] )
                                                                            ->get() );
     } );
-    Route::get( 'theme' , [ ThemeController::class , 'index' ] );
+    Route::get( '/theme' , [ ThemeController::class , 'index' ] );
     Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
     Route::match( [ 'get' , 'post' ] , '/login' , function () {
         return response()->json( [ 'errors' => 'unauthenticated' ] , 401 );

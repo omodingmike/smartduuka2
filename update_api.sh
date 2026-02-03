@@ -15,7 +15,10 @@ BRANCH="main"
 # HELPERS
 # --------------------------------------------------
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-fail() { echo "❌ $*" >&2; exit 1; }
+fail() {
+  echo "❌ $*" >&2
+  exit 1
+}
 require_cmd() { command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"; }
 
 # --------------------------------------------------
@@ -85,7 +88,7 @@ $COMPOSE run --rm --user root api bash -c "
 # 2. BUILD & RECREATE CONTAINERS
 # --------------------------------------------------
 log "🔨 Building and recreating api & nginx containers..."
-$COMPOSE up -d --build --force-recreate api nginx
+$COMPOSE up -d --build --force-recreate --force-recreate api nginx
 
 # --------------------------------------------------
 # 3. NGINX CONFIG TEST
@@ -116,7 +119,12 @@ log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true
 
 log "🧹 Optimizing application..."
-$COMPOSE exec -T api php artisan optimize
+$COMPOSE exec -T api php artisan optimize:clear
+$COMPOSE exec -T api php artisan config:cache
+$COMPOSE exec -T api php artisan event:cache
+$COMPOSE exec -T api php artisan route:cache
+$COMPOSE exec -T api php artisan view:cache
+$COMPOSE exec -T api php artisan reload
 
 # --------------------------------------------------
 # 6. RELOAD PHP-FPM (THE FIX)
