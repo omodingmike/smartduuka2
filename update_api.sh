@@ -30,7 +30,6 @@ $COMPOSE version >/dev/null 2>&1 || fail "Docker Compose plugin not found"
 log "🚀 Starting deployment for ${APP_NAME}"
 cd "$BACKEND_DIR"
 
-# --- ADD THIS FIX HERE ---
 log "🔐 Reclaiming ownership for the deploy user..."
 # This ensures 'deploy' can modify/delete files during git pull
 sudo chown -R $(whoami):$(whoami) "$BACKEND_DIR"
@@ -120,7 +119,15 @@ log "🧹 Optimizing application..."
 $COMPOSE exec -T api php artisan optimize
 
 # --------------------------------------------------
-# 6. VERIFY CONTAINERS
+# 6. RELOAD PHP-FPM (THE FIX)
+# --------------------------------------------------
+log "🔄 Reloading PHP-FPM to clear OPcache..."
+# This sends the USR2 signal to the master process (PID 1) to reload workers
+# This ensures they pick up the 'config.php' changes made in Step 5
+$COMPOSE exec -T api kill -USR2 1 || echo "⚠️  Could not reload PHP-FPM automatically, verify manually."
+
+# --------------------------------------------------
+# 7. VERIFY CONTAINERS
 # --------------------------------------------------
 log "🔎 Verifying container status..."
 for service in api nginx; do

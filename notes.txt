@@ -8,6 +8,7 @@
               docker exec -it db psql -U smartduuka -l
 
               docker exec -it api /bin/bash
+              docker compose exec -T api php artisan optimize
               docker exec -it nginx sh
               docker exec -it smartduuka_next sh
               cd storage/logs
@@ -27,3 +28,5 @@ TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 show close reminder of register 24 hours since last opened,
 gross is total sales - cost of goods
 net profit = gross - expenses
+
+php artisan tinker --execute="echo config('system.currency_symbol');
