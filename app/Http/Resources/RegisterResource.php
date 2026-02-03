@@ -11,6 +11,12 @@
     /** @mixin Register */
     class RegisterResource extends JsonResource
     {
+        /**
+         * @param Request $request
+         *
+         * @mixin Register
+         * @return array
+         */
         public function toArray(Request $request) : array
         {
             $allProducts = $this->orders->flatMap( function ($order) {
@@ -65,6 +71,9 @@
                 'user_id'                      => $this->user_id ,
                 'sales'                        => $this->posPayments()->sum( 'amount' ) ,
                 'sales_currency'               => AppLibrary::currencyAmountFormat( $this->posPayments()->sum( 'amount' ) ) ,
+                'expense'                      => $this->expenses()->sum( 'amount' ) ,
+                'expenses'                     => ExpenseResouce::collection( $this->expenses ) ,
+                'expense_currency'             => AppLibrary::currencyAmountFormat( $this->expenses()->sum( 'amount' ) ) ,
                 'user'                         => new UserResource( $this->whenLoaded( 'user' ) ) ,
                 'posPayments'                  => PosPaymentResource::collection( $this->posPayments ) ,
                 'item_summary'                 => $groupedItems ,

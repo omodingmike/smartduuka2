@@ -33,7 +33,12 @@
 
         public function orders() : HasMany | Register
         {
-            return $this->hasMany( Order::class,'register_id','id');
+            return $this->hasMany( Order::class , 'register_id' , 'id' );
+        }
+
+        public function expenses() : HasMany | Register
+        {
+            return $this->hasMany( Expense::class , 'register_id' , 'id' );
         }
 
         public function user() : BelongsTo
