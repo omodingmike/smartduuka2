@@ -120,7 +120,7 @@ $COMPOSE exec -T api php artisan storage:link --relative || true
 
 log "🧹 Optimizing application..."
 $COMPOSE exec -T api php artisan optimize:clear
-$COMPOSE exec -T api php artisan optimize:cache
+$COMPOSE exec -T api php artisan optimize
 $COMPOSE exec -T api php artisan config:cache
 $COMPOSE exec -T api php artisan event:cache
 $COMPOSE exec -T api php artisan route:cache
