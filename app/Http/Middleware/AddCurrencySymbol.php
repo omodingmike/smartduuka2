@@ -18,6 +18,7 @@
                 if ( is_array( $data ) ) {
                     $user               = auth()->user();
                     $data[ 'currency' ] = config( 'system.currency_symbol' );
+                    $data[ 'currency_2' ] = env( 'CURRENCY_SYMBOL');
                     if ( $user ) {
                         $data[ 'has_open_register' ] = $user->registers()->whereNull( 'closed_at' )->latest()->exists();;
                     }
