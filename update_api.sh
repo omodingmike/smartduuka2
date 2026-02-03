@@ -124,7 +124,6 @@ $COMPOSE exec -T api php artisan config:cache
 $COMPOSE exec -T api php artisan event:cache
 $COMPOSE exec -T api php artisan route:cache
 $COMPOSE exec -T api php artisan view:cache
-$COMPOSE exec -T api php artisan reload
 
 # --------------------------------------------------
 # 6. RELOAD PHP-FPM (THE FIX)
