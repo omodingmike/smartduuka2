@@ -41,7 +41,7 @@
                 $query = $country->states();
                 $name  = $request->input( 'query' );
                 if ( $name ) {
-                    $query->where( 'name' , 'like' , "%$name%" );
+                    $query->where( 'name' , 'ilike' , "%$name%" );
                 }
                 return StateResource::collection( $query->take( 5 )->get() );
             } catch ( Exception $exception ) {

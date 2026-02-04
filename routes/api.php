@@ -501,7 +501,7 @@
         } );
         Route::prefix( 'state' )->name( 'state.' )->group( function () {
             Route::get( '/' , [ StateController::class , 'index' ] );
-            Route::get( '/{country:code}' , [ StateController::class , 'state' ] );
+            Route::get( '/{country:id}' , [ StateController::class , 'state' ] );
             Route::get( '/simple-lists' , [ StateController::class , 'simpleLists' ] );
             Route::get( '/show/{state}' , [ StateController::class , 'show' ] );
             Route::post( '/' , [ StateController::class , 'store' ] );
@@ -512,7 +512,7 @@
 
         Route::prefix( 'city' )->name( 'city.' )->group( function () {
             Route::get( '/' , [ CityController::class , 'index' ] );
-            Route::get( '/{country:code}/{state:name}' , [ CityController::class , 'city' ] );
+            Route::get( '/{country:id}/{state:id}' , [ CityController::class , 'city' ] );
             Route::get( '/show/{city}' , [ CityController::class , 'show' ] );
             Route::post( '/' , [ CityController::class , 'store' ] );
             Route::delete( '/{city}' , [ CityController::class , 'destroy' ] );

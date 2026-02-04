@@ -34,6 +34,7 @@
 
         public function update(CompanyRequest $request)
         {
+            Settings::group( 'company' )->set( [ 'company_city' => '' ] );
             $data = $request->validated();
             Settings::group( 'company' )->set( $data );
             $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );

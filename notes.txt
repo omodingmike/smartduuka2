@@ -30,3 +30,21 @@ gross is total sales - cost of goods
 net profit = gross - expenses
 
 php artisan tinker --execute="echo config('system.currency_symbol');
+https://github.com/dr5hn/countries-states-cities-database
+
+  'regions.sql' ,
+                'subregions.sql' ,
+                'countries.sql' ,
+                'states.sql' ,
+                'cities.sql' ,
+
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/countries.sql
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql
+
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/regions.sql
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/subregions.sql
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/states.sql
+
+
+curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql.gz
+gzip -d cities.sql.gz

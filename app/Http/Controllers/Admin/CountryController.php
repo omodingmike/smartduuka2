@@ -36,17 +36,21 @@
         {
             try {
                 $query = Country::query();
-                $name = $request->input('query');
-                if ($name) {
-                    $query->where('name', 'ilike', "%{$name}%");
+                $name  = $request->input( 'query' );
+                $id    = $request->input( 'queryString' );
+                if ( $name ) {
+                    $query->where( 'name' , 'ilike' , "%{$name}%" );
                 }
-                $countries = $query->take(5)->get();
+                else {
+                    $query->where( 'id' , $id );
+                }
+                $countries = $query->take( 5 )->get();
                 return CountryResource::collection( $countries );
-            } catch (Exception $exception) {
-                return response()->json([
-                    'status' => false,
+            } catch ( Exception $exception ) {
+                return response()->json( [
+                    'status'  => FALSE ,
                     'message' => $exception->getMessage()
-                ], 422);
+                ] , 422 );
             }
         }
 

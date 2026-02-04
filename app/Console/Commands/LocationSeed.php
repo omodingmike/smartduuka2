@@ -4,153 +4,134 @@
 
     use Illuminate\Console\Command;
     use Illuminate\Support\Facades\DB;
-    use Illuminate\Support\Facades\Schema;
+    use Illuminate\Support\Facades\File;
 
     class LocationSeed extends Command
     {
         protected $signature   = 'l:seed';
-        protected $description = 'Truncate and seed countries, states, and cities from CSV files';
+        protected $description = 'Import location data via streaming SQL';
 
         public function handle() : int
         {
-            // 1. Truncate Tables in reverse order of dependency
-            $this->warn('Truncating tables...');
-            $this->truncateTables();
+            // Prevent timeout for large files
+            set_time_limit( 0 );
+            ini_set( 'memory_limit' , '-1' );
 
-            // 2. Import Data
-            $this->importCountries( database_path( 'locations/countries.csv' ) );
-            $this->importStates( database_path( 'locations/states.csv' ) );
-            $this->importCities( database_path( 'locations/cities.csv' ) );
+            $this->warn( 'Dropping old tables to reset structure...' );
+            $this->cleanDatabase();
 
-            $this->info('Location seeding completed successfully!');
+            // STRICT ORDER: Parents first, children last
+            $files = [
+                'regions.sql' ,
+                'subregions.sql' ,
+                'countries.sql' ,
+                'states.sql' ,
+                'cities.sql' ,
+            ];
+
+            foreach ( $files as $filename ) {
+                $path = database_path( "locations/{$filename}" );
+                $this->importSqlStream( $path , $filename );
+            }
+
+            $this->info( 'Location seeding completed successfully!' );
             return self::SUCCESS;
         }
 
         /**
-         * Truncate tables for PostgreSQL with sequence reset
+         * USES DROP CASCADE instead of Truncate.
+         * This destroys the tables so the SQL files can recreate them
+         * without fighting over existing Foreign Key constraints.
          */
-        private function truncateTables() : void
+        private function cleanDatabase() : void
         {
-            DB::statement('TRUNCATE TABLE cities, states, countries RESTART IDENTITY CASCADE');
-            $this->info('Tables truncated and sequences reset.');
+            $tables = [ 'cities' , 'states' , 'countries' , 'subregions' , 'regions' ];
+
+            // We use DROP ... CASCADE to force remove the tables and their links
+            // The SQL files contain CREATE TABLE statements, so they will be rebuilt.
+            $tableList = implode( ', ' , $tables );
+
+            try {
+                DB::statement( "DROP TABLE IF EXISTS {$tableList} CASCADE" );
+                $this->info( "Dropped tables: {$tableList}" );
+            } catch ( \Exception $e ) {
+                $this->warn( 'Cleanup warning: ' . $e->getMessage() );
+            }
         }
 
         /**
-         * Import Countries
+         * Reads SQL file line-by-line and filters out problematic commands.
          */
-        private function importCountries(string $filePath) : void
+        private function importSqlStream(string $filePath , string $fileName) : void
         {
-            $this->info( 'Importing countries...' );
-            $this->importCSV( $filePath , 'countries' , function ($data) {
-                return [
-                    'name'       => $data[ 'name' ] ,
-                    'code'       => $data[ 'code' ] ?? NULL ,
-                    'status'     => $data[ 'status' ] ?? 5 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'deleted_at' => NULL ,
-                ];
-            } );
-        }
-
-        /**
-         * Import States
-         */
-        private function importStates(string $filePath) : void
-        {
-            $this->info( 'Importing states...' );
-            $this->importCSV( $filePath , 'states' , function ($data) {
-                // Validate country
-                $country = DB::table( 'countries' )->where( 'id' , $data[ 'country_id' ] )->first();
-                if ( ! $country ) {
-                    return NULL;
-                }
-
-                return [
-                    'name'       => $data[ 'name' ] ,
-                    'country_id' => $country->id ,
-                    'status'     => $data[ 'status' ] ?? 5 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'deleted_at' => NULL ,
-                ];
-            } );
-        }
-
-        /**
-         * Import Cities
-         */
-        private function importCities(string $filePath) : void
-        {
-            $this->info( 'Importing cities...' );
-            $this->importCSV( $filePath , 'cities' , function ($data) {
-
-                // Validate state
-                $state = DB::table( 'states' )->where( 'id' , $data[ 'state_id' ] )->first();
-                if ( ! $state ) {
-                    return NULL;
-                }
-
-                return [
-                    'name'       => $data[ 'name' ] ,
-                    'state_id'   => $state->id ,
-                    'status'     => $data[ 'status' ] ?? 5 ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                    'deleted_at' => NULL ,
-                ];
-            } );
-        }
-
-        /**
-         * Generic CSV importer
-         */
-        private function importCSV(string $filePath , string $table , callable $mapFunction) : void
-        {
-            if ( ! file_exists( $filePath ) ) {
-                $this->error( "File missing: $filePath" );
+            if ( ! File::exists( $filePath ) ) {
+                $this->error( "File missing: {$fileName}" );
                 return;
             }
 
-            if ( ! ( $handle = fopen( $filePath , 'r' ) ) ) {
-                $this->error( "Cannot open: $filePath" );
+            $this->line( "Processing: {$fileName}..." );
+
+            $handle = fopen( $filePath , 'r' );
+
+            if ( ! $handle ) {
+                $this->error( "Could not open file: {$fileName}" );
                 return;
             }
 
-            $header = fgetcsv( $handle );
-            if ( ! $header ) {
-                $this->error( "Invalid CSV header: $filePath" );
+            // Use transaction for speed
+            DB::beginTransaction();
+
+            try {
+                $buffer = '';
+
+                while ( ( $line = fgets( $handle ) ) !== FALSE ) {
+                    $trimmed = trim( $line );
+
+                    // --- FILTERS ---
+
+                    // 1. Skip empty lines and standard comments
+                    if ( $trimmed === '' || str_starts_with( $trimmed , '--' ) || str_starts_with( $trimmed , '\\' ) ) {
+                        continue;
+                    }
+
+                    // 2. Skip "OWNER TO" (Fixes: role "postgres" does not exist)
+                    if ( stripos( $line , 'OWNER TO' ) !== FALSE ) {
+                        continue;
+                    }
+
+                    // 3. Skip "SET" commands (Optimization configs that might fail on your DB)
+                    if ( str_starts_with( $trimmed , 'SET ' ) ) {
+                        continue;
+                    }
+
+                    // 4. Skip "DROP" commands (We already dropped them in cleanDatabase)
+                    // This prevents "cannot drop constraint" errors
+                    if ( stripos( $line , 'DROP TABLE' ) !== FALSE || stripos( $line , 'DROP CONSTRAINT' ) !== FALSE ) {
+                        continue;
+                    }
+
+                    // --- EXECUTION ---
+
+                    $buffer .= $line;
+
+                    // Execute when we hit a semicolon
+                    if ( str_ends_with( $trimmed , ';' ) ) {
+                        DB::unprepared( $buffer );
+                        $buffer = '';
+                    }
+                }
+
+                DB::commit();
+                $this->info( "Imported: {$fileName}" );
+
+            } catch ( \Exception $e ) {
+                DB::rollBack();
+                $this->error( "Error importing {$fileName}: " . $e->getMessage() );
+                // Close handle if error occurs
+                fclose( $handle );
                 return;
-            }
-
-            $batch     = [];
-            $chunkSize = 1000;
-            $skipped   = 0;
-
-            while ( ( $row = fgetcsv( $handle ) ) !== FALSE ) {
-                $data = array_combine( $header , $row );
-
-                $mapped = $mapFunction( $data );
-
-                if ( ! $mapped ) {
-                    $skipped++;
-                    continue;
-                }
-
-                $batch[] = $mapped;
-
-                if ( count( $batch ) >= $chunkSize ) {
-                    DB::table( $table )->insert( $batch );
-                    $batch = [];
-                }
-            }
-
-            if ( ! empty( $batch ) ) {
-                DB::table( $table )->insert( $batch );
             }
 
             fclose( $handle );
-
-            $this->info( "Imported into [$table], skipped: $skipped records." );
         }
     }
