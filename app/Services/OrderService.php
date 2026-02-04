@@ -288,12 +288,13 @@
                     if ( ! blank( $products ) ) {
                         foreach ( $products as $product ) {
                             OrderProduct::create( [
-                                'order_id'   => $this->order->id ,
-                                'item_id'    => $product[ 'item_id' ] ,
-                                'item_type'  => Product::class ,
-                                'quantity'   => $product[ 'quantity' ] ,
-                                'total'      => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price' => $product[ 'unitPrice' ] ,
+                                'order_id'        => $this->order->id ,
+                                'item_id'         => $product[ 'item_id' ] ,
+                                'item_type'       => Product::class ,
+                                'quantity_picked' => 0 ,
+                                'quantity'        => $product[ 'quantity' ] ,
+                                'total'           => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price'      => $product[ 'unitPrice' ] ,
                             ] );
                             $stock = Stock::where( [
                                 'item_id'      => $product[ 'item_id' ] ,

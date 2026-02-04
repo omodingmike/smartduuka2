@@ -13,14 +13,16 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'                  => $this->id ,
-                'quantity'            => $this->quantity ,
-                'quantity_text'       => number_format( $this->quantity ) ,
-                'total'               => $this->total ,
-                'item'                => $this->item ,
-                'total_currency'      => AppLibrary::currencyAmountFormat( $this->total ) ,
-                'unit_price'          => $this->unit_price ,
-                'unit_price_currency' => AppLibrary::currencyAmountFormat( $this->unit_price ) ,
+                'id'                   => $this->id ,
+                'quantity'             => $this->quantity ,
+                'quantity_picked'      => $this->quantity_picked ,
+                'quantity_text'        => number_format( $this->quantity ) ,
+                'quantity_picked_text' => number_format( $this->quantity_picked ) ,
+                'total'                => $this->total ,
+                'item'                 => $this->item ,
+                'total_currency'       => AppLibrary::currencyAmountFormat( $this->total ) ,
+                'unit_price'           => $this->unit_price ,
+                'unit_price_currency'  => AppLibrary::currencyAmountFormat( $this->unit_price ) ,
             ];
         }
     }

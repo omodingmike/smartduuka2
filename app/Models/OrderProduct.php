@@ -14,12 +14,13 @@ class OrderProduct extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'order_id',
-        'item_id',
-        'item_type',
-        'quantity',
-        'total',
-        'unit_price',
+        'order_id' ,
+        'item_id' ,
+        'item_type' ,
+        'quantity' ,
+        'total' ,
+        'unit_price' ,
+        'quantity_picked' ,
     ];
 
     public function order(): BelongsTo

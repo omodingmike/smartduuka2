@@ -682,6 +682,7 @@
             Route::get( '/quotations' , [ PosOrderController::class , 'indexQuotations' ] );
             Route::get( '/export-quotation' , [ PosOrderController::class , 'exportOrder' ] );
             Route::post( '/mail-quotation' , [ PosOrderController::class , 'mailQuotation' ] );
+            Route::post( '/fulfill' , [ PosOrderController::class , 'fullFill' ] );
             Route::post( '/quotation-css-variables' , [ PosOrderController::class , 'updateCssVariables' ] );
             Route::get( '/deposits' , [ PosOrderController::class , 'indexDeposit' ] );
             Route::get( 'show/{order}' , [ PosOrderController::class , 'show' ] );

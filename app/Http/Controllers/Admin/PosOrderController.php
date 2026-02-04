@@ -11,6 +11,7 @@
     use App\Http\Resources\OrderResource;
     use App\Jobs\SendInvoiceMailJob;
     use App\Models\Order;
+    use App\Models\OrderProduct;
     use App\Services\OrderService;
     use App\Services\PdfExportService;
     use Exception;
@@ -188,6 +189,15 @@
                 return new OrderDetailsResource( $this->orderService->changePaymentStatus( $order , $request , FALSE ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function fullFill(Request $request )
+        {
+            $items = json_decode( $request->items , TRUE );
+            foreach ( $items as $item ) {
+                $order_product = OrderProduct::find( $item[ 'product_id' ] );
+                $order_product->increment( 'quantity_picked' , $item[ 'picking_now' ] );
             }
         }
     }
