@@ -10,6 +10,8 @@
          */
         public function up() : void
         {
+            Schema::dropIfExists( 'printer_jobs' );
+
             Schema::create( 'printer_jobs' , function (Blueprint $table) {
                 $table->id();
                 $table->foreignId( 'printer_id' )->constrained( 'printers' )->onDelete( 'cascade' );
