@@ -11,6 +11,7 @@
     {
         /**
          * Transform the resource into an array.
+         * @mixin Order
          *
          * @param \Illuminate\Http\Request $request
          *
@@ -18,31 +19,37 @@
          */
         public function toArray($request) : array
         {
+            $last_paid = $this->posPayments()?->latest()?->first();
             return [
-                'id'                   => $this->id ,
-                'order_serial_no'      => $this->order_serial_no ,
-                'user_id'              => $this->user_id ,
-                "total_amount_price"   => AppLibrary::flatAmountFormat( $this->total ) ,
-                "total_currency_price" => AppLibrary::currencyAmountFormat( $this->total ) ,
-                'status'               => [ 'label' => $this->status?->label() , 'value' => $this->status?->value ] ,
-                'order_type'           => [ 'label' => $this->order_type?->label() , 'value' => $this->order_type?->value ] ,
-                'payment_status'       => [ 'label' => $this->payment_status?->label() , 'value' => $this->payment_status?->value ] ,
-                'discount'             => AppLibrary::currencyAmountFormat( $this->discount ) ,
-                'paid'                 => $this->paid ,
-                'net_paid'             => $this->net_paid,
-                'net_paid_currency'    => AppLibrary::currencyAmountFormat($this->net_paid),
-                'paid_currency'        => AppLibrary::currencyAmountFormat( $this->paid ) ,
-                'change'               => AppLibrary::currencyAmountFormat( $this->change ) ,
-                'balance'              => $this->balance ,
-                'balance_currency'     => AppLibrary::currencyAmountFormat( $this->balance ) ,
-                'shipping_charge'      => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
-                'order_items'          => optional( $this->orderProducts )->count() ,
-                'order_datetime'       => AppLibrary::datetime2( $this->order_datetime ) ,
-                'user'                 => new OrderUserResource( $this->user ) ,
-                'creator'              => new UserResource( $this->creator ) ,
-                'orderProducts'        => OrderProductResourceNew::collection( $this->orderProducts ) ,
-                'delivery_address'     => $this->delivery_address ,
-                'paymentMethods'       => PosPaymentResource::collection( $this->paymentMethods ) ,
+                'id'                             => $this->id ,
+                'order_serial_no'                => $this->order_serial_no ,
+                'user_id'                        => $this->user_id ,
+                "total_amount_price"             => AppLibrary::flatAmountFormat( $this->total ) ,
+                "total_currency_price"           => AppLibrary::currencyAmountFormat( $this->total ) ,
+                'status'                         => [ 'label' => $this->status?->label() , 'value' => $this->status?->value ] ,
+                'order_type'                     => [ 'label' => $this->order_type?->label() , 'value' => $this->order_type?->value ] ,
+                'payment_status'                 => [ 'label' => $this->payment_status?->label() , 'value' => $this->payment_status?->value ] ,
+                'discount'                       => AppLibrary::currencyAmountFormat( $this->discount ) ,
+                'paid'                           => $this->paid ,
+                'net_paid'                       => $this->net_paid ,
+                'last_paid'                      => [
+                    'amount'           => currency( $last_paid->amount ) ,
+                    'previous_balance' => currency( $this->balance + $last_paid->amount ) ,
+                    'method'           => $last_paid->paymentMethod
+                ] ,
+                'net_paid_currency'              => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
+                'paid_currency'                  => AppLibrary::currencyAmountFormat( $this->paid ) ,
+                'change'                         => AppLibrary::currencyAmountFormat( $this->change ) ,
+                'balance'                        => $this->balance ,
+                'balance_currency'               => AppLibrary::currencyAmountFormat( $this->balance ) ,
+                'shipping_charge'                => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
+                'order_items'                    => optional( $this->orderProducts )->count() ,
+                'order_datetime'                 => AppLibrary::datetime2( $this->order_datetime ) ,
+                'user'                           => new OrderUserResource( $this->user ) ,
+                'creator'                        => new UserResource( $this->creator ) ,
+                'orderProducts'                  => OrderProductResourceNew::collection( $this->orderProducts ) ,
+                'delivery_address'               => $this->delivery_address ,
+                'paymentMethods'                 => PosPaymentResource::collection( $this->paymentMethods ) ,
 
                 // Added keys from OrderDetailsResource
                 "subtotal_currency_price"        => AppLibrary::currencyAmountFormat( $this->subtotal ) ,

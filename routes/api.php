@@ -238,6 +238,8 @@
         } );
 
         Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
+            Route::get( 'printer-templates' , [PrinterController::class,'templates'] );
+            Route::post( 'printer-assign/{printer}' , [PrinterController::class,'assign'] );
             Route::apiResource( 'printers' , PrinterController::class )->except( 'destroy');
             Route::delete( 'printers/delete' , [PrinterController::class,'destroy'] );
             Route::prefix( 'company' )->name( 'company.' )->group( function () {

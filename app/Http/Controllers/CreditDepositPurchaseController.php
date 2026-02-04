@@ -4,6 +4,7 @@
 
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
+    use App\Http\Resources\OrderResource;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
     use App\Models\Order;
@@ -42,7 +43,7 @@
 
         public function updateBalance(Request $request , Order $order)
         {
-            DB::transaction( function () use ($order , $request) {
+           return DB::transaction( function () use ($order , $request) {
                 $change = $request->integer( 'change' );
 
                 $payments = json_decode( $request->payments , TRUE );
@@ -78,13 +79,13 @@
                     ] );
                 }
 
-                return response()->json( [ 'message' => 'Balance updated successfully' ] );
+                return new OrderResource($order);
             } );
         }
 
         public function payDebt(Request $request , Order $order)
         {
-            DB::transaction( function () use ($order , $request) {
+           return DB::transaction( function () use ($order , $request) {
                 $amount     = $request->integer( 'amount' );
                 $net_amount = $amount;
                 if ( $amount > 0 ) {
@@ -115,7 +116,7 @@
                     ] );
                 }
 
-                return response()->json( [ 'message' => 'Balance updated successfully' ] );
+                return new OrderResource($order);
             } );
         }
     }

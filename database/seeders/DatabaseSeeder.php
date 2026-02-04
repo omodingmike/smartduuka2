@@ -4,13 +4,12 @@
 
 
     use Illuminate\Database\Seeder;
-    use Illuminate\Support\Facades\Artisan;
-    use Illuminate\Support\Facades\DB;
 
     class DatabaseSeeder extends Seeder
     {
         public function run() : void
         {
+            $this->call( PrinterTemplateSeeder::class );
 //        $this->call(CompanyTableSeeder::class);
 //        $this->call(ThemeTableSeeder::class);
 //        $this->call(SiteTableSeeder::class);
