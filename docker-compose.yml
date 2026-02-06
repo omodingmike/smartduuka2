@@ -9,11 +9,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-#      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
-#      - /home/deploy/smartduuka/api:/app:ro
       - php_socket:/var/run/php
       - assets_media:/app/public/media:ro
+      - demo_assets_media:/app/public/media:ro
     depends_on:
       - api
     networks:
@@ -25,16 +24,7 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: api
     restart: unless-stopped
-    # Exposing 9000 is optional if Nginx is on the same network, but kept per your req
-#    ports:
-#      - "9000:9000"
     volumes:
-      # Use the local project directory to map the whole app
-#      - ./:/app
-      # Ensure specific writable volumes are mapped correctly
-#      - /home/deploy/smartduuka/api/storage:/app/storage
-#      - /home/deploy/smartduuka/api/public/static:/app/public/static
-#      - /home/deploy/smartduuka/api/public/media:/app/public/media
       - app_storage:/app/storage
       - assets_static:/app/public/static
       - assets_media:/app/public/media
@@ -45,9 +35,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      # PHP-FPM check (using cgi-fcgi is more reliable if installed, but this works)
-#      test: ["CMD-SHELL", "php-fpm -t"]
-      test: ["CMD", "test", "-S", "/var/run/php/php-fpm.sock"]
+      test: [ "CMD", "test", "-S", "/var/run/php/php-fpm.sock" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +53,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data # Added /data suffix for Postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -76,11 +64,11 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD}" ]
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -96,6 +84,10 @@ volumes:
   php_socket:
     external: true
     name: smartduuka_php_socket
+  demo_assets_media:
+    external: true
+  demo_assets_static:
+    external: true
 
 networks:
   smartduuka_network:

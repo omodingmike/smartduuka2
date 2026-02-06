@@ -1,0 +1,43 @@
+services:
+  api_demo:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: api_demo
+    restart: unless-stopped
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+    volumes:
+      - demo_app_storage:/app/storage
+      - demo_assets_static:/app/public/static
+      - demo_assets_media:/app/public/media
+      - php_socket:/var/run/php
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "test", "-S", "/var/run/php/php-fpm-demo.sock"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartduuka_network
+
+volumes:
+  demo_app_storage:
+    external: true
+  php_socket:
+    external: true
+    name: smartduuka_php_socket
+  demo_assets_media:
+    external: true
+  demo_assets_static:
+    external: true
+
+networks:
+  smartduuka_network:
+    external: true
+    name: smartduuka_network
