@@ -81,7 +81,7 @@ $COMPOSE run --rm --user root api bash -c "
     git config --global --add safe.directory /app && \
     mkdir -p /app/vendor /app/storage /app/bootstrap/cache && \
     chown -R www-data:www-data /app && \
-    composer install --no-dev --optimize-autoloader --no-interaction
+    composer install --no-dev --optimize-autoloader --no-interaction && composer dump-autoload
 "
 
 # --------------------------------------------------
