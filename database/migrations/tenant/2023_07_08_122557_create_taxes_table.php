@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Status;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->decimal('tax_rate', 13, 6)->default(0);
-            $table->unsignedTinyInteger('status')->default(\App\Enums\Status::ACTIVE)->comment(\App\Enums\Status::ACTIVE . '=' . trans('statuse.' . \App\Enums\Status::ACTIVE) . ', ' . \App\Enums\Status::INACTIVE . '=' . trans('statuse.' . \App\Enums\Status::INACTIVE));
+            $table->unsignedTinyInteger('status')->default(Status::ACTIVE);
             $table->string('creator_type',)->nullable();
             $table->bigInteger('creator_id',)->nullable();
             $table->string('editor_type',)->nullable();

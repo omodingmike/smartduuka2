@@ -3,15 +3,11 @@
     use Illuminate\Database\Migrations\Migration;
     use Illuminate\Database\Schema\Blueprint;
     use Illuminate\Support\Facades\Schema;
+    use Spatie\Permission\Models\Role;
 
     class CreatePermissionTables extends Migration
     {
-        /**
-         * Run the migrations.
-         *
-         * @return void
-         */
-        public function up()
+        public function up() : void
         {
             $tableNames      = config( 'permission.table_names' );
             $columnNames     = config( 'permission.column_names' );
@@ -126,6 +122,46 @@
                 $table->primary( [ $pivotPermission , $pivotRole ] , 'role_has_permissions_permission_id_role_id_primary' );
             } );
 
+            // Use DB::table() instead of Eloquent Model to avoid caching issues during migration
+            DB::table($tableNames['roles'])->insert( [
+                [
+                    'name'       => 'Admin' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+                [
+                    'name'       => 'Customer' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+                [
+                    'name'       => 'Manager' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+                [
+                    'name'       => 'POS Operator' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+                [
+                    'name'       => 'Stuff' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+                [
+                    'name'       => 'Distributor' ,
+                    'guard_name' => 'sanctum' ,
+                    'created_at' => now() ,
+                    'updated_at' => now() ,
+                ] ,
+            ] );
+
             app( 'cache' )
                 ->store( config( 'permission.cache.store' ) != 'default' ? config( 'permission.cache.store' ) : NULL )
                 ->forget( config( 'permission.cache.key' ) );
@@ -136,7 +172,7 @@
          *
          * @return void
          */
-        public function down()
+        public function down() : void
         {
             $tableNames = config( 'permission.table_names' );
 

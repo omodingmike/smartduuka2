@@ -84,7 +84,7 @@
             $token = $user->createToken( 'auth_token' )->plainTextToken;
 
             // Update last login date
-            $user->update(['last_login_date' => now()]);
+            $user->update( [ 'last_login_date' => now() ] );
 
             return new JsonResponse( [
                 'message'           => trans( 'all.message.login_success' ) ,
@@ -99,9 +99,12 @@
 
         public function token(Request $request)
         {
-            $user = $request->user();
-            $user->tokens()->delete();
-            $token = $request->user()->createToken( 'erudite' )->plainTextToken;
+            $token = '';
+            $user  = $request->user();
+            if ( $user ) {
+                $user?->tokens()?->delete();
+                $token = $request->user()->createToken( 'erudite' )->plainTextToken;
+            }
             return response()->json( [ 'token' => $token ] );
         }
 

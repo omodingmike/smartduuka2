@@ -7,7 +7,6 @@
 
     class CompanyResource extends JsonResource
     {
-
         public $info;
 
         public function __construct($info)
@@ -16,29 +15,19 @@
             $this->info = $info;
         }
 
-        /**
-         * Transform the resource into an array.
-         *
-         * @param \Illuminate\Http\Request $request
-         *
-         * @return array
-         */
         public function toArray($request) : array
         {
             return [
-                "company_name"            => $this->info[ 'company_name' ] ,
-                "company_email"           => $this->info[ 'company_email' ] ,
-//                "company_calling_code"    => $this->info[ 'company_calling_code' ] ,
-                "company_phone"           => $this->info[ 'company_phone' ] ,
+                "company_name"            => $this->info[ 'company_name' ] ?? '',
+                "company_email"           => $this->info[ 'company_email' ] ?? '',
+                "company_phone"           => $this->info[ 'company_phone' ] ?? '',
                 "company_phone_alternate" => $this->info[ 'company_phone_alternate' ] ?? '' ,
-                "company_website"         => $this->info[ 'company_website' ] ,
-                "company_city"            => $this->info[ 'company_city' ] ,
-                "company_state"           => $this->info[ 'company_state' ] ,
-                "company_country_code"    => $this->info[ 'company_country_code' ] ,
-                "company_zip_code"        => $this->info[ 'company_zip_code' ] ,
-//                "company_latitude"        => $this->info[ 'company_latitude' ] === NULL ? '' : $this->info[ 'company_latitude' ] ,
-//                "company_longitude"       => $this->info[ 'company_longitude' ] === NULL ? '' : $this->info[ 'company_longitude' ] ,
-                "company_address"         => $this->info[ 'company_address' ] ,
+                "company_website"         => $this->info[ 'company_website' ] ?? '',
+                "company_city"            => $this->info[ 'company_city' ] ?? '',
+                "company_state"           => $this->info[ 'company_state' ] ?? '',
+                "company_country_code"    => $this->info[ 'company_country_code' ] ?? '',
+                "company_zip_code"        => $this->info[ 'company_zip_code' ] ?? '',
+                "company_address"         => $this->info[ 'company_address' ] ?? '',
             ];
         }
     }

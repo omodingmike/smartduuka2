@@ -25,6 +25,11 @@ TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
 TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
 
+TRUNCATE TABLE tenants RESTART IDENTITY CASCADE;
+TRUNCATE TABLE domains RESTART IDENTITY CASCADE;
+drop database if exists tenant_shop;
+drop database if exists tenantshop;
+
 show close reminder of register 24 hours since last opened,
 gross is total sales - cost of goods
 net profit = gross - expenses
@@ -48,3 +53,18 @@ curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-datab
 
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql.gz
 gzip -d cities.sql.gz
+
+Sanctum::actingAs(
+        User::factory()->create(),
+        ['view-tasks']
+    );
+    herd proxy shop-frontend http://localhost:3000
+
+      app( 'cache' )
+                    ->store( config( 'permission.cache.store' ) != 'default' ? config( 'permission.cache.store' ) : NULL )
+                    ->forget( config( 'permission.cache.key' ) );
+
+
+      https:\/\/api.smartduuka.com\/media\/9\/conversions\/cxExEIdVW9drlFufIaLs-preview.jpg
+      http://api.smartduuka2.test/tenancy/assets/media/3/conversions/electronic_191-cover.jpg
+      http://api.smartduuka2.test/tenancy/assets/tenantapi/3/conversions/electronic_191-cover.jpg

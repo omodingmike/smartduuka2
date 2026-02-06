@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('unit');
             $table->integer('quantity');
             $table->integer('quantity_alert');
-            $table->tinyInteger('status')->default(Status::ACTIVE)->comment(Status::ACTIVE . '=' . trans('statuse.' . Status::ACTIVE) . ', ' . Status::INACTIVE . '=' . trans('statuse.' . Status::INACTIVE));
+            $table->tinyInteger('status')->default(Status::ACTIVE);
             $table->string('buying_price')->nullable()->change();
             $table->string('quantity')->nullable()->change();
             $table->string('quantity_alert')->nullable()->change();

@@ -7,6 +7,7 @@
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
+    use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
     return Application::configure( basePath: dirname( __DIR__ ) )
                       ->withRouting(
@@ -31,6 +32,12 @@
                               return response()->json( [
                                   'success' => FALSE ,
                                   'message' => [ 'message' => 'User does not have the right permissions.' , 'details' => $e->getMessage() ]
+                              ] , 403 );
+                          } );
+                          $exceptions->render( function (TenantCouldNotBeIdentifiedOnDomainException $e , $request) {
+                              return response()->json( [
+                                  'success' => FALSE ,
+                                  'message' => [ 'message' => 'Tenant error' , 'details' => $e->getMessage() ]
                               ] , 403 );
                           } );
 

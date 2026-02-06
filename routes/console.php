@@ -92,7 +92,7 @@
                     }
                 }
             }
-            Order::whereColumn( 'paid' , '>=' , 'total' )->update( [ 'order_type' => OrderType::POS ] );
+            Order::whereColumn( 'paid' , '>=' , 'total' )->update( [ 'order_type' => OrderType::IN_STORE ] );
         } )->everyFiveMinutes();
 
         Schedule::call( function () {
