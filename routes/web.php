@@ -10,12 +10,5 @@
     Route::get( '/opcache' , function () {
         return response()->json( opcache_get_status( FALSE ) );
     } );
-    Route::group( [ 'prefix' => config( 'sanctum.prefix' , 'sanctum' ) ] , static function () {
-        Route::get( '/csrf-cookie' , [ CsrfCookieController::class , 'show' ] )
-             ->middleware( [
-                 'web' ,
-                 InitializeTenancyByDomain::class // Use tenancy initialization middleware of your choice
-             ] )->name( 'sanctum.csrf-cookie' );
-    } );
 
     require __DIR__ . '/auth.php';

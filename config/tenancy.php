@@ -5,19 +5,16 @@
     use Stancl\Tenancy\Database\Models\Domain;
 
     return [
-        'tenant_model' => \App\Models\Tenant::class ,
-        'id_generator' => Stancl\Tenancy\UUIDGenerator::class ,
-
+        'tenant_model'         => \App\Models\Tenant::class ,
+        'id_generator'         => Stancl\Tenancy\UUIDGenerator::class ,
         'domain_model'         => Domain::class ,
-
         /**
          * The list of domains hosting your central app.
          *
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
         'central_domains'      => [
-            '127.0.0.1' ,
-            'localhost' ,
+            'smartduuka2.test' ,
         ] ,
 
         /**
@@ -31,20 +28,20 @@
             Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class ,
             Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class ,
             Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class ,
-            Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class , // Note: phpredis is needed
+            // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
         ] ,
 
         /**
          * Database tenancy config. Used by DatabaseTenancyBootstrapper.
          */
         'database'             => [
-            'central_connection'         => env( 'DB_CONNECTION' , 'central' ) ,
+            'central_connection'         => env('DB_CONNECTION' , 'central') ,
 
             /**
              * Connection used as a "template" for the dynamically created tenant database connection.
              * Note: don't name your template connection tenant. That name is reserved by package.
              */
-            'template_tenant_connection' => NULL ,
+            'template_tenant_connection' => null ,
 
             /**
              * Tenant database names are created like this:
@@ -125,7 +122,7 @@
              * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
              * you may want to disable this if you are experiencing these edge case issues.
              */
-            'suffix_storage_path'  => TRUE ,
+            'suffix_storage_path'  => true ,
 
             /**
              * By default, asset() calls are made multi-tenant too. You can use global_asset() and mix()
@@ -134,7 +131,7 @@
              * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
              * where you want to use tenant-specific assets (product images, avatars, etc).
              */
-            'asset_helper_tenancy' => TRUE ,
+            'asset_helper_tenancy' => false ,
         ] ,
 
         /**
@@ -177,15 +174,15 @@
          * enabled. But it may be useful to disable them if you use external
          * storage (e.g. S3 / Dropbox) or have a custom asset controller.
          */
-        'routes'               => TRUE ,
+        'routes'               => true ,
 
         /**
          * Parameters used by the tenants:migrate command.
          */
         'migration_parameters' => [
-            '--force'    => TRUE , // This needs to be true to run migrations in production.
-            '--path'     => [ database_path( 'migrations/tenant' ) ] ,
-            '--realpath' => TRUE ,
+            '--force'    => true , // This needs to be true to run migrations in production.
+            '--path'     => [ database_path('migrations/tenant') ] ,
+            '--realpath' => true ,
         ] ,
 
         /**
@@ -193,6 +190,6 @@
          */
         'seeder_parameters'    => [
             '--class' => 'DatabaseSeeder' , // root seeder class
-             '--force' => true, // This needs to be true to seed tenant databases in production
+            // '--force' => true, // This needs to be true to seed tenant databases in production
         ] ,
     ];

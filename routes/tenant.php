@@ -59,7 +59,6 @@
     use App\Http\Controllers\CleaningOrderController;
     use App\Http\Controllers\CleaningServiceCategoryController;
     use App\Http\Controllers\CleaningServiceController;
-    use App\Http\Controllers\CleaningServiceCustomerController;
     use App\Http\Controllers\CommissionController;
     use App\Http\Controllers\CommissionPayoutController;
     use App\Http\Controllers\CreditDepositPurchaseController;
@@ -70,7 +69,6 @@
     use App\Http\Controllers\Frontend\LanguageController as FrontendLanguageController;
     use App\Http\Controllers\Frontend\ProfileController;
     use App\Http\Controllers\Frontend\SettingController as FrontendSettingController;
-    use App\Http\Controllers\IotecController;
     use App\Http\Controllers\LedgerController;
     use App\Http\Controllers\ModuleController;
     use App\Http\Controllers\PaymentAccountController;
@@ -82,18 +80,29 @@
     use App\Http\Controllers\ProductionSetupController;
     use App\Http\Controllers\PurchaseReturnController;
     use App\Http\Controllers\StockTransferController;
-    use App\Http\Controllers\SubscriptionController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\WarehouseController;
-    use App\Http\Controllers\WhatsAppController;
-    use App\Http\Resources\ChartOfAccountGroupResource;
-    use App\Models\ChartOfAccountGroup;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
+    use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
     use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
+    Route::middleware( [
+        'web' ,
+        InitializeTenancyByDomain::class ,
+        PreventAccessFromCentralDomains::class ,
+    ] )->group( function () {
+        Route::get( '/' , function () {
+            return 'This is your multi-tenant application. The id of the current tenant is ' . tenant( 'id' );
+        } );
+        Route::get( 'sanctum/csrf-cookie' , [ CsrfCookieController::class , 'show' ] )
+             ->middleware( [
+                 'web' ,
+                 InitializeTenancyByDomain::class // Use tenancy initialization middleware of your choice
+             ] )->name( 'sanctum.csrf-cookie' );
+    } );
 
     Route::middleware( [
         'api' ,

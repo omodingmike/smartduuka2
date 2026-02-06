@@ -14,6 +14,7 @@
     use Stancl\Tenancy\Jobs;
     use Stancl\Tenancy\Listeners;
     use Stancl\Tenancy\Middleware;
+    use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 
     class TenancyServiceProvider extends ServiceProvider
     {
@@ -114,6 +115,9 @@
             $this->mapRoutes();
 
             $this->makeTenancyMiddlewareHighestPriority();
+            InitializeTenancyByDomain::$onFail = function () {
+                return redirect(config('app.url'));
+            };
         }
 
         protected function bootEvents() : void
@@ -145,7 +149,7 @@
                 // Even higher priority than the initialization middleware
                 Middleware\PreventAccessFromCentralDomains::class ,
 
-                Middleware\InitializeTenancyByDomain::class ,
+                InitializeTenancyByDomain::class ,
                 Middleware\InitializeTenancyBySubdomain::class ,
                 Middleware\InitializeTenancyByDomainOrSubdomain::class ,
                 Middleware\InitializeTenancyByPath::class ,
