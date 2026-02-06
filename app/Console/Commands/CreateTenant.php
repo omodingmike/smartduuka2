@@ -14,7 +14,10 @@
 
         public function handle() : void
         {
-            $tenant1 = Tenant::create( [ 'id' => 'api2' ] );
-            $tenant1->domains()->create( [ 'domain' => 'api2.smartduuka2.test' ] );
+            $tenant1 = Tenant::create( [ 'id' => 'demo' ] );
+            $tenant1->domains()->create( [ 'domain' => 'demo-api.smartduuka.com' ] );
+
+            $tenant1 = Tenant::create( [ 'id' => 'zakayo' ] );
+            $tenant1->domains()->create( [ 'domain' => 'zakayo-api.smartduuka.com' ] );
         }
     }
