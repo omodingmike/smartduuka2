@@ -17,7 +17,7 @@
             $tenant1 = Tenant::create( [ 'id' => 'demo' ] );
             $tenant1->domains()->create( [ 'domain' => 'demo-api.smartduuka.com' ] );
 
-            $tenant1 = Tenant::create( [ 'id' => 'zakayo' ] );
-            $tenant1->domains()->create( [ 'domain' => 'zakayo-api.smartduuka.com' ] );
+            $tenant2 = Tenant::create( [ 'id' => 'zakayo' ] );
+            $tenant2->domains()->create( [ 'domain' => 'zakayo-api.smartduuka.com' ] );
         }
     }
