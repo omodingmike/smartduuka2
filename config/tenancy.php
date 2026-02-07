@@ -14,7 +14,7 @@
          * Only relevant if you're using the domain or subdomain identification middleware.
          */
         'central_domains'      => [
-            'smartduuka2.test' ,
+            config( 'app.url' ) ,
         ] ,
 
         /**
@@ -35,13 +35,13 @@
          * Database tenancy config. Used by DatabaseTenancyBootstrapper.
          */
         'database'             => [
-            'central_connection'         => env('DB_CONNECTION' , 'central') ,
+            'central_connection'         => env( 'DB_CONNECTION' , 'central' ) ,
 
             /**
              * Connection used as a "template" for the dynamically created tenant database connection.
              * Note: don't name your template connection tenant. That name is reserved by package.
              */
-            'template_tenant_connection' => null ,
+            'template_tenant_connection' => NULL ,
 
             /**
              * Tenant database names are created like this:
@@ -122,7 +122,7 @@
              * edge cases, it can cause issues (like using Passport with Vapor - see #196), so
              * you may want to disable this if you are experiencing these edge case issues.
              */
-            'suffix_storage_path'  => true ,
+            'suffix_storage_path'  => TRUE ,
 
             /**
              * By default, asset() calls are made multi-tenant too. You can use global_asset() and mix()
@@ -131,7 +131,7 @@
              * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
              * where you want to use tenant-specific assets (product images, avatars, etc).
              */
-            'asset_helper_tenancy' => false ,
+            'asset_helper_tenancy' => FALSE ,
         ] ,
 
         /**
@@ -174,15 +174,15 @@
          * enabled. But it may be useful to disable them if you use external
          * storage (e.g. S3 / Dropbox) or have a custom asset controller.
          */
-        'routes'               => true ,
+        'routes'               => TRUE ,
 
         /**
          * Parameters used by the tenants:migrate command.
          */
         'migration_parameters' => [
-            '--force'    => true , // This needs to be true to run migrations in production.
-            '--path'     => [ database_path('migrations/tenant') ] ,
-            '--realpath' => true ,
+            '--force'    => TRUE , // This needs to be true to run migrations in production.
+            '--path'     => [ database_path( 'migrations/tenant' ) ] ,
+            '--realpath' => TRUE ,
         ] ,
 
         /**
@@ -190,6 +190,6 @@
          */
         'seeder_parameters'    => [
             '--class' => 'DatabaseSeeder' , // root seeder class
-            // '--force' => true, // This needs to be true to seed tenant databases in production
+            '--force' => TRUE ,             // This needs to be true to seed tenant databases in production
         ] ,
     ];
