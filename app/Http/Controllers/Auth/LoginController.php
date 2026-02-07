@@ -36,7 +36,7 @@
             $this->defaultAccessService = $defaultAccessService;
         }
 
-        public function login(Request $request) : JsonResponse
+        public function login1(Request $request) : JsonResponse
         {
             // 1. Validation
             $isPinLogin = $request->filled( 'pin' );
@@ -96,6 +96,73 @@
                 'defaultPermission' => AppLibrary::defaultPermission( $permission ?? [] ) ,
             ] , 200 );
         }
+        public function login(Request $request) : JsonResponse
+        {
+            // 1. Validation (remains the same)
+            $isPinLogin = $request->filled('pin');
+            $rules = $isPinLogin
+                ? ['pin' => ['required', 'string', 'size:5']]
+                : ['email' => ['required', 'string'], 'password' => ['required', 'string']];
+
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return new JsonResponse(['errors' => $validator->errors()], 422);
+            }
+
+            $user = null;
+
+            // 2. Authentication Logic
+            if ($isPinLogin) {
+                // Optimized check: only fetch users with the matching status and PIN
+                $user = User::where('status', Status::ACTIVE)
+                            ->whereNotNull('pin')
+                            ->get()
+                            ->first(fn($u) => Hash::check($request->pin, $u->pin));
+
+                if ($user) {
+                    // CRITICAL: Manually log the user into the session guard
+                    Auth::login($user, true);
+                }
+            } else {
+                $loginField = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+                // Auth::attempt automatically handles the session if successful
+                if (Auth::attempt([$loginField => $request->email, 'password' => $request->password, 'status' => Status::ACTIVE], true)) {
+                    $user = Auth::user();
+                }
+            }
+
+            // 3. Validation of Credentials
+            if (!$user) {
+                return new JsonResponse(['errors' => ['validation' => trans('all.message.credentials_invalid')]], 401);
+            }
+
+            // 4. Session Regeneration (Critical for SPA/Cookie-based Auth)
+            // This prevents session fixation attacks and ensures the session is active
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+
+            // 5. Role Check
+            $role = $user->roles()->first();
+            if (!$role) {
+                return new JsonResponse(['errors' => ['validation' => trans('all.message.role_exist')]], 400);
+            }
+
+            // 6. Token Generation
+            $user->tokens()->delete();
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Update last login date
+            $user->update(['last_login_date' => now()]);
+
+            return new JsonResponse([
+                'message'           => trans('all.message.login_success'),
+                'token'             => $token,
+                'user'              => new UserResource($user),
+                // ... rest of your resources
+            ], 200);
+        }
 
         public function token(Request $request)
         {
@@ -113,12 +180,29 @@
             $user = auth()->user();
             return MenuResource::collection( collect( $this->menuService->menu( $user->roles[ 0 ] ) ) );
         }
-
-        public function logout(Request $request) : JsonResponse
+        public function logout(Request $request): JsonResponse
         {
-            $request->user()->currentAccessToken()->delete();
-            return new JsonResponse( [
-                'message' => trans( 'all.message.logout_success' )
-            ] , 200 );
+            // 1. Revoke the token used for the current request
+            if ($request->user()) {
+                $request->user()->tokens()->delete();
+            }
+
+            // 2. Invalidate the session and regenerate the CSRF token
+            // This is critical for SPA/Cookie-based auth to prevent session fixation
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return new JsonResponse([
+                'message' => trans('all.message.logout_success')
+            ], 200);
         }
+
+//        public function logout(Request $request) : JsonResponse
+//        {
+//            $request->user()->currentAccessToken()->delete();
+//            return new JsonResponse( [
+//                'message' => trans( 'all.message.logout_success' )
+//            ] , 200 );
+//        }
     }
