@@ -19,9 +19,16 @@
 
         'allowed_methods' => [ '*' ] ,
 
-        'allowed_origins' => [ env( 'FRONTEND_URL' , 'http://localhost:3000' ) ] ,
+        'allowed_origins'          => [ env( 'FRONTEND_URL' , 'http://localhost:3000' ) ] ,
 
-        'allowed_origins_patterns' => [] ,
+//        'allowed_origins_patterns' => [] ,
+        'allowed_origins_patterns' => [
+            // Matches http/https for any subdomain of smartduuka2.test
+            '/^https?:\/\/.*\.smartduuka2\.test$/' ,
+
+            // Matches http/https for any subdomain of smartduuka.com AND the root domain itself
+            '/^https?:\/\/(.*\.)?smartduuka\.com$/' ,
+        ] ,
 
         'allowed_headers' => [ '*' ] ,
 
