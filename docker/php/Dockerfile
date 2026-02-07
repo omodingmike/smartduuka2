@@ -54,7 +54,9 @@ COPY --chown=www-data:www-data . .
 
 # 8. Finalize Laravel
 # Removed the redundant double-run. Consolidated here.
-RUN composer dump-autoload --optimize && \
+RUN git config --global --add safe.directory /app && \
+    composer dump-autoload --optimize --no-scripts && \
+    php artisan package:discover --ansi && \
     php artisan storage:link || true && \
     chown -R www-data:www-data /app/bootstrap/cache
 
