@@ -79,15 +79,10 @@ log "📦 Bootstrapping vendor folder and fixing ownership..."
 # and create the vendor folder if it was previously owned by 'deploy'.
 log "📦 Bootstrapping vendor folder and copying SQL seeds..."
 
-$COMPOSE run --rm --user root \
-  -v "$HOME/sql:/mnt/sql_source:ro" \
-  api bash -c "
+$COMPOSE run --rm --user root api bash -c "
     git config --global --add safe.directory /app && \
-    mkdir -p /app/database/sql && \
-    # Using -f to force overwrite and ensuring we aren't copying to ourselves
-    cp -f /mnt/sql_source/*.sql /app/database/sql/ && \
-    chown -R www-data:www-data /app/database/sql && \
-    composer install --no-dev --optimize-autoloader --no-interaction
+    composer install --no-dev --optimize-autoloader --no-interaction && \
+    composer dump-autoload
 "
 
 # --------------------------------------------------
