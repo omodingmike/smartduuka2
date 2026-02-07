@@ -52,11 +52,12 @@ RUN mkdir -p /var/www/.cache/composer /app/storage /app/bootstrap/cache/filament
 COPY --chown=www-data:www-data . .
 
 # 8. Finalize Laravel
-# 1. We fix the 'dubious ownership' for the www-data user [cite: 7]
-# 2. We run dump-autoload with --no-scripts to prevent early Tenancy crashes
-# 3. We then manually trigger discovery once the class map is ready
 RUN git config --global --add safe.directory /app && \
+    # First: Ensure all dependencies are physically present
+    composer install --no-dev --optimize-autoloader --no-interaction && \
+    # Second: Map them without booting Laravel
     composer dump-autoload --optimize --no-scripts && \
+    # Third: Now that the class is mapped, Laravel can boot for discovery
     php artisan package:discover --ansi && \
     php artisan storage:link || true && \
     chown -R www-data:www-data /app/bootstrap/cache
