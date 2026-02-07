@@ -32,11 +32,11 @@
                 'discount'                       => AppLibrary::currencyAmountFormat( $this->discount ) ,
                 'paid'                           => $this->paid ,
                 'net_paid'                       => $this->net_paid ,
-                'last_paid'                      => [
+                'last_paid'                      => $last_paid ? [
                     'amount'           => currency( $last_paid?->amount ?? 0 ) ,
                     'previous_balance' => currency( $this->balance + ( $last_paid?->amount ?? 0 ) ) ,
                     'method'           => $last_paid->paymentMethod
-                ] ,
+                ] : [] ,
                 'net_paid_currency'              => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
                 'paid_currency'                  => AppLibrary::currencyAmountFormat( $this->paid ) ,
                 'change'                         => AppLibrary::currencyAmountFormat( $this->change ) ,
