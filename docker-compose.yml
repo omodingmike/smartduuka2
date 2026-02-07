@@ -9,6 +9,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - .:/app:ro
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro
       - php_socket:/var/run/php
       - assets_media:/app/public/media:ro
