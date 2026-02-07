@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class LocationSeed extends Seeder
 {
@@ -16,6 +17,12 @@ class LocationSeed extends Seeder
         // Prevent timeout for large files
         set_time_limit( 0 );
         ini_set( 'memory_limit' , '-1' );
+
+        // Check if tables are empty before seeding
+        if (DB::table('countries')->exists()) {
+            $this->logInfo('Location tables already seeded. Skipping...');
+            return;
+        }
 
         $this->cleanDatabase();
 
@@ -29,7 +36,7 @@ class LocationSeed extends Seeder
         ];
 
         foreach ( $files as $filename ) {
-            $path = database_path( "sql/{$filename}" );
+            $path = database_path( "locations/{$filename}" );
             $this->importSqlStream( $path , $filename );
         }
     }
@@ -43,25 +50,25 @@ class LocationSeed extends Seeder
 
         try {
             DB::statement( "DROP TABLE IF EXISTS {$tableList} CASCADE" );
-            $this->command->info( "Dropped tables: {$tableList}" );
+            $this->logInfo( "Dropped tables: {$tableList}" );
         } catch ( \Exception $e ) {
-            $this->command->warn( 'Cleanup warning: ' . $e->getMessage() );
+            $this->logWarn( 'Cleanup warning: ' . $e->getMessage() );
         }
     }
 
     private function importSqlStream(string $filePath , string $fileName) : void
     {
         if ( ! File::exists( $filePath ) ) {
-            $this->command->error( "File missing: {$fileName}" );
+            $this->logError( "File missing: {$fileName}" );
             return;
         }
 
-        $this->command->line( "Processing: {$fileName}..." );
+        $this->logInfo( "Processing: {$fileName}..." );
 
         $handle = fopen( $filePath , 'r' );
 
         if ( ! $handle ) {
-            $this->command->error( "Could not open file: {$fileName}" );
+            $this->logError( "Could not open file: {$fileName}" );
             return;
         }
 
@@ -109,16 +116,43 @@ class LocationSeed extends Seeder
             }
 
             DB::commit();
-            $this->command->info( "Imported: {$fileName}" );
+            $this->logInfo( "Imported: {$fileName}" );
 
         } catch ( \Exception $e ) {
             DB::rollBack();
-            $this->command->error( "Error importing {$fileName}: " . $e->getMessage() );
+            $this->logError( "Error importing {$fileName}: " . $e->getMessage() );
             // Close handle if error occurs
             fclose( $handle );
             return;
         }
 
         fclose( $handle );
+    }
+
+    private function logInfo($message)
+    {
+        if (isset($this->command)) {
+            $this->command->info($message);
+        } else {
+            Log::info($message);
+        }
+    }
+
+    private function logWarn($message)
+    {
+        if (isset($this->command)) {
+            $this->command->warn($message);
+        } else {
+            Log::warning($message);
+        }
+    }
+
+    private function logError($message)
+    {
+        if (isset($this->command)) {
+            $this->command->error($message);
+        } else {
+            Log::error($message);
+        }
     }
 }
