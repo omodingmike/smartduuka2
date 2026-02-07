@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class LocationSeed extends Seeder
 {
@@ -18,8 +19,8 @@ class LocationSeed extends Seeder
         set_time_limit( 0 );
         ini_set( 'memory_limit' , '-1' );
 
-        // Check if tables are empty before seeding
-        if (DB::table('countries')->exists()) {
+        // Check if tables exist and are empty before seeding
+        if (Schema::hasTable('countries') && DB::table('countries')->exists()) {
             $this->logInfo('Location tables already seeded. Skipping...');
             return;
         }
