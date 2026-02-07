@@ -83,17 +83,11 @@ $COMPOSE run --rm --user root \
   -v "$HOME/sql:/mnt/sql_source:ro" \
   api bash -c "
     git config --global --add safe.directory /app && \
-
-    # 1. Create the internal directory (this is inside the container's writeable layer)
     mkdir -p /app/database/sql && \
-
-    # 2. Copy files FROM the read-only mount TO the internal path
-    cp /mnt/sql_source/*.sql /app/database/sql/ && \
-
-    # 3. Now chown will work because /app/database/sql is not a mount point
-    chown -R www-data:www-data /app && \
-
-    composer install --no-dev --optimize-autoloader --no-interaction && composer dump-autoload
+    # Using -f to force overwrite and ensuring we aren't copying to ourselves
+    cp -f /mnt/sql_source/*.sql /app/database/sql/ && \
+    chown -R www-data:www-data /app/database/sql && \
+    composer install --no-dev --optimize-autoloader --no-interaction
 "
 
 # --------------------------------------------------
