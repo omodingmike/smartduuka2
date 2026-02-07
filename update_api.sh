@@ -77,10 +77,22 @@ done
 log "📦 Bootstrapping vendor folder and fixing ownership..."
 # We use --user root here because only root can fix the "dubious ownership"
 # and create the vendor folder if it was previously owned by 'deploy'.
-$COMPOSE run --rm --user root api bash -c "
+log "📦 Bootstrapping vendor folder and copying SQL seeds..."
+
+$COMPOSE run --rm --user root \
+  -v "$HOME/sql:/mnt/sql_source:ro" \
+  api bash -c "
     git config --global --add safe.directory /app && \
-    mkdir -p /app/vendor /app/storage /app/bootstrap/cache && \
-    chown -R www-data:www-data /app && mkdir -p /app/database/sql && \
+
+    # 1. Create the internal directory (this is inside the container's writeable layer)
+    mkdir -p /app/database/sql && \
+
+    # 2. Copy files FROM the read-only mount TO the internal path
+    cp /mnt/sql_source/*.sql /app/database/sql/ && \
+
+    # 3. Now chown will work because /app/database/sql is not a mount point
+    chown -R www-data:www-data /app && \
+
     composer install --no-dev --optimize-autoloader --no-interaction && composer dump-autoload
 "
 
