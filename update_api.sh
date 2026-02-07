@@ -80,7 +80,7 @@ log "📦 Bootstrapping vendor folder and fixing ownership..."
 $COMPOSE run --rm --user root api bash -c "
     git config --global --add safe.directory /app && \
     mkdir -p /app/vendor /app/storage /app/bootstrap/cache && \
-    chown -R www-data:www-data /app && \
+    chown -R www-data:www-data /app && mkdir -p /app/database/sql && \
     composer install --no-dev --optimize-autoloader --no-interaction && composer dump-autoload
 "
 

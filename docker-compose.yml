@@ -29,6 +29,7 @@ services:
       - assets_static:/app/public/static
       - assets_media:/app/public/media
       - php_socket:/var/run/php
+      - /home/deploy/sql:/app/database/sql:ro
     depends_on:
       db:
         condition: service_healthy
