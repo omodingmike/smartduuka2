@@ -37,7 +37,7 @@ class LocationSeed extends Seeder
         ];
 
         foreach ( $files as $filename ) {
-            $path = database_path( "locations/{$filename}" );
+            $path = database_path( "sql/{$filename}" );
             $this->importSqlStream( $path , $filename );
         }
     }
