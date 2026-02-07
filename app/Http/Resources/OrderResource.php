@@ -33,8 +33,8 @@
                 'paid'                           => $this->paid ,
                 'net_paid'                       => $this->net_paid ,
                 'last_paid'                      => [
-                    'amount'           => currency( $last_paid->amount ) ,
-                    'previous_balance' => currency( $this->balance + $last_paid->amount ) ,
+                    'amount'           => currency( $last_paid?->amount ?? 0 ) ,
+                    'previous_balance' => currency( $this->balance + ( $last_paid?->amount ?? 0 ) ) ,
                     'method'           => $last_paid->paymentMethod
                 ] ,
                 'net_paid_currency'              => AppLibrary::currencyAmountFormat( $this->net_paid ) ,

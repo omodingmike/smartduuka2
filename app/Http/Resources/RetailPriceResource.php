@@ -16,7 +16,7 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'                 => $this->id ,
+                'id'                 => rand(),
                 'unit_id'            => $this->unit_id ,
                 'buying_price'       => $this->buying_price ,
                 'buying_price_text'  => AppLibrary::currencyAmountFormat( $this->buying_price ) ,

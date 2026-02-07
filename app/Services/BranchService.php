@@ -63,7 +63,7 @@
                     'phone'   => $request->input( 'phone' ) ,
                     'email'   => $request->input( 'email' ) ,
                     'status'  => $request->input( 'status' ) ,
-                    'address' => $request->input( 'location' ) ,
+                    'address' => $request->input( 'address' ) ,
                 ] );
                 activityLog( "Created Branch: $branch->name" );
                 return $branch;

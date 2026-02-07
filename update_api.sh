@@ -130,6 +130,7 @@ $COMPOSE exec -T api php artisan view:cache
 log "🔄 Reloading PHP-FPM to clear OPcache..."
 # This sends the USR2 signal to the master process (PID 1) to reload workers
 # This ensures they pick up the 'config.php' changes made in Step 5
+$COMPOSE exec -T api php -r "opcache_reset();"
 $COMPOSE exec -T api kill -USR2 1 || echo "⚠️  Could not reload PHP-FPM automatically, verify manually."
 
 # --------------------------------------------------
