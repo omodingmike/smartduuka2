@@ -20,7 +20,7 @@
                 'shipping'    => [ 'sometimes' , 'numeric:' ] ,
                 'notes'       => [ 'sometimes' , 'string:' ] ,
 //                'status'      => [ 'required' , 'numeric' ] ,
-//                'items'       => [ 'required' , 'string' ] ,
+                'items'       => [ 'required' , 'string' ] ,
             ];
         }
     }

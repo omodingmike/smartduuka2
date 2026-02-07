@@ -27,7 +27,6 @@
     use App\Models\StockProduct;
     use App\Models\StockPurchaseRequest;
     use App\Models\StockTax;
-    use App\Models\Supplier;
     use App\Models\Tax;
     use App\Models\Warehouse;
     use Exception;
@@ -273,9 +272,11 @@
          */
         public function store(PurchaseRequest $request) : object
         {
+            info($request->all());
             try {
                 DB::transaction( function () use ($request) {
                     $warehouse_id   = Warehouse::first()->id;
+                    $status = $request->integer( 'status');
                     $this->purchase = Purchase::create( [
                         'supplier_id'    => $request->supplier_id ,
                         'date'           => $request->date ,
@@ -283,9 +284,9 @@
                         'subtotal'       => $request->subtotal ,
                         'total'          => $request->total ,
                         'notes'          => $request->note ? $request->note : "" ,
-                        'status'         => $request->status ,
+                        'status'         => $status ,
                         'shipping'       => $request->shipping ?? 0 ,
-                        'payment_status' => PurchasePaymentStatus::PENDING ,
+                        'payment_status' => PurchasePaymentStatus::PENDING->value ,
                         'warehouse_id'   => $warehouse_id
                     ] );
 
@@ -304,7 +305,7 @@
                                 'item_id'          => $product[ 'product_id' ] ,
                                 'variation_names'  => 'variation_names' ,
                                 'price'            => $product[ 'price' ] ,
-                                'quantity'         => 0 ,
+                                'quantity'         => $status == PurchaseStatus::RECEIVED->value ? $product[ 'quantity' ] : 0 ,
                                 'quantity_ordered' => $product[ 'quantity' ] ,
                                 'discount'         => 0 ,
                                 'tax'              => 0 ,
@@ -312,7 +313,7 @@
                                 'total'            => $product[ 'price' ] ,
                                 'sku'              => 'sku' ,
                                 'warehouse_id'     => $warehouse_id ,
-                                'status'           => $request->status == PurchaseStatus::RECEIVED ? StockStatus::RECEIVED : StockStatus::IN_TRANSIT
+                                'status'           => $status == PurchaseStatus::RECEIVED->value ? StockStatus::RECEIVED->value : StockStatus::IN_TRANSIT->value
                             ] );
                         }
                     }
