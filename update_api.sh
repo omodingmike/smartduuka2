@@ -81,7 +81,7 @@ log "📦 Bootstrapping vendor folder and copying SQL seeds..."
 
 log "📦 Performing clean vendor installation..."
 $COMPOSE run --rm api bash -c "
-    composer install --no-dev --optimize-autoloader --no-interaction
+    composer install --no-dev --no-interaction
 "
 
 # --------------------------------------------------
