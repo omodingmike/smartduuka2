@@ -79,10 +79,15 @@ log "📦 Bootstrapping vendor folder and fixing ownership..."
 # and create the vendor folder if it was previously owned by 'deploy'.
 log "📦 Bootstrapping vendor folder and copying SQL seeds..."
 
+log "📦 Performing clean vendor installation..."
 $COMPOSE run --rm --user root api bash -c "
     git config --global --add safe.directory /app && \
+    # Remove existing vendor and lock to ensure no stale state
+    rm -rf vendor composer.lock && \
+    # Fresh install of the main package and its dependencies
     composer install --no-dev --optimize-autoloader --no-interaction && \
-    composer dump-autoload
+    composer dump-autoload --optimize && \
+    chown -R www-data:www-data /app/vendor
 "
 
 # --------------------------------------------------
