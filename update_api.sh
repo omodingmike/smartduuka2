@@ -74,10 +74,6 @@ done
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
-log "📦 Bootstrapping vendor folder and fixing ownership..."
-# We use --user root here because only root can fix the "dubious ownership"
-# and create the vendor folder if it was previously owned by 'deploy'.
-log "📦 Bootstrapping vendor folder and copying SQL seeds..."
 
 log "📦 Performing clean vendor installation..."
 $COMPOSE run --rm api bash -c "
@@ -91,7 +87,7 @@ log "🔨 Building and recreating api & nginx containers..."
 $COMPOSE up -d --build --force-recreate --force-recreate api nginx
 
 # --------------------------------------------------
-# 3. NGINX CONFIG TEST
+# 3. NGINX CONFIG TESTd
 # --------------------------------------------------
 log "🧪 Validating Nginx configuration..."
 $COMPOSE exec -T nginx nginx -t || fail "Nginx configuration test failed"

@@ -41,19 +41,20 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-interaction --no-scripts --no-autoloader --no-dev --ignore-platform-reqs
 
-# 6. Permissions & Cron Fix
-RUN touch /etc/crontab
-RUN mkdir -p /app/storage /app/bootstrap/cache/filament /app/.cache /tmp/crashpad /app/public/media /var/run/php \
-    && chown -R www-data:www-data /app /var/run/php \
+# 6. Permissions & Environment Fix
+# We create the composer cache dir and ensure www-data owns its home
+RUN mkdir -p /var/www/.cache/composer /app/storage /app/bootstrap/cache/filament /app/.cache /tmp/crashpad /app/public/media /var/run/php \
+    && chown -R www-data:www-data /var/www /app /var/run/php \
     && chmod -R 775 /app/storage /app/bootstrap/cache /var/run/php
 
-RUN mkdir -p /var/run/php && chown -R www-data:www-data /var/run/php && chmod -R 775 /var/run/php
-
 # 7. Copy Code
+# Ensure files are owned by www-data immediately upon copying [cite: 6]
 COPY --chown=www-data:www-data . .
 
 # 8. Finalize Laravel
-# Removed the redundant double-run. Consolidated here.
+# 1. We fix the 'dubious ownership' for the www-data user [cite: 7]
+# 2. We run dump-autoload with --no-scripts to prevent early Tenancy crashes
+# 3. We then manually trigger discovery once the class map is ready
 RUN git config --global --add safe.directory /app && \
     composer dump-autoload --optimize --no-scripts && \
     php artisan package:discover --ansi && \

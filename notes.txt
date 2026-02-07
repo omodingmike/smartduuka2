@@ -65,6 +65,4 @@ Sanctum::actingAs(
                     ->forget( config( 'permission.cache.key' ) );
 
 
-      https:\/\/api.smartduuka.com\/media\/9\/conversions\/cxExEIdVW9drlFufIaLs-preview.jpg
-      http://api.smartduuka2.test/tenancy/assets/media/3/conversions/electronic_191-cover.jpg
-      http://api.smartduuka2.test/tenancy/assets/tenantapi/3/conversions/electronic_191-cover.jpg
+2026-02-07 06:50:55
