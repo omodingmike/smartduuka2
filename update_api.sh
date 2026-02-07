@@ -121,6 +121,7 @@ $COMPOSE exec -T api php artisan optimize:clear
 $COMPOSE exec -T api php artisan optimize
 $COMPOSE exec -T api php artisan config:cache
 $COMPOSE exec -T api php artisan event:cache
+$COMPOSE exec -T api php artisan route:clear
 $COMPOSE exec -T api php artisan route:cache
 $COMPOSE exec -T api php artisan view:cache
 

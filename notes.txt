@@ -45,12 +45,9 @@ https://github.com/dr5hn/countries-states-cities-database
 
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/countries.sql
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql
-
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/regions.sql
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/subregions.sql
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/states.sql
-
-
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql.gz
 gzip -d cities.sql.gz
 
