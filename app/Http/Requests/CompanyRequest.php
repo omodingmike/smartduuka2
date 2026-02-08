@@ -33,7 +33,7 @@
                 'company_city'            => [ 'nullable' , 'string' , 'max:190' ] ,
                 'company_state'           => [ 'required' , 'string' , 'max:190' ] ,
                 'company_country_code'    => [ 'required' , 'string' , 'max:190' ] ,
-                'company_zip_code'        => [ 'sometimes' , 'string' , 'max:190' ] ,
+                'company_zip_code'        => [ 'nullable' , 'string' , 'max:190' ] ,
                 'company_address'         => [ 'required' , 'string' , 'max:500' ] ,
             ];
         }
