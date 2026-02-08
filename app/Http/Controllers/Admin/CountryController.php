@@ -42,7 +42,9 @@
                     $query->where( 'name' , 'ilike' , "%{$name}%" );
                 }
                 else {
-                    $query->where( 'id' , $id );
+                    if ( $id ) {
+                        $query->where( 'id' , $id );
+                    }
                 }
                 $countries = $query->take( 5 )->get();
                 return CountryResource::collection( $countries );
