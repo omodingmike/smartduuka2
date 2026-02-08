@@ -126,10 +126,11 @@ $COMPOSE exec -T api php artisan event:cache
 
 # 3. Cache Routes (This replaces the route:clear/route:cache loop)
 # We run this after config is cached to ensure the environment is stable
-$COMPOSE exec -T api php artisan route:cache
 
 # 4. Cache Views
 $COMPOSE exec -T api php artisan view:cache
+
+$COMPOSE exec -T api php artisan route:clear
 
 # --------------------------------------------------
 # 6. RELOAD PHP-FPM (THE FIX)
