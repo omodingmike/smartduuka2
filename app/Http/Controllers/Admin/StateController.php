@@ -13,7 +13,6 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Log;
 
-
     class StateController extends AdminController
     {
 
@@ -40,8 +39,14 @@
             try {
                 $query = $country->states();
                 $name  = $request->input( 'query' );
+                $id    = $request->input( 'queryString' );
                 if ( $name ) {
                     $query->where( 'name' , 'ilike' , "%$name%" );
+                }
+                else {
+                    if ( $id ) {
+                        $query->where( 'id' , $id );
+                    }
                 }
                 return StateResource::collection( $query->take( 5 )->get() );
             } catch ( Exception $exception ) {
