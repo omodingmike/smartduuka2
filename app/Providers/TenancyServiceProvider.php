@@ -11,6 +11,7 @@
     use Spatie\Permission\PermissionRegistrar;
     use Stancl\JobPipeline\JobPipeline;
     use Stancl\Tenancy\Events;
+    use Stancl\Tenancy\Features\TenantConfig;
     use Stancl\Tenancy\Jobs;
     use Stancl\Tenancy\Listeners;
     use Stancl\Tenancy\Middleware;
@@ -116,8 +117,35 @@
 
             $this->makeTenancyMiddlewareHighestPriority();
             InitializeTenancyByDomain::$onFail = function () {
-                return redirect(config('app.url'));
+                return redirect( config( 'app.url' ) );
             };
+            TenantConfig::$storageToConfigMap = [
+                // From app.php
+                'APP_NAME'               => 'app.name',
+                'PROJECT_ID'             => 'app.project_id',
+                'BUSINESS_ID'            => 'app.business_id',
+                'TIMEZONE'               => 'app.timezone',
+
+                // From at.php
+                'AT_USERNAME'            => 'at.username',
+                'AT_API_KEY'             => 'at.api_key',
+
+                // From system.php
+                'DATE_FORMAT'            => 'system.date_format',
+                'TIME_FORMAT'            => 'system.time_format',
+                'CURRENCY'               => 'system.currency',
+                'CURRENCY_POSITION'      => 'system.currency_position',
+                'CURRENCY_SYMBOL'        => 'system.currency_symbol',
+                'CURRENCY_DECIMAL_POINT' => 'system.currency_decimal_point',
+
+                // Standard Mail Overrides (Laravel default config)
+                'MAIL_HOST'              => 'mail.mailers.smtp.host',
+                'MAIL_PORT'              => 'mail.mailers.smtp.port',
+                'MAIL_USERNAME'          => 'mail.mailers.smtp.username',
+                'MAIL_PASSWORD'          => 'mail.mailers.smtp.password',
+                'MAIL_ENCRYPTION'        => 'mail.mailers.smtp.encryption',
+                'MAIL_FROM_ADDRESS'      => 'mail.from.address',
+            ];
         }
 
         protected function bootEvents() : void

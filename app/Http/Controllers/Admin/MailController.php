@@ -6,6 +6,9 @@ use App\Http\Requests\MailRequest;
 use App\Http\Resources\MailResource;
 use App\Services\MailService;
 use Exception;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Response;
 
 class MailController extends AdminController
 {
@@ -27,7 +30,7 @@ class MailController extends AdminController
         }
     }
 
-    public function update(MailRequest $request): \Illuminate\Http\Response | MailResource | \Illuminate\Contracts\Foundation\Application | \Illuminate\Contracts\Routing\ResponseFactory
+    public function update(MailRequest $request): Response | MailResource | Application | ResponseFactory
     {
         try {
             return new MailResource($this->mailService->update($request));

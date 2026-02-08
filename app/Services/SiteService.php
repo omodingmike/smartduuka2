@@ -57,19 +57,30 @@
             $data[ 'site_default_currency_symbol' ] = $currency->symbol;
             Settings::group( 'site' )->set( $data );
 
-            $this->envService->addData( [
-                'TIMEZONE'               => $request->site_default_timezone ,
-                'CURRENCY'               => $currency?->code ,
-                'CURRENCY_SYMBOL'        => $currency?->symbol ,
-                'CURRENCY_POSITION'      => $request->site_currency_position ,
-                'CURRENCY_DECIMAL_POINT' => $request->site_digit_after_decimal_point ,
-                'DATE_FORMAT'            => $request->site_date_format ,
-                'TIME_FORMAT'            => $request->site_time_format ,
-                'NON_PURCHASE_QUANTITY'  => $request->site_non_purchase_product_maximum_quantity
-            ] );
+//            $this->envService->addData( [
+//                'TIMEZONE'               => $request->site_default_timezone ,
+//                'CURRENCY'               => $currency?->code ,
+//                'CURRENCY_SYMBOL'        => $currency?->symbol ,
+//                'CURRENCY_POSITION'      => $request->site_currency_position ,
+//                'CURRENCY_DECIMAL_POINT' => $request->site_digit_after_decimal_point ,
+//                'DATE_FORMAT'            => $request->site_date_format ,
+//                'TIME_FORMAT'            => $request->site_time_format ,
+//                'NON_PURCHASE_QUANTITY'  => $request->site_non_purchase_product_maximum_quantity
+//            ] );
 
-            Cache::forget( CacheEnum::CURRENCY_SYMBOL );
-            UpdateConfigJob::dispatchAfterResponse();
+            tenant()->update([
+                'TIMEZONE'               => $request->site_default_timezone,
+                'CURRENCY'               => $currency?->code,
+                'CURRENCY_SYMBOL'        => $currency?->symbol,
+                'CURRENCY_POSITION'      => $request->site_currency_position,
+                'CURRENCY_DECIMAL_POINT' => $request->site_digit_after_decimal_point,
+                'DATE_FORMAT'            => $request->site_date_format,
+                'TIME_FORMAT'            => $request->site_time_format,
+                'NON_PURCHASE_QUANTITY'  => $request->site_non_purchase_product_maximum_quantity,
+            ]);
+
+//            Cache::forget( CacheEnum::CURRENCY_SYMBOL );
+//            UpdateConfigJob::dispatchAfterResponse();
             return $this->list();
         }
 

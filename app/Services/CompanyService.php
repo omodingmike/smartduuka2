@@ -3,7 +3,6 @@
     namespace App\Services;
 
     use App\Http\Requests\CompanyRequest;
-    use App\Jobs\UpdateConfigJob;
     use App\Models\Business;
     use Dipokhalder\EnvEditor\EnvEditor;
     use Exception;
@@ -37,12 +36,16 @@
             Settings::group( 'company' )->set( [ 'company_city' => '' ] );
             $data = $request->validated();
             Settings::group( 'company' )->set( $data );
-            $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );
+//            $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );
 
             Business::where( [ 'project_id' => config( 'app.project_id' ) ] )
                     ->update( [ 'business_name' => Settings::group( 'company' )->get( 'company_name' ) , 'phone_number' => phoneNumber() ] );
 
-            UpdateConfigJob::dispatchAfterResponse();
+            tenant()->update( [
+                'APP_NAME' => $request->company_name
+            ] );
+
+//            UpdateConfigJob::dispatchAfterResponse();
             return $this->list();
 
         }

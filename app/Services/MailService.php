@@ -39,17 +39,26 @@ class MailService
     {
         try {
             Settings::group('mail')->set($request->validated());
-            $this->envService->addData([
-                'MAIL_MAILER'       => 'smtp',
+//            $this->envService->addData([
+//                'MAIL_MAILER'       => 'smtp',
+//                'MAIL_HOST'         => $request->mail_host,
+//                'MAIL_PORT'         => $request->mail_port,
+//                'MAIL_USERNAME'     => $request->mail_username,
+//                'MAIL_PASSWORD'     => $request->mail_password,
+//                'MAIL_ENCRYPTION'   => $request->mail_encryption,
+//                'MAIL_FROM_ADDRESS' => $request->mail_from_email,
+//                'MAIL_FROM_NAME'    => $request->mail_from_name
+//            ]);
+            tenant()->update([
                 'MAIL_HOST'         => $request->mail_host,
                 'MAIL_PORT'         => $request->mail_port,
                 'MAIL_USERNAME'     => $request->mail_username,
-                'MAIL_PASSWORD'     => $request->mail_password,
+                'MAIL_PASSWORD'     => $request->mail_password, // Use encrypted casts on Tenant model
                 'MAIL_ENCRYPTION'   => $request->mail_encryption,
                 'MAIL_FROM_ADDRESS' => $request->mail_from_email,
-                'MAIL_FROM_NAME'    => $request->mail_from_name
+                'MAIL_FROM_NAME'    => $request->mail_from_name,
+                'MAIL_MAILER'       => 'smtp',
             ]);
-            Artisan::call( 'config:cache');
             return $this->list();
         } catch (Exception $exception) {
             Log::info($exception->getMessage());

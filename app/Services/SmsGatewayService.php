@@ -39,11 +39,15 @@
             try {
                 Settings::group( 'sms_gateway' )->set( $request->validated() );
 
-                $this->envService->addData( [
-                    'AT_USERNAME' => $request->at_username ,
-                    'AT_API_KEY'  => $request->at_apikey ,
-                ] );
-                Artisan::call( 'config:cache' );
+//                $this->envService->addData( [
+//                    'AT_USERNAME' => $request->at_username ,
+//                    'AT_API_KEY'  => $request->at_apikey ,
+//                ] );
+//                Artisan::call( 'config:cache' );
+                tenant()->update([
+                    'AT_USERNAME' => $request->at_username,
+                    'AT_API_KEY'  => $request->at_apikey,
+                ]);
 
                 return $this->list();
             } catch ( Exception $exception ) {

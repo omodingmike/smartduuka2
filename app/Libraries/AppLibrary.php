@@ -310,12 +310,34 @@
             return (float) number_format( $amount , config( 'system.currency_decimal_point' ) , '.' , '' );
         }
 
+//        public static function fcmDataBind($request) : void
+//        {
+//            $cdn         = public_path( "firebase-cdn.txt" );
+//            $textContent = public_path( "firebase-content.txt" );
+//            $file        = public_path( "firebase-messaging-sw.js" );
+//            $content     = 'let config = {
+//        apiKey: "' . $request->notification_fcm_api_key . '",
+//        authDomain: "' . $request->notification_fcm_auth_domain . '",
+//        projectId: "' . $request->notification_fcm_project_id . '",
+//        storageBucket: "' . $request->notification_fcm_storage_bucket . '",
+//        messagingSenderId: "' . $request->notification_fcm_messaging_sender_id . '",
+//        appId: "' . $request->notification_fcm_app_id . '",
+//        measurementId: "' . $request->notification_fcm_measurement_id . '",' . "\n" . ' };' . "\n";
+//            File::put( $file , File::get( $cdn ) . $content . File::get( $textContent ) );
+//        }
+
+        // app/Libraries/AppLibrary.php
+
         public static function fcmDataBind($request) : void
         {
-            $cdn         = public_path( "firebase-cdn.txt" );
-            $textContent = public_path( "firebase-content.txt" );
-            $file        = public_path( "firebase-messaging-sw.js" );
-            $content     = 'let config = {
+            $cdn         = public_path( 'firebase-cdn.txt' );
+            $textContent = public_path( 'firebase-content.txt' );
+
+            // CHANGE: Use a tenant-specific filename so they don't overwrite each other
+            $fileName = tenant( 'id' ) ? 'firebase-messaging-sw-' . tenant( 'id' ) . '.js' : 'firebase-messaging-sw.js';
+            $file     = public_path( $fileName );
+
+            $content = 'let config = {
         apiKey: "' . $request->notification_fcm_api_key . '",
         authDomain: "' . $request->notification_fcm_auth_domain . '",
         projectId: "' . $request->notification_fcm_project_id . '",
@@ -323,6 +345,7 @@
         messagingSenderId: "' . $request->notification_fcm_messaging_sender_id . '",
         appId: "' . $request->notification_fcm_app_id . '",
         measurementId: "' . $request->notification_fcm_measurement_id . '",' . "\n" . ' };' . "\n";
+
             File::put( $file , File::get( $cdn ) . $content . File::get( $textContent ) );
         }
 
