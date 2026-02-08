@@ -23,6 +23,7 @@
     "pragmarx/countries": "^1.0",
     "smartisan/laravel-settings": "dev-main",
     "spatie/browsershot": "^5.0",
+    "spatie/laravel-activitylog": "^4.11",
     "spatie/laravel-medialibrary": "^11.15",
     "spatie/laravel-permission": "^6.21",
     "stancl/tenancy": "^3.9",
