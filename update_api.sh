@@ -125,8 +125,6 @@ $COMPOSE exec -T api php artisan route:clear
 $COMPOSE exec -T api php artisan route:cache
 $COMPOSE exec -T api php artisan view:cache
 
-docker exec -it api php artisan optimize
-
 # --------------------------------------------------
 # 6. RELOAD PHP-FPM (THE FIX)
 # --------------------------------------------------
