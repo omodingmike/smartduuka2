@@ -119,7 +119,6 @@
 
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
         Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
-        Route::apiResource( 'expense-categories' , ExpenseCategoryController::class );
 
 //    Route::post('pay' , [ PaymentController::class , 'requestToPay' ]);
         Route::post( 'status' , [ PaymentController::class , 'requesttoPayTransactionStatus' ] );
@@ -165,6 +164,10 @@
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
+
+            Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy');
+            Route::delete( 'expense-categories/delete' , [ExpenseCategoryController::class,'destroy'] );
+
             Route::prefix( 'branches' )->name( 'branches.' )->group( function () {
                 Route::get( '/' , [ BranchController::class , 'branches' ] );
                 Route::post( '/' , [ BranchController::class , 'store' ] );
