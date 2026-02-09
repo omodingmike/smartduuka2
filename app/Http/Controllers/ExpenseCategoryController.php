@@ -77,7 +77,7 @@
             foreach ( $ids as $id ) {
                 $expenseCategory = ExpenseCategory::find( $id );
                 if ( $expenseCategory->children()->exists() ) {
-                    return $this->response( message: 'Cannot delete category with sub-categories.' );
+                    return $this->error( message: 'Cannot delete category with sub-categories.' );
                 }
                 $expenseCategory->delete();
             }

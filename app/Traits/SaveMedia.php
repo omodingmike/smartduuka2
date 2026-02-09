@@ -11,7 +11,7 @@
 
     trait SaveMedia
     {
-        public function saveMedia(Request $request , Model $model , string $collection) : void
+        public function saveMedia(Request $request , Model $model , string $collection = MediaEnum::IMAGES_COLLECTION) : void
         {
             if ( $request->hasFile( MediaEnum::MEDIA_FILE ) ) {
                 $media = $model->addMediaFromRequest( MediaEnum::MEDIA_FILE )

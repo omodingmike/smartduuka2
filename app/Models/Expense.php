@@ -2,37 +2,48 @@
 
     namespace App\Models;
 
+    use App\Enums\ExpenseType;
+    use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\HasOne;
     use Spatie\MediaLibrary\HasMedia;
-    use Spatie\MediaLibrary\InteractsWithMedia;
 
     class Expense extends Model implements HasMedia
     {
-        use HasFactory , InteractsWithMedia;
+        use HasFactory , HasImageMedia;
 
         protected $fillable = [ 'name' , 'amount' , 'date' , 'category' , 'note' , 'paymentMethod' , 'referenceNo' , 'attachment' , 'recurs' , 'isRecurring' , 'user_id' , 'repetitions' , 'paid' , 'paid_on' , 'repeats_on' , 'registerMediaConversionsUsingModelInstance' , 'count' , 'register_id' ,
             'expense_category_id' ,
             'payment_method_id' ,
             'reference_no' ,
-            'is_recurring'
+            'is_recurring' ,
+            'base_amount' ,
+            'extra_charge' ,
+            'expense_type'
         ];
         protected $casts    = [
-            'date'   => 'datetime' ,
-            'paid_on'   => 'datetime' ,
-            'amount' => 'integer' ,
-            'paid'   => 'integer'
+            'date'         => 'datetime' ,
+            'paid_on'      => 'datetime' ,
+            'amount'       => 'integer' ,
+            'expense_type' => ExpenseType::class ,
+            'paid'         => 'integer' ,
         ];
+        protected $appends  = [ 'image' ];
 
         public function expenseCategory() : HasOne
         {
-            return $this->hasOne(ExpenseCategory::class , 'id' , 'category');
+            return $this->hasOne( ExpenseCategory::class , 'id' , 'expense_category_id' );
+        }
+
+        public function registers()
+        {
+            return $this->hasMany( Register::class , 'id' , 'register_id' );
         }
 
         public function getAttachmentAttribute($value)
         {
-            return asset('storage/' . $value);
+            return asset( 'storage/' . $value );
 //            if (!empty($this->getFirstMediaUrl('attachment'))) {
 //                $product = $this->getMedia('attachment')->first();
 //                return $product->getUrl();

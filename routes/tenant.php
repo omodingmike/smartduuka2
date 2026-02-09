@@ -165,8 +165,8 @@
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
 
-            Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy');
-            Route::delete( 'expense-categories/delete' , [ExpenseCategoryController::class,'destroy'] );
+            Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy' );
+            Route::delete( 'expense-categories/delete' , [ ExpenseCategoryController::class , 'destroy' ] );
 
             Route::prefix( 'branches' )->name( 'branches.' )->group( function () {
                 Route::get( '/' , [ BranchController::class , 'branches' ] );
@@ -427,7 +427,8 @@
                 } );
             } );
 
-            Route::resource( 'expenses' , ExpensesController::class );
+            Route::resource( 'expenses' , ExpensesController::class )->except( 'destroy' );
+            Route::delete( 'expenses/delete' , [ ExpensesController::class , 'destroy' ] );
             Route::get( 'expense-category/depth-tree' , [ ExpenseCategoryController::class , 'depthTree' ] );
             Route::resource( 'expense-payments' , ExpensePaymentController::class );
             Route::get( 'expense-categories-export' , [ ExpenseCategoryController::class , 'export' ] );
