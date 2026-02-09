@@ -71,6 +71,15 @@ for DIR in "${WRITABLE_DIRS[@]}"; do
   sudo chmod -R 775 "$DIR"
 done
 
+# ----------------------------
+# CLEAR OLD LOGS
+# ----------------------------
+log "🧹 Clearing old log files..."
+# Truncate all .log files in the storage/logs directory
+# We use find/truncate to ensure we don't delete the files themselves
+sudo find "$LARAVEL_PATH/storage/logs" -type f -name "*.log" -exec truncate -s 0 {} +
+log "✨ Logs cleared."
+
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
