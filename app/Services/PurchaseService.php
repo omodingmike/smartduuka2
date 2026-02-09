@@ -3,6 +3,7 @@
     namespace App\Services;
 
     use App\Enums\Ask;
+    use App\Enums\ExpenseType;
     use App\Enums\PurchasePaymentStatus;
     use App\Enums\PurchaseStatus;
     use App\Enums\PurchaseType;
@@ -272,11 +273,10 @@
          */
         public function store(PurchaseRequest $request) : object
         {
-            info($request->all());
             try {
                 DB::transaction( function () use ($request) {
                     $warehouse_id   = Warehouse::first()->id;
-                    $status = $request->integer( 'status');
+                    $status         = $request->integer( 'status' );
                     $this->purchase = Purchase::create( [
                         'supplier_id'    => $request->supplier_id ,
                         'date'           => $request->date ,
@@ -287,8 +287,12 @@
                         'status'         => $status ,
                         'shipping'       => $request->shipping ?? 0 ,
                         'payment_status' => PurchasePaymentStatus::PENDING->value ,
-                        'warehouse_id'   => $warehouse_id
+                        'warehouse_id'   => $warehouse_id ,
+                        'tax'            => 0 ,
+                        'discount'       => 0
                     ] );
+
+                    activity()->log( 'Created Purchase with id: ' . $this->purchase->id );
 
                     if ( $request->items ) {
                         $model_id = $this->purchase->id;
@@ -340,6 +344,7 @@
                         'priority'       => $request->priority ,
                         'supplier_id'    => $request->supplier_id ,
                     ] );
+                    activityLog( 'Added stock Request: ' . $purchase_request->id );
 
                     if ( $request->items ) {
                         $products = json_decode( $request->items , TRUE );
@@ -563,6 +568,8 @@
                         'register_id'    => register()->id
                     ] );
 
+                    activityLog( 'Added Stock Purchase Payment: ' . $purchasePayment->id );
+
                     $expense_category = ExpenseCategory::firstOrCreate( [ 'name' => 'Expense Category' ] , [
                         'description' => 'description' ,
                         'name'        => 'Expense Category' ,
@@ -574,9 +581,9 @@
                         'amount'              => $request->amount ,
                         'date'                => $request->date ,
                         'expense_category_id' => $expense_category->id ,
-                        'payment_method_id'   => $request->payment_method ,
                         'reference_no'        => $request->reference_no ,
                         'is_recurring'        => 0 ,
+                        'expense_type'        => ExpenseType::SYSTEM_CAPTURED->value ,
                         'recurs'              => 0 ,
                         'repetitions'         => 0 ,
                         'repeats_on'          => NULL ,
@@ -588,8 +595,6 @@
                     if ( $request->file ) {
                         $purchasePayment->addMediaFromRequest( 'file' )->toMediaCollection( 'purchase_payment' );
                     }
-
-//                    $paid = PurchasePayment::where( [ 'purchase_id' => $purchase->id , 'purchase_type' => $request->purchase_type ] )->sum( 'amount' );
 
                     if ( $purchase->paid == $purchase->total ) {
                         $purchase->payment_status = PurchasePaymentStatus::FULLY_PAID;

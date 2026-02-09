@@ -11,7 +11,6 @@
     use App\Enums\Status;
     use App\Enums\StockStatus;
     use App\Libraries\AppLibrary;
-    use App\Models\ActivityLog;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
     use App\Models\Ledger;
@@ -20,7 +19,6 @@
     use App\Models\PaymentMethod;
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
-    use App\Models\User;
     use Carbon\Carbon;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Cache;
@@ -133,15 +131,6 @@
     function settingValue(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : string | null
     {
         return Settings::group( $group )->get( $key );
-    }
-
-    function activityLog(string $action) : void
-    {
-        ActivityLog::create( [
-            'user_id'   => Auth::user()->id ,
-            'user_type' => User::class ,
-            'action'    => $action ,
-        ] );
     }
 
     function register() : Register
@@ -399,6 +388,11 @@
             $char = $matches[ 0 ];
             return $replacements[ $char ] ?? $char;
         } , $phpFormat );
+    }
+
+    function activityLog(string $description) : void
+    {
+        activity()->log( $description );
     }
 
     function statusLabel($status) : string | null

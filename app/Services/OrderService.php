@@ -248,6 +248,7 @@
                             'register_id'     => register()->id
                         ]
                     );
+                    activity()->log( 'Created order: ' . $order->order_serial_no );
 
                     $this->order = $order;
                     if ( $delivery_address ) {

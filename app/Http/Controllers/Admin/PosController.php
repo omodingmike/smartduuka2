@@ -175,6 +175,7 @@
                             $stock = Stock::where( [ 'item_type' => Product::class , 'item_id' => $order_product->item_id ] )->first();
                             $stock->increment( 'quantity' , $order_product->quantity );
                         }
+                        activity()->on( auth()->user() )->log( "Deleted Order: " . $order->order_serial_no );
                         $order->delete();
                     }
                     return response()->json( [ 'status' => TRUE , 'message' => 'Orders deleted successfully' ] );

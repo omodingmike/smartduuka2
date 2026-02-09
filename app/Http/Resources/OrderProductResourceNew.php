@@ -19,7 +19,7 @@
                 'quantity_text'        => number_format( $this->quantity ) ,
                 'quantity_picked_text' => number_format( $this->quantity_picked ) ,
                 'total'                => $this->total ,
-                'item'                 => $this->item ,
+                'item'                 => new SimpleProductDetailsResource(  $this->item ) ,
                 'total_currency'       => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'unit_price'           => $this->unit_price ,
                 'unit_price_currency'  => AppLibrary::currencyAmountFormat( $this->unit_price ) ,
