@@ -12,20 +12,26 @@
     use App\Http\Resources\OrderResource;
     use App\Http\Resources\RegisterResource;
     use App\Models\Order;
+    use App\Models\Product;
     use App\Models\Register;
+    use App\Models\Stock;
     use App\Models\User;
     use App\Services\CommissionCalculator;
     use App\Services\CustomerService;
     use App\Services\OrderService;
+    use Essa\APIToolKit\Api\ApiResponse;
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
+    use Illuminate\Support\Facades\DB;
 
 
     class PosController extends AdminController
     {
+        use ApiResponse;
+
         private OrderService    $orderService;
         private CustomerService $customerService;
 
@@ -152,6 +158,29 @@
             if ( ! $register ) {
                 return response()->json( [ 'message' => 'No open register found' ] , 404 );
             }
-            return new RegisterResource( $register->load( [ 'user' , 'posPayments' , 'orders.orderProducts.item','expenses' ] ) );
+            return new RegisterResource( $register->load( [ 'user' , 'posPayments' , 'orders.orderProducts.item' , 'expenses' ] ) );
+        }
+
+        public function destroy(Request $request)
+        {
+            try {
+                return DB::transaction( function () use ($request) {
+                    $ids = $request->ids;
+                    foreach ( $ids as $id ) {
+                        $order = Order::find( $id );
+                        $order->posPayments()->delete();
+                        $order->paymentMethodTransactions()->delete();
+                        $order->orderProducts()->delete();
+                        foreach ( $order->orderProducts as $order_product ) {
+                            $stock = Stock::where( [ 'item_type' => Product::class , 'item_id' => $order_product->item_id ] )->first();
+                            $stock->increment( 'quantity' , $order_product->quantity );
+                        }
+                        $order->delete();
+                    }
+                    return response()->json( [ 'status' => TRUE , 'message' => 'Orders deleted successfully' ] );
+                } );
+            } catch ( Exception $e ) {
+                return $this->APIError( 422 , 'Error' , $e->getMessage() );
+            }
         }
     }

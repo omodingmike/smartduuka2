@@ -12,6 +12,7 @@
             'charge' ,
             'description' ,
             'payment_method_id' ,
+            'order_id' ,
         ];
 
         public function paymentMethod() : BelongsTo

@@ -6,6 +6,7 @@
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Database\Eloquent\Relations\HasOne;
     use Spatie\MediaLibrary\HasMedia;
 
@@ -36,7 +37,7 @@
             return $this->hasOne( ExpenseCategory::class , 'id' , 'expense_category_id' );
         }
 
-        public function registers()
+        public function registers() : HasMany | Expense
         {
             return $this->hasMany( Register::class , 'id' , 'register_id' );
         }

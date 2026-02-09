@@ -278,6 +278,7 @@
 
                             PaymentMethodTransaction::create( [
                                 'amount'            => $net_amount ,
+                                'order_id'          => $order->id ,
                                 'charge'            => 0 ,
                                 'description'       => 'Order Payment #' . $this->order->order_serial_no ,
                                 'payment_method_id' => $payment->id ,
@@ -679,13 +680,31 @@
         {
             try {
                 DB::transaction( function () use ($order) {
-                    if ( $order?->orderProducts ) {
-                        $stockIds = $order?->orderProducts->pluck( 'id' );
+                    // Delete related PosPayments
+                    if ( $order->posPayments ) {
+                        foreach ( $order->posPayments as $posPayment ) {
+                            PaymentMethodTransaction::where( 'description' , 'Order Payment #' . $order->order_serial_no )->delete();
+                        }
+                        $order->posPayments()->delete();
+                    }
+
+                    // Delete CreditDepositPurchase records
+                    CreditDepositPurchase::where( 'order_id' , $order->id )->delete();
+
+                    // Delete Stocks (and StockTaxes via cascade or manual)
+                    if ( $order->stocks ) {
+                        $stockIds = $order->stocks->pluck( 'id' );
                         if ( ! blank( $stockIds ) ) {
                             StockTax::whereIn( 'stock_id' , $stockIds )->delete();
                         }
-                        $order?->orderProducts()->delete();
+                        $order->stocks()->delete();
                     }
+
+                    // Delete OrderProducts
+                    if ( $order->orderProducts ) {
+                        $order->orderProducts()->delete();
+                    }
+
                     $order->delete();
                 } );
             } catch ( Exception $exception ) {

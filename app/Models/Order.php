@@ -75,6 +75,7 @@
             return $this->hasMany( OrderProduct::class );
         }
 
+        
         public function stocks() : MorphMany
         {
             return $this->morphMany( Stock::class , 'model' );
@@ -113,5 +114,10 @@
         public function creator() : MorphTo
         {
             return $this->morphTo();
+        }
+
+        public function paymentMethodTransactions() : HasMany
+        {
+            return $this->hasMany( PaymentMethodTransaction::class );
         }
     }

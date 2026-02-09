@@ -698,6 +698,7 @@
 
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
+                Route::delete( '/delete' , [ PosController::class , 'destroy' ] )->middleware( 'register' );
                 Route::post( '/update' , [ PosController::class , 'update' ] );
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
                 Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );

@@ -107,9 +107,9 @@
                     foreach ( $request->ids as $id ) {
                         $expense = Expense::find( $id );
                         if ($expense) {
-                            if ($expense->register) {
-                                $expense->register->delete();
-                            }
+//                            if ($expense->register) {
+//                                $expense->register->delete();
+//                            }
                             $expense->delete();
                         }
                     }
