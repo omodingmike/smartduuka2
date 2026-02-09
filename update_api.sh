@@ -71,15 +71,6 @@ for DIR in "${WRITABLE_DIRS[@]}"; do
   sudo chmod -R 775 "$DIR"
 done
 
-# ----------------------------
-# CLEAR OLD LOGS
-# ----------------------------
-log "🧹 Clearing old log files..."
-# Truncate all .log files in the storage/logs directory
-# We use find/truncate to ensure we don't delete the files themselves
-sudo find "$LARAVEL_PATH/storage/logs" -type f -name "*.log" -exec truncate -s 0 {} +
-log "✨ Logs cleared."
-
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
@@ -94,6 +85,12 @@ $COMPOSE run --rm api bash -c "
 # --------------------------------------------------
 log "🔨 Building and recreating api & nginx containers..."
 $COMPOSE up -d --build --force-recreate --force-recreate api nginx
+
+log "🧹 Truncating log files inside the container..."
+# This finds all .log files in the container's storage path and empties them
+$COMPOSE exec -T api bash -c 'for f in /app/storage/logs/*.log; do [ -e "$f" ] && truncate -s 0 "$f"; done'
+
+log "🗄 Running database migrations..."
 
 # --------------------------------------------------
 # 3. NGINX CONFIG TESTd
