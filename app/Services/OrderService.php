@@ -231,19 +231,21 @@
 
                     $order = Order::create(
                         $request->validated() + [
-                            'paid'           => $request->received ?? 0 ,
-                            'user_id'        => $request->customer_id ,
-                            'original_type'  => PaymentMethodEnum::TAKE_AWAY ,
-                            'due_date'       => now()->addDays( 30 ) ,
-                            'status'         => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
-                            'change'         => $request->change ,
-                            'payment_type'   => $request->paymentType ,
-                            'channel'        => $request->channel ,
-                            'creator_id'     => auth()->id() ,
-                            'creator_type'   => User::class ,
-                            'payment_status' => $paymentStatus->value ,
-                            'order_datetime' => now() ,
-                            'register_id'    => register()->id
+                            'paid'            => $request->received ?? 0 ,
+                            'balance'         => 0 ,
+                            'shipping_charge' => $request->shipping_charge ?? 0 ,
+                            'user_id'         => $request->customer_id ,
+                            'original_type'   => PaymentMethodEnum::TAKE_AWAY ,
+                            'due_date'        => now()->addDays( 30 ) ,
+                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
+                            'change'          => $request->change ,
+                            'payment_type'    => $request->paymentType ,
+                            'channel'         => $request->channel ,
+                            'creator_id'      => auth()->id() ,
+                            'creator_type'    => User::class ,
+                            'payment_status'  => $paymentStatus->value ,
+                            'order_datetime'  => now() ,
+                            'register_id'     => register()->id
                         ]
                     );
 
