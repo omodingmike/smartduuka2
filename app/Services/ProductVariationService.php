@@ -332,7 +332,6 @@
             }
         }
 
-
         private function recursiveDelete($variation) : void
         {
             if ( $variation->sku == NULL && count( $variation->children ) == 0 ) {
