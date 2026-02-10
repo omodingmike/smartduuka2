@@ -5,7 +5,7 @@ ENV CHROME_CRASHPAD_DATABASE_DIR=/tmp/crashpad
 ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
 
 # 1. System Dependencies
-RUN apt-get update && apt-get install -y libicu-dev libuv1-dev pcntl \
+RUN apt-get update && apt-get install -y libicu-dev libuv1-dev  \
     curl nano gnupg ca-certificates supervisor git unzip libpq-dev \
     jpegoptim optipng pngquant gifsicle libavif-bin libmagickwand-dev \
     libzip-dev libx11-xcb1 libxcomposite1 libxshmfence1 libglu1 libnss3 \
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y libicu-dev libuv1-dev pcntl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 2. PHP Extensions
-RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip intl opcache \
+RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip intl opcache pcntl \
     && pecl install redis imagick \
     && docker-php-ext-enable redis imagick opcache
 
