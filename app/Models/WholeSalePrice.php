@@ -3,21 +3,22 @@
     namespace App\Models;
 
     use Illuminate\Database\Eloquent\Model;
-    use Illuminate\Database\Eloquent\Relations\BelongsTo;
+    use Illuminate\Database\Eloquent\Relations\MorphTo;
 
     class WholeSalePrice extends Model
     {
-        public $timestamps = FALSE;
-        protected $table ='whole_sale_prices';
+        public    $timestamps = FALSE;
+        protected $table      = 'whole_sale_prices';
 
         protected $fillable = [
             'minQuantity' ,
             'price' ,
-            'product_id' ,
+            'item_id' ,
+            'item_type' ,
         ];
 
-        public function product() : BelongsTo
+        public function item() : MorphTo
         {
-            return $this->belongsTo( Product::class );
+            return $this->morphTo();
         }
     }

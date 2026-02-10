@@ -9,6 +9,7 @@
     use App\Libraries\AppLibrary;
     use App\Models\Product;
     use App\Models\ProductVariation;
+    use App\Models\WholeSalePrice;
     use Exception;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
@@ -108,7 +109,7 @@
         /**
          * @throws Exception
          */
-        public function initialVariation( Product $product,Request $request )
+        public function initialVariation(Product $product , Request $request)
         {
             try {
                 $variations = $product->variations;
@@ -262,95 +263,68 @@
         public function store(ProductVariationRequest $request , Product $product) : object
         {
             try {
-                DB::transaction( function () use ($request , $product) {
-                    $order           = 1;
-                    $parentId        = NULL;
-                    $collection      = [];
-                    $variations      = json_decode( $request->attribute );
-                    $variationsCount = ( count( $variations ) - 1 );
+                return DB::transaction( function () use ($request , $product) {
+                    $order    = 1;
+                    $parentId = NULL;
+                    $data              = $request->validated();
+                    $retail_pricing    = json_decode( $data[ 'retail_pricing' ] , TRUE );
+                    $wholesale_pricing = json_decode( $data[ 'wholesale_pricing' ] , TRUE );
 
-                    if ( is_array( $variations ) ) {
-                        foreach ( $variations as $key => $variation ) {
-                            $productVariationExistCheck = ProductVariation::where( [
-                                'product_id'                  => $product->id ,
-                                'product_attribute_id'        => $variation->product_attribute_id ,
-                                'product_attribute_option_id' => $variation->product_attribute_option_id ,
-                                'parent_id'                   => $parentId
-                            ] )->orderBy( 'id' , 'desc' )->first();
+                    $productVariationExistCheck = ProductVariation::where( [
+                        'product_id'                  => $data[ 'product_id' ] ,
+                        'product_attribute_id'        => $data[ 'product_attribute_id' ] ,
+                        'product_attribute_option_id' => $data[ 'product_attribute_option_id' ] ,
+                        'parent_id'                   => $parentId
+                    ] )->orderBy( 'id' , 'desc' )->first();
 
-                            $productVariationOrderCheck = ProductVariation::where( [
-                                'product_id'           => $product->id ,
-                                'product_attribute_id' => $variation->product_attribute_id ,
-                            ] )->orderBy( 'id' , 'desc' )->first();
+                    if ( $productVariationExistCheck ) {
+                        throw new \Error( 'Product Variation already Exists' );
+                    }
 
-                            if ( $productVariationOrderCheck ) {
-                                $order = $productVariationOrderCheck->order + 1;
-                            }
+                    $productVariationOrderCheck = ProductVariation::where( [
+                        'product_id'           => $product->id ,
+                        'product_attribute_id' => $data[ 'product_attribute_id' ] ,
+                    ] )->orderBy( 'id' , 'desc' )->first();
 
-                            if ( $productVariationExistCheck ) {
-                                $productVariationExistCheck->update( [ 'price' => $variation->price ] );
-                                if ( $key != $variationsCount ) {
-                                    $productVariationExistCheck->update( [ 'sku' => NULL ] );
-                                }
+                    if ( $productVariationOrderCheck ) {
+                        $order = $productVariationOrderCheck->order + 1;
+                    }
 
-                                $parentId     = $productVariationExistCheck->id;
-                                $collection[] = $productVariationExistCheck;
-                                continue;
-                            }
-                            $productVariationArray = [
-                                'product_id'                  => $product->id ,
-                                'product_attribute_id'        => $variation->product_attribute_id ,
-                                'product_attribute_option_id' => $variation->product_attribute_option_id ,
-                                'price'                       => $variation->price ,
-                                'sku'                         => ( $key == $variationsCount ? $variation->sku : NULL ) ,
-                                'parent_id'                   => $parentId ,
-                                'order'                       => $order
-                            ];
+                    $productVariationArray = [
+                        'product_id'                  => $product->id ,
+                        'product_attribute_id'        => $data[ 'product_attribute_id' ] ,
+                        'product_attribute_option_id' => $data[ 'product_attribute_option_id' ] ,
+                        'price'                       => $retail_pricing[0][ 'sellingPrice' ] ,
+                        'sku'                         => $data[ 'sku' ] ,
+                        'parent_id'                   => $parentId ,
+                        'order'                       => $order
+                    ];
 
-                            $productVariation      = ProductVariation::create( $productVariationArray );
-                            $parentId              = $productVariation->id;
-                            $collection[]          = $productVariation;
+                    $this->productVariation = ProductVariation::create( $productVariationArray );
 
-                            if ( $key == $variationsCount ) {
-//                                $generator = new BarcodeGeneratorPNG();
-//                                $barcode   = NULL;
-//                                $black     = [ 0 , 0 , 0 ];
-//                                if ( $product->barcode_id === BarcodeType::EAN_13 ) {
-//                                    $barcode_value = str_pad( $productVariation->sku , 12 , '0' , STR_PAD_LEFT );
-//                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::EAN_13 );
-//                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 , 3 , 50 , $black );
-//                                }
-//                                if ( $product->barcode_id === BarcodeType::UPC_A ) {
-//                                    $barcode_value = str_pad( $productVariation->sku , 11 , '0' , STR_PAD_LEFT );
-//                                    $barcode_value = validateAndCorrectChecksum( $barcode_value , BarcodeType::UPC_A );
-//                                    $barcode       = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A , 3 , 50 , $black );
-//                                }
-
-//                                if ( $request->user_barcode ) {
-//                                    $barcode_value                  = $request->user_barcode;
-//                                    $productVariation->user_barcode = $barcode_value;
-//                                    $productVariation->save();
-//                                }
-
-//                                if ( $barcode ) {
-//                                    $tempFilePath = storage_path( 'app/public/barcode.png' );
-//                                    file_put_contents( $tempFilePath , $barcode );
-//                                    $productVariation->addMedia( $tempFilePath )->toMediaCollection( 'product-variation-barcode' );
-//                                }
-                            }
-                        }
-
-                        $this->productVariation = collect( $collection );
-
-                        $productData   = Product::find( $product->id );
-                        $checkMinPrice = $product->variations->min( 'price' );
-                        if ( $checkMinPrice ) {
-                            $productData->variation_price = $checkMinPrice;
-                            $productData->save();
+                    if ( $wholesale_pricing ) {
+                        foreach ( $wholesale_pricing as $wholesale_price ) {
+                            WholeSalePrice::create( [
+                                'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
+                                'price'       => $wholesale_price[ 'price' ] ,
+                                'item_id'     => $product->id ,
+                                'item_type'   => ProductVariation::class ,
+                            ] );
                         }
                     }
+                    if ( $retail_pricing ) {
+                        foreach ( $retail_pricing as $retail_price ) {
+                            $product->retailPrices()->create( [
+                                'unit_id'       => $retail_price[ 'unitId' ] ,
+                                'buying_price'  => $retail_price[ 'buyingPrice' ] ,
+                                'selling_price' => $retail_price[ 'sellingPrice' ] ,
+                                'item_id'       => $product->id ,
+                                'item_type'     => ProductVariation::class ,
+                            ] );
+                        }
+                    }
+                    return $this->productVariation;
                 } );
-                return $this->productVariation;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();

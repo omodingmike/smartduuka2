@@ -13,11 +13,13 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'          => rand(),
+                'id'          => rand() ,
                 'minQuantity' => $this->minQuantity ,
                 'price'       => $this->price ,
                 'price_text'  => AppLibrary::currencyAmountFormat( $this->price ) ,
-                'product_id'  => $this->product_id ,
+                'item_id'     => $this->item_id ,
+                'product_id'  => $this->item_id ,
+                'item_type'   => $this->item_type ,
             ];
         }
     }

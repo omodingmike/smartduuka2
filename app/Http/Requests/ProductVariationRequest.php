@@ -16,7 +16,7 @@
          */
         public function authorize() : bool
         {
-            return true;
+            return TRUE;
         }
 
         /**
@@ -27,59 +27,16 @@
         public function rules() : array
         {
             return [
-                'product_variation_id' => [ 'nullable' , 'numeric' ] ,
-                'attribute'            => [ 'required' , 'json' ] ,
-//                'user_barcode'         => [ 'sometimes' , 'string' ]
+                'product_attribute_option_id' => [ 'required' , 'numeric' ] ,
+                'product_attribute_id'        => [ 'required' , 'numeric' ] ,
+                'product_id'                  => [ 'required' , 'numeric' ] ,
+                'name'                        => [ 'required' , 'string' ] ,
+                'sku'                         => [ 'required' , 'string' ] ,
+                'barcode'                     => [ 'required' , 'string' ] ,
+                'trackStock'                  => [ 'sometimes' , 'numeric' ] ,
+                'retail_pricing'              => [ 'required' , 'string' ] ,
+                'wholesale_pricing'           => [ 'sometimes' , 'string' ] ,
+                'image'                       => [ 'sometimes' , 'file' ] ,
             ];
-        }
-
-        public function withValidator($validator) : void
-        {
-            $validator->after(function ($validator) {
-                $status     = false;
-                $message    = '';
-                $variations = json_decode($this->attribute);
-
-
-                if ( is_array($variations) && count($variations) ) {
-                    foreach ( $variations as $variation ) {
-                        if ( $status ) {
-                            break;
-                        }
-
-                        $price           = AppLibrary::amountCheck($variation->price);
-                        $checkProductSku = Product::where([ 'sku' => $variation->sku ])->first();
-                        if ( $this->route('productVariation.id') ) {
-                            $checkVariationSku = ProductVariation::where('sku' , $variation->sku)->where('id' , '!=' , $this->route('productVariation.id'))->first();
-                        } else {
-                            $checkVariationSku = ProductVariation::where('sku' , $variation->sku)->first();
-                        }
-
-                        if ( ! $price->status ) {
-                            $status  = true;
-                            $message = trans('all.message.price_invalid');
-                        } elseif ( ! is_int((int) $variation->product_attribute_id) ) {
-                            $status  = true;
-                            $message = trans('all.message.product_attribute_invalid');
-                        } elseif ( ! is_int((int) $variation->product_attribute_option_id) ) {
-                            $status  = true;
-                            $message = trans('all.message.product_attribute_option_invalid');
-                        } elseif ( blank($variation->sku) ) {
-                            $status  = true;
-                            $message = trans('all.message.variation_sku_required');
-                        } elseif ( $checkVariationSku || $checkProductSku ) {
-                            $status  = true;
-                            $message = trans('all.message.sku_exist');
-                        }
-                    }
-                } else {
-                    $status  = true;
-                    $message = trans('all.message.attribute_invalid');
-                }
-
-                if ( $status ) {
-                    $validator->errors()->add('global' , $message);
-                }
-            });
         }
     }

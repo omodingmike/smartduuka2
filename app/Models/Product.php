@@ -177,9 +177,9 @@
             return $this->belongsToMany( Unit::class , 'product_units' , 'product_id' , 'unit_id' );
         }
 
-        public function wholesalePrices() : HasMany | Product
+        public function wholesalePrices() : MorphMany
         {
-            return $this->hasMany( WholeSalePrice::class );
+            return $this->morphMany( WholeSalePrice::class , 'item' );
         }
 
 //        public function prices() : Builder | HasMany | Product

@@ -64,3 +64,5 @@ Sanctum::actingAs(
 
 demoshop.smartduuka.com
 demoshop-api.smartduuka.com
+
+only name is required.

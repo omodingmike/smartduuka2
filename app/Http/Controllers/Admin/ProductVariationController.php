@@ -52,10 +52,10 @@ class ProductVariationController extends AdminController
         }
     }
 
-    public function store(ProductVariationRequest $request, Product $product): Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+    public function store(ProductVariationRequest $request, Product $product)
     {
         try {
-            return ProductVariationResource::collection($this->productVariationService->store($request, $product));
+            return $this->productVariationService->store($request, $product);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }

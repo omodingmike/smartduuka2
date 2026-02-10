@@ -21,7 +21,7 @@
             return [
                 'name'   => [ 'required' , 'string' , 'max:190' ] ,
                 'phone'  => [
-                    'required' ,
+                    'nullable' ,
                     'string' ,
                     'max:190' ,
                     // Added unique check for phone while ignoring the current user

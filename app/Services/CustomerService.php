@@ -71,7 +71,8 @@
                 DB::transaction( function () use ($request) {
                     $status     = $request->status;
                     $this->user = User::create( [
-                        'username'          => $request->phone ,
+                        'username'          => $request->phone ?? $request->name ,
+                        'commission'        => 0 ,
                         'name'              => $request->name ,
                         'type'              => $request->type ,
                         'phone'             => $this->username( $request->phone ) ,
