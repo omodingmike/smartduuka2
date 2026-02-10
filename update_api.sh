@@ -88,7 +88,7 @@ $COMPOSE up -d --build --force-recreate --force-recreate api nginx
 
 log "🧹 Truncating log files inside the container..."
 # This finds all .log files in the container's storage path and empties them
-$COMPOSE exec -T api bash -c 'for f in /app/storage/logs/*.log; do [ -e "$f" ] && truncate -s 0 "$f"; done'
+#$COMPOSE exec -T api bash -c 'for f in /app/storage/logs/*.log; do [ -e "$f" ] && truncate -s 0 "$f"; done'
 
 log "🗄 Running database migrations..."
 
