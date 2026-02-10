@@ -72,7 +72,7 @@
                     function (Events\DatabaseSeeded $event) {
                         $tenant = $event->tenant;
                         $tenant->update( [ 'ready' => TRUE ] );
-                        broadcast( new TenantCreatedEvent( $tenant , Auth::user() ) );
+//                        broadcast( new TenantCreatedEvent( $tenant , Auth::user() ) );
                     }
                 ] ,
                 Events\DatabaseRolledBack::class  => [] ,

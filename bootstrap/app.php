@@ -32,17 +32,17 @@
                           $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
-                          $exceptions->reportable( function (Throwable $e) {
-                              if (
-                                  app()->isProduction() &&
-                                  ! in_array( get_class( $e ) , [
-                                      ValidationException::class ,
-                                      AuthenticationException::class ,
-                                  ] )
-                              ) {
-                                  SendExceptionJob::dispatchException( $e );
-                              }
-                          } );
+//                          $exceptions->reportable( function (Throwable $e) {
+//                              if (
+//                                  app()->isProduction() &&
+//                                  ! in_array( get_class( $e ) , [
+//                                      ValidationException::class ,
+//                                      AuthenticationException::class ,
+//                                  ] )
+//                              ) {
+//                                  SendExceptionJob::dispatchException( $e );
+//                              }
+//                          } );
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
