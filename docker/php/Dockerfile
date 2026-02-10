@@ -5,7 +5,7 @@ ENV CHROME_CRASHPAD_DATABASE_DIR=/tmp/crashpad
 ENV PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
 
 # 1. System Dependencies
-RUN apt-get update && apt-get install -y libicu-dev libuv1-dev \
+RUN apt-get update && apt-get install -y libicu-dev libuv1-dev pcntl \
     curl nano gnupg ca-certificates supervisor git unzip libpq-dev \
     jpegoptim optipng pngquant gifsicle libavif-bin libmagickwand-dev \
     libzip-dev libx11-xcb1 libxcomposite1 libxshmfence1 libglu1 libnss3 \
