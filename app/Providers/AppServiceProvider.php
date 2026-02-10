@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider

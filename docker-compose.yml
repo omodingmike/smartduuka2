@@ -8,6 +8,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8080:8080"
     volumes:
       - .:/app:ro
       - /home/deploy/ssl/smartduuka:/etc/nginx/ssl:ro

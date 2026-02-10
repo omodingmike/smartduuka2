@@ -2,6 +2,7 @@
 
     use App\Enums\OrderType;
     use App\Enums\StockStatus;
+    use App\Events\TestEvent;
     use App\Http\Controllers\WhatsAppController;
     use App\Libraries\AppLibrary;
     use App\Models\Business;
@@ -21,6 +22,11 @@
 
     // Schedule tenant backups
     Schedule::command( 'tenants:backup' )->hourly();
+
+    // Schedule Reverb Test Event
+    Schedule::call(function () {
+        TestEvent::dispatch('Scheduled event at ' . now()->toDateTimeString());
+    })->everyMinute();
 
     Schedule::call( function () use ($now) {
         Expense::where( [

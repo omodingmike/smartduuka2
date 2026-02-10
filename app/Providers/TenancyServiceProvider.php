@@ -4,7 +4,9 @@
 
     namespace App\Providers;
 
+    use App\Events\TenantCreatedEvent;
     use Illuminate\Contracts\Http\Kernel;
+    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\ServiceProvider;
@@ -66,7 +68,13 @@
                 // Database events
                 Events\DatabaseCreated::class     => [] ,
                 Events\DatabaseMigrated::class    => [] ,
-                Events\DatabaseSeeded::class      => [] ,
+                Events\DatabaseSeeded::class      => [
+                    function (Events\DatabaseSeeded $event) {
+                        $tenant = $event->tenant;
+                        $tenant->update( [ 'ready' => TRUE ] );
+                        broadcast( new TenantCreatedEvent( $tenant , Auth::user() ) );
+                    }
+                ] ,
                 Events\DatabaseRolledBack::class  => [] ,
                 Events\DatabaseDeleted::class     => [] ,
 
@@ -119,32 +127,34 @@
             InitializeTenancyByDomain::$onFail = function () {
                 return redirect( config( 'app.url' ) );
             };
-            TenantConfig::$storageToConfigMap = [
+            TenantConfig::$storageToConfigMap  = [
                 // From app.php
-                'APP_NAME'               => 'app.name',
-                'PROJECT_ID'             => 'app.project_id',
-                'BUSINESS_ID'            => 'app.business_id',
-                'TIMEZONE'               => 'app.timezone',
+                'APP_NAME'                   => 'app.name' ,
+                'PROJECT_ID'                 => 'app.project_id' ,
+                'BUSINESS_ID'                => 'app.business_id' ,
+                'TIMEZONE'                   => 'app.timezone' ,
 
                 // From at.php
-                'AT_USERNAME'            => 'at.username',
-                'AT_API_KEY'             => 'at.api_key',
+                'AT_USERNAME'                => 'at.username' ,
+                'AT_API_KEY'                 => 'at.api_key' ,
 
                 // From system.php
-                'DATE_FORMAT'            => 'system.date_format',
-                'TIME_FORMAT'            => 'system.time_format',
-                'CURRENCY'               => 'system.currency',
-                'CURRENCY_POSITION'      => 'system.currency_position',
-                'CURRENCY_SYMBOL'        => 'system.currency_symbol',
-                'CURRENCY_DECIMAL_POINT' => 'system.currency_decimal_point',
+                'DATE_FORMAT'                => 'system.date_format' ,
+                'TIME_FORMAT'                => 'system.time_format' ,
+                'CURRENCY'                   => 'system.currency' ,
+                'CURRENCY_POSITION'          => 'system.currency_position' ,
+                'CURRENCY_SYMBOL'            => 'system.currency_symbol' ,
+                'CURRENCY_DECIMAL_POINT'     => 'system.currency_decimal_point' ,
 
                 // Standard Mail Overrides (Laravel default config)
-                'MAIL_HOST'              => 'mail.mailers.smtp.host',
-                'MAIL_PORT'              => 'mail.mailers.smtp.port',
-                'MAIL_USERNAME'          => 'mail.mailers.smtp.username',
-                'MAIL_PASSWORD'          => 'mail.mailers.smtp.password',
-                'MAIL_ENCRYPTION'        => 'mail.mailers.smtp.encryption',
-                'MAIL_FROM_ADDRESS'      => 'mail.from.address',
+                'MAIL_HOST'                  => 'mail.mailers.smtp.host' ,
+                'MAIL_PORT'                  => 'mail.mailers.smtp.port' ,
+                'MAIL_USERNAME'              => 'mail.mailers.smtp.username' ,
+                'MAIL_PASSWORD'              => 'mail.mailers.smtp.password' ,
+                'MAIL_ENCRYPTION'            => 'mail.mailers.smtp.encryption' ,
+                'MAIL_FROM_ADDRESS'          => 'mail.from.address' ,
+                'TELEGRAM_EXCEPTION_TOKEN'   => 'telegram.token' ,
+                'TELEGRAM_EXCEPTION_CHAT_ID' => 'telegram.chat_id' ,
             ];
         }
 

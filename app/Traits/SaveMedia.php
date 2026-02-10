@@ -5,7 +5,6 @@
     use App\Enums\MediaEnum;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Artisan;
     use Illuminate\Support\Str;
 
 
@@ -18,10 +17,10 @@
                                ->usingFileName( Str::random( 20 ) . '.' . $request->file( MediaEnum::MEDIA_FILE )->getClientOriginalExtension() )
 //                               ->withResponsiveImages()
                                ->toMediaCollection( $collection );
-                Artisan::call( 'media-library:regenerate' , [
-                    '--ids'   => [ $media->id ] ,
-                    '--force' => TRUE ,
-                ] );
+//                Artisan::call( 'media-library:regenerate' , [
+//                    '--ids'   => [ $media->id ] ,
+//                    '--force' => TRUE ,
+//                ] );
             }
         }
     }
