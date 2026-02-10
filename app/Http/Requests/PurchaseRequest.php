@@ -16,11 +16,12 @@
             return [
 //                'supplier_id' => [ 'required' , 'numeric' ] ,
 //                'date'        => [ 'required' , 'string' ] ,
-                'refNo'       => [ 'sometimes' , 'string' ] ,
-                'shipping'    => [ 'sometimes' , 'numeric:' ] ,
-                'notes'       => [ 'sometimes' , 'string:' ] ,
+                'refNo'    => [ 'sometimes' , 'string' ] ,
+                'shipping' => [ 'sometimes' , 'numeric:' ] ,
+                'notes'    => [ 'sometimes' , 'string:' ] ,
 //                'status'      => [ 'required' , 'numeric' ] ,
-                'items'       => [ 'required' , 'string' ] ,
+                'items'    => [ 'sometimes' , 'string' ] ,
+                'products' => [ 'sometimes' , 'string' ] ,
             ];
         }
     }

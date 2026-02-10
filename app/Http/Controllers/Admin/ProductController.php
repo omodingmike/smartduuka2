@@ -72,7 +72,8 @@
             try {
                 return new ProductAdminResource( $this->productService->store( $request ) );
             } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                info($exception->getMessage());
+                return response( [ 'status' => FALSE , 'message' => 'Internal Server Error!' ] , 500 );
             }
         }
 

@@ -204,7 +204,8 @@
                             WholeSalePrice::create( [
                                 'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
                                 'price'       => $wholesale_price[ 'price' ] ,
-                                'product_id'  => $product->id ,
+                                'item_id'     => $product->id ,
+                                'item_type'   => Product::class ,
                             ] );
                         }
                     }
@@ -214,6 +215,8 @@
                                 'unit_id'       => $retail_price[ 'unitId' ] ,
                                 'buying_price'  => $retail_price[ 'buyingPrice' ] ,
                                 'selling_price' => $retail_price[ 'sellingPrice' ] ,
+                                'item_id'       => $product->id ,
+                                'item_type'     => Product::class ,
                             ] );
                         }
                     }
