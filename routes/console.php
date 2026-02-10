@@ -15,8 +15,13 @@
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
     use Illuminate\Support\Arr;
+    use Illuminate\Support\Facades\Schedule;
 
     $now = now( config( 'app.timezone' ) );
+
+    // Schedule tenant backups
+    Schedule::command( 'tenants:backup' )->hourly();
+
     Schedule::call( function () use ($now) {
         Expense::where( [
             'isRecurring' => 1 ,
