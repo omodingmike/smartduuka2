@@ -161,7 +161,7 @@
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_by' ) ?? 'desc';
 
-                return Order::where( 'order_type' , "!=" , OrderType::POS )->where( function ($query) use ($requests) {
+                return Order::where( function ($query) use ($requests) {
                     $query->where( 'user_id' , auth()->user()->id );
                     foreach ( $requests as $key => $request ) {
                         if ( in_array( $key , $this->orderFilter ) ) {
@@ -293,6 +293,7 @@
                     if ( ! blank( $products ) ) {
                         foreach ( $products as $product ) {
                             $p = Product::find( $product[ 'item_id' ] );
+                            info($p->stock);
                             if ( $p->stock < $product[ 'quantity' ] ) {
                                 throw  new Exception( "{$p->name} stock not enough" );
                             }

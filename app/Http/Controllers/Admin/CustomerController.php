@@ -31,17 +31,17 @@
             parent::__construct();
             $this->customerService = $customerService;
             $this->orderService    = $orderService;
-            $this->middleware( [ 'permission:customers' ] )->only(
-                'index' ,
-                'export' ,
-                'changePassword' ,
-                'changeImage' ,
-                'myOrder'
-            );
-            $this->middleware( [ 'permission:customers_create' ] )->only( 'store' );
-            $this->middleware( [ 'permission:customers_edit' ] )->only( 'update' );
-            $this->middleware( [ 'permission:customers_delete' ] )->only( 'destroy' );
-            $this->middleware( [ 'permission:customers_show' ] )->only( 'show' );
+//            $this->middleware( [ 'permission:customers' ] )->only(
+//                'index' ,
+//                'export' ,
+//                'changePassword' ,
+//                'changeImage' ,
+//                'myOrder'
+//            );
+//            $this->middleware( [ 'permission:customers_create' ] )->only( 'store' );
+//            $this->middleware( [ 'permission:customers_edit' ] )->only( 'update' );
+//            $this->middleware( [ 'permission:customers_delete' ] )->only( 'destroy' );
+//            $this->middleware( [ 'permission:customers_show' ] )->only( 'show' );
         }
 
         public function index(PaginateRequest $request
@@ -50,9 +50,7 @@
             try {
                 return CustomerResource::collection( $this->customerService->list( $request ) );
             } catch ( Exception $exception ) {
-
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-
             }
         }
 

@@ -8,16 +8,21 @@
 
     class CreateTenant extends Command
     {
-        protected $signature = 'app:create-tenant';
+        protected $signature = 'app:create-tenant {id}';
 
-        protected $description = 'Command description';
+        protected $description = 'Create a new tenant with the given ID. Domain will be {id}.smartduuka2.test';
 
         public function handle() : void
         {
-            $tenant1 = Tenant::create( [ 'id' => 'app' ] );
-            $tenant1->domains()->create( [ 'domain' => 'app.smartduuka2.test' ] );
+            $id          = $this->argument( 'id' );
+            $root_domain = config( 'session.domain' );
+            $domain      = "$id-api$root_domain";
 
-//            $tenant2 = Tenant::create( [ 'id' => 'zakayo' ] );
-//            $tenant2->domains()->create( [ 'domain' => 'zakayo-api.smartduuka.com' ] );
+            $this->info( "Creating tenant {$id} with domain {$domain}..." );
+
+            $tenant = Tenant::create( [ 'id' => $id ] );
+            $tenant->domains()->create( [ 'domain' => $domain ] );
+
+            $this->info( "Tenant {$id} created successfully." );
         }
     }

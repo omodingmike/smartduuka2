@@ -71,7 +71,7 @@
 
                 $products_query = Product::with(
                     [
-                        'media' , 'category' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+                        'media' , 'category' ,'variations', 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
                     ] );
                 return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
 
@@ -286,7 +286,8 @@
                             WholeSalePrice::create( [
                                 'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
                                 'price'       => $wholesale_price[ 'price' ] ,
-                                'product_id'  => $product->id ,
+                                'item_id'       => $product->id ,
+                                'item_type'     => Product::class ,
                             ] );
                         }
                     }
@@ -299,6 +300,8 @@
                                 'unit_id'       => $retail_price[ 'unitId' ] ,
                                 'buying_price'  => $retail_price[ 'buyingPrice' ] ,
                                 'selling_price' => $retail_price[ 'sellingPrice' ] ,
+                                'item_id'       => $product->id ,
+                                'item_type'     => Product::class ,
                             ] );
                         }
                     }
