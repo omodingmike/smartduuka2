@@ -249,7 +249,7 @@
                             'register_id'     => register()->id
                         ]
                     );
-                    activity()->log( 'Created order: ' . $order->order_serial_no );
+
 
                     $this->order = $order;
                     if ( $delivery_address ) {
@@ -260,7 +260,7 @@
                     }
                     $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
                     $this->order->save();
-
+                    activity()->log( 'Created order: ' . $order->order_serial_no );
                     $payments = json_decode( $request->payments , TRUE );
 
                     foreach ( $payments as $p ) {

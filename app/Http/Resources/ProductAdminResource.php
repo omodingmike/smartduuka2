@@ -35,6 +35,7 @@
                 "barcode_id"                 => $this->barcode_id ,
                 "product_brand_id"           => $this->product_brand_id ,
                 "unit_id"                    => $this->unit_id ,
+                "single_tree"                => $this->single_tree ,
                 "variations"                 => ProductVariationResource::collection( $this->variations ) ,
                 "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
                 "retailPrices"               => RetailPriceResource::collection( $this->retailPrices ) ,

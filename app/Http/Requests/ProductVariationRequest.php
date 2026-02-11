@@ -30,7 +30,7 @@
                 'product_attribute_option_id' => [ 'required' , 'numeric' ] ,
                 'product_attribute_id'        => [ 'required' , 'numeric' ] ,
                 'product_id'                  => [ 'required' , 'numeric' ] ,
-                'name'                        => [ 'required' , 'string' ] ,
+//                'name'                        => [ 'required' , 'string' ] ,
                 'sku'                         => [ 'required' , 'string' ] ,
                 'barcode'                     => [ 'required' , 'string' ] ,
                 'trackStock'                  => [ 'sometimes' , 'numeric' ] ,

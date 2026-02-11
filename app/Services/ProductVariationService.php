@@ -9,7 +9,6 @@
     use App\Libraries\AppLibrary;
     use App\Models\Product;
     use App\Models\ProductVariation;
-    use App\Models\WholeSalePrice;
     use Exception;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
@@ -90,7 +89,6 @@
                     $productVariation->options = $this->nested( ProductVariation::find( $productVariation->id )->ancestorsAndSelf->load( 'productAttribute' , 'productAttributeOption' )->reverse() );
                 }
             }
-
             return $productVariations;
         }
 
@@ -264,8 +262,8 @@
         {
             try {
                 return DB::transaction( function () use ($request , $product) {
-                    $order    = 1;
-                    $parentId = NULL;
+                    $order             = 1;
+                    $parentId          = NULL;
                     $data              = $request->validated();
                     $retail_pricing    = json_decode( $data[ 'retail_pricing' ] , TRUE );
                     $wholesale_pricing = json_decode( $data[ 'wholesale_pricing' ] , TRUE );
@@ -278,7 +276,7 @@
                     ] )->orderBy( 'id' , 'desc' )->first();
 
                     if ( $productVariationExistCheck ) {
-                        throw new \Error( 'Product Variation already Exists' );
+                        throw new Exception( 'Variation already Exists' );
                     }
 
                     $productVariationOrderCheck = ProductVariation::where( [
@@ -294,7 +292,7 @@
                         'product_id'                  => $product->id ,
                         'product_attribute_id'        => $data[ 'product_attribute_id' ] ,
                         'product_attribute_option_id' => $data[ 'product_attribute_option_id' ] ,
-                        'price'                       => $retail_pricing[0][ 'sellingPrice' ] ,
+                        'price'                       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                         'sku'                         => $data[ 'sku' ] ,
                         'parent_id'                   => $parentId ,
                         'order'                       => $order
@@ -304,26 +302,22 @@
 
                     if ( $wholesale_pricing ) {
                         foreach ( $wholesale_pricing as $wholesale_price ) {
-                            WholeSalePrice::create( [
+                            $this->productVariation->wholesalePrices()->create( [
                                 'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
                                 'price'       => $wholesale_price[ 'price' ] ,
-                                'item_id'     => $product->id ,
-                                'item_type'   => ProductVariation::class ,
                             ] );
                         }
                     }
                     if ( $retail_pricing ) {
                         foreach ( $retail_pricing as $retail_price ) {
-                            $product->retailPrices()->create( [
+                            $this->productVariation->retailPrices()->create( [
                                 'unit_id'       => $retail_price[ 'unitId' ] ,
                                 'buying_price'  => $retail_price[ 'buyingPrice' ] ,
                                 'selling_price' => $retail_price[ 'sellingPrice' ] ,
-                                'item_id'       => $product->id ,
-                                'item_type'     => ProductVariation::class ,
                             ] );
                         }
                     }
-                    return $this->productVariation;
+                    return $this->productVariation->load( [ 'wholesalePrices' , 'retailPrices' ] );
                 } );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
@@ -498,6 +492,8 @@
                 DB::transaction( function () use ($product , $productVariation) {
                     if ( $productVariation->product_id == $product->id && $productVariation->sku != NULL ) {
 
+                        $productVariation->wholesalePrices()->delete();
+                        $productVariation->retailPrices()->delete();
                         $productVariation->delete();
                         $this->parentDelete( $productVariation->parent_id );
 

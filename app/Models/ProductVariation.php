@@ -40,6 +40,16 @@
             return $this->belongsTo( Product::class );
         }
 
+        public function wholesalePrices() : MorphMany
+        {
+            return $this->morphMany( WholeSalePrice::class , 'item' );
+        }
+
+        public function retailPrices() : MorphMany
+        {
+            return $this->morphMany( RetailPrice::class , 'item' );
+        }
+
         public function getStockAttribute() : float
         {
             return (float) $this->stocks()

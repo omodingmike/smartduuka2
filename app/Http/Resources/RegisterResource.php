@@ -29,7 +29,7 @@
                 $totalCost     = $totalQuantity * ( $firstItem->buying_price ?? 0 );
 
                 return [
-                    'item_id'              => $firstItem->id ,
+                    'item_id'              => $firstItem?->id ,
                     'name'                 => $firstItem->name ,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,

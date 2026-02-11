@@ -71,7 +71,7 @@
 
                 $products_query = Product::with(
                     [
-                        'media' , 'category' ,'variations', 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+                        'media' , 'category' , 'variations.wholesalePrices' , 'variations.retailPrices' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
                     ] );
                 return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
 
@@ -286,8 +286,8 @@
                             WholeSalePrice::create( [
                                 'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
                                 'price'       => $wholesale_price[ 'price' ] ,
-                                'item_id'       => $product->id ,
-                                'item_type'     => Product::class ,
+                                'item_id'     => $product->id ,
+                                'item_type'   => Product::class ,
                             ] );
                         }
                     }
@@ -421,13 +421,42 @@
         {
             try {
                 DB::transaction( function () use ($product) {
-                    if ( $product->productTaxes ) {
-                        $product->productTaxes()->delete();
+                    // 1. Delete Product-level Pricing and Taxes
+                    $product->wholesalePrices()->delete();
+                    $product->retailPrices()->delete();
+                    $product->productTaxes()->delete();
+                    $product->commissionTargets()->delete();
+
+                    // 2. Delete POS and Inventory Records
+                    // This cleans up records from OrderService::posOrderStore
+                    $product->orderProducts()->delete();
+                    $product->stocks()->delete();
+
+                    // 3. Delete Metadata and Reviews
+                    $product->tags()->delete();
+                    $product->reviews()->delete();
+
+                    // 4. Handle Variations and their specific related data
+                    // Each variation has its own polymorphic prices and stocks
+                    foreach ( $product->variations as $variation ) {
+                        $variation->wholesalePrices()->delete();
+                        $variation->retailPrices()->delete();
+                        $variation->stocks()->delete();
+                        $variation->orderProducts()->delete();
+                        $variation->delete();
                     }
+
+                    // 5. Clean up many-to-many pivots
+                    $product->rawMaterials()->detach();
+
+                    // 6. Finally, delete the product
+                    // Note: Since the model uses SoftDeletes, this sets deleted_at.
+                    // Use forceDelete() if you want to permanently remove it.
+                    activityLog( "Deleted Product {$product->name}" );
                     $product->delete();
                 } );
             } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
+                Log::error( 'Failed to destroy product: ' . $exception->getMessage() );
                 DB::rollBack();
                 throw new Exception( $exception->getMessage() , 422 );
             }

@@ -4,17 +4,12 @@
 
 
     use App\Libraries\AppLibrary;
+    use App\Models\ProductVariation;
     use Illuminate\Http\Resources\Json\JsonResource;
 
     class ProductVariationResource extends JsonResource
     {
-        /**
-         * Transform the resource into an array.
-         *
-         * @param \Illuminate\Http\Request $request
-         *
-         * @return array
-         */
+        /** @mixin ProductVariation */
         public function toArray($request) : array
         {
             return [
@@ -27,6 +22,8 @@
                 'sku'                           => $this->sku ,
                 'parent_id'                     => $this->parent_id ,
                 'order'                         => $this->order ,
+                'wholesalePrices'               => WholeSalePriceResource::collection( $this->whenLoaded( 'wholesalePrices' ) ) ,
+                'retailPrices'                  => RetailPriceResource::collection( $this->whenLoaded( 'retailPrices' ) ) ,
                 'stock'                         => $this->stock ,
                 'unit'                          => new UnitResource( $this->product->unit ) ,
                 'product'                       => $this->product->name ,

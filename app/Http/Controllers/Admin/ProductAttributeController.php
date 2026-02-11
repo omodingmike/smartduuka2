@@ -11,6 +11,7 @@
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Http\Request;
+    use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
 
     class ProductAttributeController extends AdminController
@@ -25,7 +26,7 @@
             $this->middleware( [ 'permission:settings' ] )->only( 'show' , 'store' , 'update' , 'destroy' );
         }
 
-        public function index(PaginateRequest $request) : Response | \Illuminate\Http\Resources\Json\AnonymousResourceCollection | Application | ResponseFactory
+        public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
                 return ProductAttributeResource::collection( $this->productAttributeService->list( $request ) );

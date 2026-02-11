@@ -5,6 +5,7 @@
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Libraries\AppLibrary;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,7 +25,7 @@
 
         protected       $table   = 'products';
         protected       $guarded = [];
-        protected       $appends = [ 'stock' ];
+        protected       $appends = [ 'stock' , 'single_tree' ];
         protected array $dates   = [ 'deleted_at' ];
         protected       $casts   = [
             'id'                         => 'integer' ,
@@ -182,14 +183,15 @@
             return $this->morphMany( WholeSalePrice::class , 'item' );
         }
 
+        public function retailPrices() : MorphMany
+        {
+            return $this->morphMany( RetailPrice::class , 'item' );
+        }
+
 //        public function prices() : Builder | HasMany | Product
 //        {
 //            return $this->hasMany( RetailPrice::class , 'product_id' , 'id' );
 //        }
-        public function retailPrices(): MorphMany
-        {
-            return $this->morphMany(RetailPrice::class, 'item');
-        }
 
         public function commissionTargets() : Builder | HasMany | Product
         {
@@ -210,6 +212,87 @@
         public function orderCountable() : HasMany
         {
             return $this->hasMany( Stock::class , 'product_id' , 'id' );
+        }
+
+        public function getSingleTreeAttribute1()
+        {
+            // Retrieve variations with media where SKU is not null
+            $productVariations = ProductVariation::with( 'media' )
+                                                 ->where( 'product_id' , $this->id )
+                                                 ->whereNotNull( 'sku' )
+                                                 ->orderBy( 'parent_id' , 'asc' )
+                                                 ->get();
+
+            if ( $productVariations->isNotEmpty() ) {
+                foreach ( $productVariations as $productVariation ) {
+                    // Re-use the nesting logic to map attributes and options
+                    $productVariation->options = $this->generateNestedOptions( $productVariation );
+                }
+            }
+            return $productVariations;
+        }
+
+        private function generateNestedOptions($variation) : array
+        {
+            $options = [];
+            // Load ancestors and self using the Adjacency List relationship
+            $ancestors = $variation->ancestorsAndSelf()
+                                   ->with( [ 'productAttribute' , 'productAttributeOption' ] )
+                                   ->get()
+                                   ->reverse();
+
+            foreach ( $ancestors as $node ) {
+                if ( $node->productAttribute && $node->productAttributeOption ) {
+//                    $options[ $node->productAttribute->name ] = $node->productAttributeOption->name;
+                    $options[ 'name' ]   = $node->productAttribute->name;
+                    $options[ 'option' ] = $node->productAttributeOption->name;
+                }
+            }
+
+            return $options;
+        }
+
+        public function getSingleTreeAttribute()
+        {
+            // Original fetching logic: with media, where sku is not null, ordered by parent_id
+            $productVariations = ProductVariation::with( 'media' )
+                                                 ->where( 'product_id' , $this->id )
+                                                 ->whereNotNull( 'sku' )
+                                                 ->orderBy( 'parent_id' , 'asc' )
+                                                 ->get();
+
+            if ( $productVariations->isEmpty() ) {
+                return collect( [] ); //
+            }
+
+            // Combine similar attributes while preserving all non-common data
+            return $productVariations->groupBy( 'product_attribute_id' )->map( function ($group , $attributeId) {
+                $first = $group->first();
+
+                return [
+                    'product_attribute_id' => (int) $attributeId ,                           //
+                    'attribute_name'       => $first->productAttribute?->name ?? 'Unknown' , //
+                    'options'              => $group->map( function ($variation) {
+                        // All non-common variation data is preserved here
+                        return [
+                            'id'             => $variation->id ,
+                            'product_id'     => $variation->product_id ,
+                            'sku'            => $variation->sku ,
+                            'price'          => AppLibrary::flatAmountFormat( ( $variation->price ) ) ,
+                            'price_currency' => currency( ( $variation->price ) ) ,
+                            'parent_id'      => $variation->parent_id ,
+                            'order'          => $variation->order ,
+                            'user_barcode'   => $variation->user_barcode ,
+                            'stock'          => (float) $variation->stock ,
+                            'media'          => $variation->media ,
+                            'options'        => [
+                                'name'   => $variation->productAttribute?->name ,
+                                'option' => $variation->productAttributeOption?->name ,
+                            ] ,
+                        ];
+                    } )->values()
+                ];
+            } )->values();
         }
 
         public function tags() : HasMany

@@ -62,7 +62,7 @@
                         // Summarizing items for the table row
                         'items_count'     => $order->orderProducts->sum( 'quantity' ) ,
                         'items_summary'   => $order->orderProducts->map( function ($op) {
-                            return $op->item->name . ' (x' . $op->quantity . ')';
+                            return $op?->item?->name . ' (x' . $op->quantity . ')';
                         } )->implode( ', ' ) ,
                     ];
                 } ) ,
