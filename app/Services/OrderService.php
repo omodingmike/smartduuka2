@@ -29,6 +29,7 @@
     use App\Models\StockTax;
     use App\Models\Unit;
     use App\Models\User;
+    use Error;
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -291,6 +292,10 @@
 
                     if ( ! blank( $products ) ) {
                         foreach ( $products as $product ) {
+                            $p = Product::find( $product[ 'item_id' ] );
+                            if ( $p->stock < $product[ 'quantity' ] ) {
+                                throw  new Exception( "{$p->name} stock not enough" );
+                            }
                             OrderProduct::create( [
                                 'order_id'        => $this->order->id ,
                                 'item_id'         => $product[ 'item_id' ] ,
