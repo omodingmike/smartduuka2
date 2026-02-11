@@ -25,7 +25,8 @@
 
     // Schedule Reverb Test Event
     Schedule::call(function () {
-        TestEvent::dispatch('Scheduled event at ' . now()->toDateTimeString());
+        $tenantId = tenant('id') ?? 'central';
+        TestEvent::dispatch("Scheduled event for tenant [{$tenantId}] at " . now()->toDateTimeString());
     })->everyMinute();
 
     Schedule::call( function () use ($now) {

@@ -75,7 +75,6 @@
                         'commission'        => 0 ,
                         'name'              => $request->name ,
                         'type'              => $request->type ,
-                        'phone'             => $this->username( $request->phone ) ,
                         'password'          => bcrypt( 'password' ) ,
                         'email_verified_at' => now() ,
                         'status'            => $status ? $request->status : Status::ACTIVE ,
@@ -83,6 +82,9 @@
                     ] );
                     if ( $request->phone2 ) {
                         $this->user->phone2 = $request->phone2;
+                    }
+                    if ( $request->phone ) {
+                        $this->user->phone = $request->phone;
                     }
                     if ( $request->notes ) {
                         $this->user->notes = $request->notes;

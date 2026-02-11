@@ -23,7 +23,7 @@
 
             return [
                 "id"            => $this->id ,
-                "name"          => $this->name ,
+                "name"          => ucwords($this->name) ,
                 "username"      => $this->username ,
                 "email"         => $this->email ,
                 "type"          => $this->type ,
