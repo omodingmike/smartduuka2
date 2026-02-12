@@ -17,10 +17,14 @@
         public function toArray($request) : array
         {
             $product                 = Product::find( $this->id );
-            $base_units_per_top_unit = $product->base_units_per_top_unit;
-            $units_per_mid_unit      = $product->units_per_mid_unit;
-            $price                   = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
-            $stock                   = max( 0 , $this->stock_items_sum_quantity );
+            $base_units_per_top_unit = $product?->base_units_per_top_unit;
+            $units_per_mid_unit      = $product?->units_per_mid_unit;
+
+            // Fix: Check if variations is null before counting
+            $variationsCount = $this->variations ? count( $this->variations ) : 0;
+            $price           = $variationsCount > 0 ? $this->variation_price : $this->selling_price;
+
+            $stock = max( 0 , $this->stock_items_sum_quantity );
 
             // Safely check if offer is active
             $offerActive = $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date );
@@ -47,8 +51,8 @@
                 'image'                      => $this->cover ,
                 'images'                     => $this->previews ,
                 'units_nature'               => $this->units_nature ,
-                'taxes'                      => SimpleTaxResource::collection( $this->taxes ) ,
-                'reviews'                    => ProductReviewResource::collection( $this->reviews ) ,
+//                'taxes'                      => SimpleTaxResource::collection( $this->taxes ) ,
+//                'reviews'                    => ProductReviewResource::collection( $this->reviews ) ,
                 'details'                    => $this->description ,
                 'shipping_and_return'        => $this->shipping_and_return ,
                 'category_slug'              => $this->category?->slug ,
@@ -68,7 +72,7 @@
                 'top_unit_wholesale_price'   => (float) $this->top_unit_wholesale_price ,
                 'retail_price_per_base_unit' => (float) $this->retail_price_per_base_unit ,
                 'unit_id'                    => $this->unit_id ,
-                'selling_units'              => UnitResource::collection( $this->sellingUnits ) ,
+                'selling_units'              => UnitResource::collection( $this->sellingUnits ?? [] ) ,
                 'stock'                      => (int) $stock ?? 0 ,
                 'top_stock'                  => $base_units_per_top_unit ? intdiv( $stock , $base_units_per_top_unit ) : $stock ,
                 'mid_stock'                  => $units_per_mid_unit ? intdiv( $stock , $units_per_mid_unit ) : NULL ,
@@ -86,6 +90,10 @@
                     'shipping_cost'                => $this->shipping_cost ,
                     'is_product_quantity_multiply' => $this->is_product_quantity_multiply ,
                 ] ,
+                "variations"                 => $this->variations ? ProductVariationResource::collection( $this->variations ) : [] ,
+                "wholesalePrices"            => $this->wholesalePrices ? WholeSalePriceResource::collection( $this->wholesalePrices ) : [] ,
+                "retailPrices"               => $this->retailPrices ? RetailPriceResource::collection( $this->retailPrices ) : [] ,
+                "single_tree"                => $this->single_tree ,
             ];
 
         }

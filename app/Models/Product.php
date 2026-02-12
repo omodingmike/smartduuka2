@@ -5,6 +5,8 @@
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Http\Resources\RetailPriceResource;
+    use App\Http\Resources\WholeSalePriceResource;
     use App\Libraries\AppLibrary;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
@@ -285,6 +287,8 @@
                             'user_barcode'   => $variation->user_barcode ,
                             'stock'          => (float) $variation->stock ,
                             'media'          => $variation->media ,
+                            'wholesalePrices'=> WholeSalePriceResource::collection( $variation->wholesalePrices ),
+                            'retailPrices'   => RetailPriceResource::collection( $variation->retailPrices ),
                             'options'        => [
                                 'name'   => $variation->productAttribute?->name ,
                                 'option' => $variation->productAttributeOption?->name ,

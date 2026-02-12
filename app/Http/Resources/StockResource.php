@@ -35,6 +35,7 @@
                 'products'        => ProductAdminResource::collection( $this[ 'products' ] ) ,
                 'product_name'    => $this[ 'product_name' ] ,
                 'variation_names' => $this[ 'variation_names' ] ,
+                'variation_id'    => $this[ 'variation_id' ] ?? null ,
                 'status'          => $this[ 'status' ] ,
                 'stock_status'    => $this[ 'stock_status' ] ,
                 'discrepancy'     => $discrepancy ,

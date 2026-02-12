@@ -7,6 +7,8 @@
     use App\Enums\StockStatus;
     use App\Http\Requests\PaginateRequest;
     use App\Models\Ingredient;
+    use App\Models\ProductAttribute;
+    use App\Models\ProductAttributeOption;
     use App\Models\Stock;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
@@ -50,8 +52,8 @@
                 }
 
                 $groupCriteria = enabledWarehouse()
-                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
-                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
+                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id . '-' . $item->variation_id
+                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names . '-' . $item->variation_id;
 
                 $processedItems = $stocks->groupBy( $groupCriteria )
                                          ->map( fn($group) => $this->transformStockGrouped( $group ) )
@@ -68,33 +70,6 @@
             }
         }
 
-        public function list1(Request $request)
-        {
-            try {
-                $perPage     = $request->integer( 'per_page' , 10 );
-                $isPaginated = $request->boolean( 'paginate' );
-                $stocks      = $this->stockQuery( $request )
-                                    ->where( 'status' , StockStatus::RECEIVED )
-                                    ->get();
-                if ( $stocks->isEmpty() ) {
-                    return $isPaginated ? $this->paginate( [] , $perPage ) : [];
-                }
-                $groupCriteria  = enabledWarehouse()
-                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
-                    : fn($item) => $item->product_id . '-' . $item->item_type . '-' . $item->variation_names;
-                $processedItems = $stocks->groupBy( $groupCriteria )
-                                         ->map( fn($group) => $this->transformStockGroup( $group ) )
-                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
-                                         ->values();
-                if ( $isPaginated ) {
-                    return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock' ) );
-                }
-                return $processedItems;
-            } catch ( Exception $exception ) {
-                Log::error( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
 
         private function stockQuery(Request $request) : Builder
         {
@@ -142,6 +117,14 @@
             $isPurchasable = $first->product->can_purchasable !== Ask::NO;
             $status        = $first->status;
 
+            $variationNames = $first->variation_names;
+            if ($first->variation_id) {
+                $variation = \App\Models\ProductVariation::with('productAttributeOption.productAttribute')->find($first->variation_id);
+                if ($variation && $variation->productAttributeOption) {
+                    $variationNames = $variation->productAttributeOption->productAttribute->name . '(' . $variation->productAttributeOption->name . ')';
+                }
+            }
+
             return [
                 'product_id'               => $first->product_id ,
                 'products'                 => $first->products ,
@@ -153,7 +136,8 @@
                 'unit'                     => $first->product->unit ,
                 'other_unit'               => $first->product->otherUnit ,
                 'units_nature'             => $first->product->units_nature ,
-                'variation_names'          => $first->variation_names ,
+                'variation_names'          => $variationNames ,
+                'variation_id'             => $first->variation_id ,
                 'status'                   => $first->product->status ,
                 'warehouse_id'             => $first->warehouse_id ,
                 'reference'                => $first->reference ,
@@ -173,6 +157,10 @@
                 'description'              => $first->description ,
                 'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
                 'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+                'product_attribute_id'        => $first->product_attribute_id ,
+                'product_attribute_option_id' => $first->product_attribute_option_id ,
+                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
+                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
             ];
         }
 
@@ -184,6 +172,14 @@
             $isPurchasable = $first->product->can_purchasable !== Ask::NO;
             $status        = $first->status;
 
+            $variationNames = $first->variation_names;
+            if ($first->variation_id) {
+                $variation = \App\Models\ProductVariation::with('productAttributeOption.productAttribute')->find($first->variation_id);
+                if ($variation && $variation->productAttributeOption) {
+                    $variationNames = $variation->productAttributeOption->productAttribute->name . '(' . $variation->productAttributeOption->name . ')';
+                }
+            }
+
             return [
                 'product_id'               => $first->product_id ,
                 'products'                 => $first->products ,
@@ -195,7 +191,8 @@
                 'unit'                     => $first->product->unit ,
                 'other_unit'               => $first->product->otherUnit ,
                 'units_nature'             => $first->product->units_nature ,
-                'variation_names'          => $first->variation_names ,
+                'variation_names'          => $variationNames ,
+                'variation_id'             => $first->variation_id ,
                 'status'                   => $first->product->status ,
                 'warehouse_id'             => $first->warehouse_id ,
                 'reference'                => $first->reference ,
@@ -215,6 +212,10 @@
                 'description'              => $first->description ,
                 'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
                 'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+                'product_attribute_id'        => $first->product_attribute_id ,
+                'product_attribute_option_id' => $first->product_attribute_option_id ,
+                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
+                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
             ];
         }
 

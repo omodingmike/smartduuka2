@@ -4,7 +4,6 @@
 
     use App\Enums\Ask;
     use App\Enums\OrderStatus;
-    use App\Enums\OrderType;
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
@@ -29,7 +28,6 @@
     use App\Models\StockTax;
     use App\Models\Unit;
     use App\Models\User;
-    use Error;
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -293,26 +291,80 @@
                     if ( ! blank( $products ) ) {
                         foreach ( $products as $product ) {
                             $p = Product::find( $product[ 'item_id' ] );
-                            info($p->stock);
-                            if ( $p->stock < $product[ 'quantity' ] ) {
-                                throw  new Exception( "{$p->name} stock not enough" );
+
+                            // Determine if it's a variation
+                            $is_variation = isset( $product[ 'attribute_id' ] ) && isset( $product[ 'option_id' ] );
+                            $variation    = NULL;
+                            $targetModel  = $p;
+                            $targetClass  = Product::class;
+                            $itemId       = $product[ 'item_id' ];
+
+                            if ( $is_variation ) {
+                                // Find the variation based on attribute and option
+                                // Assuming single attribute variation for now based on payload structure
+                                // If multiple attributes, logic needs to be adjusted
+                                $variation = ProductVariation::where( 'product_id' , $p->id )
+                                                             ->where( 'product_attribute_option_id' , $product[ 'option_id' ] )
+                                                             ->first();
+
+                                if ( $variation ) {
+                                    $targetModel = $variation;
+                                    $targetClass = ProductVariation::class;
+                                    $itemId      = $variation->id;
+                                }
                             }
+
+                            // Check stock
+                            if ( $targetModel->stock < $product[ 'quantity' ] ) {
+                                $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
+                                throw  new Exception( "{$name} stock not enough" );
+                            }
+
                             OrderProduct::create( [
-                                'order_id'        => $this->order->id ,
-                                'item_id'         => $product[ 'item_id' ] ,
-                                'item_type'       => Product::class ,
-                                'quantity_picked' => 0 ,
-                                'quantity'        => $product[ 'quantity' ] ,
-                                'total'           => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price'      => $product[ 'unitPrice' ] ,
+                                'order_id'                    => $this->order->id ,
+                                'item_id'                     => $itemId ,
+                                'item_type'                   => $targetClass ,
+                                'quantity_picked'             => 0 ,
+                                'quantity'                    => $product[ 'quantity' ] ,
+                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price'                  => $product[ 'unitPrice' ] ,
+                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
                             ] );
-                            $stock = Stock::where( [
-                                'item_id'      => $product[ 'item_id' ] ,
-                                'item_type'    => Product::class ,
+
+                            // Decrement stock
+                            // We need to find the specific stock record to decrement.
+                            // StockService uses FIFO or specific warehouse logic.
+                            // Here we simplify by finding any available stock record for this item/variation.
+
+                            $stockQuery = Stock::where( [
+                                'item_id'      => $itemId ,
+                                'item_type'    => $targetClass ,
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $request->warehouse_id
-                            ] )->first();
-                            $stock->decrement( 'quantity' , $product[ 'quantity' ] );
+                            ] )->where( 'quantity' , '>' , 0 )->orderBy( 'created_at' , 'asc' ); // FIFO
+
+                            $qtyToDecrement = $product[ 'quantity' ];
+
+                            $stocks = $stockQuery->get();
+
+                            foreach ( $stocks as $stock ) {
+                                if ( $qtyToDecrement <= 0 ) break;
+
+                                if ( $stock->quantity >= $qtyToDecrement ) {
+                                    $stock->decrement( 'quantity' , $qtyToDecrement );
+                                    $qtyToDecrement = 0;
+                                }
+                                else {
+                                    $qtyToDecrement -= $stock->quantity;
+                                    $stock->update( [ 'quantity' => 0 ] );
+                                }
+                            }
+
+                            if ( $qtyToDecrement > 0 ) {
+                                // Should not happen if we checked total stock before
+                                throw new Exception( "Stock inconsistency for {$p->name}" );
+                            }
                         }
                     }
                     $this->order->save();

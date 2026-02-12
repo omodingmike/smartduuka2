@@ -30,7 +30,7 @@
 
                 return [
                     'item_id'              => $firstItem?->id ,
-                    'name'                 => $firstItem->name ,
+                    'name'                 => $firstItem?->name ,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,
                     'total_sales_currency' => AppLibrary::currencyAmountFormat( $group->sum( 'total' ) ) ,

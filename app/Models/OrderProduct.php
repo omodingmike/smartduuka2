@@ -21,6 +21,8 @@ class OrderProduct extends Model
         'total' ,
         'unit_price' ,
         'quantity_picked' ,
+        'product_attribute_id',
+        'product_attribute_option_id',
     ];
 
     public function order(): BelongsTo
@@ -31,5 +33,15 @@ class OrderProduct extends Model
     public function item(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function productAttribute(): BelongsTo
+    {
+        return $this->belongsTo(ProductAttribute::class);
+    }
+
+    public function productAttributeOption(): BelongsTo
+    {
+        return $this->belongsTo(ProductAttributeOption::class);
     }
 }
