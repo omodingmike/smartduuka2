@@ -13,6 +13,7 @@
     use App\Models\ProductVariation;
     use App\Models\Stock;
     use App\Models\Subscription;
+    use App\Models\Tenant;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
     use Illuminate\Support\Arr;
@@ -24,9 +25,15 @@
     Schedule::command( 'tenants:backup' )->hourly();
 
     // Schedule Reverb Test Event
+//    Schedule::call(function () {
+//        $tenantId = tenant('id') ?? 'central';
+//        TestEvent::dispatch("Scheduled event for tenant [{$tenantId}] at " . now()->toDateTimeString());
+//    })->everyMinute();
+
     Schedule::call(function () {
-        $tenantId = tenant('id') ?? 'central';
-        TestEvent::dispatch("Scheduled event for tenant [{$tenantId}] at " . now()->toDateTimeString());
+        Tenant::all()->runForEach(function ($tenant) {
+            TestEvent::dispatch("Scheduled event for tenant [{$tenant->id}] at " . now()->toDateTimeString());
+        });
     })->everyMinute();
 
     Schedule::call( function () use ($now) {
