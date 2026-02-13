@@ -10,6 +10,7 @@
               docker exec -it api /bin/bash
               truncate -s 0 laravel.log
               docker exec -it smartduuka_next /bin/bash
+              docker exec -it db psql -U smartduuka -d tenant_zakayo
               docker compose exec -T api php artisan optimize
               docker exec -it nginx sh
               docker exec -it smartduuka_next sh

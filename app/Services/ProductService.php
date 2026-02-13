@@ -60,28 +60,63 @@
             'except'
         ];
 
-        /**
-         * @throws Exception
-         */
         public function list(Request $request)
         {
             try {
-                $perPage = $request->input( 'perPage' );
-                $page    = $request->input( 'page' );
-                $query   = $request->input( 'query' );
+                $search = $request->input( 'query' );
+                $page   = $request->input( 'page' , 1 );
 
-                $products_query = Product::with(
-                    [
-                        'media' , 'category' , 'variations.wholesalePrices' , 'variations.retailPrices' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
-                    ] );
-                return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
+                $products_query = Product::with( [
+                    'media' , 'category' , 'variations.wholesalePrices' ,
+                    'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
+                    'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+                ] );
+
+                // Apply search filter if query is provided
+                if ( $search ) {
+                    $products_query->where( 'name' , 'like' , "%{$search}%" )
+                                   ->orWhere( 'sku' , 'like' , "%{$search}%" );
+                }
+
+                $products_query->orderBy( 'created_at' , 'desc' );
+
+                // To "paginate" all data in one page, set perPage to the total count
+                // We use a high fallback or count() to ensure everything is captured
+                $totalItems = $products_query->count();
+
+                // If total is 0, we still want to return a valid paginated structure
+                $perPage = $totalItems > 0 ? $totalItems : 15;
+
+                return $products_query->paginate( $perPage , [ '*' ] , 'page' , $page );
 
             } catch ( Exception $exception ) {
-                info( $exception->getMessage() );
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+                Log::error( 'Product List Error: ' . $exception->getMessage() );
+                return response()->json( [ 'error' => $exception->getMessage() ] , 422 );
             }
         }
+
+        /**
+         * @throws Exception
+         */
+//        public function list(Request $request)
+//        {
+//            try {
+//                $perPage = $request->input( 'perPage' );
+//                $page    = $request->input( 'page' );
+//                $query   = $request->input( 'query' );
+//
+//                $products_query = Product::with(
+//                    [
+//                        'media' , 'category' , 'variations.wholesalePrices' , 'variations.retailPrices' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+//                    ] );
+//                return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
+//
+//            } catch ( Exception $exception ) {
+//                info( $exception->getMessage() );
+//                Log::info( $exception->getMessage() );
+//                throw new Exception( $exception->getMessage() , 422 );
+//            }
+//        }
 
         public function purchasableIngredientsList(PaginateRequest $request)
         {
