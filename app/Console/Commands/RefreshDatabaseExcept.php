@@ -12,35 +12,46 @@
     {
         /**
          * The name and signature of the console command.
-         * --tables: Specify what to KEEP.
-         * --tenant: Specify which tenant to target.
+         * * --tables: Comma-separated list of tables to KEEP (not drop).
+         * --tenant: The ID of the tenant to target (optional).
          */
         protected $signature = 'db:refresh-except 
                             {--tables=users,settings : Comma-separated list of tables to exclude from dropping} 
-                            {--tenant= : The tenant ID to run the command for}';
+                            {--tenant= : The tenant ID to run the command for (optional)}';
 
-        protected $description = 'Drops all tables except specified ones and re-migrates (Supports Laravel 12 & Tenancy)';
+        /**
+         * The console command description.
+         */
+        protected $description = 'Drops all tables except specified ones and re-migrates. Supports Laravel 12, PostgreSQL CASCADE, and Stancl Tenancy.';
 
+        /**
+         * Execute the console command.
+         */
         public function handle()
         {
-            // 1. Production Guard
+            // 1. Environment Safety Check
             if ( ! app()->environment( 'local' , 'testing' ) ) {
-                if ( ! $this->confirm( 'CAUTION: You are running this in production. Do you wish to continue?' ) ) {
+                if ( ! $this->confirm( 'CAUTION: You are running this in a non-local environment. Do you wish to continue?' ) ) {
                     return;
                 }
             }
 
-            $tenantId         = $this->option( 'tenant' );
-            $excludedTables   = explode( ',' , $this->option( 'tables' ) );
-            $excludedTables[] = 'migrations'; // Critical: Never drop the migrations table
+            $tenantId       = $this->option( 'tenant' );
+            $excludedTables = explode( ',' , $this->option( 'tables' ) );
 
-            // 2. Initialize Tenancy if requested
+            // Always preserve the migrations table so the system knows what to re-run
+            $excludedTables[] = 'migrations';
+
+            // 2. Initialize Tenancy Context
             if ( $tenantId ) {
-                $tenant = config( 'tenancy.tenant_model' , \App\Models\Tenant::class )::find( $tenantId );
+                $tenantModel = config( 'tenancy.tenant_model' , \App\Models\Tenant::class );
+                $tenant      = $tenantModel::find( $tenantId );
+
                 if ( ! $tenant ) {
                     $this->error( "Tenant '$tenantId' not found." );
                     return;
                 }
+
                 Tenancy::initialize( $tenant );
                 $this->info( 'Targeting Tenant Database: ' . $tenant->getTenantKey() );
             }
@@ -48,8 +59,7 @@
                 $this->info( 'Targeting Central Database' );
             }
 
-            // 3. Get Tables (Laravel 12 Native Method)
-            // Schema::getTables() returns an array of arrays. Each has a 'name' key.
+            // 3. Identify Tables (Laravel 12 Native Schema)
             $tables        = Schema::getTables();
             $allTableNames = array_map( fn($table) => $table[ 'name' ] , $tables );
 
@@ -61,21 +71,25 @@
             }
 
             // 4. Drop and Clean Migration History
+            // We disable constraints, but PostgreSQL still requires CASCADE for physical drops
             Schema::disableForeignKeyConstraints();
 
             foreach ( $tablesToDrop as $table ) {
-                Schema::drop( $table );
+                // Using DB::statement with CASCADE to bypass "Dependent objects still exist" errors in Postgres
+                DB::statement( "DROP TABLE \"{$table}\" CASCADE" );
 
-                // We must delete the migration record so Laravel re-runs the "create" migration
+                // Clean up the migration history so Laravel thinks the table was never migrated
                 $pattern         = "%_create_{$table}_table";
                 $singularPattern = '%_create_' . Str::singular( $table ) . '_table';
+                $pluralPattern   = '%_create_' . Str::plural( $table ) . '_table';
 
                 DB::table( 'migrations' )
                   ->where( 'migration' , 'like' , $pattern )
                   ->orWhere( 'migration' , 'like' , $singularPattern )
+                  ->orWhere( 'migration' , 'like' , $pluralPattern )
                   ->delete();
 
-                $this->line( "<fg=yellow>Dropped & Cleaned migration for:</> $table" );
+                $this->line( "<fg=yellow>Dropped (Cascaded) & Cleaned migration for:</> $table" );
             }
 
             Schema::enableForeignKeyConstraints();
@@ -83,12 +97,15 @@
             // 5. Re-run Migrations
             $this->info( 'Re-running migrations...' );
             if ( $tenantId ) {
+                // Re-migrates only the current tenant's database
                 $this->call( 'tenancy:migrate' , [ '--tenants' => [ $tenantId ] ] );
             }
             else {
+                // Re-migrates the central database
                 $this->call( 'migrate' );
             }
 
             $this->info( 'Database refresh complete!' );
+            $this->info( 'Preserved tables: ' . implode( ', ' , array_filter( $excludedTables , fn($t) => $t !== 'migrations' ) ) );
         }
     }
