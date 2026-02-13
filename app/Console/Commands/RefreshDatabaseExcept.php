@@ -98,7 +98,7 @@
             $this->info( 'Re-running migrations...' );
             if ( $tenantId ) {
                 // Re-migrates only the current tenant's database
-                $this->call( 'tenancy:migrate' , [ '--tenants' => [ $tenantId ] ] );
+                $this->call( 'tenants:migrate' , [ '--tenants' => [ $tenantId ] ] );
             }
             else {
                 // Re-migrates the central database
