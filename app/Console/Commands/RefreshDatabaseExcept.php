@@ -6,82 +6,89 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Schema;
     use Illuminate\Support\Str;
+    use Stancl\Tenancy\Facades\Tenancy;
 
     class RefreshDatabaseExcept extends Command
     {
+        /**
+         * The name and signature of the console command.
+         * --tables: Specify what to KEEP.
+         * --tenant: Specify which tenant to target.
+         */
         protected $signature = 'db:refresh-except 
-                            {--tables=users,settings : Comma-separated list of tables to exclude} 
-                            {--tenant= : The tenant ID to run the command for (Stancl Tenancy)}';
+                            {--tables=users,settings : Comma-separated list of tables to exclude from dropping} 
+                            {--tenant= : The tenant ID to run the command for}';
 
-        protected $description = 'Refresh database tables except specified ones, supporting Stancl Tenancy';
+        protected $description = 'Drops all tables except specified ones and re-migrates (Supports Laravel 12 & Tenancy)';
 
         public function handle()
         {
-            // 1. Environment Safety Check
+            // 1. Production Guard
             if ( ! app()->environment( 'local' , 'testing' ) ) {
-                if ( ! $this->confirm( 'You are running this in production. Continue?' ) ) {
+                if ( ! $this->confirm( 'CAUTION: You are running this in production. Do you wish to continue?' ) ) {
                     return;
                 }
             }
 
             $tenantId         = $this->option( 'tenant' );
             $excludedTables   = explode( ',' , $this->option( 'tables' ) );
-            $excludedTables[] = 'migrations';
+            $excludedTables[] = 'migrations'; // Critical: Never drop the migrations table
 
-            // 2. Tenancy Initialization
+            // 2. Initialize Tenancy if requested
             if ( $tenantId ) {
-                $tenant = \App\Models\Tenant::find( $tenantId );
+                $tenant = config( 'tenancy.tenant_model' , \App\Models\Tenant::class )::find( $tenantId );
                 if ( ! $tenant ) {
                     $this->error( "Tenant '$tenantId' not found." );
                     return;
                 }
-                // Switch database connection to the tenant
-                tenancy()->initialize( $tenant );
-                $this->info( "Scope: Tenant Database ($tenantId)" );
+                Tenancy::initialize( $tenant );
+                $this->info( 'Targeting Tenant Database: ' . $tenant->getTenantKey() );
             }
             else {
-                $this->info( 'Scope: Central Database' );
+                $this->info( 'Targeting Central Database' );
             }
 
-            // 3. Identify and Drop Tables
-            $allTables    = Schema::getConnection()->getDoctrineSchemaManager()->listTableNames();
-            $tablesToDrop = array_diff( $allTables , $excludedTables );
+            // 3. Get Tables (Laravel 12 Native Method)
+            // Schema::getTables() returns an array of arrays. Each has a 'name' key.
+            $tables        = Schema::getTables();
+            $allTableNames = array_map( fn($table) => $table[ 'name' ] , $tables );
+
+            $tablesToDrop = array_diff( $allTableNames , $excludedTables );
 
             if ( empty( $tablesToDrop ) ) {
-                $this->info( 'No tables to drop.' );
+                $this->info( 'No tables found to drop based on your exclusions.' );
                 return;
             }
 
+            // 4. Drop and Clean Migration History
             Schema::disableForeignKeyConstraints();
 
             foreach ( $tablesToDrop as $table ) {
                 Schema::drop( $table );
 
-                // Cleanup migration history so Laravel thinks they need to be re-run
-                $singular = Str::singular( $table );
-                $plural   = Str::plural( $table );
+                // We must delete the migration record so Laravel re-runs the "create" migration
+                $pattern         = "%_create_{$table}_table";
+                $singularPattern = '%_create_' . Str::singular( $table ) . '_table';
 
-                DB::table( 'migrations' )->where( function ($query) use ($table , $singular , $plural) {
-                    $query->where( 'migration' , 'like' , "%_create_{$table}_table" )
-                          ->orWhere( 'migration' , 'like' , "%_create_{$singular}_table" )
-                          ->orWhere( 'migration' , 'like' , "%_create_{$plural}_table" );
-                } )->delete();
+                DB::table( 'migrations' )
+                  ->where( 'migration' , 'like' , $pattern )
+                  ->orWhere( 'migration' , 'like' , $singularPattern )
+                  ->delete();
 
-                $this->line( "Cleaned: $table" );
+                $this->line( "<fg=yellow>Dropped & Cleaned migration for:</> $table" );
             }
 
             Schema::enableForeignKeyConstraints();
 
-            // 4. Re-run Migrations
-            $this->info( 'Running migrations...' );
+            // 5. Re-run Migrations
+            $this->info( 'Re-running migrations...' );
             if ( $tenantId ) {
-                // stancl/tenancy specific command
                 $this->call( 'tenancy:migrate' , [ '--tenants' => [ $tenantId ] ] );
             }
             else {
                 $this->call( 'migrate' );
             }
 
-            $this->info( 'Refresh complete.' );
+            $this->info( 'Database refresh complete!' );
         }
     }
