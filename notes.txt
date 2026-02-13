@@ -12,6 +12,9 @@
               docker exec -it smartduuka_next /bin/bash
               docker exec -it db psql -U smartduuka -d tenant_zakayo
               docker compose exec -T api php artisan optimize
+
+              php artisan tenants:migrate
+
               docker exec -it nginx sh
               docker exec -it smartduuka_next sh
               cd storage/logs
