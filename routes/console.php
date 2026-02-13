@@ -22,7 +22,7 @@
     $now = now( config( 'app.timezone' ) );
 
     // Schedule tenant backups
-    Schedule::command( 'tenants:backup' )->hourly();
+//    Schedule::command( 'tenants:backup' )->hourly();
 
     // Schedule Reverb Test Event
 //    Schedule::call(function () {
