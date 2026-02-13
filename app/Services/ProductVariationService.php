@@ -4,11 +4,13 @@
 
 
     use App\Enums\BarcodeType;
+    use App\Enums\MediaEnum;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductVariationRequest;
     use App\Libraries\AppLibrary;
     use App\Models\Product;
     use App\Models\ProductVariation;
+    use App\Traits\SaveMedia;
     use Exception;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
@@ -21,6 +23,8 @@
 
     class ProductVariationService
     {
+        use SaveMedia;
+
         public object   $productVariation;
         protected array $productVariationFilter = [
             'product_attribute_id' ,
@@ -262,44 +266,75 @@
         {
             try {
                 return DB::transaction( function () use ($request , $product) {
-                    $order             = 1;
-                    $parentId          = NULL;
-                    $data              = $request->validated();
-                    $retail_pricing    = json_decode( $data[ 'retail_pricing' ] , TRUE );
-                    $wholesale_pricing = json_decode( $data[ 'wholesale_pricing' ] , TRUE );
+                    $order                     = 1;
+                    $parentId                  = NULL;
+                    $data                      = $request->validated();
+                    $retail_pricing            = json_decode( $data[ 'retail_pricing' ] , TRUE );
+                    $wholesale_pricing         = json_decode( $data[ 'wholesale_pricing' ] , TRUE );
+                    $product_attributes        = json_decode( $data[ 'product_attributes' ] , TRUE );
+                    $product_attribute_options = json_decode( $data[ 'product_attribute_options' ] , TRUE );
 
-                    $productVariationExistCheck = ProductVariation::where( [
-                        'product_id'                  => $data[ 'product_id' ] ,
-                        'product_attribute_id'        => $data[ 'product_attribute_id' ] ,
-                        'product_attribute_option_id' => $data[ 'product_attribute_option_id' ] ,
-                        'parent_id'                   => $parentId
-                    ] )->orderBy( 'id' , 'desc' )->first();
+                    // Assuming single variation creation for now based on payload structure
+                    // The payload has arrays for attributes and options, suggesting potentially multiple levels or a single variation defined by multiple attributes.
+                    // However, the current ProductVariation model structure (parent_id) suggests a hierarchical structure.
+                    // If [2,1] and [3,1] means Attribute 2 Option 3 AND Attribute 1 Option 1.
 
-                    if ( $productVariationExistCheck ) {
-                        throw new Exception( 'Variation already Exists' );
+                    // If we are creating a single variation that is a combination of these attributes:
+                    // We need to create/find the hierarchy.
+
+                    // Let's assume the order in the array matters for hierarchy:
+                    // Index 0 is parent of Index 1, etc.
+
+                    $currentParentId = NULL;
+                    $finalVariation  = NULL;
+
+                    foreach ( $product_attributes as $index => $attributeId ) {
+                        $optionId = $product_attribute_options[ $index ];
+
+                        // Check if this level exists
+                        $existingVariation = ProductVariation::where( [
+                            'product_id'                  => $product->id ,
+                            'product_attribute_id'        => $attributeId ,
+                            'product_attribute_option_id' => $optionId ,
+                            'parent_id'                   => $currentParentId
+                        ] )->first();
+
+                        if ( $existingVariation ) {
+                            $currentParentId = $existingVariation->id;
+                            $finalVariation  = $existingVariation;
+                        }
+                        else {
+                            // Create new level
+                            $productVariationOrderCheck = ProductVariation::where( [
+                                'product_id'           => $product->id ,
+                                'product_attribute_id' => $attributeId ,
+                                'parent_id'            => $currentParentId
+                            ] )->orderBy( 'id' , 'desc' )->first();
+
+                            $order = $productVariationOrderCheck ? $productVariationOrderCheck->order + 1 : 1;
+
+                            // Only the last level gets the price/sku/barcode/media/pricing
+                            $isLastLevel = $index === count( $product_attributes ) - 1;
+
+                            $newVariation = ProductVariation::create( [
+                                'product_id'                  => $product->id ,
+                                'product_attribute_id'        => $attributeId ,
+                                'product_attribute_option_id' => $optionId ,
+                                'parent_id'                   => $currentParentId ,
+                                'order'                       => $order ,
+                                'price'                       => $isLastLevel ? ( $retail_pricing[ 0 ][ 'sellingPrice' ] ?? 0 ) : 0 , // Price usually on leaf
+                                'sku'                         => $isLastLevel ? $data[ 'sku' ] : NULL ,
+//                                'track_stock'                 => $isLastLevel ? ( $data[ 'trackStock' ] ?? 0 ) : 0 ,
+                            ] );
+
+                            $currentParentId = $newVariation->id;
+                            $finalVariation  = $newVariation;
+                        }
                     }
 
-                    $productVariationOrderCheck = ProductVariation::where( [
-                        'product_id'           => $product->id ,
-                        'product_attribute_id' => $data[ 'product_attribute_id' ] ,
-                    ] )->orderBy( 'id' , 'desc' )->first();
+                    $this->productVariation = $finalVariation;
 
-                    if ( $productVariationOrderCheck ) {
-                        $order = $productVariationOrderCheck->order + 1;
-                    }
-
-                    $productVariationArray = [
-                        'product_id'                  => $product->id ,
-                        'product_attribute_id'        => $data[ 'product_attribute_id' ] ,
-                        'product_attribute_option_id' => $data[ 'product_attribute_option_id' ] ,
-                        'price'                       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
-                        'sku'                         => $data[ 'sku' ] ,
-                        'parent_id'                   => $parentId ,
-                        'order'                       => $order
-                    ];
-
-                    $this->productVariation = ProductVariation::create( $productVariationArray );
-
+                    // Attach pricing and media only to the final variation (leaf node)
                     if ( $wholesale_pricing ) {
                         foreach ( $wholesale_pricing as $wholesale_price ) {
                             $this->productVariation->wholesalePrices()->create( [
@@ -317,6 +352,9 @@
                             ] );
                         }
                     }
+
+                    $this->saveMedia( $request , $this->productVariation , MediaEnum::DAMAGES);
+
                     return $this->productVariation->load( [ 'wholesalePrices' , 'retailPrices' ] );
                 } );
             } catch ( Exception $exception ) {
@@ -338,7 +376,6 @@
                 }
             }
         }
-
 
         /**
          * @throws Exception

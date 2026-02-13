@@ -7,6 +7,7 @@
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Enums\StockType;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductOfferRequest;
@@ -153,6 +154,8 @@
                         'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
                         'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
+
+                    activityLog( "Created product {$product->name}" );
 
                     $track_stock = 0;
                     if ( isset( $data[ 'trackStock' ] ) && $data[ 'trackStock' ] == 1 ) {

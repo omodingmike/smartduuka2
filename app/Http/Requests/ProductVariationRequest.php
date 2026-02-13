@@ -2,9 +2,6 @@
 
     namespace App\Http\Requests;
 
-    use App\Libraries\AppLibrary;
-    use App\Models\Product;
-    use App\Models\ProductVariation;
     use Illuminate\Foundation\Http\FormRequest;
 
     class ProductVariationRequest extends FormRequest
@@ -27,16 +24,16 @@
         public function rules() : array
         {
             return [
-                'product_attribute_option_id' => [ 'required' , 'numeric' ] ,
-                'product_attribute_id'        => [ 'required' , 'numeric' ] ,
-                'product_id'                  => [ 'required' , 'numeric' ] ,
+                'product_attributes'        => [ 'required' , 'string' ] ,
+                'product_attribute_options' => [ 'required' , 'string' ] ,
+                'product_id'                => [ 'required' , 'numeric' ] ,
 //                'name'                        => [ 'required' , 'string' ] ,
-                'sku'                         => [ 'required' , 'string' ] ,
-                'barcode'                     => [ 'required' , 'string' ] ,
-                'trackStock'                  => [ 'sometimes' , 'numeric' ] ,
-                'retail_pricing'              => [ 'required' , 'string' ] ,
-                'wholesale_pricing'           => [ 'sometimes' , 'string' ] ,
-                'image'                       => [ 'sometimes' , 'file' ] ,
+                'sku'                       => [ 'required' , 'string' ] ,
+                'barcode'                   => [ 'required' , 'string' ] ,
+                'trackStock'                => [ 'sometimes' , 'numeric' ] ,
+                'retail_pricing'            => [ 'required' , 'string' ] ,
+                'wholesale_pricing'         => [ 'sometimes' , 'string' ] ,
+                'image'                     => [ 'sometimes' , 'file' ] ,
             ];
         }
     }
