@@ -16,7 +16,26 @@ class SimpleProductResource extends JsonResource
      * @param \Illuminate\Http\Request $request
      * @return array
      */
+
     public function toArray($request)
+    {
+        // Use variation_price if the product has variations, otherwise selling_price
+        $price = (count($this->variations) > 0) ? $this->variation_price : $this->selling_price;
+
+        return [
+            'id'                => $this->id,
+            'name'              => $this->name,
+            'slug'              => $this->slug,
+            'currency_price'    => AppLibrary::currencyAmountFormat($price),
+            'cover'             => $this->cover,
+            'flash_sale'        => $this->add_to_flash_sale == Ask::YES,
+            'is_offer'          => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
+            'discounted_price'  => AppLibrary::currencyAmountFormat($price - (($price / 100) * $this->discount)),
+            'rating_star'       => $this->rating_star,
+            'rating_star_count' => $this->rating_star_count,
+        ];
+    }
+    public function toArray1($request)
     {
         $price = count($this->variations) > 0 ? $this->variation_price : $this->selling_price;
         return [

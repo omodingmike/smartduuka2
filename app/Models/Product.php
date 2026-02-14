@@ -7,7 +7,6 @@
     use App\Enums\StockStatus;
     use App\Http\Resources\RetailPriceResource;
     use App\Http\Resources\WholeSalePriceResource;
-    use App\Libraries\AppLibrary;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -203,7 +202,12 @@
 
         public function variations() : HasMany
         {
-            return $this->hasMany( ProductVariation::class )->with( 'productAttribute' );
+            return $this->hasMany( ProductVariation::class , 'product_id' , 'id' );
+        }
+
+        public function variations1() : HasMany
+        {
+            return $this->hasMany( ProductVariation::class , 'product_id' , 'id' )->with( 'productAttribute' );
         }
 
         public function orders() : MorphMany
@@ -216,23 +220,6 @@
             return $this->hasMany( Stock::class , 'product_id' , 'id' );
         }
 
-        public function getSingleTreeAttribute1()
-        {
-            // Retrieve variations with media where SKU is not null
-            $productVariations = ProductVariation::with( 'media' )
-                                                 ->where( 'product_id' , $this->id )
-                                                 ->whereNotNull( 'sku' )
-                                                 ->orderBy( 'parent_id' , 'asc' )
-                                                 ->get();
-
-            if ( $productVariations->isNotEmpty() ) {
-                foreach ( $productVariations as $productVariation ) {
-                    // Re-use the nesting logic to map attributes and options
-                    $productVariation->options = $this->generateNestedOptions( $productVariation );
-                }
-            }
-            return $productVariations;
-        }
 
         private function generateNestedOptions($variation) : array
         {
@@ -256,46 +243,142 @@
 
         public function getSingleTreeAttribute()
         {
-            // Original fetching logic: with media, where sku is not null, ordered by parent_id
-            $productVariations = ProductVariation::with( 'media' )
+            // Fetch variations with necessary relations including retailPrices for buying_price
+            $productVariations = ProductVariation::with( [
+                'media' ,
+                'productAttribute' ,
+                'productAttributeOption' ,
+                'wholesalePrices' ,
+//                'retailPrices'
+            ] )
                                                  ->where( 'product_id' , $this->id )
                                                  ->whereNotNull( 'sku' )
-                                                 ->orderBy( 'parent_id' , 'asc' )
                                                  ->get();
 
-            if ( $productVariations->isEmpty() ) {
-                return collect( [] ); //
+            return $productVariations->map( function ($variation) {
+                // 1. Build the options path
+                $options = [];
+                $nodes   = $variation->ancestorsAndSelf()
+                                     ->with( [ 'productAttribute' , 'productAttributeOption' ] )
+                                     ->get()
+                                     ->reverse();
+
+                foreach ( $nodes as $node ) {
+                    if ( $node->productAttribute && $node->productAttributeOption ) {
+                        $options[ $node->productAttribute->name ] = $node->productAttributeOption->name;
+                    }
+                }
+
+                // 2. Initialize $data FIRST so we don't overwrite custom keys
+                $data = $variation->toArray();
+
+                // 3. PRICE MANIPULATION (Discount & Formatting)
+                $originalPrice = (float) $variation->price;
+                $discount      = (float) $this->discount;
+                $isOffer       = FALSE;
+
+                // Date validation: Check if 'now' is between start and end dates
+                $now   = now();
+                $start = $this->offer_start_date ? \Carbon\Carbon::parse( $this->offer_start_date ) : NULL;
+                $end   = $this->offer_end_date ? \Carbon\Carbon::parse( $this->offer_end_date ) : NULL;
+
+                if ( $discount > 0 &&
+                    ( ! $start || $now->greaterThanOrEqualTo( $start ) ) &&
+                    ( ! $end || $now->lessThanOrEqualTo( $end ) ) ) {
+                    $isOffer = TRUE;
+                }
+
+                // Calculate discounted price (assuming percentage)
+                $discountedPrice = $isOffer ? ( $originalPrice - ( $originalPrice * ( $discount / 100 ) ) ) : $originalPrice;
+
+                // Inject manipulated prices into the array
+                $data[ 'price' ]            = $originalPrice;
+                $data[ 'price_currency' ]   = currency( $originalPrice , 2 , '.' , '' );
+                $data[ 'discounted_price' ] = number_format( $discountedPrice , 2 , '.' , '' );
+                $data[ 'is_offer' ]         = $isOffer;
+
+                // Include buying price from the retail_prices relation
+                $retail                 = $variation->retailPrices->first();
+                $data[ 'buying_price' ] = $retail ? number_format( (float) $retail->buying_price , 2 , '.' , '' ) : '0.00';
+
+                // 4. VARIATION NAME FORMATTING
+                $formattedOptions = [];
+                foreach ( $options as $key => $value ) {
+                    $formattedOptions[] = "$key :: $value";
+                }
+                $data[ 'variation_name' ] = implode( ' > ' , $formattedOptions );
+
+                // 5. STOCK & OPTIONS
+                $data[ 'options' ] = $options;
+                $data[ 'stock' ]   = (float) $variation->stock;
+
+                // 6. SINGLE MEDIA OBJECT
+                $mediaItem       = $variation->getFirstMedia( 'product-variation-image' )
+                    ?? $variation->media->first();
+                $data[ 'media' ] = $mediaItem ? $mediaItem : NULL;
+
+                // 7. WHOLESALE TIERS
+                $data[ 'wholesale_prices' ] = WholeSalePriceResource::collection( $variation->wholesalePrices );
+
+                return $data;
+            } )->values();
+        }
+
+        public function getSingleTreeAttribute1()
+        {
+            $productVariations = $this->variations()->with( 'media' )->where( 'sku' , '!=' , NULL )->orderBy( 'parent_id' , 'asc' )
+                                      ->get();
+            if ( count( $productVariations ) ) {
+                foreach ( $productVariations as $productVariation ) {
+                    $productVariation->options = $this->nested( ProductVariation::find( $productVariation->id )->ancestorsAndSelf->load( 'productAttribute' , 'productAttributeOption' )->reverse() );
+                }
             }
+            return $productVariations;
+        }
 
-            // Combine similar attributes while preserving all non-common data
-            return $productVariations->groupBy( 'product_attribute_id' )->map( function ($group , $attributeId) {
-                $first = $group->first();
+        private function nested($variations) : array
+        {
+            $array = [];
+            if ( count( $variations ) ) {
+                foreach ( $variations as $variation ) {
+                    $array[ $variation->productAttribute?->name ] = $variation->productAttributeOption?->name;
+                }
+            }
+            return $array;
+        }
 
-                return [
-                    'product_attribute_id' => (int) $attributeId ,                           //
-                    'attribute_name'       => $first->productAttribute?->name ?? 'Unknown' , //
-                    'options'              => $group->map( function ($variation) {
-                        // All non-common variation data is preserved here
-                        return [
-                            'id'             => $variation->id ,
-                            'product_id'     => $variation->product_id ,
-                            'sku'            => $variation->sku ,
-                            'price'          => AppLibrary::flatAmountFormat( ( $variation->price ) ) ,
-                            'price_currency' => currency( ( $variation->price ) ) ,
-                            'parent_id'      => $variation->parent_id ,
-                            'order'          => $variation->order ,
-                            'user_barcode'   => $variation->user_barcode ,
-                            'stock'          => (float) $variation->stock ,
-                            'media'          => $variation->media ,
-                            'wholesalePrices'=> WholeSalePriceResource::collection( $variation->wholesalePrices ),
-                            'retailPrices'   => RetailPriceResource::collection( $variation->retailPrices ),
-                            'options'        => [
-                                'name'   => $variation->productAttribute?->name ,
-                                'option' => $variation->productAttributeOption?->name ,
-                            ] ,
-                        ];
-                    } )->values()
-                ];
+        public function getSingleTreeAttribute2()
+        {
+            $productVariations = ProductVariation::with( [
+                'media' , 'productAttribute' , 'productAttributeOption' , 'wholesalePrices' , 'retailPrices'
+            ] )
+                                                 ->where( 'product_id' , $this->id )
+                                                 ->whereNotNull( 'sku' )
+                                                 ->get();
+
+            return $productVariations->map( function ($variation) {
+                // Build the option path (Material > Color > Size)
+                $options = [];
+                $nodes   = $variation->ancestorsAndSelf()->with( [ 'productAttribute' , 'productAttributeOption' ] )->get()->reverse();
+                foreach ( $nodes as $node ) {
+                    if ( $node->productAttribute && $node->productAttributeOption ) {
+                        $options[ $node->productAttribute->name ] = $node->productAttributeOption->name;
+                    }
+                }
+
+                $data              = $variation->toArray();
+                $data[ 'options' ] = $options;
+                $data[ 'media' ]   = $variation->media;
+                $data[ 'stock' ]   = (float) $variation->stock;
+
+                // Wholesale: Multiple records (Array)
+                $data[ 'wholesale_prices' ] = WholeSalePriceResource::collection( $variation->wholesalePrices );
+
+                // Retail: Single record (Object)
+                $retail                 = $variation->retailPrices->first();
+                $data[ 'retail_price' ] = $retail ? new RetailPriceResource( $retail ) : NULL;
+
+                return $data;
             } )->values();
         }
 

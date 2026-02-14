@@ -36,7 +36,31 @@
                 "product_brand_id"           => $this->product_brand_id ,
                 "unit_id"                    => $this->unit_id ,
                 "single_tree"                => $this->single_tree ,
-                "variations"                 => ProductVariationResource::collection( $this->variations ) ,
+//                "variations"                 => ProductVariationResource::collection( $this->variations ) ,
+                // Inside ProductAdminResource.php -> toArray()
+                'variations'                 => $this->variations->map( function ($variation) {
+                    // Build the options array specifically for this variation
+                    $options = [];
+                    $nodes   = $variation->ancestorsAndSelf()
+                                         ->with( [ 'productAttribute' , 'productAttributeOption' ] )
+                                         ->get()
+                                         ->reverse();
+
+                    foreach ( $nodes as $node ) {
+                        if ( $node->productAttribute && $node->productAttributeOption ) {
+                            $options[] = [
+                                'attribute_name' => $node->productAttribute->name ,
+                                'option_name'    => $node->productAttributeOption->name ,
+                            ];
+                        }
+                    }
+
+                    // Use the existing Resource but merge the new options array
+                    return array_merge(
+                        ( new ProductVariationResource( $variation ) )->toArray( request() ) ,
+                        [ 'options' => $options ]
+                    );
+                } ) ,
                 "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
                 "retailPrices"               => RetailPriceResource::collection( $this->retailPrices ) ,
                 "track_stock"                => $this->track_stock ,

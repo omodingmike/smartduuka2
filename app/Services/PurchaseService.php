@@ -626,6 +626,80 @@
 
         public function storeStock(PurchaseRequest $request)
         {
+            try {
+                $warehouse_id = $request->input( 'warehouse_id' );
+                $products     = json_decode( $request->string( 'products' ) , TRUE );
+                $batch        = 'B' . time();
+
+                foreach ( $products as $p ) {
+                    $product        = Product::find( $p[ 'product_id' ] );
+                    $variationId    = $p[ 'variation_id' ] ?? NULL;
+                    $variationNames = ''; // Default empty for simple products
+
+                    if ( $variationId ) {
+                        // VARIANT PRODUCT LOGIC
+                        $targetModel = ProductVariation::find( $variationId );
+                        $targetClass = ProductVariation::class;
+                        $price       = $targetModel->price ?? $product->buying_price;
+                        $sku         = $targetModel->sku ?? $product->sku;
+
+                        // Build human-readable path only if variation_path is provided
+                        if ( isset( $p[ 'variation_path' ] ) && ! empty( $p[ 'variation_path' ] ) ) {
+                            $names = [];
+                            ksort( $p[ 'variation_path' ] );
+                            foreach ( $p[ 'variation_path' ] as $optionId ) {
+                                $option = \App\Models\ProductAttributeOption::with( 'productAttribute' )->find( $optionId );
+                                if ( $option && $option->productAttribute ) {
+                                    $names[] = $option->productAttribute->name . ' :: ' . $option->name;
+                                }
+                            }
+                            $variationNames = implode( ' > ' , $names ); // e.g., "Color :: Red > Size :: XL"
+                        }
+                    }
+                    else {
+                        // SIMPLE PRODUCT LOGIC (Identical to previous version)
+                        $targetModel = $product;
+                        $targetClass = Product::class;
+                        $price       = $product->buying_price;
+                        $sku         = $product->sku;
+                    }
+
+                    $total = $p[ 'quantity' ] * $price;
+
+                    Stock::create( [
+                        'model_type'      => $targetClass ,
+                        'model_id'        => $targetModel->id ,
+                        'warehouse_id'    => $warehouse_id ,
+                        'reference'       => 'S' . time() ,
+                        'item_type'       => $targetClass ,
+                        'item_id'         => $targetModel->id ,
+                        'product_id'      => $product->id ,
+                        'variation_id'    => $variationId ,
+                        'variation_names' => $variationNames ,
+                        'price'           => $price ,
+                        'quantity'        => $p[ 'quantity' ] ,
+                        // These fields are now correctly mapped from your restored UI
+//                        'weight'          => $p[ 'weight' ] ?? NULL ,
+//                        'serial'          => $p[ 'serial' ] ?? NULL ,
+                        'expiry_date'     => $p[ 'expiry' ] ?? NULL ,
+                        'discount'        => 0 ,
+                        'tax'             => 0 ,
+                        'batch'           => $batch ,
+                        'subtotal'        => $total ,
+                        'total'           => $total ,
+                        'sku'             => $sku ,
+                        'status'          => StockStatus::RECEIVED
+                    ] );
+                }
+                return response()->json( [ 'message' => 'Stock stored successfully' ] );
+            } catch ( Exception $e ) {
+                Log::error( 'Store Stock Error: ' . $e->getMessage() );
+                throw new Exception( $e->getMessage() , 422 );
+            }
+        }
+
+        public function storeStock1(PurchaseRequest $request)
+        {
 //            return 1;
             try {
                 $warehouse_id = $request->input( 'warehouse_id' );

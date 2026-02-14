@@ -72,7 +72,21 @@
                 'product'                       => $product->name ,
                 'product_attribute_name'        => $this->productAttribute->name ?? null ,
                 'product_attribute_option_name' => $this->productAttributeOption->name ?? null ,
-                'product_attribute'             => $this->productAttribute ,
+//                'product_attribute'             => $this->productAttribute ,
+                'product_attribute' => [
+                    'id'      => $this->productAttribute->id ?? null,
+                    'name'    => $this->productAttribute->name ?? null,
+                    'status'  => $this->productAttribute->status ?? null,
+                    // Add the list of all possible options for this specific attribute
+                    'options' => $this->productAttribute
+                        ? $this->productAttribute->productAttributeOptions()->get()->map(function($option) {
+                            return [
+                                'id'   => $option->id,
+                                'name' => $option->name,
+                            ];
+                        })
+                        : []
+                ],
                 'product_attribute_option'      => $this->productAttributeOption,
                 
                 'cover'                         => $this->cover ?? $product->cover, // Fallback to product cover if variation doesn't have one
