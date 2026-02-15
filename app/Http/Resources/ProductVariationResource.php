@@ -11,113 +11,113 @@
     use Carbon\Carbon;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /** @mixin ProductVariation */
     class ProductVariationResource extends JsonResource
     {
-        /** @mixin ProductVariation */
         public function toArray($request) : array
         {
             // Assuming ProductVariation has similar relationships/attributes as Product where applicable
             // Or we map parent product attributes if variation doesn't override them.
-            
+
             $product = $this->product; // Parent product
-            
+
             // Price logic for variation
             $price = $this->price;
-            
+
             // Offer logic (usually on parent product, but could be on variation if supported)
             // Assuming offer is on parent product for now
             $offerActive = $product->offer_start_date && $product->offer_end_date && Carbon::now()->between( $product->offer_start_date , $product->offer_end_date );
-            
+
             $discountedPrice = $offerActive
                 ? $price - ( ( $price / 100 ) * $product->discount )
                 : $price;
 
-            $stock = max(0, $this->stock); // Variation stock
+            $stock = max( 0 , $this->stock ); // Variation stock
 
             // Construct variation name by traversing ancestors
             $variationOptions = [];
-            
+
             // Load ancestors if not already loaded (using adjacency list trait method if available or manual traversal)
             // Assuming ancestorsAndSelf relationship is available via trait
             // The trait returns [Self, Parent, Grandparent...]. We want [Grandparent, Parent, Self].
-            $ancestors = $this->ancestorsAndSelf()->with(['productAttributeOption'])->get()->reverse();
-            
-            foreach ($ancestors as $ancestor) {
-                if ($ancestor->productAttributeOption) {
+            $ancestors = $this->ancestorsAndSelf()->with( [ 'productAttributeOption' ] )->get()->reverse();
+
+            foreach ( $ancestors as $ancestor ) {
+                if ( $ancestor->productAttributeOption ) {
                     $variationOptions[] = $ancestor->productAttributeOption->name;
                 }
             }
-            
-            $variationString = implode(', ', $variationOptions);
-            $variationName = $product->name . ($variationString ? " ({$variationString})" : '');
+
+            $variationString = implode( ', ' , $variationOptions );
+            $variationName   = $product->name . ( $variationString ? " ({$variationString})" : '' );
 
             return [
-                'id'                            => $this->id ,
-                'product_id'                    => $this->product_id ,
-                'name'                          => $variationName,
-                'slug'                          => $product->slug , // Variation doesn't usually have slug, use parent
-                'product_attribute_id'          => $this->product_attribute_id ,
-                'product_attribute_option_id'   => $this->product_attribute_option_id ,
-                
-                'price'                         => AppLibrary::convertAmountFormat( $discountedPrice ) ,
-                'currency_price'                => AppLibrary::currencyAmountFormat( AppLibrary::convertAmountFormat( $discountedPrice ) ) ,
-                'old_price'                     => AppLibrary::convertAmountFormat( $price ) ,
-                'old_currency_price'            => AppLibrary::currencyAmountFormat( $price ) ,
-                'discount'                      => $offerActive ? AppLibrary::convertAmountFormat( ( $price / 100 ) * $product->discount ) : 0 ,
-                'discount_percentage'           => AppLibrary::convertAmountFormat( $product->discount ) ,
-                'flash_sale'                    => $product->add_to_flash_sale == Ask::YES ,
-                'is_offer'                      => $offerActive ,
-                
-                'sku'                           => $this->sku ,
-                'parent_id'                     => $this->parent_id ,
-                'order'                         => $this->order ,
-                
-                'wholesalePrices'               => WholeSalePriceResource::collection( $this->whenLoaded( 'wholesalePrices' ) ) ,
-                'retailPrices'                  => RetailPriceResource::collection( $this->whenLoaded( 'retailPrices' ) ) ,
-                
-                'stock'                         => (int) $stock ,
-                'other_stock'                   => $product->show_stock_out == Activity::DISABLE
-                                                    ? ( $product->can_purchasable == Ask::NO
-                                                        ? (int) config( 'system.non_purchase_quantity' )
-                                                        : (int) $stock )
-                                                    : 0 ,
-                                                    
-                'unit'                          => new UnitResource( $product->unit ) ,
-                'unit_id'                       => $product->unit_id,
-                'code'                          => $product->unit?->code,
-                
+                'id'                          => $this->id ,
+                'product_id'                  => $this->product_id ,
+                'name'                        => $variationName ,
+                'slug'                        => $product->slug , // Variation doesn't usually have slug, use parent
+                'product_attribute_id'        => $this->product_attribute_id ,
+                'product_attribute_option_id' => $this->product_attribute_option_id ,
+
+                'price'               => AppLibrary::convertAmountFormat( $discountedPrice ) ,
+                'currency_price'      => AppLibrary::currencyAmountFormat( AppLibrary::convertAmountFormat( $discountedPrice ) ) ,
+                'old_price'           => AppLibrary::convertAmountFormat( $price ) ,
+                'old_currency_price'  => AppLibrary::currencyAmountFormat( $price ) ,
+                'discount'            => $offerActive ? AppLibrary::convertAmountFormat( ( $price / 100 ) * $product->discount ) : 0 ,
+                'discount_percentage' => AppLibrary::convertAmountFormat( $product->discount ) ,
+                'flash_sale'          => $product->add_to_flash_sale == Ask::YES ,
+                'is_offer'            => $offerActive ,
+
+                'sku'       => $this->sku ,
+                'parent_id' => $this->parent_id ,
+                'order'     => $this->order ,
+
+                'wholesalePrices' => WholeSalePriceResource::collection( $this->whenLoaded( 'wholesalePrices' ) ) ,
+                'retailPrices'    => RetailPriceResource::collection( $this->whenLoaded( 'retailPrices' ) ) ,
+
+                'stock'       => (int) $stock ,
+                'other_stock' => $product->show_stock_out == Activity::DISABLE
+                    ? ( $product->can_purchasable == Ask::NO
+                        ? (int) config( 'system.non_purchase_quantity' )
+                        : (int) $stock )
+                    : 0 ,
+
+                'unit'    => new UnitResource( $product->unit ) ,
+                'unit_id' => $product->unit_id ,
+                'code'    => $product->unit?->code ,
+
                 'product'                       => $product->name ,
-                'product_attribute_name'        => $this->productAttribute->name ?? null ,
-                'product_attribute_option_name' => $this->productAttributeOption->name ?? null ,
+                'product_attribute_name'        => $this->productAttribute->name ?? NULL ,
+                'product_attribute_option_name' => $this->productAttributeOption->name ?? NULL ,
 //                'product_attribute'             => $this->productAttribute ,
-                'product_attribute' => [
-                    'id'      => $this->productAttribute->id ?? null,
-                    'name'    => $this->productAttribute->name ?? null,
-                    'status'  => $this->productAttribute->status ?? null,
+                'product_attribute'             => [
+                    'id'      => $this->productAttribute->id ?? NULL ,
+                    'name'    => $this->productAttribute->name ?? NULL ,
+                    'status'  => $this->productAttribute->status ?? NULL ,
                     // Add the list of all possible options for this specific attribute
                     'options' => $this->productAttribute
-                        ? $this->productAttribute->productAttributeOptions()->get()->map(function($option) {
+                        ? $this->productAttribute->productAttributeOptions()->get()->map( function ($option) {
                             return [
-                                'id'   => $option->id,
-                                'name' => $option->name,
+                                'id'   => $option->id ,
+                                'name' => $option->name ,
                             ];
-                        })
+                        } )
                         : []
-                ],
-                'product_attribute_option'      => $this->productAttributeOption,
-                
-                'cover'                         => $this->cover ?? $product->cover, // Fallback to product cover if variation doesn't have one
-                'thumb'                         => $this->thumb ?? $product->thumb,
-                'image'                         => $this->preview ?? $product->preview,
-                'images'                        => $this->previews ?? $product->previews, // Assuming previews attribute exists on variation too or fallback
-                
-                'rating_star'                   => $product->rating_star,
-                'rating_star_count'             => $product->rating_star_count,
-                
-                'details'                       => $product->description, // Variation usually shares description
-                'shipping_and_return'           => $product->shipping_and_return,
-                'category_slug'                 => $product->category?->slug,
-                
+                ] ,
+                'product_attribute_option'      => $this->productAttributeOption ,
+
+                'cover'  => $this->cover ?? $product->cover , // Fallback to product cover if variation doesn't have one
+                'thumb'  => $this->thumb ?? $product->thumb ,
+                'image'  => $this->preview ?? $product->preview ,
+                'images' => $this->previews ?? $product->previews , // Assuming previews attribute exists on variation too or fallback
+
+                'rating_star'       => $product->rating_star ,
+                'rating_star_count' => $product->rating_star_count ,
+
+                'details'                    => $product->description , // Variation usually shares description
+                'shipping_and_return'        => $product->shipping_and_return ,
+                'category_slug'              => $product->category?->slug ,
+
                 // Unit conversions (inherited from product)
                 'retail_unit_id'             => $product->retail_unit_id ,
                 'retail_unit'                => $product->retail_unit_id ? new UnitResource( Unit::find( $product->retail_unit_id ) ) : NULL ,
@@ -131,8 +131,8 @@
                 'mid_unit_wholesale_price'   => (float) $product->mid_unit_wholesale_price ,
                 'top_unit_wholesale_price'   => (float) $product->top_unit_wholesale_price ,
                 'retail_price_per_base_unit' => (float) $product->retail_price_per_base_unit ,
-                
-                'shipping'                   => [
+
+                'shipping' => [
                     'shipping_type'                => $product->shipping_type ,
                     'shipping_cost'                => $product->shipping_cost ,
                     'is_product_quantity_multiply' => $product->is_product_quantity_multiply ,

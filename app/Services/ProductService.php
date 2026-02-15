@@ -74,8 +74,8 @@
 
                 // Apply search filter if query is provided
                 if ( $search ) {
-                    $products_query->where( 'name' , 'like' , "%{$search}%" )
-                                   ->orWhere( 'sku' , 'like' , "%{$search}%" );
+                    $products_query->where( 'name' , 'ilike' , "%{$search}%" )
+                                   ->orWhere( 'sku' , 'ilike' , "%{$search}%" );
                 }
 
                 $products_query->orderBy( 'created_at' , 'desc' );
