@@ -8,16 +8,12 @@
 
     class RetailPriceResource extends JsonResource
     {
-        /**
-         * Transform the resource into an array.
-         *
-         * @return array<string, mixed>
-         */
         public function toArray(Request $request) : array
         {
             return [
-                'id'                 => rand(),
+                'id'                 => rand() ,
                 'unit_id'            => $this->unit_id ,
+                'unit'               => new UnitResource( $this->whenLoaded( 'unit' ) ) ,
                 'buying_price'       => $this->buying_price ,
                 'buying_price_text'  => AppLibrary::currencyAmountFormat( $this->buying_price ) ,
                 'selling_price'      => $this->selling_price ,

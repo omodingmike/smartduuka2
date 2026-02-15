@@ -17,6 +17,7 @@
             return [
                 'id'                          => $this->id ,
                 'quantity'                    => $this->quantity ,
+                'is_variation'                => $this->is_variation ,
                 'quantity_picked'             => $this->quantity_picked ,
                 'product_attribute_id'        => $this->product_attribute_id ,
                 'product_attribute_option_id' => $this->product_attribute_option_id ,

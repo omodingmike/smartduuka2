@@ -324,7 +324,7 @@
                                 throw  new Exception( "{$name} stock not enough" );
                             }
 
-                            OrderProduct::create( [
+                            $order_product = OrderProduct::create( [
                                 'order_id'                    => $this->order->id ,
                                 'item_id'                     => $itemId ,
                                 'item_type'                   => $targetClass ,
@@ -335,6 +335,8 @@
                                 'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
                                 'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
                             ] );
+
+                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
 
                             // Decrement stock
                             // We need to find the specific stock record to decrement.

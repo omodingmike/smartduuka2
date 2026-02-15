@@ -34,10 +34,27 @@
 
             $stock = max(0, $this->stock); // Variation stock
 
+            // Construct variation name by traversing ancestors
+            $variationOptions = [];
+            
+            // Load ancestors if not already loaded (using adjacency list trait method if available or manual traversal)
+            // Assuming ancestorsAndSelf relationship is available via trait
+            // The trait returns [Self, Parent, Grandparent...]. We want [Grandparent, Parent, Self].
+            $ancestors = $this->ancestorsAndSelf()->with(['productAttributeOption'])->get()->reverse();
+            
+            foreach ($ancestors as $ancestor) {
+                if ($ancestor->productAttributeOption) {
+                    $variationOptions[] = $ancestor->productAttributeOption->name;
+                }
+            }
+            
+            $variationString = implode(', ', $variationOptions);
+            $variationName = $product->name . ($variationString ? " ({$variationString})" : '');
+
             return [
                 'id'                            => $this->id ,
                 'product_id'                    => $this->product_id ,
-                'name'                          => $product->name . ' (' . ($this->productAttributeOption->name ?? '') . ')', // Construct name
+                'name'                          => $variationName,
                 'slug'                          => $product->slug , // Variation doesn't usually have slug, use parent
                 'product_attribute_id'          => $this->product_attribute_id ,
                 'product_attribute_option_id'   => $this->product_attribute_option_id ,

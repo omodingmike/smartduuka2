@@ -21,8 +21,9 @@ class OrderProduct extends Model
         'total' ,
         'unit_price' ,
         'quantity_picked' ,
-        'product_attribute_id',
-        'product_attribute_option_id',
+        'product_attribute_id' ,
+        'product_attribute_option_id' ,
+        'variation_id' ,
     ];
 
     public function order(): BelongsTo

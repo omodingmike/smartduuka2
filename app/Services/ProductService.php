@@ -69,7 +69,7 @@
                 $products_query = Product::with( [
                     'media' , 'category' , 'variations.wholesalePrices' ,
                     'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
-                    'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
+                    'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
                 ] );
 
                 // Apply search filter if query is provided
