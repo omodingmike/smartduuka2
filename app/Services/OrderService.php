@@ -293,19 +293,23 @@
                             $p = Product::find( $product[ 'item_id' ] );
 
                             // Determine if it's a variation
-                            $is_variation = isset( $product[ 'attribute_id' ] ) && isset( $product[ 'option_id' ] );
+//                            $is_variation = isset( $product[ 'attribute_id' ] ) && isset( $product[ 'option_id' ] );
+                            $is_variation = isset( $product[ 'variation_id' ] );
                             $variation    = NULL;
                             $targetModel  = $p;
                             $targetClass  = Product::class;
                             $itemId       = $product[ 'item_id' ];
 
                             if ( $is_variation ) {
+                                $variation_id = $product[ 'variation_id' ];
                                 // Find the variation based on attribute and option
                                 // Assuming single attribute variation for now based on payload structure
                                 // If multiple attributes, logic needs to be adjusted
-                                $variation = ProductVariation::where( 'product_id' , $p->id )
-                                                             ->where( 'product_attribute_option_id' , $product[ 'option_id' ] )
-                                                             ->first();
+
+//                                $variation = ProductVariation::where( 'product_id' , $p->id )
+//                                                             ->where( 'product_attribute_option_id' , $product[ 'option_id' ] )
+//                                                             ->first();
+                                $variation = ProductVariation::find( $variation_id );
 
                                 if ( $variation ) {
                                     $targetModel = $variation;
@@ -337,34 +341,15 @@
                             // StockService uses FIFO or specific warehouse logic.
                             // Here we simplify by finding any available stock record for this item/variation.
 
-                            $stockQuery = Stock::where( [
+                            $stock = Stock::where( [
                                 'item_id'      => $itemId ,
                                 'item_type'    => $targetClass ,
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $request->warehouse_id
-                            ] )->where( 'quantity' , '>' , 0 )->orderBy( 'created_at' , 'asc' ); // FIFO
+                            ] )->first();
 
                             $qtyToDecrement = $product[ 'quantity' ];
-
-                            $stocks = $stockQuery->get();
-
-                            foreach ( $stocks as $stock ) {
-                                if ( $qtyToDecrement <= 0 ) break;
-
-                                if ( $stock->quantity >= $qtyToDecrement ) {
-                                    $stock->decrement( 'quantity' , $qtyToDecrement );
-                                    $qtyToDecrement = 0;
-                                }
-                                else {
-                                    $qtyToDecrement -= $stock->quantity;
-                                    $stock->update( [ 'quantity' => 0 ] );
-                                }
-                            }
-
-                            if ( $qtyToDecrement > 0 ) {
-                                // Should not happen if we checked total stock before
-                                throw new Exception( "Stock inconsistency for {$p->name}" );
-                            }
+                            $stock->decrement( 'quantity' , $qtyToDecrement );
                         }
                     }
                     $this->order->save();

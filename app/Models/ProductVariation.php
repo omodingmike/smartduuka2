@@ -130,17 +130,6 @@
                                 ->sum( 'quantity' );
         }
 
-
-//        public function productAttributeOption() : BelongsTo
-//        {
-//            return $this->belongsTo( ProductAttributeOption::class );
-//        }
-
-        // public function productAttributeOptions() : BelongsToMany
-        // {
-        //     return $this->belongsToMany( ProductAttributeOption::class , 'product_variation_attribute_option' );
-        // }
-
         public function getBarcodeImageAttribute() : string
         {
             if ( ! empty( $this->getFirstMediaUrl( 'product-barcode' ) ) ) {

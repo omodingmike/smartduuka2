@@ -266,8 +266,8 @@
                 'other_stock'              => $isPurchasable ? $group->sum('other_quantity') : 'N/C',
                 'product_attribute_id'        => $first->product_attribute_id,
                 'product_attribute_option_id' => $first->product_attribute_option_id,
-                'attribute'                   => $first->product_attribute_id ? \App\Models\ProductAttribute::find($first->product_attribute_id) : null,
-                'attribute_option'            => $first->product_attribute_option_id ? \App\Models\ProductAttributeOption::find($first->product_attribute_option_id) : null,
+                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
+                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
             ];
         }
 

@@ -13,7 +13,7 @@
 
         public function toArray(Request $request) : array
         {
-            $is_variation = $this->product_attribute_id && $this->product_attribute_option_id;
+            $is_variation = $this->variation_id;
             return [
                 'id'                          => $this->id ,
                 'quantity'                    => $this->quantity ,

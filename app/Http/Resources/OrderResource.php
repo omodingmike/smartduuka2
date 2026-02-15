@@ -47,7 +47,6 @@
                 'order_datetime'                 => AppLibrary::datetime2( $this->order_datetime ) ,
                 'user'                           => new OrderUserResource( $this->user ) ,
                 'creator'                        => new UserResource( $this->creator ) ,
-                'orderProducts1'                  => $this->orderProducts  ,
                 'orderProducts'                  => OrderProductResourceNew::collection( $this->orderProducts ) ,
                 'delivery_address'               => $this->delivery_address ,
                 'paymentMethods'                 => PosPaymentResource::collection( $this->paymentMethods ) ,
