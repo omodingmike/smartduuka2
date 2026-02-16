@@ -2,10 +2,13 @@
 
     namespace App\Enums;
 
+    use ArchTech\Enums\InvokableCases;
     use JsonSerializable;
 
     enum Status : int implements JsonSerializable
     {
+        use InvokableCases;
+
         case ACTIVE            = 5;
         case INACTIVE          = 10;
         case CANCELED          = 15;
