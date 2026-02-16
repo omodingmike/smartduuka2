@@ -318,6 +318,38 @@
                                 'warehouse_id'     => $warehouse_id ,
                                 'status'           => $status == PurchaseStatus::RECEIVED->value ? StockStatus::RECEIVED->value : StockStatus::IN_TRANSIT->value
                             ] );
+
+                            $productModel = Product::find( $product[ 'product_id' ] );
+
+                            $productModel->update( [
+                                'buying_price'  => $product[ 'price' ] ,
+                                'selling_price' => $product[ 'retailPrices' ][ 0 ][ 'new_price' ] ,
+                            ] );
+
+                            // Update Retail Prices
+                            if ( isset( $product[ 'retailPrices' ] ) && ! empty( $product[ 'retailPrices' ] ) ) {
+                                $productModel->retailPrices()->delete();
+                                foreach ( $product[ 'retailPrices' ] as $retailPrice ) {
+                                    $productModel->retailPrices()->create(
+                                        [
+                                            'buying_price'  => $product[ 'price' ] ,
+                                            'selling_price' => $retailPrice[ 'new_price' ] ,
+                                            'unit_id'       => $retailPrice[ 'unit_id' ]
+                                        ]
+                                    );
+                                }
+                            }
+
+                            // Update Wholesale Prices
+                            if ( isset( $product[ 'wholesalePrices' ] ) && ! empty( $product[ 'wholesalePrices' ] ) ) {
+                                $productModel->wholesalePrices()->delete();
+                                foreach ( $product[ 'wholesalePrices' ] as $wholesalePrice ) {
+                                    $productModel->wholesalePrices()->create( [
+                                        'minQuantity' => $wholesalePrice[ 'min_quantity' ] ,
+                                        'price'       => $wholesalePrice[ 'new_price' ]
+                                    ] );
+                                }
+                            }
                         }
                     }
                 } );
