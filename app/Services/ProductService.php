@@ -32,6 +32,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Str;
+    use IlluminateAgnostic\Str\Support\Collection;
     use Picqer\Barcode\BarcodeGeneratorJPG;
 
     class ProductService
@@ -94,29 +95,6 @@
                 return response()->json( [ 'error' => $exception->getMessage() ] , 422 );
             }
         }
-
-        /**
-         * @throws Exception
-         */
-//        public function list(Request $request)
-//        {
-//            try {
-//                $perPage = $request->input( 'perPage' );
-//                $page    = $request->input( 'page' );
-//                $query   = $request->input( 'query' );
-//
-//                $products_query = Product::with(
-//                    [
-//                        'media' , 'category' , 'variations.wholesalePrices' , 'variations.retailPrices' , 'brand' , 'taxes' , 'tags' , 'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices'
-//                    ] );
-//                return $products_query->orderBy( 'created_at' , 'desc' )->paginate( $perPage , [ '*' ] , 'page' , $page );
-//
-//            } catch ( Exception $exception ) {
-//                info( $exception->getMessage() );
-//                Log::info( $exception->getMessage() );
-//                throw new Exception( $exception->getMessage() , 422 );
-//            }
-//        }
 
         public function purchasableIngredientsList(PaginateRequest $request)
         {
@@ -706,16 +684,6 @@
             }
         }
 
-//        public function generateSku()
-//        {
-//            try {
-//                return AppLibrary::sku(rand(100000000000 , 999999999999));
-//            } catch ( Exception $exception ) {
-//                Log::info($exception->getMessage());
-//                throw new Exception($exception->getMessage() , 422);
-//            }
-//        }
-
         /**
          * @throws Exception
          */
@@ -741,7 +709,7 @@
         /**
          * @throws Exception
          */
-        public function categoryWiseProducts(Request $request) : Collection | \IlluminateAgnostic\Str\Support\Collection | \IlluminateAgnostic\Collection\Support\Collection | \IlluminateAgnostic\StrAgnostic\Str\Support\Collection | \IlluminateAgnostic\ArrAgnostic\Arr\Support\Collection | \Illuminate\Support\Collection | \IlluminateAgnostic\Arr\Support\Collection
+        public function categoryWiseProducts(Request $request)
         {
             try {
                 $customProductFilter = [

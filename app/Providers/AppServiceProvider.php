@@ -17,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
             return config('app.frontend_url')."/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";
         });
 
-        $origin = $request->header('Origin'); // e.g., http://tenant1.smartduuka2.test
+        $origin = $request->header('Origin');
         $host = parse_url($origin, PHP_URL_HOST);
 
         // If the request comes from your root domain, trust it as stateful

@@ -32,7 +32,7 @@
                 'site_copyright'                 => [ 'sometimes' , 'string' , 'max:190' ] ,
                 'site_default_language'          => [ 'sometimes' , 'numeric' ] ,
                 'site_default_branch'            => [ 'sometimes' , 'numeric' ] ,
-                'site_google_map_key'            => [ 'sometimes' , 'string' ] ,
+                'site_google_map_key'            => [ 'nullable' , 'string' ] ,
                 'site_digits_after_decimal'      => [ 'sometimes' , 'numeric:' ] ,
                 'site_currency_position'         => [ 'sometimes' , 'numeric' ] ,
                 'site_email_verification'        => [ 'sometimes' , 'numeric' ] ,

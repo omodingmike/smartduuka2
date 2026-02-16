@@ -31,16 +31,27 @@
             'warehouse_id' ,
         ];
 
-        public function list1(Request $request)
+
+        /**
+         * @throws Exception
+         */
+
+        public function list(Request $request)
         {
             try {
                 $perPage      = $request->integer( 'per_page' , 10 );
                 $isPaginated  = $request->boolean( 'paginate' );
                 $warehouse_id = $request->warehouse_id;
+                $query        = $request->input( 'query' );
 
                 $stocks       = $this->stockQuery( $request )
                                      ->where( 'status' , StockStatus::RECEIVED )
                                      ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                                     ->when( $query , function ($q) use ($query) {
+                                         $q->whereHas( 'product' , function ($q) use ($query) {
+                                             $q->where( 'name' , 'ilike' , '%' . $query . '%' );
+                                         } );
+                                     } )
                                      ->get();
 
                 if ( $stocks->isEmpty() ) {
@@ -65,52 +76,8 @@
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }
-        public function list(Request $request)
-        {
-            try {
-                $perPage      = $request->integer('per_page', 10);
-                $isPaginated  = $request->boolean('paginate');
-                $warehouse_id = $request->warehouse_id;
-
-                $stocks = $this->stockQuery($request)
-                               ->where('status', StockStatus::RECEIVED)
-                               ->when($warehouse_id, fn($q) => $q->where('warehouse_id', $warehouse_id))
-                               ->get();
-
-                if ($stocks->isEmpty()) {
-                    return $isPaginated ? $this->paginate([], $perPage) : [];
-                }
-
-                $groupCriteria = function($item) {
-                    $wh = enabledWarehouse() ? $item->warehouse_id : 'global';
-                    return $item->product_id . '-' . $wh . '-' . ($item->variation_id ?? 'parent');
-                };
-
-                $processedItems = $stocks->groupBy($groupCriteria)
-                                         ->map(fn($group) => $this->transformStockGrouped($group))
-                                         ->filter(fn($item) => $item !== NULL && $item['stock'] !== 0)
-                                         ->values();
-
-                return $isPaginated ? $this->paginate($processedItems, $perPage, NULL, url('/api/admin/stock')) : $processedItems;
-            } catch (Exception $exception) {
-                Log::error($exception->getMessage());
-                throw new Exception($exception->getMessage(), 422);
-            }
-        }
 
         private function stockQuery(Request $request) : Builder
-        {
-            return Stock::with( [
-                'stockProducts.item' ,
-                'user',
-                'product'
-            ] )
-                        ->whereNull( 'user_id' )
-                        ->where( 'model_type' , '<>' , Ingredient::class )
-                        ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
-                        ->orderBy( 'created_at' , 'desc' );
-        }
-        private function stockQuery1(Request $request) : Builder
         {
             return Stock::with( [
                 'stockProducts.item' ,
@@ -119,6 +86,7 @@
                         ->whereNull( 'user_id' )
                         ->where( 'model_type' , '<>' , Ingredient::class )
                         ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
+                        ->whereHas('product')
                         ->orderBy( 'created_at' , 'desc' );
         }
 
@@ -148,7 +116,50 @@
             }
         }
 
-        protected function transformStockGrouped1($group)
+        protected function transformStockGroup($group)
+        {
+            $first = $group->first();
+            if ( ! $first->product ) return NULL;
+
+            $isPurchasable = $first->product->can_purchasable !== Ask::NO;
+            $status        = $first->status;
+
+            return [
+                'product_id'               => $first->product_id ,
+                'products'                 => $first->products ,
+                'stock_status'             => [
+                    'value' => $status->value ,
+                    'label' => $status->label() ,
+                ] ,
+                'product_name'             => $first->product->name ,
+                'unit'                     => $first->product->unit ,
+                'other_unit'               => $first->product->otherUnit ,
+                'units_nature'             => $first->product->units_nature ,
+                'variation_names'          => $first->variation_names ,
+                'variation_id'             => $first->variation_id ,
+                'status'                   => $first->product->status ,
+                'warehouse_id'             => $first->warehouse_id ,
+                'reference'                => $first->reference ,
+                'delivery'                 => $first->delivery ,
+                'system_stock'             => $first->system_stock ,
+                'physical_stock'           => $first->physical_stock ,
+                'difference'               => $first->difference ,
+                'discrepancy'              => $first->discrepancy ,
+                'classification'           => $first->classification ,
+                'creator'                  => $first->user ,
+                'batch'                    => $first->batch ,
+                'weight'                   => $first->product->weight ,
+                'source_warehouse_id'      => $first->source_warehouse_id ,
+                'total'                    => $first->total ,
+                'destination_warehouse_id' => $first->destination_warehouse_id ,
+                'created_at'               => $first->created_at ,
+                'description'              => $first->description ,
+                'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
+                'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+            ];
+        }
+
+        protected function transformStockGrouped($group)
         {
             $first = $group->first();
             if ( ! $first->product ) return NULL;
@@ -198,74 +209,6 @@
                 'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
                 'product_attribute_id'        => $first->product_attribute_id ,
                 'product_attribute_option_id' => $first->product_attribute_option_id ,
-                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
-                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
-            ];
-        }
-
-        protected function transformStockGrouped($group)
-        {
-            $first = $group->first();
-            if (!$first->product) return NULL;
-
-            $isPurchasable = $first->product->can_purchasable !== Ask::NO;
-            $productName   = $first->product->name;
-            $variationNames = $productName;
-
-            if ($first->variation_id) {
-                // Dynamic construction using recursive ancestors to prevent "renaming" issues
-                $variation = ProductVariation::with([
-                    'ancestors.productAttributeOption.productAttribute',
-                    'productAttributeOption.productAttribute'
-                ])->find($first->variation_id);
-
-                if ($variation) {
-                    // Reconstruct the path: ancestors + current node, filtered for valid attributes
-                    $path = $variation->ancestors->push($variation)->filter(fn($node) => !is_null($node->product_attribute_option_id));
-
-                    if ($path->isNotEmpty()) {
-                        $details = $path->map(function($node) {
-                            $attr = $node->productAttributeOption->productAttribute->name ?? 'Attr';
-                            $opt  = $node->productAttributeOption->name ?? 'Option';
-                            return "$attr :: $opt";
-                        })->implode(' > ');
-
-                        $variationNames = "$productName - $details";
-                    }
-                }
-            }
-
-            return [
-                'product_id'               => $first->product_id,
-                'products'                 => $first->products,
-                'stock_status'             => ['value' => $first->status->value, 'label' => $first->status->label()],
-                'product_name'             => $productName,
-                'unit'                     => $first->product->unit,
-                'other_unit'               => $first->product->otherUnit,
-                'units_nature'             => $first->product->units_nature,
-                'variation_names'          => $variationNames,
-                'variation_id'             => $first->variation_id,
-                'status'                   => $first->product->status,
-                'warehouse_id'             => $first->warehouse_id,
-                'reference'                => $first->reference,
-                'delivery'                 => $first->delivery,
-                'system_stock'             => $first->system_stock,
-                'physical_stock'           => $first->physical_stock,
-                'difference'               => $first->difference,
-                'discrepancy'              => $first->discrepancy,
-                'classification'           => $first->classification,
-                'creator'                  => $first->user,
-                'batch'                    => $first->batch,
-                'weight'                   => $first->product->weight,
-                'source_warehouse_id'      => $first->source_warehouse_id,
-                'total'                    => $first->total,
-                'destination_warehouse_id' => $first->destination_warehouse_id,
-                'created_at'               => $first->created_at,
-                'description'              => $first->description,
-                'stock'                    => $isPurchasable ? $group->sum('quantity') : 'N/C',
-                'other_stock'              => $isPurchasable ? $group->sum('other_quantity') : 'N/C',
-                'product_attribute_id'        => $first->product_attribute_id,
-                'product_attribute_option_id' => $first->product_attribute_option_id,
                 'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
                 'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
             ];
