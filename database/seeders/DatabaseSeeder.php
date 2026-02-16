@@ -12,7 +12,7 @@
             $this->call( PrinterTemplateSeeder::class );
             $this->call( UserTableSeeder::class );
             $this->call( LocationSeed::class );
-            $this->call( RoleTableSeeder::class );
+//            $this->call( RoleTableSeeder::class );
 //        $this->call(CompanyTableSeeder::class);
 //        $this->call(ThemeTableSeeder::class);
 //        $this->call(SiteTableSeeder::class);
@@ -20,7 +20,7 @@
 
 
 //            DB::statement( 'TRUNCATE TABLE roles, permissions, users RESTART IDENTITY CASCADE' );
-            $this->call( PermissionTableSeeder::class );
+//            $this->call( PermissionTableSeeder::class );
 //            $this->call( UserTableSeeder::class );
 //            $this->call( PaymentMethodSeeder::class );
 
