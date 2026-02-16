@@ -236,18 +236,18 @@
                             'user_id'         => $request->customer_id ,
                             'original_type'   => PaymentMethodEnum::TAKE_AWAY ,
                             'due_date'        => now()->addDays( 30 ) ,
-                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
+                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
                             'change'          => $request->change ,
                             'payment_type'    => $request->paymentType ,
                             'channel'         => $request->channel ,
                             'creator_id'      => auth()->id() ,
                             'creator_type'    => User::class ,
                             'payment_status'  => $paymentStatus->value ,
+                            'warehouse_id'    => $request->warehouse_id ,
                             'order_datetime'  => now() ,
                             'register_id'     => register()->id
                         ]
                     );
-
 
                     $this->order = $order;
                     if ( $delivery_address ) {
@@ -292,8 +292,6 @@
                         foreach ( $products as $product ) {
                             $p = Product::find( $product[ 'item_id' ] );
 
-                            // Determine if it's a variation
-//                            $is_variation = isset( $product[ 'attribute_id' ] ) && isset( $product[ 'option_id' ] );
                             $is_variation = isset( $product[ 'variation_id' ] );
                             $variation    = NULL;
                             $targetModel  = $p;
@@ -302,13 +300,7 @@
 
                             if ( $is_variation ) {
                                 $variation_id = $product[ 'variation_id' ];
-                                // Find the variation based on attribute and option
-                                // Assuming single attribute variation for now based on payload structure
-                                // If multiple attributes, logic needs to be adjusted
 
-//                                $variation = ProductVariation::where( 'product_id' , $p->id )
-//                                                             ->where( 'product_attribute_option_id' , $product[ 'option_id' ] )
-//                                                             ->first();
                                 $variation = ProductVariation::find( $variation_id );
 
                                 if ( $variation ) {
@@ -337,11 +329,6 @@
                             ] );
 
                             if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
-
-                            // Decrement stock
-                            // We need to find the specific stock record to decrement.
-                            // StockService uses FIFO or specific warehouse logic.
-                            // Here we simplify by finding any available stock record for this item/variation.
 
                             $stock = Stock::where( [
                                 'item_id'      => $itemId ,
@@ -819,9 +806,37 @@
         public function updateStatus(Order $order , Request $request) : object
         {
             try {
-                $order->status = $request->status;
-                $order->save();
-                return response()->json();
+                return DB::transaction( function () use ($order , $request) {
+                    $status = $request->integer( 'status' );
+                    if ( $status == OrderStatus::CANCELED->value ) {
+                        $order->posPayments()->delete();
+//                        $order->posPayments()->update( [ 'register_id' => NULL ] );
+                        foreach ( $order->orderProducts as $orderProduct ) {
+                            $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
+                                ? ProductVariation::class
+                                : Product::class;
+                            $stock    = Stock::where( [
+                                'item_id'      => $orderProduct->item_id ,
+                                'item_type'    => $itemType ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id
+                            ] )->first();
+                            $raw      = Stock::where( [
+                                'item_id'      => $orderProduct->item_id ,
+                                'item_type'    => $itemType ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id
+                            ] )->toRawSql();
+                            info( $raw );
+                            info( $stock );
+                            info( $orderProduct );
+                            $stock?->increment( 'quantity' , $orderProduct->quantity );
+                        }
+                    }
+                    $order->update( [ 'status' => $status ] );
+                    activityLog( "Cancelled Order: {$order->order_serial_no}" );
+                    return response()->json();
+                } );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
