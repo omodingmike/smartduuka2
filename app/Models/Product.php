@@ -14,6 +14,7 @@
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     use Illuminate\Database\Eloquent\Relations\HasMany;
+    use Illuminate\Database\Eloquent\Relations\hasOne;
     use Illuminate\Database\Eloquent\Relations\MorphMany;
     use Illuminate\Database\Eloquent\SoftDeletes;
     use Illuminate\Support\Facades\Auth;
@@ -182,6 +183,16 @@
         public function wholesalePrices() : MorphMany
         {
             return $this->morphMany( WholeSalePrice::class , 'item' );
+        }
+
+        public function retailPriceUpdates() : MorphMany
+        {
+            return $this->morphMany( RetailPriceUpdate::class , 'item' );
+        }
+
+        public function wholesalePriceUpdates() : MorphMany
+        {
+            return $this->morphMany( WholesalePriceUpdate::class , 'item' );
         }
 
         public function retailPrices() : MorphMany
@@ -445,7 +456,7 @@
             return $this->hasMany( Stock::class , 'product_id' , 'id' )->where( 'model_type' , Order::class );
         }
 
-        public function userReview() : \Illuminate\Database\Eloquent\Relations\hasOne
+        public function userReview() : hasOne
         {
             return $this->hasOne( ProductReview::class , 'product_id' , 'id' )->where( 'user_id' , Auth::user()->id );
         }

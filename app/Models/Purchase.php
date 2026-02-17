@@ -57,6 +57,28 @@
             return $this->morphMany( Stock::class , 'model' );
         }
 
+        // Inside App\Models\Purchase.php
+
+        public function retailPriceUpdates() : HasMany
+        {
+            return $this->hasMany(RetailPriceUpdate::class, 'purchase_id', 'id');
+        }
+
+        public function wholesalePriceUpdates() : HasMany
+        {
+            return $this->hasMany(WholesalePriceUpdate::class, 'purchase_id', 'id');
+        }
+
+//        public function retailPriceUpdates() : MorphMany
+//        {
+//            return $this->morphMany( RetailPriceUpdate::class , 'item' );
+//        }
+//
+//        public function wholesalePriceUpdates() : MorphMany
+//        {
+//            return $this->morphMany( WholesalePriceUpdate::class , 'item' );
+//        }
+
         public function otherWarehouse() : BelongsTo
         {
             return $this->belongsTo( Warehouse::class , 'other_warehouse_id' , 'id' );

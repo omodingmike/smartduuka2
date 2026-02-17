@@ -60,8 +60,13 @@
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
 
-                return Purchase::with( [ 'supplier' , 'creator' , 'stocks.product' , 'purchasePayments' ] )->where( function ($query) use ($requests) {
-//                    $query->where( 'type' , PurchaseType::ITEM );
+                return Purchase::with( [
+                    'supplier' ,
+                    'creator' ,
+                    'purchasePayments' , 'retailPriceUpdates' , 'wholesalePriceUpdates' ,
+                    'stocks.product'
+                ] )->where
+                ( function ($query) use ($requests) {
                     foreach ( $requests as $key => $request ) {
                         if ( in_array( $key , $this->purchaseFilter ) ) {
                             if ( $key == "except" ) {
@@ -337,6 +342,13 @@
                                             'unit_id'       => $retailPrice[ 'unit_id' ]
                                         ]
                                     );
+
+                                    $productModel->retailPriceUpdates()->create( [
+                                        'new_price'   => $retailPrice[ 'new_price' ] ,
+                                        'unit_id'     => $retailPrice[ 'unit_id' ] ,
+                                        'old_price'   => $retailPrice[ 'old_price' ] ,
+                                        'purchase_id' => $this->purchase->id
+                                    ] );
                                 }
                             }
 
@@ -348,7 +360,13 @@
                                         'minQuantity' => $wholesalePrice[ 'min_quantity' ] ,
                                         'price'       => $wholesalePrice[ 'new_price' ]
                                     ] );
-                                }
+                                    $productModel->wholesalePriceUpdates()->create( [
+                                        'min_quantity' => $wholesalePrice[ 'min_quantity' ] ,
+                                        'new_price'    => $wholesalePrice[ 'new_price' ] ,
+                                        'old_price'    => $wholesalePrice[ 'old_price' ] ,
+                                        'purchase_id'  => $this->purchase->id
+                                    ] );
+                                }/**/
                             }
                         }
                     }
