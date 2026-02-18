@@ -31,6 +31,8 @@
                 return [
                     'item_id'              => $firstItem?->id ,
                     'name'                 => $firstItem?->name ,
+                    'stock'                => $firstItem?->stock ,
+                    'unit'                 => new UnitResource( $firstItem?->unit ) ,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,
                     'total_sales_currency' => AppLibrary::currencyAmountFormat( $group->sum( 'total' ) ) ,

@@ -810,6 +810,7 @@
                     $status = $request->integer( 'status' );
                     if ( $status == OrderStatus::CANCELED->value ) {
                         $order->posPayments()->delete();
+                        $order->orderProducts()->delete();
 //                        $order->posPayments()->update( [ 'register_id' => NULL ] );
                         foreach ( $order->orderProducts as $orderProduct ) {
                             $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
@@ -821,15 +822,7 @@
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $order->warehouse_id
                             ] )->first();
-                            $raw      = Stock::where( [
-                                'item_id'      => $orderProduct->item_id ,
-                                'item_type'    => $itemType ,
-                                'status'       => StockStatus::RECEIVED ,
-                                'warehouse_id' => $order->warehouse_id
-                            ] )->toRawSql();
-                            info( $raw );
-                            info( $stock );
-                            info( $orderProduct );
+
                             $stock?->increment( 'quantity' , $orderProduct->quantity );
                         }
                     }

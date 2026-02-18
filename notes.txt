@@ -75,4 +75,6 @@ demoshop-api.smartduuka.com
 
 only name is required.
 
-Beans 900
+806
+Cash
+UGX 24,500
