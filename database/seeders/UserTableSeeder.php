@@ -19,7 +19,7 @@
                 $admin = User::create( [
                     'name'              => 'John Doe' ,
                     'email'             => 'support@smartduuka.com' ,
-                    'phone'             => '1254875855' ,
+                    'phone'             => '0701034242' ,
                     'username'          => 'admin' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
