@@ -207,25 +207,7 @@
             Route::post( '/pos-payment' , [ PurchaseController::class , 'pos' ] );
 
             Route::prefix( 'dashboard' )->name( 'dashboard.' )->group( function () {
-                Route::get( '/cards' , [ DashboardController::class , 'cards' ] );
-                Route::get( '/total-sales' , [ DashboardController::class , 'totalSales' ] );
-                Route::get( '/total-expenses' , [ DashboardController::class , 'totalExpenses' ] );
-                Route::get( '/pending-expenses' , [ DashboardController::class , 'pendingExpenses' ] );
-                Route::get( '/total-orders' , [ DashboardController::class , 'totalOrders' ] );
-                Route::get( '/total-customers' , [ DashboardController::class , 'totalCustomers' ] );
-                Route::get( '/total-products' , [ DashboardController::class , 'totalProducts' ] );
-                Route::get( '/sales-summary' , [ DashboardController::class , 'salesSummary' ] );
-                Route::get( '/customer-states' , [ DashboardController::class , 'customerStates' ] );
-                Route::get( '/top-products' , [ DashboardController::class , 'topProducts' ] );
-                Route::get( '/credit-sales' , [ DashboardController::class , 'creditSales' ] );
-                Route::get( '/deposit-sales' , [ DashboardController::class , 'depositSales' ] );
-                Route::get( '/in-stock' , [ DashboardController::class , 'inStock' ] );
-                Route::get( '/out-stock' , [ DashboardController::class , 'outStock' ] );
-                Route::get( '/expiredStock' , [ DashboardController::class , 'expiredStock' ] );
-                Route::get( '/stock-value' , [ DashboardController::class , 'stockValue' ] );
-                Route::get( '/vendor-balance' , [ DashboardController::class , 'vendorBalance' ] );
-                Route::get( '/net-profit' , [ DashboardController::class , 'netProfit' ] );
-                Route::get( '/gross-profit' , [ DashboardController::class , 'grossProfit' ] );
+                Route::get( '/' , [ DashboardController::class , 'index' ] );
             } );
 
             Route::prefix( 'supplier' )->name( 'supplier.' )->group( function () {
