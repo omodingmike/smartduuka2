@@ -17,11 +17,11 @@
         {
             $admin = User::updateOrCreate(
                 [
-                    'email'    => 'support@smartduuka.com' ,
-                    'phone'    => '0701034242' ,
                     'username' => 'admin'
                 ] ,
                 [
+                    'email'             => 'support@smartduuka.com' ,
+                    'phone'             => '0701034242' ,
                     'name'              => 'John Doe' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
@@ -34,11 +34,11 @@
 
             $customer = User::updateOrCreate(
                 [
-                    'email'    => 'walkingcustomer@example.com' ,
-                    'phone'    => '0701234567' ,
                     'username' => 'default-customer'
                 ] ,
                 [
+                    'email'             => 'walkingcustomer@example.com' ,
+                    'phone'             => '0701234567' ,
                     'name'              => 'Walking Customer' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
