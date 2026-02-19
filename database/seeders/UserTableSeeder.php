@@ -15,33 +15,37 @@
 
         public function run() : void
         {
-            if ( ! User::where( 'email' , 'support@smartduuka.com' )->exists() ) {
-                $admin = User::create( [
+            $admin = User::updateOrCreate(
+                [
+                    'email'    => 'support@smartduuka.com' ,
+                    'phone'    => '0701034242' ,
+                    'username' => 'admin'
+                ] ,
+                [
                     'name'              => 'John Doe' ,
-                    'email'             => 'support@smartduuka.com' ,
-                    'phone'             => '0701034242' ,
-                    'username'          => 'admin' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
                     'status'            => Status::ACTIVE ,
                     'country_code'      => '+880' ,
                     'is_guest'          => Ask::NO
-                ] );
-                $admin->assignRole( Role::find( EnumRole::ADMIN ) );
-            }
+                ]
+            );
+            $admin->assignRole( Role::find( EnumRole::ADMIN ) );
 
-            if ( ! User::where( 'email' , 'walkingcustomer@example.com' )->exists() ) {
-                $customer = User::create( [
+            $customer = User::updateOrCreate(
+                [
+                    'email'    => 'walkingcustomer@example.com' ,
+                    'phone'    => '0701234567' ,
+                    'username' => 'default-customer'
+                ] ,
+                [
                     'name'              => 'Walking Customer' ,
-                    'email'             => 'walkingcustomer@example.com' ,
-                    'phone'             => '0701234567' ,
-                    'username'          => 'default-customer' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
                     'status'            => Status::ACTIVE ,
                     'is_guest'          => Ask::NO
-                ] );
-                $customer->assignRole( Role::find( EnumRole::CUSTOMER ) );
-            }
+                ]
+            );
+            $customer->assignRole( Role::find( EnumRole::CUSTOMER ) );
         }
     }
