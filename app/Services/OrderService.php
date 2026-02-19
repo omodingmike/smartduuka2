@@ -29,6 +29,7 @@
     use App\Models\Unit;
     use App\Models\User;
     use Exception;
+    use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
@@ -58,27 +59,35 @@
         /**
          * @throws Exception
          */
-        public function list(PaginateRequest $request)
+        public function list(Request $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderBy     = $request->get( 'order_by' ) ?? 'desc';
+                $page        = $request->get( 'page' ) ?? 1;
+                $perPage     = $request->get( 'perPage' ) ?? 10;
+                $status      = $request->get( 'status' );
+                $order_type      = $request->get( 'order_type' );
+                $query       = $request->get( 'query' );
+                $query       = $query ? trim( $query ) : NULL;
                 $type        = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
                 return Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
                             ->where( 'payment_type' , $type )
-                            ->where( function ($query) use ($requests) {
-                                foreach ( $requests as $key => $request ) {
-                                    if ( in_array( $key , $this->orderFilter ) ) {
-                                        $query->where( $key , 'like' , '%' . $request . '%' );
-                                    }
-                                }
-                            } )->orderBy( $orderColumn , $orderBy )->$method(
-                        $methodValue
-                    );
+                            ->when( $query , function (Builder $q) use ($query) {
+                                $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                                  ->orWhereHas( 'user' , function ($q) use ($query) {
+                                      $q->where( 'name' , 'ilike' , "%$query%" );
+                                  } );
+                            } )
+                            ->when( $status , function (Builder $q) use ($status) {
+                                $q->where( 'payment_status' , $status );
+                            } )
+                            ->when( $order_type , function (Builder $q) use ($order_type) {
+                                $q->where( 'order_type' , $order_type );
+                            } )
+                            ->orderBy( $orderColumn , $orderBy )
+                            ->paginate( $perPage , [ '*' ] , 'page' , $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
