@@ -67,8 +67,10 @@
                 $page        = $request->get( 'page' ) ?? 1;
                 $perPage     = $request->get( 'perPage' ) ?? 10;
                 $status      = $request->get( 'status' );
-                $order_type      = $request->get( 'order_type' );
+                $order_type  = $request->get( 'order_type' );
                 $query       = $request->get( 'query' );
+                $start       = $request->date( 'start' );
+                $end         = $request->date( 'end' );
                 $query       = $query ? trim( $query ) : NULL;
                 $type        = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
@@ -82,6 +84,12 @@
                             } )
                             ->when( $status , function (Builder $q) use ($status) {
                                 $q->where( 'payment_status' , $status );
+                            } )
+                            ->when( ($start && !$end) , function (Builder $q) use ($start) {
+                                $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                            } )
+                            ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
                             } )
                             ->when( $order_type , function (Builder $q) use ($order_type) {
                                 $q->where( 'order_type' , $order_type );
