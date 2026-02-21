@@ -4,6 +4,7 @@
 
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Spatie\MediaLibrary\HasMedia;
     use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -32,14 +33,19 @@
 
         public function getFileAttribute()
         {
-            if ( ! empty($this->getFirstMediaUrl('purchase_payment')) ) {
-                $product = $this->getMedia('purchase_payment')->first();
+            if ( ! empty( $this->getFirstMediaUrl( 'purchase_payment' ) ) ) {
+                $product = $this->getMedia( 'purchase_payment' )->first();
                 return $product->getUrl();
             }
         }
 
         public function paymentMethod()
         {
-            return $this->belongsTo(PaymentMethod::class , 'payment_method');
+            return $this->belongsTo( PaymentMethod::class , 'payment_method' );
+        }
+
+        public function purchase() : BelongsTo
+        {
+            return $this->belongsTo( Purchase::class );
         }
     }

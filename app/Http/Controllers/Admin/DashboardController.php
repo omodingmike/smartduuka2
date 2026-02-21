@@ -36,6 +36,8 @@
                     'salesOrderCharts'   => $this->dashboardService->salesOrderCharts( $request ) ,
                     'inventoryOverview'  => $this->dashboardService->inventoryOverview( $request ) ,
                     'topSellingProducts' => $this->dashboardService->topSellingProducts( $request ) ,
+                    'expenses'           => $this->dashboardService->expenses( $request ) ,
+                    'purchases'          => $this->dashboardService->purchases( $request ) ,
                 ]
                 ];
             } catch ( Exception $exception ) {

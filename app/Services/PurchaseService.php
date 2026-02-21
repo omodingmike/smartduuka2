@@ -305,8 +305,7 @@
                         $products = json_decode( $request->items , TRUE );
 
                         foreach ( $products as $product ) {
-                            $expiry     = ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay();
-                            $expiryDate = isset( $product[ 'expiry' ] ) ? $expiry : NULL;
+                            $expiryDate = isset( $product[ 'expiry' ] ) ? ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay() : NULL;
                             Stock::create( [
                                 'model_type'       => Purchase::class ,
                                 'reference'        => "S" . time() ,
@@ -612,11 +611,12 @@
         {
             try {
                 DB::transaction( function () use ($request , $purchase) {
+                    $amount          = $request->amount;
                     $purchasePayment = PurchasePayment::create( [
                         'purchase_id'    => $purchase->id ,
                         'date'           => $request->date ,
                         'reference_no'   => $request->reference_no ,
-                        'amount'         => $request->amount ,
+                        'amount'         => $amount ,
                         'payment_method' => $request->payment_method ,
                         'register_id'    => register()->id
                     ] );
@@ -750,121 +750,6 @@
                 return response()->json( [ 'message' => 'Stock stored successfully' ] );
             } catch ( Exception $e ) {
                 Log::error( 'Store Stock Error: ' . $e->getMessage() );
-                throw new Exception( $e->getMessage() , 422 );
-            }
-        }
-
-        public function storeStock1(PurchaseRequest $request)
-        {
-//            return 1;
-            try {
-                $warehouse_id = $request->input( 'warehouse_id' );
-                $products     = json_decode( $request->string( 'products' ) , TRUE );
-                $batch        = 'B' . time();
-                //  '[{"product_id":3,"selected_attribute_type":1,"quantity":"1000","weight":"","serial":"","variation":{"1":1}}]'
-                // '[{"product_id":4,"quantity":"1000","weight":"","serial":"","variation":{}}]'
-                foreach ( $products as $p ) {
-                    $is_variation = isset( $p[ 'selected_attribute_type' ] );
-                    $product      = Product::find( $p[ 'product_id' ] );
-
-                    $product_attribute_id        = $p[ 'product_attribute_id' ] ?? NULL;
-                    $product_attribute_option_id = $p[ 'product_attribute_option_id' ] ?? NULL;
-
-                    if ( $is_variation && isset( $p[ 'variation' ] ) ) {
-                        // The variation key is like {"1": 1} where key is attribute_id and value is option_id
-                        $variationId      = NULL;
-                        $variationOptions = $p[ 'variation' ];
-
-                        // Find variation that has exactly these options
-                        $optionIds = array_values( $variationOptions );
-
-                        // Use recursive relationship or direct query to find the variation
-                        // Assuming ProductVariation has a relationship to ProductAttributeOption via a pivot table or similar
-                        // Since ProductVariation model doesn't have productAttributeOptions relationship defined in the provided file,
-                        // we need to rely on how variations are structured.
-                        // The model has 'product_attribute_id' and 'product_attribute_option_id'.
-                        // This suggests a variation is linked to a SINGLE option?
-                        // Or is it a recursive structure (parent_id)?
-
-                        // If it's recursive (HasRecursiveRelationships trait used), a variation might be a leaf node in a tree.
-                        // A leaf node variation would have a path of options.
-
-                        // Given the complexity and missing relationship in the model file provided earlier,
-                        // let's try to find the variation by matching the specific option ID if it's a single level,
-                        // or iterate if we can't query directly.
-
-                        // However, the payload {"1": 1} suggests multiple attributes could be present.
-                        // If ProductVariation represents a single combination (SKU), it should be findable.
-
-                        // Let's try to find a variation that matches the last option in the chain if it's hierarchical,
-                        // or matches the set of options if it's flat.
-
-                        // Since I can't call productAttributeOptions(), I will try to find by the option ID directly if possible,
-                        // assuming the variation record itself holds the option ID (product_attribute_option_id).
-
-                        // If the payload has multiple options, we might need to traverse.
-                        // But for {"1": 1}, it's just one option.
-
-                        // Let's try to find a variation where product_attribute_option_id matches one of the values.
-                        // And product_id matches.
-
-                        // If there are multiple options, this logic needs to be smarter.
-                        // But for now, let's assume the provided option ID identifies the variation.
-
-                        $variation = ProductVariation::where( 'product_id' , $product->id )
-                                                     ->whereIn( 'product_attribute_option_id' , $optionIds )
-                                                     ->first();
-
-                        if ( $variation ) {
-                            $targetModel = $variation;
-                            $targetClass = ProductVariation::class;
-                            $price       = $variation->price ?? $product->buying_price; // Use variation price if available
-                            $sku         = $variation->sku ?? $product->sku;
-                            $variationId = $variation->id;
-                        }
-                        else {
-                            // Fallback to product if variation not found (should not happen if data is correct)
-                            $targetModel = $product;
-                            $targetClass = Product::class;
-                            $price       = $product->buying_price;
-                            $sku         = $product->sku;
-                            $variationId = NULL;
-                        }
-                    }
-                    else {
-                        $targetModel = $product;
-                        $targetClass = Product::class;
-                        $price       = $product->buying_price;
-                        $sku         = $product->sku;
-                        $variationId = NULL;
-                    }
-
-                    $total = $p[ 'quantity' ] * $price;
-
-                    Stock::create( [
-                        'model_type'                  => $targetClass ,
-                        'model_id'                    => $targetModel->id ,
-                        'warehouse_id'                => $warehouse_id ,
-                        'reference'                   => 'S' . time() ,
-                        'item_type'                   => $targetClass ,
-                        'item_id'                     => $targetModel->id ,
-                        'product_id'                  => $product->id , // Always keep reference to parent product
-                        'variation_id'                => $variationId ,
-                        'price'                       => $price ,
-                        'quantity'                    => $p[ 'quantity' ] ,
-                        'discount'                    => 0 ,
-                        'tax'                         => 0 ,
-                        'batch'                       => $batch ,
-                        'subtotal'                    => $total ,
-                        'total'                       => $total ,
-                        'sku'                         => $sku ,
-                        'product_attribute_id'        => $product_attribute_id ,
-                        'product_attribute_option_id' => $product_attribute_option_id ,
-                        'status'                      => StockStatus::RECEIVED
-                    ] );
-                }
-                return response()->json( [] );
-            } catch ( Exception $e ) {
                 throw new Exception( $e->getMessage() , 422 );
             }
         }

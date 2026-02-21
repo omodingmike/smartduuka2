@@ -14,6 +14,7 @@
     use App\Models\PaymentMethod;
     use App\Models\PosPayment;
     use App\Models\Product;
+    use App\Models\Purchase;
     use App\Models\Stock;
     use App\Models\User;
     use Carbon\Carbon;
@@ -21,6 +22,7 @@
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
 
     class DashboardService
@@ -445,6 +447,112 @@
             }
         }
 
+        public function expenses(Request $request)
+        {
+            try {
+                $start = $request->date( 'start' );
+                $end   = $request->date( 'end' );
+                if ( $start && $end ) {
+                    $startDate = $start->copy()->startOfDay();
+                    $endDate   = $end->copy()->endOfDay();
+                }
+                else {
+                    $startDate = Carbon::now()->copy()->startOfMonth();
+                    $endDate   = Carbon::now()->copy()->endOfMonth();
+                }
+
+                $diffInDays = $startDate->diffInDays( $endDate );
+                $categories = [];
+
+                $totalExpensesData  = [];
+                $paidExpensesData   = [];
+                $unpaidExpensesData = [];
+
+                if ( $diffInDays > 31 ) {
+                    // Monthly grouping
+                    $current = $startDate->copy()->startOfMonth();
+                    while ( $current->lte( $endDate ) ) {
+                        $categories[] = [ 'label' => $current->format( 'M Y' ) ];
+
+                        $monthStart = $current->copy()->startOfMonth();
+                        $monthEnd   = $current->copy()->endOfMonth();
+
+                        if ( $monthStart->lt( $startDate ) ) $monthStart = $startDate->copy();
+                        if ( $monthEnd->gt( $endDate ) ) $monthEnd = $endDate->copy();
+
+                        $stats = Expense::whereBetween( 'date' , [ $monthStart , $monthEnd ] )
+                                        ->selectRaw( 'sum(amount) as total, sum(paid) as paid_amount' )
+                                        ->first();
+
+                        $total  = (float) ( $stats->total ?? 0 );
+                        $paid   = (float) ( $stats->paid_amount ?? 0 );
+                        $unpaid = $total - $paid;
+
+                        $totalExpensesData[]  = $total;
+                        $paidExpensesData[]   = $paid;
+                        $unpaidExpensesData[] = $unpaid;
+
+                        $current->addMonth();
+                    }
+                }
+                else {
+                    // Daily grouping
+                    $period = CarbonPeriod::create( $startDate , $endDate );
+                    foreach ( $period as $date ) {
+                        $categories[] = [ 'label' => $date->format( 'M d' ) ];
+
+                        $stats = Expense::whereDate( 'date' , $date )
+                                        ->selectRaw( 'sum(amount) as total, sum(paid) as paid_amount' )
+                                        ->first();
+
+                        $total  = (float) ( $stats->total ?? 0 );
+                        $paid   = (float) ( $stats->paid_amount ?? 0 );
+                        $unpaid = $total - $paid;
+
+                        $totalExpensesData[]  = $total;
+                        $paidExpensesData[]   = $paid;
+                        $unpaidExpensesData[] = $unpaid;
+                    }
+                }
+
+                $distributionData = Expense::whereBetween( 'date' , [ $startDate , $endDate ] )
+                                           ->select( 'expense_category_id' , DB::raw( 'sum(amount) as total' ) )
+                                           ->groupBy( 'expense_category_id' )
+                                           ->with( 'expenseCategory' )
+                                           ->get()
+                                           ->map( function ($row) {
+                                               return [
+                                                   'name'  => $row->expenseCategory?->name ?? 'Uncategorized' ,
+                                                   'value' => (float) $row->total
+                                               ];
+                                           } )
+                                           ->sortByDesc( 'value' )
+                                           ->values();
+
+                $totalPeriodExpenses = Expense::whereBetween( 'date' , [ $startDate , $endDate ] )->sum( 'amount' );
+
+                return [
+                    'overview'     => [
+                        'categories' => $categories ,
+                        'series'     => [
+                            [ 'name' => 'Total Expenses' , 'type' => 'column' , 'data' => $totalExpensesData ] ,
+                            [ 'name' => 'Paid' , 'type' => 'area' , 'data' => $paidExpensesData ] ,
+                            [ 'name' => 'Unpaid' , 'type' => 'line' , 'data' => $unpaidExpensesData ] ,
+                        ]
+                    ] ,
+                    'distribution' => [
+                        'labels' => $distributionData->pluck( 'name' ) ,
+                        'series' => $distributionData->pluck( 'value' )
+                    ] ,
+                    'total'        => currency( $totalPeriodExpenses )
+                ];
+
+            } catch ( Exception $exception ) {
+                Log::error( 'Expenses Chart Error: ' . $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
         public function topSellingProducts(Request $request)
         {
             try {
@@ -474,13 +582,51 @@
                                            'category' => $item->category?->name ?? 'General' ,
                                            'sold'     => (int) $row->total_sold ,
                                            // Using your format_currency_short function for values like "UGX 264M"
-                                           'revenue'  =>  format_currency_short( $row->total_revenue ) ,
+                                           'revenue'  => format_currency_short( $row->total_revenue ) ,
                                            'trend'    => '0%' , // Trend requires comparison with previous period logic
                                        ];
                                    } );
             } catch ( \Exception $e ) {
                 Log::error( 'Top Selling Products Error: ' . $e->getMessage() );
                 return [];
+            }
+        }
+
+        public function purchases(Request $request)
+        {
+            try {
+                $start = $request->date( 'start' );
+                $end   = $request->date( 'end' );
+                if ( $start && $end ) {
+                    $startDate = $start->copy()->startOfDay();
+                    $endDate   = $end->copy()->endOfDay();
+                }
+                else {
+                    $startDate = Carbon::now()->copy()->startOfMonth();
+                    $endDate   = Carbon::now()->copy()->endOfMonth();
+                }
+
+                $purchasesQuery = Purchase::whereBetween( 'date' , [ $startDate , $endDate ] );
+
+                $totalAmount = $purchasesQuery->sum( 'total' );
+
+                $totalPaid = $purchasesQuery->get()->sum( function (Purchase $q) {
+                    return $q->purchasePayments()->sum( 'amount' );
+                } );
+
+                $balance = $totalAmount - $totalPaid;
+
+                $totalSuppliers = $purchasesQuery->get()->unique( 'supplier_id' )->count();
+
+                return [
+                    'series'         => [ $totalPaid , $balance ] ,
+                    'totalSuppliers' => $totalSuppliers ,
+                    'balance'        => format_currency_short( $balance )
+                ];
+
+            } catch ( Exception $exception ) {
+                Log::error( 'Purchases Chart Error: ' . $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
             }
         }
     }
