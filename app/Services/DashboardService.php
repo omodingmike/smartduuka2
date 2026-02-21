@@ -7,6 +7,7 @@
     use App\Enums\Role as EnumRole;
     use App\Http\Resources\PaymentMethodResource;
     use App\Libraries\AppLibrary;
+    use App\Models\Damage;
     use App\Models\Expense;
     use App\Models\Order;
     use App\Models\PaymentMethod;
@@ -370,50 +371,147 @@
         public function inventoryOverview(Request $request)
         {
             try {
-                $totalStockValue = 0;
-                $totalItems      = 0;
-                $inStock         = 0;
-                $lowStock        = 0;
-                $outOfStock      = 0;
-                $expired         = 0;
+                $products      = Product::all();
+                $totalProducts = $products->count();
 
-                // Assuming you have a Stock model or similar logic to calculate stock value
-                // This part needs to be adapted to your actual Stock model structure
-                // Based on previous context, there is a Stock model.
+                // Use a safe divisor to avoid division by zero
+                $totalItemsCount = $totalProducts > 0 ? $totalProducts : 1;
 
-                // Fetch all active stocks
-                // You might want to chunk this if you have a huge number of stocks
-                $stocks = Stock::with( 'product' )->get();
+                $stock_value = 0;
+                $lowStock    = 0;
+                $outOfStock  = 0;
+                $inStock     = 0;
+                $hasIssue    = 0;
 
-                foreach ( $stocks as $stock ) {
-                    $quantity = $stock->quantity;
-                    $price    = $stock->price; // Or cost price, depending on what "Stock Value" means to you (usually cost)
+                foreach ( $products as $product ) {
+                    // Calculate total monetary value of current inventory
+                    $stock_value += $product->stock * $product->buying_price;
 
-                    // If product has variations or specific pricing logic, adjust here.
-                    // For now, simple quantity * price
-                    $totalStockValue += ( $quantity * $price );
-                    $totalItems++;
+                    // 1. Check for Critical Issues (Expired or Damaged)
+                    // We count the product here if it has ANY expired batch or damage record
+                    $isExpired = $product->stocks()
+                                         ->whereNotNull( 'expiry_date' )
+                                         ->where( 'expiry_date' , '<' , now() )
+                                         ->exists();
 
-                    if ( $quantity <= 0 ) {
+                    $hasDamages = $product->stocks()
+                                          ->where( 'model_type' , Damage::class )
+                                          ->exists();
+
+                    if ( $isExpired || $hasDamages ) {
+                        $hasIssue++;
+                    }
+
+                    // 2. Classify based on Quantity (Mutually Exclusive)
+                    if ( $product->stock <= 0 ) {
                         $outOfStock++;
                     }
-                    elseif ( $quantity < 10 ) { // Assuming 10 is the low stock threshold, or use a setting
+                    elseif ( $product->stock < $product->low_stock_quantity_warning ) {
                         $lowStock++;
                     }
                     else {
+                        // Only count as "In Stock" if it is NOT low and NOT out of stock
                         $inStock++;
                     }
+                }
 
-                    // Check for expiry if applicable
-                    if ( $stock->expiry_date && Carbon::parse( $stock->expiry_date )->isPast() ) {
-                        $expired++;
+                return [
+                    'stock_value' => AppLibrary::currencyAmountFormat( $stock_value ) ,
+                    'items'       => [
+                        [
+                            'label' => 'In Stock' ,
+                            'val'   => number_format( $inStock ) . ' items (' . round( ( $inStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
+                            'pct'   => round( ( $inStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
+                            'color' => 'bg-green-500'
+                        ] ,
+                        [
+                            'label' => 'Low Stock' ,
+                            'val'   => number_format( $lowStock ) . ' items (' . round( ( $lowStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
+                            'pct'   => round( ( $lowStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
+                            'color' => 'bg-yellow-500'
+                        ] ,
+                        [
+                            'label' => 'Out of Stock' ,
+                            'val'   => number_format( $outOfStock ) . ' items (' . round( ( $outOfStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
+                            'pct'   => round( ( $outOfStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
+                            'color' => 'bg-red-500'
+                        ] ,
+                        [
+                            'label' => 'Expired/Damaged' ,
+                            'val'   => number_format( $hasIssue ) . ' items (' . round( ( $hasIssue / $totalItemsCount ) * 100 , 1 ) . '%)' ,
+                            'pct'   => round( ( $hasIssue / $totalItemsCount ) * 100 , 1 ) . '%' ,
+                            'color' => 'bg-gray-400'
+                        ]
+                    ]
+                ];
+
+            } catch ( Exception $exception ) {
+                Log::error( 'Inventory Overview Error: ' . $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function inventoryOverview1(Request $request)
+        {
+            try {
+                $totalProducts = Product::count();
+                $totalItems    = $totalProducts;
+
+                $stocks      = Stock::with( 'product' )->get();
+                $products    = Product::all();
+                $stock_value = 0;
+                $lowStock    = 0;
+                $outOfStock  = 0;
+                $inStock     = 0;
+                $hasIssue = 0;
+
+                foreach ( $products as $product ) {
+                    $stock_value += $product->stock * $product->buying_price;
+                    if ( $product->stock < $product->low_stock_quantity_warning ) {
+                        $lowStock += 1;
+                    }
+                    if ( $product->stock > $product->low_stock_quantity_warning && $product->stock > 0 ) {
+                        $inStock += 1;
+                    }
+                    if ( $product->stock == 0 ) {
+                        $outOfStock += 1;
+                    }
+
+
+                    $currentStock = $product->stock;
+                    $isExpired = $product->stocks()->whereNotNull('expiry_date')->where('expiry_date', '<', now())->exists();
+                    $hasDamages = $product->stocks()->where('model_type', Damage::class)->exists();
+
+                    if ($isExpired || $hasDamages) {
+                        $hasIssue++;
+                    }
+
+                    // 2. Classify based on quantity
+                    if ($currentStock <= 0) {
+                        $outOfStock++;
+                    } elseif ($currentStock < $product->low_stock_quantity_warning) {
+                        $lowStock++;
+                    } else {
+                        $inStock++;
                     }
                 }
+                $damages = Damage::whereHas( 'stocks' , function ($q) {
+                    $q->whereHas( 'products' );
+                } )->count();
+
+                $uniqueExpiredProducts = [];
+                foreach ( $stocks as $stock ) {
+                    if ( $stock->expiry_date && $stock->expiry_date->isPast() ) {
+                        $uniqueExpiredProducts[ $stock->product_id ] = TRUE;
+                    }
+                }
+                $expired = count( $uniqueExpiredProducts );
+
 
                 $totalItems = $totalItems > 0 ? $totalItems : 1;
 
                 return [
-                    'stock_value' => AppLibrary::currencyAmountFormat( $totalStockValue ) ,
+                    'stock_value' => AppLibrary::currencyAmountFormat( $stock_value ) ,
                     'items'       => [
                         [
                             'label' => 'In Stock' ,
@@ -435,8 +533,8 @@
                         ] ,
                         [
                             'label' => 'Expired/Damaged' ,
-                            'val'   => number_format( $expired ) . ' items (' . round( ( $expired / $totalItems ) * 100 , 1 ) . '%)' ,
-                            'pct'   => round( ( $expired / $totalItems ) * 100 , 1 ) . '%' ,
+                            'val'   => number_format( $expired + $damages ) . ' items (' . round( ( ( $expired + $damages ) / $totalItems ) * 100 , 1 ) . '%)' ,
+                            'pct'   => round( ( ( $expired + $damages ) / $totalItems ) * 100 , 1 ) . '%' ,
                             'color' => 'bg-gray-400'
                         ]
                     ]

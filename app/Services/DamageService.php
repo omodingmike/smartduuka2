@@ -4,6 +4,7 @@
 
     use App\Enums\MediaEnum;
     use App\Enums\Status;
+    use App\Enums\StockStatus;
     use App\Http\Requests\DamageRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Models\Damage;
@@ -98,6 +99,7 @@
                     }
                     $model_id   = $this->damage->id;
                     $product_id = $request->input( 'product_id' );
+
                     Stock::create( [
                         'model_type'      => Damage::class ,
                         'model_id'        => $model_id ,
@@ -113,12 +115,13 @@
                         'subtotal'        => 0 ,
                         'total'           => 0 ,
                         'sku'             => 'sku' ,
-                        'status'          => Status::INACTIVE
+                        'status'          => StockStatus::RECEIVED
                     ] );
+
                     if ( $request->image ) {
                         $this->saveMedia( $request , $this->damage , MediaEnum::DAMAGES );
-//                        $this->damage->addMediaFromRequest( 'image' )->toMediaCollection( MediaEnum::DAMAGES );
                     }
+
                 } );
                 return $this->damage;
             } catch ( Exception $exception ) {

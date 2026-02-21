@@ -21,6 +21,7 @@
     use App\Models\ExpenseCategory;
     use App\Models\Ingredient;
     use App\Models\Product;
+    use App\Models\ProductAttributeOption;
     use App\Models\ProductVariation;
     use App\Models\Purchase;
     use App\Models\PurchasePayment;
@@ -29,6 +30,7 @@
     use App\Models\StockTax;
     use App\Models\Tax;
     use App\Models\Warehouse;
+    use Carbon\Carbon;
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
@@ -303,11 +305,13 @@
                         $products = json_decode( $request->items , TRUE );
 
                         foreach ( $products as $product ) {
+                            $expiry     = ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay();
+                            $expiryDate = isset( $product[ 'expiry' ] ) ? $expiry : NULL;
                             Stock::create( [
                                 'model_type'       => Purchase::class ,
                                 'reference'        => "S" . time() ,
                                 'model_id'         => $model_id ,
-                                'expiry_date'      => $product[ 'expiry' ] ?? NULL ,
+                                'expiry_date'      => $expiryDate ,
                                 'item_type'        => Product::class ,
                                 'product_id'       => $product[ 'product_id' ] ,
                                 'item_id'          => $product[ 'product_id' ] ,
@@ -684,7 +688,9 @@
                 foreach ( $products as $p ) {
                     $product        = Product::find( $p[ 'product_id' ] );
                     $variationId    = $p[ 'variation_id' ] ?? NULL;
-                    $variationNames = ''; // Default empty for simple products
+                    $variationNames = '';
+
+                    $expiryDate = isset( $p[ 'expiry' ] ) ? ( Carbon::parse( $p[ 'expiry' ] ) )->copy()->endOfDay() : NULL;
 
                     if ( $variationId ) {
                         // VARIANT PRODUCT LOGIC
@@ -698,7 +704,7 @@
                             $names = [];
                             ksort( $p[ 'variation_path' ] );
                             foreach ( $p[ 'variation_path' ] as $optionId ) {
-                                $option = \App\Models\ProductAttributeOption::with( 'productAttribute' )->find( $optionId );
+                                $option = ProductAttributeOption::with( 'productAttribute' )->find( $optionId );
                                 if ( $option && $option->productAttribute ) {
                                     $names[] = $option->productAttribute->name . ' :: ' . $option->name;
                                 }
@@ -731,7 +737,7 @@
                         // These fields are now correctly mapped from your restored UI
 //                        'weight'          => $p[ 'weight' ] ?? NULL ,
 //                        'serial'          => $p[ 'serial' ] ?? NULL ,
-                        'expiry_date'     => $p[ 'expiry' ] ?? NULL ,
+                        'expiry_date'     => $expiryDate ,
                         'discount'        => 0 ,
                         'tax'             => 0 ,
                         'batch'           => $batch ,
