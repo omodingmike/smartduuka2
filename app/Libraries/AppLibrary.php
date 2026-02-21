@@ -297,14 +297,15 @@
 
         public static function currencyAmountFormat($amount) : string
         {
-            $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
-            $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, config( 'system.currency_decimal_point',0 ));
+            if ( ! $amount ) $amount = 0;
+            $formatter = new NumberFormatter( 'en_US' , NumberFormatter::CURRENCY );
+            $formatter->setAttribute( NumberFormatter::MIN_FRACTION_DIGITS , config( 'system.currency_decimal_point' , 0 ) );
             if ( config( 'system.currency_position' ) == CurrencyPosition::RIGHT ) {
                 return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . currencySymbol();
             }
 //            return currencySymbol() . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
-            $money= Money::of( $amount , currencySymbol() , roundingMode: RoundingMode::Up );
-            return $money->formatToLocale('en_US',true);
+            $money = Money::of( $amount , currencySymbol() , roundingMode: RoundingMode::Up );
+            return $money->formatToLocale( 'en_US' , TRUE );
         }
 
         public static function flatAmountFormat($amount) : string
