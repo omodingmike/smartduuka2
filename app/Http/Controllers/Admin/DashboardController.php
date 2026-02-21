@@ -30,11 +30,12 @@
         {
             try {
                 return [ 'data' => [
-                    'kpi'               => $this->dashboardService->kpi( $request ) ,
-                    'paymentMethods'    => $this->dashboardService->paymentMethods( $request ) ,
-                    'invoiceDeposit'    => $this->dashboardService->invoiceDeposit( $request ) ,
-                    'salesOrderCharts'  => $this->dashboardService->salesOrderCharts( $request ) ,
-                    'inventoryOverview' => $this->dashboardService->inventoryOverview( $request ) ,
+                    'kpi'                => $this->dashboardService->kpi( $request ) ,
+                    'paymentMethods'     => $this->dashboardService->paymentMethods( $request ) ,
+                    'invoiceDeposit'     => $this->dashboardService->invoiceDeposit( $request ) ,
+                    'salesOrderCharts'   => $this->dashboardService->salesOrderCharts( $request ) ,
+                    'inventoryOverview'  => $this->dashboardService->inventoryOverview( $request ) ,
+                    'topSellingProducts' => $this->dashboardService->topSellingProducts( $request ) ,
                 ]
                 ];
             } catch ( Exception $exception ) {

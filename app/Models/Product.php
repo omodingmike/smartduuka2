@@ -27,7 +27,7 @@
 
         protected       $table   = 'products';
         protected       $guarded = [];
-        protected       $appends = [ 'stock' , 'single_tree' ];
+        protected       $appends = [ 'stock' , 'single_tree','image' ];
         protected array $dates   = [ 'deleted_at' ];
         protected       $casts   = [
             'id'                         => 'integer' ,

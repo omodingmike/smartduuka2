@@ -10,6 +10,7 @@
     use App\Models\Damage;
     use App\Models\Expense;
     use App\Models\Order;
+    use App\Models\OrderProduct;
     use App\Models\PaymentMethod;
     use App\Models\PosPayment;
     use App\Models\Product;
@@ -371,89 +372,6 @@
         public function inventoryOverview(Request $request)
         {
             try {
-                $products      = Product::all();
-                $totalProducts = $products->count();
-
-                // Use a safe divisor to avoid division by zero
-                $totalItemsCount = $totalProducts > 0 ? $totalProducts : 1;
-
-                $stock_value = 0;
-                $lowStock    = 0;
-                $outOfStock  = 0;
-                $inStock     = 0;
-                $hasIssue    = 0;
-
-                foreach ( $products as $product ) {
-                    // Calculate total monetary value of current inventory
-                    $stock_value += $product->stock * $product->buying_price;
-
-                    // 1. Check for Critical Issues (Expired or Damaged)
-                    // We count the product here if it has ANY expired batch or damage record
-                    $isExpired = $product->stocks()
-                                         ->whereNotNull( 'expiry_date' )
-                                         ->where( 'expiry_date' , '<' , now() )
-                                         ->exists();
-
-                    $hasDamages = $product->stocks()
-                                          ->where( 'model_type' , Damage::class )
-                                          ->exists();
-
-                    if ( $isExpired || $hasDamages ) {
-                        $hasIssue++;
-                    }
-
-                    // 2. Classify based on Quantity (Mutually Exclusive)
-                    if ( $product->stock <= 0 ) {
-                        $outOfStock++;
-                    }
-                    elseif ( $product->stock < $product->low_stock_quantity_warning ) {
-                        $lowStock++;
-                    }
-                    else {
-                        // Only count as "In Stock" if it is NOT low and NOT out of stock
-                        $inStock++;
-                    }
-                }
-
-                return [
-                    'stock_value' => AppLibrary::currencyAmountFormat( $stock_value ) ,
-                    'items'       => [
-                        [
-                            'label' => 'In Stock' ,
-                            'val'   => number_format( $inStock ) . ' items (' . round( ( $inStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
-                            'pct'   => round( ( $inStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
-                            'color' => 'bg-green-500'
-                        ] ,
-                        [
-                            'label' => 'Low Stock' ,
-                            'val'   => number_format( $lowStock ) . ' items (' . round( ( $lowStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
-                            'pct'   => round( ( $lowStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
-                            'color' => 'bg-yellow-500'
-                        ] ,
-                        [
-                            'label' => 'Out of Stock' ,
-                            'val'   => number_format( $outOfStock ) . ' items (' . round( ( $outOfStock / $totalItemsCount ) * 100 , 1 ) . '%)' ,
-                            'pct'   => round( ( $outOfStock / $totalItemsCount ) * 100 , 1 ) . '%' ,
-                            'color' => 'bg-red-500'
-                        ] ,
-                        [
-                            'label' => 'Expired/Damaged' ,
-                            'val'   => number_format( $hasIssue ) . ' items (' . round( ( $hasIssue / $totalItemsCount ) * 100 , 1 ) . '%)' ,
-                            'pct'   => round( ( $hasIssue / $totalItemsCount ) * 100 , 1 ) . '%' ,
-                            'color' => 'bg-gray-400'
-                        ]
-                    ]
-                ];
-
-            } catch ( Exception $exception ) {
-                Log::error( 'Inventory Overview Error: ' . $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
-
-        public function inventoryOverview1(Request $request)
-        {
-            try {
                 $totalProducts = Product::count();
                 $totalItems    = $totalProducts;
 
@@ -463,7 +381,6 @@
                 $lowStock    = 0;
                 $outOfStock  = 0;
                 $inStock     = 0;
-                $hasIssue = 0;
 
                 foreach ( $products as $product ) {
                     $stock_value += $product->stock * $product->buying_price;
@@ -476,37 +393,19 @@
                     if ( $product->stock == 0 ) {
                         $outOfStock += 1;
                     }
-
-
-                    $currentStock = $product->stock;
-                    $isExpired = $product->stocks()->whereNotNull('expiry_date')->where('expiry_date', '<', now())->exists();
-                    $hasDamages = $product->stocks()->where('model_type', Damage::class)->exists();
-
-                    if ($isExpired || $hasDamages) {
-                        $hasIssue++;
-                    }
-
-                    // 2. Classify based on quantity
-                    if ($currentStock <= 0) {
-                        $outOfStock++;
-                    } elseif ($currentStock < $product->low_stock_quantity_warning) {
-                        $lowStock++;
-                    } else {
-                        $inStock++;
-                    }
                 }
                 $damages = Damage::whereHas( 'stocks' , function ($q) {
                     $q->whereHas( 'products' );
                 } )->count();
 
                 $uniqueExpiredProducts = [];
+
                 foreach ( $stocks as $stock ) {
                     if ( $stock->expiry_date && $stock->expiry_date->isPast() ) {
                         $uniqueExpiredProducts[ $stock->product_id ] = TRUE;
                     }
                 }
                 $expired = count( $uniqueExpiredProducts );
-
 
                 $totalItems = $totalItems > 0 ? $totalItems : 1;
 
@@ -541,8 +440,47 @@
                 ];
 
             } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
+                Log::error( 'Inventory Overview Error: ' . $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function topSellingProducts(Request $request)
+        {
+            try {
+                $start = $request->date( 'start' ) ?? now()->startOfMonth();
+                $end   = $request->date( 'end' ) ?? now()->endOfMonth();
+
+                return OrderProduct::query()
+                                   ->select( 'item_id' , 'item_type' )
+                                   ->selectRaw( 'SUM(quantity) as total_sold' )
+                                   ->selectRaw( 'SUM(total) as total_revenue' )
+                    // Only count products from completed/paid orders
+                                   ->whereHas( 'order' , function ($query) use ($start , $end) {
+                        $query->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                              ->whereBetween( 'order_datetime' , [ $start , $end ] );
+                    } )
+                                   ->groupBy( 'item_id' , 'item_type' )
+                                   ->orderByDesc( 'total_sold' )
+                                   ->limit( 5 )
+                                   ->get()
+                                   ->map( function ($row) {
+                                       // Load the product or variation
+                                       $item = $row->item;
+
+                                       return [
+                                           'name'     => $item->name ?? 'Unknown Product' ,
+                                           'image'    => $item->image ,
+                                           'category' => $item->category?->name ?? 'General' ,
+                                           'sold'     => (int) $row->total_sold ,
+                                           // Using your format_currency_short function for values like "UGX 264M"
+                                           'revenue'  =>  format_currency_short( $row->total_revenue ) ,
+                                           'trend'    => '0%' , // Trend requires comparison with previous period logic
+                                       ];
+                                   } );
+            } catch ( \Exception $e ) {
+                Log::error( 'Top Selling Products Error: ' . $e->getMessage() );
+                return [];
             }
         }
     }
