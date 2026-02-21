@@ -6,9 +6,12 @@
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\User;
+    use Brick\Math\RoundingMode;
+    use Brick\Money\Money;
     use Carbon\Carbon;
     use Illuminate\Support\Facades\File;
     use InvalidArgumentException;
+    use NumberFormatter;
 
     class AppLibrary
     {
@@ -294,10 +297,14 @@
 
         public static function currencyAmountFormat($amount) : string
         {
+            $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+            $formatter->setAttribute(NumberFormatter::MIN_FRACTION_DIGITS, config( 'system.currency_decimal_point',0 ));
             if ( config( 'system.currency_position' ) == CurrencyPosition::RIGHT ) {
                 return number_format( $amount , config( 'system.currency_decimal_point' ) ) . ' ' . currencySymbol();
             }
-            return currencySymbol() . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
+//            return currencySymbol() . ' ' . number_format( $amount , config( 'system.currency_decimal_point' ) );
+            $money= Money::of( $amount , currencySymbol() , roundingMode: RoundingMode::Up );
+            return $money->formatToLocale('en_US',true);
         }
 
         public static function flatAmountFormat($amount) : string

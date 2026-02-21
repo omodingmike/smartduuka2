@@ -30,8 +30,11 @@
         {
             try {
                 return [ 'data' => [
-                    'kpi' => $this->dashboardService->kpi( $request )
-                ] ];
+                    'kpi'            => $this->dashboardService->kpi( $request ) ,
+                    'paymentMethods' => $this->dashboardService->paymentMethods( $request ) ,
+                    'invoiceDeposit' => $this->dashboardService->invoiceDeposit( $request ) ,
+                ]
+                ];
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

@@ -12,6 +12,7 @@
     "php": "^8.2",
     "africastalking/africastalking": "^3.0",
     "archtechx/enums": "^1.1",
+    "brick/money": "^0.11.1",
     "dipokhalder/laravel-env-editor": "^1.0",
     "essa/api-tool-kit": "^2.2",
     "laravel/fortify": "^1.31",
@@ -28,7 +29,8 @@
     "spatie/laravel-medialibrary": "^11.15",
     "spatie/laravel-permission": "^6.21",
     "stancl/tenancy": "^3.9",
-    "staudenmeir/laravel-adjacency-list": "^1.25"
+    "staudenmeir/laravel-adjacency-list": "^1.25",
+    "ext-intl": "*"
   },
   "repositories": [
     {
