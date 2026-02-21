@@ -3,6 +3,7 @@
     namespace App\Services;
 
     use App\Enums\PaymentStatus;
+    use App\Enums\PaymentType;
     use App\Enums\Role as EnumRole;
     use App\Http\Resources\PaymentMethodResource;
     use App\Libraries\AppLibrary;
@@ -17,7 +18,6 @@
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Support\Facades\Log;
-    use Illuminate\Support\Number;
 
     class DashboardService
     {
@@ -40,58 +40,64 @@
                     $endDate   = Carbon::now()->copy()->endOfMonth();
                 }
 
-                // Unpaid Invoices (Assuming 'UNPAID' or 'PARTIALLY_PAID' status)
                 $unpaidInvoicesQuery = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
                                             ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
 
-                $totalUnpaidInvoices = $unpaidInvoicesQuery->sum( 'total' ) - $unpaidInvoicesQuery->sum( 'paid' );
+
+//                $paidInvoiceAmount = PosPayment::whereHas( 'order' , function ($query) use ($startDate , $endDate) {
+//                    $query->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+//                          ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
+//                } )->sum( 'amount' );
+
+                $totalUnpaidInvoices = $unpaidInvoicesQuery->sum( 'total' ) - $unpaidInvoicesQuery->get()->sum( function (Order $order) {
+                        return $order->posPayments()->sum( 'amount' );
+                    } );
+
 
                 // Overdue Invoices (Due date < Today)
-                $overdueInvoices = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
-                                        ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
-                                        ->where( 'due_date' , '<' , Carbon::now() )
-                                        ->get();
-                $overdueAmount   = 0;
-                foreach ( $overdueInvoices as $invoice ) {
-                    $overdueAmount += ( $invoice->total - $invoice->paid );
-                }
+                $overdueInvoicesQuery = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+                                             ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
+                                             ->where( 'due_date' , '<' , Carbon::now() );
+
+                $overdueAmount = $overdueInvoicesQuery->sum( 'total' ) - $overdueInvoicesQuery->get()->sum( function (Order $order) {
+                        return $order->posPayments()->sum( 'amount' );
+                    } );
 
                 // Not Due Yet Invoices (Due date >= Today)
-                $notDueInvoices = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
-                                       ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
-                                       ->where( 'due_date' , '>=' , Carbon::now() )
-                                       ->get();
-                $notDueAmount   = 0;
-                foreach ( $notDueInvoices as $invoice ) {
-                    $notDueAmount += ( $invoice->total - $invoice->paid );
-                }
+                $notDueInvoicesQuery = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+                                            ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
+                                            ->where( 'due_date' , '>=' , Carbon::now() );
 
-                // Deposit Orders (Assuming specific logic for deposits, e.g., order_type or just partial payments)
-                // For this example, let's assume 'PARTIALLY_PAID' orders are deposit orders or there's a specific flag.
-                // If there isn't a specific 'DEPOSIT' type in OrderType enum provided in context, we might need to infer.
-                // However, the user prompt mentions "Deposit Orders". Let's assume orders with partial payments.
-                $depositOrdersQuery = Order::where( 'payment_status' , PaymentStatus::PARTIALLY_PAID )
+                $notDueAmount = $notDueInvoicesQuery->sum( 'total' ) - $notDueInvoicesQuery->get()->sum( function (Order $order) {
+                        return $order->posPayments()->sum( 'amount' );
+                    } );;
+
+                $depositOrdersQuery = Order::where( 'payment_type' , PaymentType::DEPOSIT )
                                            ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
 
                 $totalDepositOrdersValue = $depositOrdersQuery->sum( 'total' );
-                $paidDepositAmount       = $depositOrdersQuery->sum( 'paid' );
-                $unpaidDepositBalance    = $totalDepositOrdersValue - $paidDepositAmount;
+                $paidDepositAmount       = $depositOrdersQuery->get()->sum( function (Order $order) {
+                    return $order->posPayments()->sum( 'amount' );
+                } );
 
+                $unpaidDepositBalance = $totalDepositOrdersValue - $depositOrdersQuery->get()->sum( function (Order $order) {
+                        return $order->posPayments()->sum( 'amount' );
+                    } );
 
                 return [
                     'unpaid_invoices' => [
-                        'total'       => Number::forHumans( $totalUnpaidInvoices ) ,
-                        'overdue'     => AppLibrary::currencyAmountFormat( $overdueAmount ) ,
-                        'not_due_yet' => AppLibrary::currencyAmountFormat( $notDueAmount ) ,
+                        'total'       => format_currency_short( $totalUnpaidInvoices ) ,
+                        'overdue'     => format_currency_short( $overdueAmount ) ,
+                        'not_due_yet' => format_currency_short( $notDueAmount ) ,
                         'percentages' => [
                             'overdue'     => $totalUnpaidInvoices > 0 ? round( ( $overdueAmount / $totalUnpaidInvoices ) * 100 , 1 ) : 0 ,
                             'not_due_yet' => $totalUnpaidInvoices > 0 ? round( ( $notDueAmount / $totalUnpaidInvoices ) * 100 , 1 ) : 0 ,
                         ]
                     ] ,
                     'deposit_orders'  => [
-                        'total'          => AppLibrary::currencyAmountFormat( $totalDepositOrdersValue ) ,
-                        'paid_deposit'   => AppLibrary::currencyAmountFormat( $paidDepositAmount ) ,
-                        'unpaid_balance' => AppLibrary::currencyAmountFormat( $unpaidDepositBalance ) ,
+                        'total'          => format_currency_short( $totalDepositOrdersValue ) ,
+                        'paid_deposit'   => format_currency_short( $paidDepositAmount ) ,
+                        'unpaid_balance' => format_currency_short( $unpaidDepositBalance ) ,
                         'percentages'    => [
                             'paid'   => $totalDepositOrdersValue > 0 ? round( ( $paidDepositAmount / $totalDepositOrdersValue ) * 100 , 1 ) : 0 ,
                             'unpaid' => $totalDepositOrdersValue > 0 ? round( ( $unpaidDepositBalance / $totalDepositOrdersValue ) * 100 , 1 ) : 0 ,

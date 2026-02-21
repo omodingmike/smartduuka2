@@ -4,6 +4,7 @@
     use App\Enums\BarcodeType;
     use App\Enums\CacheEnum;
     use App\Enums\Constants;
+    use App\Enums\CurrencyPosition;
     use App\Enums\OrderStatus;
     use App\Enums\PaymentStatus;
     use App\Enums\Role;
@@ -263,6 +264,33 @@
         return AppLibrary::currencyAmountFormat( $value );
     }
 
+    function format_currency_short($n) : string
+    {
+        $precision = config( 'system.currency_decimal_point' );
+
+        if ( $n < 1000 ) {
+            $format = number_format( $n , $precision );
+            $suffix = '';
+        }
+        else if ( $n < 1000000 ) {
+            $format = number_format( $n / 1000 , $precision );
+            $suffix = 'K';
+        }
+        else if ( $n < 1000000000 ) {
+            $format = number_format( $n / 1000000 , $precision );
+            $suffix = 'M';
+        }
+        else {
+            $format = number_format( $n / 1000000000 , $precision );
+            $suffix = 'B';
+        }
+
+        if ( config( 'system.currency_position' ) == CurrencyPosition::RIGHT ) {
+            return $format . $suffix . ' ' . currencySymbol();
+        }
+        return currencySymbol() . ' ' . $format . $suffix;
+    }
+
     function currencySymbol() : string
     {
         return Cache::rememberForever( CacheEnum::CURRENCY_SYMBOL , function () {
@@ -415,6 +443,3 @@
             default                   => NULL
         };
     }
-
-
-

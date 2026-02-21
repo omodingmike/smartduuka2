@@ -4,6 +4,7 @@
 
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
     class PosPayment extends Model
     {
@@ -23,14 +24,19 @@
 
         public function getFileAttribute()
         {
-            if ( ! empty($this->getFirstMediaUrl('pos_payment')) ) {
-                $product = $this->getMedia('pos_payment')->first();
+            if ( ! empty( $this->getFirstMediaUrl( 'pos_payment' ) ) ) {
+                $product = $this->getMedia( 'pos_payment' )->first();
                 return $product->getUrl();
             }
         }
 
         public function paymentMethod()
         {
-            return $this->belongsTo(PaymentMethod::class , 'payment_method_id');
+            return $this->belongsTo( PaymentMethod::class , 'payment_method_id' );
+        }
+
+        public function order() : BelongsTo
+        {
+            return $this->belongsTo( Order::class );
         }
     }
