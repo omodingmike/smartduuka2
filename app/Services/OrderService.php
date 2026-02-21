@@ -14,6 +14,7 @@
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PaymentStatusRequest;
     use App\Http\Requests\PosOrderRequest;
+    use App\Http\Resources\OrderResource;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
     use App\Models\Ingredient;
@@ -74,28 +75,38 @@
                 $query       = $query ? trim( $query ) : NULL;
                 $type        = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
-                return Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
-                            ->where( 'payment_type' , $type )
-                            ->when( $query , function (Builder $q) use ($query) {
-                                $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
-                                  ->orWhereHas( 'user' , function ($q) use ($query) {
-                                      $q->where( 'name' , 'ilike' , "%$query%" );
-                                  } );
-                            } )
-                            ->when( $status , function (Builder $q) use ($status) {
-                                $q->where( 'payment_status' , $status );
-                            } )
-                            ->when( ($start && !$end) , function (Builder $q) use ($start) {
-                                $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-                            } )
-                            ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-                                $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-                            } )
-                            ->when( $order_type , function (Builder $q) use ($order_type) {
-                                $q->where( 'order_type' , $order_type );
-                            } )
-                            ->orderBy( $orderColumn , $orderBy )
-                            ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                $orders = Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
+                               ->where( 'payment_type' , $type )
+                               ->when( $query , function (Builder $q) use ($query) {
+                                   $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                                     ->orWhereHas( 'user' , function ($q) use ($query) {
+                                         $q->where( 'name' , 'ilike' , "%$query%" );
+                                     } );
+                               } )
+                               ->when( $status , function (Builder $q) use ($status) {
+                                   $q->where( 'payment_status' , $status );
+                               } )
+                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                               } )
+                               ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                               } )
+                               ->when( $order_type , function (Builder $q) use ($order_type) {
+                                   $q->where( 'order_type' , $order_type );
+                               } );
+
+                $totalSales = $orders->sum( 'total' );
+
+                return OrderResource::collection( $orders->orderBy( $orderColumn , $orderBy )
+                                                         ->paginate( $perPage , [ '*' ] , 'page' , $page ) )
+                                    ->additional(
+                                        [
+                                            'meta' => [
+                                                'totalSales' => currency($totalSales) ,
+                                            ]
+                                        ] );
+
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

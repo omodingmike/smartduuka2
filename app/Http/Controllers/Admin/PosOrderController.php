@@ -35,13 +35,13 @@
         {
             parent::__construct();
             $this->orderService = $order;
-            $this->middleware( [ 'permission:pos-orders' ] )->only( 'index' , 'show' , 'destroy' , 'export' , 'changeStatus' , 'changePaymentStatus' );
+//            $this->middleware( [ 'permission:pos-orders' ] )->only( 'index' , 'show' , 'destroy' , 'export' , 'changeStatus' , 'changePaymentStatus' );
         }
 
         public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return OrderResource::collection( $this->orderService->list( $request ) );
+                return $this->orderService->list( $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -192,7 +192,7 @@
             }
         }
 
-        public function fullFill(Request $request )
+        public function fullFill(Request $request)
         {
             $items = json_decode( $request->items , TRUE );
             foreach ( $items as $item ) {
