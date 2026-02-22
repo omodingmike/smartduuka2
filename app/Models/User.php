@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\OrderStatus;
     use App\Enums\Status;
     use App\Services\CommissionCalculator;
     use Illuminate\Database\Eloquent\Builder;
@@ -33,7 +34,7 @@
          * @var array<int, string>
          */
         protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value', 'credit_orders' ];
+        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value' , 'credit_orders' ];
 
         protected $fillable = [
             'name' ,
@@ -150,7 +151,7 @@
 
         public function orders() : HasMany
         {
-            return $this->hasMany( Order::class , 'user_id' , 'id' );
+            return $this->hasMany( Order::class , 'user_id' , 'id' )->where( 'status' , '<>' , OrderStatus::CANCELED );
         }
 
         public function stocks() : HasMany
@@ -214,12 +215,12 @@
             );
         }
 
-        protected function creditOrders(): Attribute
+        protected function creditOrders() : Attribute
         {
             return Attribute::make(
-                get: fn () => $this->orders->filter(function ($order) {
-                    return $order->balance > 0;
-                })
+                get: fn() => $this->orders->filter( function ($order) {
+                    return ( $order->balance > 0 ) && ( $order->status !== OrderStatus::CANCELED );
+                } )
             );
         }
 

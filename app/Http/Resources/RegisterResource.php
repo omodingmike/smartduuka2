@@ -4,6 +4,7 @@
 
     use App\Enums\PaymentType;
     use App\Libraries\AppLibrary;
+    use App\Models\Order;
     use App\Models\Register;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
@@ -56,6 +57,9 @@
             $totalCreditRemaining = $this->orders
                 ->where( 'payment_type' , PaymentType::CREDIT )
                 ->sum( 'balance' );
+            $deposits             = $this->orders()->where( 'payment_type' , '<>' , PaymentType::CASH )->get()->sum( function (Order $order) {
+                return $order->posPayments()->sum( 'amount' );
+            } );
             return [
                 'id'                           => $this->id ,
                 'opening_float'                => $this->opening_float ,
@@ -82,6 +86,8 @@
                 'payment_summary'              => $paymentSummary ,
                 'total_cost_of_goods'          => $grandTotalCost ,
                 'total_credit'                 => $totalCreditRemaining ,
+                'deposits'                     => $deposits ,
+                'deposits_currency'            => currency( $deposits ) ,
                 'total_credit_currency'        => AppLibrary::currencyAmountFormat( $totalCreditRemaining ) ,
                 'total_cost_of_goods_currency' => AppLibrary::currencyAmountFormat( $grandTotalCost ) ,
                 'profit'                       => $profit ,
