@@ -63,28 +63,35 @@
         public function list(Request $request)
         {
             try {
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderBy     = $request->get( 'order_by' ) ?? 'desc';
-                $page        = $request->get( 'page' ) ?? 1;
-                $perPage     = $request->get( 'perPage' ) ?? 10;
-                $status      = $request->get( 'status' );
-                $order_type  = $request->get( 'order_type' );
-                $query       = $request->get( 'query' );
-                $start       = $request->date( 'start' );
-                $end         = $request->date( 'end' );
-                $query       = $query ? trim( $query ) : NULL;
-                $type        = $request->integer( 'type' ) ?? PaymentType::CASH->value;
+                $orderColumn    = $request->get( 'order_column' ) ?? 'id';
+                $orderBy        = $request->get( 'order_by' ) ?? 'desc';
+                $page           = $request->get( 'page' ) ?? 1;
+                $perPage        = $request->get( 'perPage' ) ?? 10;
+                $status         = $request->integer( 'status' );
+                $payment_status = $request->integer( 'payment_status' );
+                $order_type     = $request->integer( 'order_type' );
+                $query          = $request->get( 'query' );
+                $start          = $request->date( 'start' );
+                $end            = $request->date( 'end' );
+                $report         = $request->string( 'report' );
+                $query          = $query ? trim( $query ) : NULL;
+                $type           = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
                 $orders = Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
-                               ->where( 'payment_type' , $type )
                                ->when( $query , function (Builder $q) use ($query) {
                                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
                                      ->orWhereHas( 'user' , function ($q) use ($query) {
                                          $q->where( 'name' , 'ilike' , "%$query%" );
                                      } );
                                } )
-                               ->when( $status , function (Builder $q) use ($status) {
-                                   $q->where( 'payment_status' , $status );
+                               ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
+                                   $q->where( 'payment_status' , $payment_status );
+                               } )
+                               ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
+                                   $q->where( 'status' , $status );
+                               } )
+                               ->when( ( $report == 'sales' ) , function (Builder $q) {
+                                   $q->where( 'status' , '<>' , OrderStatus::CANCELED );
                                } )
                                ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
@@ -92,8 +99,11 @@
                                ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
                                } )
-                               ->when( $order_type , function (Builder $q) use ($order_type) {
+                               ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
                                    $q->where( 'order_type' , $order_type );
+                               } )
+                               ->when( $type , function (Builder $q) use ($type) {
+                                   $q->where( 'payment_type' , $type );
                                } );
 
                 $totalSales = $orders->sum( 'total' );
@@ -103,9 +113,191 @@
                                     ->additional(
                                         [
                                             'meta' => [
-                                                'totalSales' => currency($totalSales) ,
+                                                'totalSales' => currency( $totalSales ) ,
                                             ]
                                         ] );
+
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function listPerProduct(Request $request)
+        {
+            try {
+                $start   = $request->date( 'start' );
+                $end     = $request->date( 'end' );
+                $query   = $request->get( 'query' );
+                $page    = $request->get( 'page' ) ?? 1;
+                $perPage = $request->get( 'perPage' ) ?? 10;
+
+                $products = OrderProduct::query()
+                                        ->select( 'item_id' , 'item_type' )
+                                        ->selectRaw( 'SUM(quantity) as total_sold' )
+                                        ->selectRaw( 'SUM(total) as total_revenue' )
+                                        ->whereHas( 'order' , function ($q) use ($start , $end) {
+                                            $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                              ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                                  $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                              } )
+                                              ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                                  $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                              } );
+                                        } )
+                                        ->when( $query , function ($q) use ($query) {
+                                            $q->whereHasMorph( 'item' , [ Product::class , ProductVariation::class ] , function ($q) use ($query) {
+                                                $q->where( 'name' , 'ilike' , "%$query%" );
+                                            } );
+                                        } )
+                                        ->groupBy( 'item_id' , 'item_type' )
+                                        ->orderByDesc( 'total_revenue' )
+                                        ->paginate( $perPage , [ '*' ] , 'page' , $page );
+
+                return $products->through( function ($row) {
+                    $item = $row->item;
+                    return [
+                        'name'          => $item->name ?? 'Unknown Product' ,
+                        'category'      => $item->category?->name ?? 'General' ,
+                        'quantity_sold' => (int) $row->total_sold ,
+                        'total_revenue' => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
+                    ];
+                } );
+
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function listPerCustomer(Request $request)
+        {
+            try {
+                $start   = $request->date( 'start' );
+                $end     = $request->date( 'end' );
+                $query   = $request->get( 'query' );
+                $page    = $request->get( 'page' ) ?? 1;
+                $perPage = $request->get( 'perPage' ) ?? 10;
+
+                $customers = Order::query()
+                                  ->select( 'user_id' )
+                                  ->selectRaw( 'COUNT(id) as total_orders' )
+                                  ->selectRaw( 'SUM(total) as total_revenue' )
+                                  ->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                  ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                      $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                  } )
+                                  ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                      $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                  } )
+                                  ->when( $query , function ($q) use ($query) {
+                                      $q->whereHas( 'user' , function ($q) use ($query) {
+                                          $q->where( 'name' , 'ilike' , "%$query%" );
+                                      } );
+                                  } )
+                                  ->groupBy( 'user_id' )
+                                  ->orderByDesc( 'total_revenue' )
+                                  ->paginate( $perPage , [ '*' ] , 'page' , $page );
+
+                return $customers->through( function ($row) {
+                    return [
+                        'name'          => $row->user->name ?? 'Unknown Customer' ,
+                        'total_orders'  => (int) $row->total_orders ,
+                        'total_revenue' => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
+                    ];
+                } );
+
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function listPerCategory(Request $request)
+        {
+            try {
+                $start   = $request->date( 'start' );
+                $end     = $request->date( 'end' );
+                $query   = $request->get( 'query' );
+                $page    = $request->get( 'page' ) ?? 1;
+                $perPage = $request->get( 'perPage' ) ?? 10;
+
+                // We need to join order_products with products to get category_id
+                // Note: This assumes item_type is Product::class. If ProductVariation, we need to resolve parent product.
+                // For simplicity, let's assume direct product link or handle variation logic.
+
+                $categories = OrderProduct::query()
+                                          ->selectRaw( 'products.product_category_id as category_id' )
+                                          ->selectRaw( 'SUM(order_products.quantity) as total_sold' )
+                                          ->selectRaw( 'SUM(order_products.total) as total_revenue' )
+                                          ->join( 'products' , function ($join) {
+                                              $join->on( 'order_products.item_id' , '=' , 'products.id' )
+                                                   ->where( 'order_products.item_type' , '=' , Product::class );
+                                              // Handle variations if needed by joining product_variations then products
+                                          } )
+                                          ->whereHas( 'order' , function ($q) use ($start , $end) {
+                                              $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                                ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                                } )
+                                                ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                                } );
+                                          } )
+                                          ->when( $query , function ($q) use ($query) {
+                                              $q->whereHas( 'product.category' , function ($q) use ($query) {
+                                                  $q->where( 'name' , 'ilike' , "%$query%" );
+                                              } );
+                                          } )
+                                          ->groupBy( 'products.product_category_id' )
+                                          ->with( 'product.category' ) // Eager load category via product relation (might need adjustment)
+                                          ->orderByDesc( 'total_revenue' )
+                                          ->paginate( $perPage , [ '*' ] , 'page' , $page );
+
+                // Since we grouped by category_id, we can fetch the category name from the first product in that group or join categories table.
+                // Better approach: Join categories table directly.
+
+                $categories = DB::table( 'order_products' )
+                                ->join( 'orders' , 'order_products.order_id' , '=' , 'orders.id' )
+                                ->leftJoin( 'products' , function ($join) {
+                                    $join->on( 'order_products.item_id' , '=' , 'products.id' )
+                                         ->where( 'order_products.item_type' , '=' , Product::class );
+                                } )
+                                ->leftJoin( 'product_variations' , function ($join) {
+                                    $join->on( 'order_products.item_id' , '=' , 'product_variations.id' )
+                                         ->where( 'order_products.item_type' , '=' , ProductVariation::class );
+                                } )
+                                ->leftJoin( 'products as parent_products' , 'product_variations.product_id' , '=' , 'parent_products.id' )
+                                ->join( 'product_categories' , function ($join) {
+                                    $join->on( 'products.product_category_id' , '=' , 'product_categories.id' )
+                                         ->orOn( 'parent_products.product_category_id' , '=' , 'product_categories.id' );
+                                } )
+                                ->select(
+                                    'product_categories.name as category_name' ,
+                                    DB::raw( 'SUM(order_products.quantity) as total_sold' ) ,
+                                    DB::raw( 'SUM(order_products.total) as total_revenue' )
+                                )
+                                ->whereIn( 'orders.payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                ->when( ( $start && ! $end ) , function ($q) use ($start) {
+                                    $q->whereBetween( 'orders.created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                } )
+                                ->when( ( $start && $end ) , function ($q) use ($start , $end) {
+                                    $q->whereBetween( 'orders.created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                } )
+                                ->when( $query , function ($q) use ($query) {
+                                    $q->where( 'product_categories.name' , 'ilike' , "%$query%" );
+                                } )
+                                ->groupBy( 'product_categories.id' , 'product_categories.name' )
+                                ->orderByDesc( 'total_revenue' )
+                                ->paginate( $perPage , [ '*' ] , 'page' , $page );
+
+                return $categories->through( function ($row) {
+                    return [
+                        'category'      => $row->category_name ?? 'Uncategorized' ,
+                        'quantity_sold' => (int) $row->total_sold ,
+                        'total_revenue' => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
+                    ];
+                } );
 
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );

@@ -561,7 +561,10 @@
 
 
             Route::prefix( 'sales-report' )->name( 'sales-report.' )->group( function () {
-                Route::get( '/' , [ SalesReportController::class , 'index' ] );
+                Route::get( '/summary' , [ SalesReportController::class , 'summary' ] );
+                Route::get( '/item' , [ SalesReportController::class , 'perItem' ] );
+                Route::get( '/customer' , [ SalesReportController::class , 'listPerCustomer' ] );
+                Route::get( '/category' , [ SalesReportController::class , 'listPerCategory' ] );
                 Route::get( '/export' , [ SalesReportController::class , 'export' ] );
                 Route::get( '/overview' , [ SalesReportController::class , 'salesReportOverview' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
