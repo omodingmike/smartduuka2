@@ -16,7 +16,7 @@ services:
       - assets_media:/app/public/media:ro
       - demo_assets_media:/app/public/media:ro
 
-      - /home/deploy/mikrotik/mikrotik.conf:/etc/nginx/conf.d/mikrotik.conf:ro
+      - /home/deploy/mikrotik/api/mikrotik.conf:/etc/nginx/conf.d/mikrotik.conf:ro
       - mikrotik_php_socket:/var/run/mikrotik_php
       - /home/deploy/mikrotik/api/public:/mikrotik/public:ro
       - /home/deploy/mikrotik/api/storage:/mikrotik/storage:ro
