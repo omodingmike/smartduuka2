@@ -15,6 +15,11 @@ services:
       - php_socket:/var/run/php
       - assets_media:/app/public/media:ro
       - demo_assets_media:/app/public/media:ro
+
+      - /home/deploy/mikrotik/mikrotik.conf:/etc/nginx/conf.d/mikrotik.conf:ro
+      - mikrotik_php_socket:/var/run/mikrotik_php
+      - /home/deploy/mikrotik/api/public:/mikrotik/public:ro
+      - /home/deploy/mikrotik/api/storage:/mikrotik/storage:ro
     depends_on:
       - api
     networks:
@@ -84,6 +89,9 @@ volumes:
   app_storage:
   assets_static:
   assets_media:
+  mikrotik_php_socket:
+    name: mikrotik_php_socket
+    external: true
   php_socket:
     external: true
     name: smartduuka_php_socket
