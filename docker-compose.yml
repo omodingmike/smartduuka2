@@ -20,6 +20,7 @@ services:
       - mikrotik_php_socket:/var/run/mikrotik_php
       - /home/deploy/mikrotik/api/public:/mikrotik/public:ro
       - /home/deploy/mikrotik/api/storage:/mikrotik/storage:ro
+
     depends_on:
       - api
     networks:
