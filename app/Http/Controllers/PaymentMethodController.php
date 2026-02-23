@@ -7,6 +7,7 @@
     use App\Http\Requests\StorePaymentMethodRequest;
     use App\Http\Requests\UpdatePaymentMethodRequest;
     use App\Http\Resources\PaymentMethodResource;
+    use App\Models\Order;
     use App\Models\PaymentMethod;
     use App\Models\PaymentMethodTransaction;
     use App\Traits\HasAdvancedFilter;

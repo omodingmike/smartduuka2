@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Models;
+    namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Factories\HasFactory;
+    use Illuminate\Database\Eloquent\Model;
 
-class ExpensePayment extends Model
-{
-    use HasFactory;
-    protected $fillable = ['user_id', 'expense_id', 'date', 'referenceNo', 'amount', 'paymentMethod','attachment',''];
-}
+    class ExpensePayment extends Model
+    {
+        use HasFactory;
+
+        protected $fillable = [ 'user_id' , 'expense_id' , 'date' , 'referenceNo' , 'amount' , 'paymentMethod' , 'attachment' , 'register_id' ];
+    }

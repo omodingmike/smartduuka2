@@ -8,11 +8,7 @@
     class PaymentMethodTransaction extends Model
     {
         protected $fillable = [
-            'amount' ,
-            'charge' ,
-            'description' ,
-            'payment_method_id' ,
-            'order_id' ,
+           'amount', 'charge', 'description', 'payment_method_id', 'item_id', 'item_type'
         ];
 
         public function paymentMethod() : BelongsTo

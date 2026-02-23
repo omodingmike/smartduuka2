@@ -3,17 +3,20 @@
     namespace App\Http\Resources;
 
     use App\Libraries\AppLibrary;
+    use App\Models\Expense;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 
-    class ExpenseResouce extends JsonResource
+    /** @mixin Expense */
+    class ExpenseResource extends JsonResource
     {
-
         public function toArray(Request $request) : array
         {
             return [
                 'id'                   => $this->id ,
+                'expense_id'           => $this->expense_id ?? $this->id ,
                 'name'                 => $this->name ,
+                'payment_status'       => $this->payment_status ,
                 'amount'               => $this->amount ,
                 'amount_currency'      => AppLibrary::currencyAmountFormat( $this->amount ) ,
                 'date'                 => $this->date ? AppLibrary::datetime2( $this->date ) : '' ,
@@ -25,8 +28,8 @@
                 'attachment'           => $this->getFirstMediaUrl( 'attachment' ) ,
                 'recurs'               => $this->recurs ,
                 'repetitions'          => $this->repetitions ,
-                'balance'              => 0 ,
-                'balance_currency'     => AppLibrary::currencyAmountFormat( 0 ) ,
+                'balance'              => $this->balance ,
+                'balance_currency'     => AppLibrary::currencyAmountFormat( $this->balance ) ,
                 'repeats_on'           => $this->repeats_on ,
                 'paid_on'              => $this->paid_on ? AppLibrary::datetime2( $this->paid_on ) : '' ,
                 'paid'                 => $this->paid ,

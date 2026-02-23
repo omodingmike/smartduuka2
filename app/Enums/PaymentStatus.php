@@ -2,7 +2,9 @@
 
     namespace App\Enums;
 
-    enum PaymentStatus : int
+    use JsonSerializable;
+
+    enum PaymentStatus : int implements JsonSerializable
     {
         case PAID           = 5;
         case UNPAID         = 10;
@@ -15,5 +17,13 @@
                 self::UNPAID         => 'Unpaid' ,
                 self::PARTIALLY_PAID => 'Partially Paid' ,
             };
+        }
+
+        public function jsonSerialize() : array
+        {
+            return [
+                'label' => $this->label() ,
+                'value' => $this->value ,
+            ];
         }
     }

@@ -43,7 +43,7 @@
 
         public function updateBalance(Request $request , Order $order)
         {
-           return DB::transaction( function () use ($order , $request) {
+            return DB::transaction( function () use ($order , $request) {
                 $change = $request->integer( 'change' );
 
                 $payments = json_decode( $request->payments , TRUE );
@@ -67,6 +67,8 @@
                             'charge'            => 0 ,
                             'description'       => 'Order Payment #' . $order->order_serial_no ,
                             'payment_method_id' => $payment->id ,
+                            'item_type'         => Order::class ,
+                            'item_id'           => $order->id
                         ] );
                     }
                 }
@@ -79,13 +81,13 @@
                     ] );
                 }
 
-                return new OrderResource($order);
+                return new OrderResource( $order );
             } );
         }
 
         public function payDebt(Request $request , Order $order)
         {
-           return DB::transaction( function () use ($order , $request) {
+            return DB::transaction( function () use ($order , $request) {
                 $amount     = $request->integer( 'amount' );
                 $net_amount = $amount;
                 if ( $amount > 0 ) {
@@ -105,6 +107,8 @@
                         'charge'            => 0 ,
                         'description'       => 'Order Payment #' . $order->order_serial_no ,
                         'payment_method_id' => $payment->id ,
+                        'item_type'         => Order::class ,
+                        'item_id'           => $order->id
                     ] );
                 }
 
@@ -116,7 +120,7 @@
                     ] );
                 }
 
-                return new OrderResource($order);
+                return new OrderResource( $order );
             } );
         }
     }

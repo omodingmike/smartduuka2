@@ -117,8 +117,8 @@
             return $this->morphTo();
         }
 
-        public function paymentMethodTransactions() : HasMany
+        public function paymentMethodTransactions() : MorphMany
         {
-            return $this->hasMany( PaymentMethodTransaction::class );
+            return $this->morphMany( PaymentMethodTransaction::class , 'item' );
         }
     }

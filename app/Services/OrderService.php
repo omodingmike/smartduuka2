@@ -222,40 +222,34 @@
                 $page    = $request->get( 'page' ) ?? 1;
                 $perPage = $request->get( 'perPage' ) ?? 10;
 
-                // We need to join order_products with products to get category_id
-                // Note: This assumes item_type is Product::class. If ProductVariation, we need to resolve parent product.
-                // For simplicity, let's assume direct product link or handle variation logic.
+//                $categories = OrderProduct::query()
+//                                          ->selectRaw( 'products.product_category_id as category_id' )
+//                                          ->selectRaw( 'SUM(order_products.quantity) as total_sold' )
+//                                          ->selectRaw( 'SUM(order_products.total) as total_revenue' )
+//                                          ->join( 'products' , function ($join) {
+//                                              $join->on( 'order_products.item_id' , '=' , 'products.id' )
+//                                                   ->where( 'order_products.item_type' , '=' , Product::class );
+//                                              // Handle variations if needed by joining product_variations then products
+//                                          } )
+//                                          ->whereHas( 'order' , function ($q) use ($start , $end) {
+//                                              $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+//                                                ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+//                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+//                                                } )
+//                                                ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+//                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+//                                                } );
+//                                          } )
+//                                          ->when( $query , function ($q) use ($query) {
+//                                              $q->whereHas( 'product.category' , function ($q) use ($query) {
+//                                                  $q->where( 'name' , 'ilike' , "%$query%" );
+//                                              } );
+//                                          } )
+//                                          ->groupBy( 'products.product_category_id' )
+//                                          ->with( 'product.category' )
+//                                          ->orderByDesc( 'total_revenue' )
+//                                          ->paginate( $perPage , [ '*' ] , 'page' , $page );
 
-                $categories = OrderProduct::query()
-                                          ->selectRaw( 'products.product_category_id as category_id' )
-                                          ->selectRaw( 'SUM(order_products.quantity) as total_sold' )
-                                          ->selectRaw( 'SUM(order_products.total) as total_revenue' )
-                                          ->join( 'products' , function ($join) {
-                                              $join->on( 'order_products.item_id' , '=' , 'products.id' )
-                                                   ->where( 'order_products.item_type' , '=' , Product::class );
-                                              // Handle variations if needed by joining product_variations then products
-                                          } )
-                                          ->whereHas( 'order' , function ($q) use ($start , $end) {
-                                              $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
-                                                ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
-                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-                                                } )
-                                                ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-                                                } );
-                                          } )
-                                          ->when( $query , function ($q) use ($query) {
-                                              $q->whereHas( 'product.category' , function ($q) use ($query) {
-                                                  $q->where( 'name' , 'ilike' , "%$query%" );
-                                              } );
-                                          } )
-                                          ->groupBy( 'products.product_category_id' )
-                                          ->with( 'product.category' ) // Eager load category via product relation (might need adjustment)
-                                          ->orderByDesc( 'total_revenue' )
-                                          ->paginate( $perPage , [ '*' ] , 'page' , $page );
-
-                // Since we grouped by category_id, we can fetch the category name from the first product in that group or join categories table.
-                // Better approach: Join categories table directly.
 
                 $categories = DB::table( 'order_products' )
                                 ->join( 'orders' , 'order_products.order_id' , '=' , 'orders.id' )
@@ -498,7 +492,8 @@
 
                             PaymentMethodTransaction::create( [
                                 'amount'            => $net_amount ,
-                                'order_id'          => $order->id ,
+                                'item_type'         => Order::class ,
+                                'item_id'           => $order->id,
                                 'charge'            => 0 ,
                                 'description'       => 'Order Payment #' . $this->order->order_serial_no ,
                                 'payment_method_id' => $payment->id ,

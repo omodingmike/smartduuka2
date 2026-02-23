@@ -410,10 +410,14 @@
             } );
 
             Route::resource( 'expenses' , ExpensesController::class )->except( 'destroy' );
+            Route::get( 'expenses-titles' , [ ExpensesController::class , 'expenseTitles' ] );
             Route::delete( 'expenses/delete' , [ ExpensesController::class , 'destroy' ] );
             Route::get( 'expense-category/depth-tree' , [ ExpenseCategoryController::class , 'depthTree' ] );
-            Route::resource( 'expense-payments' , ExpensePaymentController::class );
+            Route::post( 'expenses/payment/{expense}' , [ ExpensePaymentController::class , 'store' ] )->middleware( 'register' );
             Route::get( 'expense-categories-export' , [ ExpenseCategoryController::class , 'export' ] );
+            Route::prefix( 'expense-report' )->name( 'expense-report.' )->group( function () {
+                Route::get( '/' , [ ExpensesController::class , 'index' ] );
+            });
 
             Route::prefix( 'product' )->name( 'product.' )->group( function () {
                 Route::get( '/' , [ ProductController::class , 'index' ] );
@@ -558,7 +562,6 @@
             Route::prefix( 'my-order' )->name( 'my-order.' )->group( function () {
                 Route::get( '/show/{user}/{order}' , [ MyOrderDetailsController::class , 'orderDetails' ] );
             } );
-
 
             Route::prefix( 'sales-report' )->name( 'sales-report.' )->group( function () {
                 Route::get( '/summary' , [ SalesReportController::class , 'summary' ] );

@@ -21,8 +21,10 @@
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
     use Carbon\Carbon;
+    use Illuminate\Database\Eloquent\Model;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Cache;
+    use Illuminate\Support\Str;
     use Smartisan\Settings\Facades\Settings;
 
     function project()
@@ -65,6 +67,12 @@
         $code  = Settings::group( 'company' )->get( 'company_calling_code' );
         $phone = substr( Settings::group( 'company' )->get( 'company_phone' ) , -9 );
         return "$code$phone";
+    }
+
+    function recordId(string $prefix, Model $model): string
+    {
+        $dynamicPadding = max(3, strlen((string)$model->id) + 1);
+        return $prefix . date('dmy') . '-' . Str::padLeft($model->id, $dynamicPadding, '0');
     }
 
     function permissionWithAccess(&$permissions , $rolePermissions) : object
