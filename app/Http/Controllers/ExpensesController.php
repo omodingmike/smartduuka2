@@ -220,7 +220,6 @@
             }
         }
 
-
         public function store(ExpenseRequest $request)
         {
             try {
