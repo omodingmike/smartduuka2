@@ -37,6 +37,11 @@
             return $this->hasMany( Register::class , 'id' , 'register_id' );
         }
 
+        public function payments() : HasMany | Expense
+        {
+            return $this->hasMany( ExpensePayment::class );
+        }
+
         public function getAttachmentAttribute($value)
         {
             return asset( 'storage/' . $value );
@@ -45,6 +50,7 @@
 //                return $product->getUrl();
 //            }
         }
+
         protected function getMediaCollection() : string
         {
             return MediaEnum::IMAGES_COLLECTION;

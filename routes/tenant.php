@@ -417,6 +417,9 @@
             Route::get( 'expense-categories-export' , [ ExpenseCategoryController::class , 'export' ] );
             Route::prefix( 'expense-report' )->name( 'expense-report.' )->group( function () {
                 Route::get( '/' , [ ExpensesController::class , 'index' ] );
+                Route::get( '/category' , [ ExpensesController::class , 'perCategoryExpenses' ] );
+                Route::get( '/paymentMethod' , [ ExpensesController::class , 'indexPerPaymentMethod' ] );
+                Route::get( '/trend' , [ ExpensesController::class , 'indexTrend' ] );
             });
 
             Route::prefix( 'product' )->name( 'product.' )->group( function () {

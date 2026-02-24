@@ -40,7 +40,8 @@
                 'extraCharge'          => $this->extra_charge ,
                 'extraCharge_currency' => AppLibrary::currencyAmountFormat( $this->extra_charge ) ,
                 'count'                => $this->count ,
-                'image'                => $this->image
+                'image'                => $this->image ,
+                'payments'             => ExpensePaymentResource::collection( $this->payments )
             ];
         }
     }
