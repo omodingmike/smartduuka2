@@ -44,7 +44,6 @@
                                    } );
                                } )
                                ->get();
-                info($stocks);
 
                 $groupCriteria = enabledWarehouse()
                     ? fn($item) => $item->product_id . '-' . $item->warehouse_id . '-' . $item->variation_id
@@ -193,8 +192,10 @@
                 }
             }
 
-            $quantity = $isPurchasable ? $group->sum( 'quantity' ) : 0;
-            $unitPrice = $first->product->buying_price;
+            $quantity          = $isPurchasable ? $group->sum( 'quantity' ) : 0;
+            $quantity_received = $isPurchasable ? $group->sum( 'quantity_received' ) : 0;
+            $stock             = $quantity - $quantity_received;
+            $unitPrice         = $first->product->buying_price;
 
             return [
                 'product_id'                  => $first->product_id ,
@@ -227,15 +228,16 @@
                 'destination_warehouse_id'    => $first->destination_warehouse_id ,
                 'created_at'                  => $first->created_at ,
                 'description'                 => $first->description ,
-                'stock'                       => $isPurchasable ? $quantity : 'N/C' ,
+                'stock'                       => $isPurchasable ? $stock : 'N/C' ,
+                'quantity_received'           => $isPurchasable ? $quantity_received : 'N/C' ,
                 'other_stock'                 => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
-                'unit_price'                  => $unitPrice,
-                'total_price'                 => $quantity * $unitPrice,
+                'unit_price'                  => $unitPrice ,
+                'total_price'                 => $quantity * $unitPrice ,
                 'product_attribute_id'        => $first->product_attribute_id ,
                 'product_attribute_option_id' => $first->product_attribute_option_id ,
                 'attribute'                   => $first->product_attribute_id ? ProductAttribute::find( $first->product_attribute_id ) : NULL ,
                 'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find( $first->product_attribute_option_id ) : NULL ,
-                'expiry_date'                 => $first->expiry_date,
+                'expiry_date'                 => $first->expiry_date ,
             ];
         }
 

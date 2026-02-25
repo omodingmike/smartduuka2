@@ -39,6 +39,7 @@
             'purchase_quantity'   => 'integer' ,
             'expiry_date'         => 'datetime' ,
             'distribution_status' => EnumDistributionStockStatusEnum::class ,
+            'quantity_received'   => 'decimal:2' ,
         ];
 
         public function item() : MorphTo
@@ -100,5 +101,4 @@
         {
             return $this->hasMany( StockTax::class );
         }
-
     }

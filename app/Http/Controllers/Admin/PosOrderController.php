@@ -3,6 +3,7 @@
     namespace App\Http\Controllers\Admin;
 
     use App\Enums\SettingsEnum;
+    use App\Enums\StockStatus;
     use App\Exports\OrderExport;
     use App\Http\Requests\OrderStatusRequest;
     use App\Http\Requests\PaginateRequest;
@@ -12,6 +13,8 @@
     use App\Jobs\SendInvoiceMailJob;
     use App\Models\Order;
     use App\Models\OrderProduct;
+    use App\Models\Product;
+    use App\Models\Stock;
     use App\Services\OrderService;
     use App\Services\PdfExportService;
     use Exception;
@@ -20,6 +23,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\File;
     use Maatwebsite\Excel\Facades\Excel;
     use Smartisan\Settings\Facades\Settings;
@@ -194,10 +198,31 @@
 
         public function fullFill(Request $request)
         {
-            $items = json_decode( $request->items , TRUE );
-            foreach ( $items as $item ) {
-                $order_product = OrderProduct::find( $item[ 'product_id' ] );
-                $order_product->increment( 'quantity_picked' , $item[ 'picking_now' ] );
+            try {
+                DB::transaction( function () use ($request) {
+                    $items = json_decode( $request->items , TRUE );
+                    $order = Order::find( $request->integer( 'order_id' ) );
+                    foreach ( $items as $item ) {
+                        $product_id    = $item[ 'product_id' ];
+                        $order_product = OrderProduct::where( 'order_id' , $order->id );
+                        $order_product->increment( 'quantity_picked' , $item[ 'picking_now' ] );
+
+                        $warehouse_id = $order->warehouse_id;
+//                        $warehouse_id = $order_product->order->warehouse_id;
+                        if ( $warehouse_id ) {
+                            $stock = Stock::where( [
+                                'item_id'      => $product_id ,
+                                'item_type'    => Product::class ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $warehouse_id
+                            ] )->first();
+
+                            $stock->increment( 'quantity_received' , $item[ 'picking_now' ] );
+                        }
+                    }
+                } );
+            } catch ( Exception $e ) {
+                throw new Exception( $e->getMessage() );
             }
         }
     }

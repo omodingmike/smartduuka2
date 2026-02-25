@@ -70,7 +70,7 @@
         {
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
-                                ->sum( 'quantity' );
+                                ->sum( \DB::raw('quantity - COALESCE(quantity_received, 0)') );
         }
 
         public function getLowStockAttribute() : bool
