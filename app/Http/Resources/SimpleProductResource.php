@@ -1,54 +1,57 @@
 <?php
 
-namespace App\Http\Resources;
+    namespace App\Http\Resources;
 
 
-use App\Enums\Ask;
-use App\Libraries\AppLibrary;
-use Carbon\Carbon;
-use Illuminate\Http\Resources\Json\JsonResource;
+    use App\Enums\Ask;
+    use App\Libraries\AppLibrary;
+    use Carbon\Carbon;
+    use Illuminate\Http\Resources\Json\JsonResource;
 
-class SimpleProductResource extends JsonResource
-{
-    /**
-     * Transform the resource into an array.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return array
-     */
-
-    public function toArray($request)
+    class SimpleProductResource extends JsonResource
     {
-        // Use variation_price if the product has variations, otherwise selling_price
-        $price = (count($this->variations) > 0) ? $this->variation_price : $this->selling_price;
+        /**
+         * Transform the resource into an array.
+         *
+         * @param \Illuminate\Http\Request $request
+         *
+         * @return array
+         */
 
-        return [
-            'id'                => $this->id,
-            'name'              => $this->name,
-            'slug'              => $this->slug,
-            'currency_price'    => AppLibrary::currencyAmountFormat($price),
-            'cover'             => $this->cover,
-            'flash_sale'        => $this->add_to_flash_sale == Ask::YES,
-            'is_offer'          => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
-            'discounted_price'  => AppLibrary::currencyAmountFormat($price - (($price / 100) * $this->discount)),
-            'rating_star'       => $this->rating_star,
-            'rating_star_count' => $this->rating_star_count,
-        ];
+        public function toArray($request)
+        {
+            // Use variation_price if the product has variations, otherwise selling_price
+            $price = ( count( $this->variations ) > 0 ) ? $this->variation_price : $this->selling_price;
+
+            return [
+                'id'                         => $this->id ,
+                'name'                       => $this->name ,
+                'low_stock_quantity_warning' => $this->low_stock_quantity_warning ,
+                'slug'                       => $this->slug ,
+                'currency_price'             => AppLibrary::currencyAmountFormat( $price ) ,
+                'cover'                      => $this->cover ,
+                'flash_sale'                 => $this->add_to_flash_sale == Ask::YES ,
+                'is_offer'                   => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
+                'discounted_price'           => AppLibrary::currencyAmountFormat( $price - ( ( $price / 100 ) * $this->discount ) ) ,
+                'rating_star'                => $this->rating_star ,
+                'rating_star_count'          => $this->rating_star_count ,
+            ];
+        }
+
+        public function toArray1($request)
+        {
+            $price = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
+            return [
+                'id'                => $this->id ,
+                'name'              => $this->name ,
+                'slug'              => $this->slug ,
+                'currency_price'    => AppLibrary::currencyAmountFormat( $price ) ,
+                'cover'             => $this->cover ,
+                'flash_sale'        => $this->add_to_flash_sale == Ask::YES ,
+                'is_offer'          => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
+                'discounted_price'  => AppLibrary::currencyAmountFormat( $price - ( ( $price / 100 ) * $this->discount ) ) ,
+                'rating_star'       => $this->rating_star ,
+                'rating_star_count' => $this->rating_star_count ,
+            ];
+        }
     }
-    public function toArray1($request)
-    {
-        $price = count($this->variations) > 0 ? $this->variation_price : $this->selling_price;
-        return [
-            'id'                => $this->id,
-            'name'              => $this->name,
-            'slug'              => $this->slug,
-            'currency_price'    => AppLibrary::currencyAmountFormat($price),
-            'cover'             => $this->cover,
-            'flash_sale'        => $this->add_to_flash_sale == Ask::YES,
-            'is_offer'          => $this->offer_start_date && $this->offer_end_date && Carbon::now()->between( $this->offer_start_date , $this->offer_end_date ) ,
-            'discounted_price'  => AppLibrary::currencyAmountFormat($price - (($price / 100) * $this->discount)),
-            'rating_star'       => $this->rating_star,
-            'rating_star_count' => $this->rating_star_count,
-        ];
-    }
-}

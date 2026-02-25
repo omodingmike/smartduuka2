@@ -82,6 +82,7 @@
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\WarehouseController;
+    use App\Services\StockService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
@@ -420,7 +421,7 @@
                 Route::get( '/category' , [ ExpensesController::class , 'perCategoryExpenses' ] );
                 Route::get( '/paymentMethod' , [ ExpensesController::class , 'indexPerPaymentMethod' ] );
                 Route::get( '/trend' , [ ExpensesController::class , 'indexTrend' ] );
-            });
+            } );
 
             Route::prefix( 'product' )->name( 'product.' )->group( function () {
                 Route::get( '/' , [ ProductController::class , 'index' ] );
@@ -575,6 +576,10 @@
                 Route::get( '/overview' , [ SalesReportController::class , 'salesReportOverview' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
+            } );
+            Route::prefix( 'inventory-report' )->name( 'inventory-report.' )->group( function () {
+                Route::get( '/' , [ StockController::class , 'index' ] );
+                Route::get( '/expiry' , [ StockController::class , 'indexGroupedByBatch' ] );
             } );
 
             Route::prefix( 'users' )->name( 'users.' )->group( function () {

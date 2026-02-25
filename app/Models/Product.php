@@ -27,7 +27,7 @@
 
         protected       $table   = 'products';
         protected       $guarded = [];
-        protected       $appends = [ 'stock' , 'single_tree','image' ];
+        protected       $appends = [ 'stock' , 'single_tree' , 'image' , 'low_stock' ];
         protected array $dates   = [ 'deleted_at' ];
         protected       $casts   = [
             'id'                         => 'integer' ,
@@ -71,6 +71,11 @@
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
                                 ->sum( 'quantity' );
+        }
+
+        public function getLowStockAttribute() : bool
+        {
+            return $this->low_stock_quantity_warning;
         }
 
         public function scopeRandAndLimitOrOrderBy($query , $rand = 0 , $orderColumn = 'id' , $orderType = 'asc')

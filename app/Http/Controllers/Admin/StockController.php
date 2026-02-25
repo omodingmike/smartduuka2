@@ -107,6 +107,15 @@
             }
         }
 
+        public function indexGroupedByBatch(PaginateRequest $request)
+        {
+            try {
+                return StockResource::collection( $this->stockService->listGroupedByBatch( $request ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function takings(PaginateRequest $request)
         {
             try {

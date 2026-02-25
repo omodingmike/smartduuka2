@@ -6,6 +6,7 @@
     use App\Enums\Status;
     use App\Enums\StockStatus;
     use App\Http\Requests\PaginateRequest;
+    use App\Http\Resources\ProductCategoryResource;
     use App\Models\Ingredient;
     use App\Models\ProductAttribute;
     use App\Models\ProductAttributeOption;
@@ -22,41 +23,28 @@
 
     class StockService
     {
-        public    $items;
-        public    $ingredients;
-        public    $links;
-        protected $stockFilter = [
-            'product_name' ,
-            'status' ,
-            'warehouse_id' ,
-        ];
-
-
-        /**
-         * @throws Exception
-         */
+        public $items;
+        public $ingredients;
+        public $links;
 
         public function list(Request $request)
         {
             try {
-                $perPage      = $request->integer( 'per_page' , 10 );
-                $isPaginated  = $request->boolean( 'paginate' );
+                $perPage      = $request->integer( 'perPage' , 10 );
                 $warehouse_id = $request->warehouse_id;
                 $query        = $request->input( 'query' );
+                $page         = $request->input( 'page' );
 
-                $stocks       = $this->stockQuery( $request )
-                                     ->where( 'status' , StockStatus::RECEIVED )
-                                     ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
-                                     ->when( $query , function ($q) use ($query) {
-                                         $q->whereHas( 'product' , function ($q) use ($query) {
-                                             $q->where( 'name' , 'ilike' , '%' . $query . '%' );
-                                         } );
-                                     } )
-                                     ->get();
-
-                if ( $stocks->isEmpty() ) {
-                    return $isPaginated ? $this->paginate( [] , $perPage ) : [];
-                }
+                $stocks = $this->stockQuery( $request )
+                               ->where( 'status' , StockStatus::RECEIVED )
+                               ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                               ->when( $query , function ($q) use ($query) {
+                                   $q->whereHas( 'product' , function ($q) use ($query) {
+                                       $q->where( 'name' , 'ilike' , '%' . $query . '%' );
+                                   } );
+                               } )
+                               ->get();
+                info($stocks);
 
                 $groupCriteria = enabledWarehouse()
                     ? fn($item) => $item->product_id . '-' . $item->warehouse_id . '-' . $item->variation_id
@@ -67,10 +55,39 @@
                                          ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
                                          ->values();
 
-                if ( $isPaginated ) {
-                    return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock' ) );
-                }
-                return $processedItems;
+                return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock' ) );
+            } catch ( Exception $exception ) {
+                Log::error( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function listGroupedByBatch(Request $request)
+        {
+            try {
+                $perPage      = $request->integer( 'perPage' , 10 );
+                $warehouse_id = $request->warehouse_id;
+                $query        = $request->input( 'query' );
+                $page         = $request->input( 'page' );
+
+                $stocks = $this->stockQuery( $request )
+                               ->where( 'status' , StockStatus::RECEIVED )
+                               ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                               ->when( $query , function ($q) use ($query) {
+                                   $q->whereHas( 'product' , function ($q) use ($query) {
+                                       $q->where( 'name' , 'ilike' , '%' . $query . '%' );
+                                   } );
+                               } )
+                               ->get();
+
+                $groupCriteria = fn($item) => $item->product_id . '-' . $item->batch . '-' . $item->warehouse_id . '-' . $item->variation_id;
+
+                $processedItems = $stocks->groupBy( $groupCriteria )
+                                         ->map( fn($group) => $this->transformStockGrouped( $group ) )
+                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
+                                         ->values();
+
+                return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock/batch' ) );
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -81,12 +98,13 @@
         {
             return Stock::with( [
                 'stockProducts.item' ,
+                'stockProducts.item' ,
                 'user'
             ] )
                         ->whereNull( 'user_id' )
                         ->where( 'model_type' , '<>' , Ingredient::class )
                         ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
-                        ->whereHas('product')
+                        ->whereHas( 'product' )
                         ->orderBy( 'created_at' , 'desc' );
         }
 
@@ -168,49 +186,56 @@
             $status        = $first->status;
 
             $variationNames = $first->variation_names;
-            if ($first->variation_id) {
-                $variation = ProductVariation::with('productAttributeOption.productAttribute')->find($first->variation_id);
-                if ($variation && $variation->productAttributeOption) {
+            if ( $first->variation_id ) {
+                $variation = ProductVariation::with( 'productAttributeOption.productAttribute' )->find( $first->variation_id );
+                if ( $variation && $variation->productAttributeOption ) {
                     $variationNames = $variation->productAttributeOption->productAttribute->name . '(' . $variation->productAttributeOption->name . ')';
                 }
             }
 
+            $quantity = $isPurchasable ? $group->sum( 'quantity' ) : 0;
+            $unitPrice = $first->product->buying_price;
+
             return [
-                'product_id'               => $first->product_id ,
-                'products'                 => $first->products ,
-                'stock_status'             => [
+                'product_id'                  => $first->product_id ,
+                'products'                    => $first->products ,
+                'stock_status'                => [
                     'value' => $status->value ,
                     'label' => $status->label() ,
                 ] ,
-                'product_name'             => $first->product->name ,
-                'unit'                     => $first->product->unit ,
-                'other_unit'               => $first->product->otherUnit ,
-                'units_nature'             => $first->product->units_nature ,
-                'variation_names'          => $variationNames ,
-                'variation_id'             => $first->variation_id ,
-                'status'                   => $first->product->status ,
-                'warehouse_id'             => $first->warehouse_id ,
-                'reference'                => $first->reference ,
-                'delivery'                 => $first->delivery ,
-                'system_stock'             => $first->system_stock ,
-                'physical_stock'           => $first->physical_stock ,
-                'difference'               => $first->difference ,
-                'discrepancy'              => $first->discrepancy ,
-                'classification'           => $first->classification ,
-                'creator'                  => $first->user ,
-                'batch'                    => $first->batch ,
-                'weight'                   => $first->product->weight ,
-                'source_warehouse_id'      => $first->source_warehouse_id ,
-                'total'                    => $first->total ,
-                'destination_warehouse_id' => $first->destination_warehouse_id ,
-                'created_at'               => $first->created_at ,
-                'description'              => $first->description ,
-                'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
-                'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+                'product_name'                => $first->product->name ,
+                'category'                    => new ProductCategoryResource( $first->product->category ) ,
+                'unit'                        => $first->product->unit ,
+                'other_unit'                  => $first->product->otherUnit ,
+                'units_nature'                => $first->product->units_nature ,
+                'variation_names'             => $variationNames ,
+                'variation_id'                => $first->variation_id ,
+                'status'                      => $first->product->status ,
+                'warehouse_id'                => $first->warehouse_id ,
+                'reference'                   => $first->reference ,
+                'delivery'                    => $first->delivery ,
+                'system_stock'                => $first->system_stock ,
+                'physical_stock'              => $first->physical_stock ,
+                'difference'                  => $first->difference ,
+                'discrepancy'                 => $first->discrepancy ,
+                'classification'              => $first->classification ,
+                'creator'                     => $first->user ,
+                'batch'                       => $first->batch ,
+                'weight'                      => $first->product->weight ,
+                'source_warehouse_id'         => $first->source_warehouse_id ,
+                'total'                       => $first->total ,
+                'destination_warehouse_id'    => $first->destination_warehouse_id ,
+                'created_at'                  => $first->created_at ,
+                'description'                 => $first->description ,
+                'stock'                       => $isPurchasable ? $quantity : 'N/C' ,
+                'other_stock'                 => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
+                'unit_price'                  => $unitPrice,
+                'total_price'                 => $quantity * $unitPrice,
                 'product_attribute_id'        => $first->product_attribute_id ,
                 'product_attribute_option_id' => $first->product_attribute_option_id ,
-                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find($first->product_attribute_id) : null,
-                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find($first->product_attribute_option_id) : null,
+                'attribute'                   => $first->product_attribute_id ? ProductAttribute::find( $first->product_attribute_id ) : NULL ,
+                'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find( $first->product_attribute_option_id ) : NULL ,
+                'expiry_date'                 => $first->expiry_date,
             ];
         }
 
