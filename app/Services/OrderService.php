@@ -559,7 +559,6 @@
                     $this->order->save();
                 } );
 
-                $this->order->save();
                 return $this->order;
             } catch ( Exception $exception ) {
                 DB::rollBack();

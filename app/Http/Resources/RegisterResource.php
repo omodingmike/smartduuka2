@@ -12,27 +12,26 @@
     /** @mixin Register */
     class RegisterResource extends JsonResource
     {
-        /**
-         * @param Request $request
-         *
-         * @mixin Register
-         * @return array
-         */
         public function toArray(Request $request) : array
         {
             $allProducts = $this->orders->flatMap( function ($order) {
                 return $order->orderProducts;
             } );
 
-            $groupedItems         = $allProducts->groupBy( 'item.id' )->map( function ($group) {
-                $firstItem     = $group->first()->item;
-                $totalQuantity = $group->sum( 'quantity' );
-                $totalCost     = $totalQuantity * ( $firstItem->buying_price ?? 0 );
+            $groupedItems         = $allProducts->groupBy( function ($item) {
+                return $item->item_id . '-' . $item->item_type;
+            } )->map( function ($group) {
+                $firstItem       = $group->first()->item;
+                $totalQuantity   = $group->sum( 'quantity' );
+                $quantity_picked = $group->sum( 'quantity_picked' );
+                $totalCost       = $totalQuantity * ( $firstItem->buying_price ?? 0 );
 
                 return [
                     'item_id'              => $firstItem?->id ,
                     'name'                 => $firstItem?->name ,
+                    'damages'              => abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 ) ,
                     'stock'                => $firstItem?->stock ,
+                    'reserved'             => $totalQuantity - $quantity_picked ,
                     'unit'                 => new UnitResource( $firstItem?->unit ) ,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,
