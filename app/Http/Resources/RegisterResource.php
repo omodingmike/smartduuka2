@@ -5,6 +5,7 @@
     use App\Enums\PaymentType;
     use App\Libraries\AppLibrary;
     use App\Models\Order;
+    use App\Models\ProductVariation;
     use App\Models\Register;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,9 +27,17 @@
                 $quantity_picked = $group->sum( 'quantity_picked' );
                 $totalCost       = $totalQuantity * ( $firstItem->buying_price ?? 0 );
 
+                $name = $firstItem?->name;
+                if ( $firstItem instanceof ProductVariation ) {
+                    $firstItem->loadMissing( 'productAttributeOption.productAttribute' );
+                    if ( $firstItem->productAttributeOption ) {
+                        $name = $firstItem->productAttributeOption->productAttribute->name . ' (' . $firstItem->productAttributeOption->name . ')';
+                    }
+                }
+
                 return [
                     'item_id'              => $firstItem?->id ,
-                    'name'                 => $firstItem?->name ,
+                    'name'                 => $name ,
                     'damages'              => abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 ) ,
                     'stock'                => $firstItem?->stock ,
                     'reserved'             => $totalQuantity - $quantity_picked ,
