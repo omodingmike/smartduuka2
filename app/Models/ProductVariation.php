@@ -8,6 +8,7 @@
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
+    use Illuminate\Database\Eloquent\Relations\HasManyThrough;
     use Illuminate\Database\Eloquent\Relations\MorphMany;
     use Spatie\MediaLibrary\HasMedia;
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -168,6 +169,13 @@
         }
 
         // Keep existing productAttributeOption (singular) if used for single-attribute logic
+
+        public function damages(): HasManyThrough
+        {
+            return $this->hasManyThrough(Damage::class, Stock::class, 'item_id', 'id', 'id', 'model_id')
+                ->where('stocks.item_type', ProductVariation::class)
+                ->where('stocks.model_type', Damage::class);
+        }
 
         public function orderProducts() : MorphMany
         {

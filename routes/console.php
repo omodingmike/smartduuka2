@@ -30,11 +30,20 @@
 //        TestEvent::dispatch("Scheduled event for tenant [{$tenantId}] at " . now()->toDateTimeString());
 //    })->everyMinute();
 
-    Schedule::call(function () {
-        Tenant::all()->runForEach(function ($tenant) {
-            TestEvent::dispatch("Scheduled event for tenant [{$tenant->id}] at " . now()->toDateTimeString());
-        });
-    })->everyMinute();
+    Schedule::call( function () {
+        $logPath = storage_path( 'logs' );
+        if ( is_dir( $logPath ) ) {
+            foreach ( glob( "$logPath/*.log" ) as $logFile ) {
+                file_put_contents( $logFile , '' );
+            }
+        }
+    } )->daily();
+
+    Schedule::call( function () {
+        Tenant::all()->runForEach( function ($tenant) {
+            TestEvent::dispatch( "Scheduled event for tenant [{$tenant->id}] at " . now()->toDateTimeString() );
+        } );
+    } )->everyMinute();
 
     Schedule::call( function () use ($now) {
         Expense::where( [
