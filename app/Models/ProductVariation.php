@@ -9,6 +9,7 @@
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+    use Illuminate\Database\Eloquent\Relations\HasOneThrough;
     use Illuminate\Database\Eloquent\Relations\MorphMany;
     use Spatie\MediaLibrary\HasMedia;
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -29,6 +30,7 @@
             'order'
         ];
         protected $appends  = [ 'stock' ];
+        protected $with = ['product.unit'];
 
         protected function getMediaCollection() : string
         {
@@ -175,6 +177,18 @@
             return $this->hasManyThrough(Damage::class, Stock::class, 'item_id', 'id', 'id', 'model_id')
                 ->where('stocks.item_type', ProductVariation::class)
                 ->where('stocks.model_type', Damage::class);
+        }
+
+        public function unit(): HasOneThrough
+        {
+            return $this->hasOneThrough(
+                Unit::class,
+                RetailPrice::class,
+                'item_id', // Foreign key on retail_prices table
+                'id',      // Foreign key on units table
+                'id',      // Local key on product_variations table
+                'unit_id'  // Local key on retail_prices table
+            )->where('retail_prices.item_type', ProductVariation::class);
         }
 
         public function orderProducts() : MorphMany
