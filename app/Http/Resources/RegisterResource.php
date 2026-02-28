@@ -31,7 +31,7 @@
                 if ( $firstItem instanceof ProductVariation ) {
                     $firstItem->loadMissing( 'productAttributeOption.productAttribute' );
                     if ( $firstItem->productAttributeOption ) {
-                        $name = $firstItem->productAttributeOption->productAttribute->name . ' (' . $firstItem->productAttributeOption->name . ')';
+                        $name = $firstItem->product->name . ' - ' . $firstItem->productAttributeOption->productAttribute->name . ' (' . $firstItem->productAttributeOption->name . ')';
                     }
                 }
 

@@ -81,3 +81,5 @@ only name is required.
 806
 Cash
 UGX 24,500
+
+available = stock + remaining deposited stock
