@@ -56,6 +56,7 @@
                 'stock'                      => $isNumeric ? number_format( $stock ) : $this[ 'stock' ] ,
                 'stock_value'                => $stock ,
                 'quantity_received'          => $this[ 'quantity_received' ] ,
+                'quantity_deposited'         => $this[ 'quantity_deposited' ] ,
                 'mid_stock'                  => ( $isNumeric && $units_per_mid_unit ) ? number_format( intdiv( $rawStock , $units_per_mid_unit ) ) : NULL ,
                 'base_stock'                 => $isNumeric ? number_format( (int) $rawStock ) : $this[ 'stock' ] ,
                 'location'                   => new SimpleWarehouseResource( Warehouse::find( $this[ 'warehouse_id' ] ) ) ,

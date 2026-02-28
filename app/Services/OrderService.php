@@ -493,7 +493,7 @@
                             PaymentMethodTransaction::create( [
                                 'amount'            => $net_amount ,
                                 'item_type'         => Order::class ,
-                                'item_id'           => $order->id,
+                                'item_id'           => $order->id ,
                                 'charge'            => 0 ,
                                 'description'       => 'Order Payment #' . $this->order->order_serial_no ,
                                 'payment_method_id' => $payment->id ,
@@ -554,6 +554,10 @@
 
                             $qtyToDecrement = $product[ 'quantity' ];
                             $stock->decrement( 'quantity' , $qtyToDecrement );
+
+                            if ( $status == SaleOrderType::DEPOSIT->value ) {
+                                $stock->increment( 'quantity_ordered' , $qtyToDecrement );
+                            }
                         }
                     }
                     $this->order->save();

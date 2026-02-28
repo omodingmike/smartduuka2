@@ -30,6 +30,7 @@
         public function list(Request $request)
         {
             try {
+
                 $perPage      = $request->integer( 'perPage' , 10 );
                 $warehouse_id = $request->warehouse_id;
                 $query        = $request->input( 'query' );
@@ -42,8 +43,7 @@
                                    $q->whereHas( 'product' , function ($q) use ($query) {
                                        $q->where( 'name' , 'ilike' , '%' . $query . '%' );
                                    } );
-                               } )
-                               ->get();
+                               } )->get();
 
                 $groupCriteria = enabledWarehouse()
                     ? fn($item) => $item->product_id . '-' . $item->warehouse_id . '-' . $item->variation_id
@@ -192,10 +192,12 @@
                 }
             }
 
-            $quantity          = $isPurchasable ? $group->sum( 'quantity' ) : 0;
-            $quantity_received = $isPurchasable ? $group->sum( 'quantity_received' ) : 0;
-            $stock             = $quantity - $quantity_received;
-            $unitPrice         = $first->product->buying_price;
+            $quantity           = $isPurchasable ? $group->sum( 'quantity' ) : 0;
+            $quantity_received  = $isPurchasable ? $group->sum( 'quantity_received' ) : 0;
+            $quantity_deposited = $isPurchasable ? $group->sum( 'quantity_ordered' ) : 0;
+            $stock              = $quantity;
+            $net_deposited      = $quantity_deposited - $quantity_received;
+            $unitPrice          = $first->product->buying_price;
 
             return [
                 'product_id'                  => $first->product_id ,
@@ -214,6 +216,7 @@
                 'status'                      => $first->product->status ,
                 'warehouse_id'                => $first->warehouse_id ,
                 'reference'                   => $first->reference ,
+                'quantity_deposited'          => $net_deposited ,
                 'delivery'                    => $first->delivery ,
                 'system_stock'                => $first->system_stock ,
                 'physical_stock'              => $first->physical_stock ,

@@ -203,12 +203,12 @@
                     $items = json_decode( $request->items , TRUE );
                     $order = Order::find( $request->integer( 'order_id' ) );
                     foreach ( $items as $item ) {
+
                         $product_id    = $item[ 'product_id' ];
                         $order_product = OrderProduct::where( 'order_id' , $order->id );
                         $order_product->increment( 'quantity_picked' , $item[ 'picking_now' ] );
 
                         $warehouse_id = $order->warehouse_id;
-//                        $warehouse_id = $order_product->order->warehouse_id;
                         if ( $warehouse_id ) {
                             $stock = Stock::where( [
                                 'item_id'      => $product_id ,

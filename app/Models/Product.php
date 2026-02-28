@@ -71,6 +71,12 @@
         {
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
+                                ->sum( \DB::raw('quantity') );
+        }
+        public function getStockAttribute1() : float
+        {
+            return (float) $this->stocks()
+                                ->where( 'status' , StockStatus::RECEIVED )
                                 ->sum( \DB::raw('quantity - COALESCE(quantity_received, 0)') );
         }
 
