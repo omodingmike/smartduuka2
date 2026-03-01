@@ -27,7 +27,7 @@
         public $ingredients;
         public $links;
 
-        public function list(Request $request)
+        public function list(Request $request, &$totalStockValue = null, &$totalLowStockCount = null)
         {
             try {
 
@@ -53,6 +53,11 @@
                                          ->map( fn($group) => $this->transformStockGrouped( $group ) )
                                          ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
                                          ->values();
+
+                $totalStockValue = $processedItems->sum( 'total_price' );
+                $totalLowStockCount = $processedItems->filter(function ($item) {
+                    return $item['stock'] <= $item['low_stock_quantity_warning'];
+                })->count();
 
                 return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock' ) );
             } catch ( Exception $exception ) {
@@ -241,6 +246,7 @@
                 'attribute'                   => $first->product_attribute_id ? ProductAttribute::find( $first->product_attribute_id ) : NULL ,
                 'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find( $first->product_attribute_option_id ) : NULL ,
                 'expiry_date'                 => $first->expiry_date ,
+                'low_stock_quantity_warning'  => $first->product->low_stock_quantity_warning,
             ];
         }
 

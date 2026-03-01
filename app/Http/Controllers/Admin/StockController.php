@@ -101,7 +101,15 @@
         public function index(PaginateRequest $request)
         {
             try {
-                return StockResource::collection( $this->stockService->list( $request ) );
+                $totalStockValue    = 0;
+                $totalLowStockCount = 0;
+                $stocks             = $this->stockService->list( $request , $totalStockValue , $totalLowStockCount );
+                return StockResource::collection( $stocks )->additional( [
+                    'meta' => [
+                        'total_stock_value'     => currency( $totalStockValue ) ,
+                        'total_low_stock_count' => $totalLowStockCount
+                    ]
+                ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
