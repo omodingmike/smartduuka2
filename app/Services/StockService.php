@@ -7,6 +7,7 @@
     use App\Enums\StockStatus;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Resources\ProductCategoryResource;
+    use App\Models\Damage;
     use App\Models\Ingredient;
     use App\Models\ProductAttribute;
     use App\Models\ProductAttributeOption;
@@ -27,7 +28,7 @@
         public $ingredients;
         public $links;
 
-        public function list(Request $request, &$totalStockValue = null, &$totalLowStockCount = null)
+        public function list(Request $request , &$totalStockValue = NULL , &$totalLowStockCount = NULL)
         {
             try {
 
@@ -54,10 +55,10 @@
                                          ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
                                          ->values();
 
-                $totalStockValue = $processedItems->sum( 'total_price' );
-                $totalLowStockCount = $processedItems->filter(function ($item) {
-                    return $item['stock'] <= $item['low_stock_quantity_warning'];
-                })->count();
+                $totalStockValue    = $processedItems->sum( 'total_price' );
+                $totalLowStockCount = $processedItems->filter( function ($item) {
+                    return $item[ 'stock' ] <= $item[ 'low_stock_quantity_warning' ];
+                } )->count();
 
                 return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock' ) );
             } catch ( Exception $exception ) {
@@ -246,7 +247,7 @@
                 'attribute'                   => $first->product_attribute_id ? ProductAttribute::find( $first->product_attribute_id ) : NULL ,
                 'attribute_option'            => $first->product_attribute_option_id ? ProductAttributeOption::find( $first->product_attribute_option_id ) : NULL ,
                 'expiry_date'                 => $first->expiry_date ,
-                'low_stock_quantity_warning'  => $first->product->low_stock_quantity_warning,
+                'low_stock_quantity_warning'  => $first->product->low_stock_quantity_warning ,
             ];
         }
 
@@ -494,5 +495,90 @@
                 $lap->setPath( $baseUrl );
             }
             return $lap;
+        }
+
+        public function wastage(Request $request)
+        {
+            try {
+                $perPage      = $request->integer( 'perPage' , 10 );
+                $page         = $request->integer( 'page' , 1 );
+                $isPaginated  = $request->boolean( 'paginate' );
+                $warehouse_id = $request->warehouse_id;
+
+                // 1. Get Damages
+                $damages = Stock::with( [ 'item' , 'model' ] )
+                                ->where( 'model_type' , Damage::class )
+                                ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                                ->get()
+                                ->map( function ($stock) {
+                                    $item = $stock->item;
+                                    $name = $item->name ?? 'Unknown Item';
+                                    $buyingPrice = $item->buying_price ?? 0;
+
+                                    if ( $item instanceof ProductVariation ) {
+                                        $item->loadMissing( 'productAttributeOption.productAttribute' );
+                                        if ( $item->productAttributeOption ) {
+                                            $name = $item->product->name . ' - ' . $item->productAttributeOption->productAttribute->name . ' (' . $item->productAttributeOption->name . ')';
+                                        }
+                                        $buyingPrice = $item->buying_price ?? $item->product->buying_price ?? 0;
+                                    }
+
+                                    return (object) [
+                                        'id'       => $stock->id ,
+                                        'date'     => $stock->created_at ,
+                                        'itemCode' => $item->sku ?? 'N/A' ,
+                                        'itemName' => $name ,
+                                        'type'     => 'Damage' ,
+                                        'reason'   => $stock->model->reason ?? 'N/A' ,
+                                        'qtyOut'   => abs( $stock->quantity ) ,
+                                        'unitCost' => $buyingPrice ,
+                                        'branch'   => $stock->warehouse->name ?? 'Main Branch' ,
+                                    ];
+                                } );
+
+                // 2. Get Expired Stock (Wastage)
+                $expired = Stock::with( [ 'item' ] )
+                                ->where( 'expiry_date' , '<' , now() )
+                                ->where( 'status' , StockStatus::RECEIVED )
+                                ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
+                                ->get()
+                                ->map( function ($stock) {
+                                    $item = $stock->item;
+                                    $name = $item->name ?? 'Unknown Item';
+                                    $buyingPrice = $item->buying_price ?? 0;
+
+                                    if ( $item instanceof ProductVariation ) {
+                                        $item->loadMissing( 'productAttributeOption.productAttribute' );
+                                        if ( $item->productAttributeOption ) {
+                                            $name = $item->product->name . ' - ' . $item->productAttributeOption->productAttribute->name . ' (' . $item->productAttributeOption->name . ')';
+                                        }
+                                        $buyingPrice = $item->buying_price ?? $item->product->buying_price ?? 0;
+                                    }
+
+                                    return (object) [
+                                        'id'       => $stock->id ,
+                                        'date'     => $stock->expiry_date , // Or created_at if you prefer when it was recorded
+                                        'itemCode' => $item->sku ?? 'N/A' ,
+                                        'itemName' => $name ,
+                                        'type'     => 'Wastage' , // Expired items are considered wastage
+                                        'reason'   => 'Expired' ,
+                                        'qtyOut'   => $stock->quantity , // Remaining quantity is lost
+                                        'unitCost' => $buyingPrice ,
+                                        'branch'   => $stock->warehouse->name ?? 'Main Branch' ,
+                                    ];
+                                } );
+
+                $wastage = $damages->merge( $expired )->sortByDesc( 'date' )->values();
+
+                if ( $isPaginated ) {
+                    return $this->paginate( $wastage , $perPage , NULL , url( '/api/admin/stock/wastage' ) );
+                }
+
+                return $wastage;
+
+            } catch ( Exception $exception ) {
+                Log::error( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
         }
     }

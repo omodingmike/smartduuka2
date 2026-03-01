@@ -47,6 +47,11 @@
             return $this->morphTo();
         }
 
+        public function model() : MorphTo
+        {
+            return $this->morphTo();
+        }
+
         public function warehouse() : BelongsTo
         {
             return $this->belongsTo( Warehouse::class , 'warehouse_id' , 'id' );

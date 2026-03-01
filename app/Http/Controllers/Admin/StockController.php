@@ -15,6 +15,7 @@
     use App\Http\Resources\RawStockResource;
     use App\Http\Resources\StockResource;
     use App\Http\Resources\StockTransferResource;
+    use App\Http\Resources\WastageResource;
     use App\Models\Ingredient;
     use App\Models\Product;
     use App\Models\Purchase;
@@ -319,6 +320,35 @@
 //            } catch ( Exception $exception ) {
 //                return response([ 'status' => false , 'message' => $exception->getMessage() ] , 422);
 //            }
+        }
+
+        public function wastage(PaginateRequest $request)
+        {
+            try {
+                return WastageResource::collection( $this->stockService->wastage( $request ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function stockCapture(PaginateRequest $request)
+        {
+            try {
+                // Implement stock capture logic here
+                return response()->json( [ 'data' => [] ] );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function reconciliation(PaginateRequest $request)
+        {
+            try {
+                // Implement reconciliation logic here
+                return response()->json( [ 'data' => [] ] );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
         }
 
     }

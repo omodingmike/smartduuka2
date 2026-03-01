@@ -580,6 +580,9 @@
             Route::prefix( 'inventory-report' )->name( 'inventory-report.' )->group( function () {
                 Route::get( '/' , [ StockController::class , 'index' ] );
                 Route::get( '/expiry' , [ StockController::class , 'indexGroupedByBatch' ] );
+                Route::get( '/wastage' , [ StockController::class , 'wastage' ] );
+                Route::get( '/stock-capture' , [ StockController::class , 'stockCapture' ] );
+                Route::get( '/reconciliation' , [ StockController::class , 'reconciliation' ] );
             } );
 
             Route::prefix( 'users' )->name( 'users.' )->group( function () {

@@ -77,7 +77,7 @@
             } );
             return [
 //                'id'                           => $this->id ,
-                'id'                           => 'REG-' . Str::padLeft( $this->id , 5,'0' ) ,
+                'id'                           => 'REG-' . Str::padLeft( $this->id , 5 , '0' ) ,
                 'opening_float'                => $this->opening_float ,
                 'reserved_value'               => currency( $reserved_value ) ,
                 'damages_value'                => currency( $damages_value ) ,
