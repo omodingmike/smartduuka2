@@ -9,6 +9,7 @@
     use App\Models\Register;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Support\Str;
 
     /** @mixin Register */
     class RegisterResource extends JsonResource
@@ -34,13 +35,17 @@
                         $name = $firstItem->product->name . ' - ' . $firstItem->productAttributeOption->productAttribute->name . ' (' . $firstItem->productAttributeOption->name . ')';
                     }
                 }
+                $reserved = $totalQuantity - $quantity_picked;
+                $damages  = abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 );
 
                 return [
                     'item_id'              => $firstItem?->id ,
                     'name'                 => $name ,
-                    'damages'              => abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 ) ,
+                    'damages'              => $damages ,
+                    'damages_value'        => $damages * ( $firstItem->buying_price ?? 0 ) ,
                     'stock'                => $firstItem?->stock ,
-                    'reserved'             => $totalQuantity - $quantity_picked ,
+                    'reserved'             => $reserved ,
+                    'reserved_value'       => $reserved * ( $firstItem->buying_price ?? 0 ) ,
                     'unit'                 => new UnitResource( $firstItem?->unit ) ,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,
@@ -61,6 +66,8 @@
                 ];
             } )->values();
             $grandTotalCost       = $groupedItems->sum( 'total_cost' );
+            $reserved_value       = $groupedItems->sum( 'reserved_value' );
+            $damages_value        = $groupedItems->sum( 'damages_value' );
             $profit               = $this->posPayments()->sum( 'amount' ) - $grandTotalCost;
             $totalCreditRemaining = $this->orders
                 ->where( 'payment_type' , PaymentType::CREDIT )
@@ -69,8 +76,11 @@
                 return $order->posPayments()->sum( 'amount' );
             } );
             return [
-                'id'                           => $this->id ,
+//                'id'                           => $this->id ,
+                'id'                           => 'REG-' . Str::padLeft( $this->id , 5,'0' ) ,
                 'opening_float'                => $this->opening_float ,
+                'reserved_value'               => currency( $reserved_value ) ,
+                'damages_value'                => currency( $damages_value ) ,
                 'opening_float_currency'       => AppLibrary::currencyAmountFormat( $this->opening_float ) ,
                 'notes'                        => $this->notes ,
                 'status'                       => [ 'label' => $this->status->label() , 'value' => $this->status?->value ] ,
