@@ -497,12 +497,12 @@
             return $lap;
         }
 
-        public function wastage(Request $request)
+        public function wastage(Request $request , &$totalLoss = 0)
         {
             try {
                 $perPage      = $request->integer( 'perPage' , 10 );
                 $page         = $request->integer( 'page' , 1 );
-                $isPaginated  = $request->boolean( 'paginate' );
+                $isPaginated  = TRUE;
                 $warehouse_id = $request->warehouse_id;
 
                 // 1. Get Damages
@@ -511,8 +511,8 @@
                                 ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
                                 ->get()
                                 ->map( function ($stock) {
-                                    $item = $stock->item;
-                                    $name = $item->name ?? 'Unknown Item';
+                                    $item        = $stock->item;
+                                    $name        = $item->name ?? 'Unknown Item';
                                     $buyingPrice = $item->buying_price ?? 0;
 
                                     if ( $item instanceof ProductVariation ) {
@@ -540,11 +540,12 @@
                 $expired = Stock::with( [ 'item' ] )
                                 ->where( 'expiry_date' , '<' , now() )
                                 ->where( 'status' , StockStatus::RECEIVED )
+                                ->where( 'quantity' , '>' , 0 )
                                 ->when( $warehouse_id , fn($q) => $q->where( 'warehouse_id' , $warehouse_id ) )
                                 ->get()
                                 ->map( function ($stock) {
-                                    $item = $stock->item;
-                                    $name = $item->name ?? 'Unknown Item';
+                                    $item        = $stock->item;
+                                    $name        = $item->name ?? 'Unknown Item';
                                     $buyingPrice = $item->buying_price ?? 0;
 
                                     if ( $item instanceof ProductVariation ) {
@@ -568,16 +569,75 @@
                                     ];
                                 } );
 
-                $wastage = $damages->merge( $expired )->sortByDesc( 'date' )->values();
+                $wastage   = $damages->merge( $expired )->sortByDesc( 'date' )->values();
+                $totalLoss = $wastage->sum( function ($item) {
+                    return $item->qtyOut * $item->unitCost;
+                } );
 
                 if ( $isPaginated ) {
-                    return $this->paginate( $wastage , $perPage , NULL , url( '/api/admin/stock/wastage' ) );
+                    return $this->paginate( $wastage , $perPage , $page , url( '/api/admin/stock/wastage' ) );
                 }
 
                 return $wastage;
 
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function stockCapture(Request $request)
+        {
+            try {
+                $perPage      = $request->integer( 'perPage' , 10 );
+                $page         = $request->integer( 'page' , 1 );
+                $isPaginated  = $request->boolean( 'paginate' , TRUE );
+                $warehouse_id = $request->warehouse_id;
+
+                $stockTakesQuery = Stock::with( [ 'warehouse' , 'user' , 'item' ] )
+                                        ->where( 'quantity' , '>' , 0 );
+
+                if ( $warehouse_id ) {
+                    $stockTakesQuery->where( 'warehouse_id' , $warehouse_id );
+                }
+
+                $stockTakes = $stockTakesQuery->get()->groupBy( 'batch' );
+
+
+                $formattedTakes = $stockTakes->map( function ($stocks , $batch) {
+                    $first = $stocks->first();
+                    return (object) [
+                        'id'           => $batch ,
+                        'date'         => $first->created_at ,
+                        'branch'       => $first->warehouse->name ?? 'N/A' ,
+                        'capturedBy'   => $first->user->name ?? 'N/A' ,
+                        'itemsCounted' => $stocks->count() ,
+                        'status'       => $first->status ,
+                        'items'        => $stocks->map( function ($stock) {
+                            $item = $stock->item;
+                            $name = $item->name ?? 'Unknown';
+                            if ( $item instanceof ProductVariation ) {
+                                $item->loadMissing( 'productAttributeOption.productAttribute' );
+                                if ( $item->productAttributeOption ) {
+                                    $name = $item->product->name . ' - ' . $item->productAttributeOption->productAttribute->name . ' (' . $item->productAttributeOption->name . ')';
+                                }
+                            }
+                            return [
+                                'itemName' => $name ,
+                                'expected' => $stock->system_stock ,
+                                'counted'  => $stock->physical_stock ,
+                                'variance' => $stock->difference ,
+                                'itemCode' => $item->sku ?? 'N/A' ,
+                                'unitCost' => $item->buying_price ?? 0 ,
+                            ];
+                        } )
+                    ];
+                } )->sortByDesc( 'date' )->values();
+
+                return $this->paginate( $formattedTakes , $perPage , $page , url( '/api/admin/inventory-report/stock-capture' ) );
+
+            } catch ( Exception $exception ) {
+                Log::error( 'Stock Capture Error: ' . $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }

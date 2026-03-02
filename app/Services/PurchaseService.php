@@ -734,9 +734,6 @@
                         'variation_names' => $variationNames ,
                         'price'           => $price ,
                         'quantity'        => $p[ 'quantity' ] ,
-                        // These fields are now correctly mapped from your restored UI
-//                        'weight'          => $p[ 'weight' ] ?? NULL ,
-//                        'serial'          => $p[ 'serial' ] ?? NULL ,
                         'expiry_date'     => $expiryDate ,
                         'discount'        => 0 ,
                         'tax'             => 0 ,
@@ -744,7 +741,9 @@
                         'subtotal'        => $total ,
                         'total'           => $total ,
                         'sku'             => $sku ,
-                        'status'          => StockStatus::RECEIVED
+                        'status'          => StockStatus::RECEIVED ,
+                        'creator'         => auth()->id() ,
+                        'user_id'         => auth()->id()
                     ] );
                 }
                 return response()->json( [ 'message' => 'Stock stored successfully' ] );

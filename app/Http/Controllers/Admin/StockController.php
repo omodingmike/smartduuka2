@@ -14,6 +14,7 @@
     use App\Http\Resources\IngredientStockResource;
     use App\Http\Resources\RawStockResource;
     use App\Http\Resources\StockResource;
+    use App\Http\Resources\StockTakeResource;
     use App\Http\Resources\StockTransferResource;
     use App\Http\Resources\WastageResource;
     use App\Models\Ingredient;
@@ -325,19 +326,25 @@
         public function wastage(PaginateRequest $request)
         {
             try {
-                return WastageResource::collection( $this->stockService->wastage( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                $totalLoss = 0;
+                $wastage = $this->stockService->wastage($request, $totalLoss);
+                return WastageResource::collection($wastage)->additional([
+                    'meta' => [
+                        'total_value_lost' => currency($totalLoss)
+                    ]
+                ]);
+            } catch (Exception $exception) {
+                return response(['status' => false, 'message' => $exception->getMessage()], 422);
             }
         }
 
-        public function stockCapture(PaginateRequest $request)
+        public function stockCapture(Request $request)
         {
             try {
-                // Implement stock capture logic here
-                return response()->json( [ 'data' => [] ] );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                $stockTakes = $this->stockService->stockCapture($request);
+                return StockTakeResource::collection($stockTakes);
+            } catch (Exception $exception) {
+                return response(['status' => false, 'message' => $exception->getMessage()], 422);
             }
         }
 
