@@ -72,7 +72,6 @@ Sanctum::actingAs(
                     ->store( config( 'permission.cache.store' ) != 'default' ? config( 'permission.cache.store' ) : NULL )
                     ->forget( config( 'permission.cache.key' ) );
 
-
 demoshop.smartduuka.com
 demoshop-api.smartduuka.com
 
@@ -83,3 +82,5 @@ Cash
 UGX 24,500
 
 available = stock + remaining deposited stock
+
+53,800

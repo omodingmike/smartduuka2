@@ -127,6 +127,7 @@
             InitializeTenancyByDomain::$onFail = function () {
                 return redirect( config( 'app.url' ) );
             };
+
             TenantConfig::$storageToConfigMap  = [
                 // From app.php
                 'APP_NAME'                   => 'app.name' ,

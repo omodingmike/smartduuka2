@@ -180,7 +180,6 @@
         public function changeStatus(Order $order , OrderStatusRequest $request)
         {
             try {
-//                return new OrderDetailsResource($this->orderService->changeStatus($order , $request , false));
                 return $this->orderService->updateStatus( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

@@ -1025,22 +1025,22 @@
         {
             try {
                 return DB::transaction( function () use ($order , $request) {
+                    $order->load( 'orderProducts' );
                     $status = $request->integer( 'status' );
                     if ( $status == OrderStatus::CANCELED->value ) {
                         $order->posPayments()->delete();
                         $order->orderProducts()->delete();
-//                        $order->posPayments()->update( [ 'register_id' => NULL ] );
                         foreach ( $order->orderProducts as $orderProduct ) {
                             $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
                                 ? ProductVariation::class
                                 : Product::class;
-                            $stock    = Stock::where( [
+
+                            $stock = Stock::where( [
                                 'item_id'      => $orderProduct->item_id ,
                                 'item_type'    => $itemType ,
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $order->warehouse_id
                             ] )->first();
-
                             $stock?->increment( 'quantity' , $orderProduct->quantity );
                         }
                     }
