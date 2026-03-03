@@ -591,7 +591,6 @@
             try {
                 $perPage      = $request->integer( 'perPage' , 10 );
                 $page         = $request->integer( 'page' , 1 );
-                $isPaginated  = $request->boolean( 'paginate' , TRUE );
                 $warehouse_id = $request->warehouse_id;
 
                 $stockTakesQuery = Stock::with( [ 'warehouse' , 'user' , 'item' ] )

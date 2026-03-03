@@ -2,7 +2,9 @@
 
     namespace App\Enums;
 
-    enum StockStatus : int
+    use JsonSerializable;
+
+    enum StockStatus : int implements JsonSerializable
     {
         case OUT_OF_STOCK       = 1;
         case LOW_STOCK          = 2;
@@ -41,5 +43,13 @@
                 'value' => $status->value ,
                 'label' => $status->label() ,
             ] , self::cases() );
+        }
+
+        public function jsonSerialize() : array
+        {
+            return [
+                'label' => $this->label() ,
+                'value' => $this->value ,
+            ];
         }
     }

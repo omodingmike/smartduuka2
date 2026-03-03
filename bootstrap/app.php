@@ -97,8 +97,8 @@
                           } );
 
                           // Optional: log for debugging (like your `reportable` callback)
-                          $exceptions->report( function (Throwable $e) {
-                              info( "{$e->getFile()} line {$e->getLine()}" );
-                              info( $e->getTraceAsString() );
-                          } );
+//                          $exceptions->report( function (Throwable $e) {
+//                              info( "{$e->getFile()} line {$e->getLine()}" );
+//                              info( $e->getTraceAsString() );
+//                          } );
                       } )->create();
