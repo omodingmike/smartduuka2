@@ -249,6 +249,11 @@
                     Route::match( [ 'post' , 'patch' ] , '/' , [ SiteController::class , 'update' ] );
                 } );
 
+                Route::prefix( 'document-preference' )->name( 'document-preference.' )->group( function () {
+                    Route::get( '/' , [ SiteController::class , 'documentPreference' ] );
+                    Route::match( [ 'post' , 'patch' ] , '/' , [ SiteController::class , 'updateDocumentPreference' ] );
+                } );
+
                 Route::prefix( 'module' )->name( 'module.' )->group( function () {
                     Route::get( '/' , [ ModuleController::class , 'index' ] );
                     Route::match( [ 'put' , 'patch' ] , '/' , [ ModuleController::class , 'update' ] );

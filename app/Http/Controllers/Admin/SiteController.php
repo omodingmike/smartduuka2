@@ -5,11 +5,13 @@
     use App\Http\Requests\CleaningSettingRequest;
     use App\Http\Requests\SiteRequest;
     use App\Http\Resources\CleaningSettingResource;
+    use App\Http\Resources\DocumentPreferenceResource;
     use App\Http\Resources\SiteResource;
     use App\Services\SiteService;
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
+    use Illuminate\Http\Request;
     use Illuminate\Http\Response;
 
     class SiteController extends AdminController
@@ -54,6 +56,24 @@
         {
             try {
                 return new CleaningSettingResource( $this->siteService->updateCleaning( $request ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function documentPreference()
+        {
+            try {
+                return new DocumentPreferenceResource( $this->siteService->documentPreference() );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function updateDocumentPreference(Request $request)
+        {
+            try {
+                return new DocumentPreferenceResource( $this->siteService->updateDocumentPreference( $request ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

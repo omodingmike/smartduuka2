@@ -84,3 +84,5 @@ UGX 24,500
 available = stock + remaining deposited stock
 
 53,800
+
+product: posho 50kg remove, leave 50k
