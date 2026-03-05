@@ -39,7 +39,8 @@
             try {
                 $requests    = $request->all();
                 $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
+                $perPage     = $request->get( 'perPage' , '*' );
+                $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
                 $query       = $request->get( 'query' ) ?? NULL;
@@ -53,9 +54,7 @@
                                 $query->where( $key , 'like' , '%' . $request . '%' );
                             }
                         }
-                    } )->orderBy( 'created_at' , 'desc' )->$method(
-                        $methodValue
-                    );
+                    } )->orderBy( 'created_at' , 'desc' )->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -164,10 +163,10 @@
                     $date           = parseDate( $request->validated()[ 'date' ] );
                     CustomerPayment::create( [ 'date' => $date , 'amount' => $amount , 'payment_method_id' => $payment_method , 'user_id' => $customer->id ] );
                     $customer->orders()->where( 'balance' , '>' , 0 )
-                             ->where( function ($query) use ($date , $payment_method) {
-                                 $query->whereOrderType( OrderType::CREDIT );
-                                 $query->orWhere( 'order_type' , '=' , OrderType::DEPOSIT );
-                             } )
+//                             ->where( function ($query) use ($date , $payment_method) {
+//                                 $query->whereOrderType( OrderType::CREDIT );
+//                                 $query->orWhere( 'order_type' , '=' , OrderType::DEPOSIT );
+//                             } )
                              ->chunkById( 100 , function ($orders) use (&$amount , $payment_method , $date) {
                                  foreach ( $orders as $order ) {
                                      if ( $amount <= 0 ) {
@@ -189,7 +188,7 @@
                                              [
                                                  'balance'        => $new_balance ,
                                                  'payment_status' => PaymentStatus::PAID ,
-                                                 'order_type'     => OrderType::POS ,
+//                                                 'order_type'     => OrderType::POS ,
                                                  'paid'           => $balance ,
                                              ] );
                                          $saveCreditPurchase->paid    = $balance;

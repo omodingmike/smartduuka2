@@ -6,6 +6,7 @@
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Support\Str;
 
     class OrderResource extends JsonResource
     {
@@ -22,7 +23,8 @@
             $last_paid = $this->posPayments()?->latest()?->first();
             return [
                 'id'                             => $this->id ,
-                'order_serial_no'                => $this->order_serial_no ,
+//                'order_serial_no'                => $this->order_serial_no,
+                'order_serial_no'                => 'ORD-' . Str::padLeft( $this->id , 6 , '0' ) ,
                 'user_id'                        => $this->user_id ,
                 "total_amount_price"             => AppLibrary::flatAmountFormat( $this->total ) ,
                 "total_currency_price"           => AppLibrary::currencyAmountFormat( $this->total ) ,
