@@ -18,8 +18,8 @@
         public function toArray(Request $request) : array
         {
             return [
-                'packing_slip'   => $this->info[ 'packing_slip' ] ? (int) $this->info[ 'packing_slip' ] : 0 ,
-                'purchase_order' => $this->info[ 'purchase_order' ] ? (int) $this->info[ 'purchase_order' ] : 0
+                'packing_slip'   => isset( $this->info[ 'packing_slip' ] ) ? (int) $this->info[ 'packing_slip' ] : 0 ,
+                'purchase_order' => isset( $this->info[ 'purchase_order' ] ) ? (int) $this->info[ 'purchase_order' ] : 0
             ];
         }
     }
