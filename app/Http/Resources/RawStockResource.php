@@ -12,7 +12,10 @@
     {
         public function toArray($request) : array
         {
-            $status = $this->status;
+            $status                = $this->status;
+            $source_warehouse      = $this->source_warehouse_id ? Warehouse::find( $this->source_warehouse_id ) : NULL;
+            $warehouse             = $this->warehouse_id ? Warehouse::find( $this->warehouse_id ) : NULL;
+            $destination_warehouse = $this->destination_warehouse_id ? Warehouse::find( $this->destination_warehouse_id ) : NULL;
             return [
                 'id'                       => $this->id ,
                 'product_id'               => $this->product_id ,
@@ -21,10 +24,9 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
                 'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
-                'location'                 => $this->warehouse_id ? new WarehouseResource( Warehouse::find( $this->warehouse_id ) ) : NULL ,
-                'from'                     => $this->source_warehouse_id ? new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) : NULL ,
-                'to'                       => $this->destination_warehouse_id ? new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) )
-                    : NULL ,
+                'location'                 => $warehouse ? new WarehouseResource( $warehouse ) : NULL ,
+                'from'                     => $source_warehouse ? new WarehouseResource( $source_warehouse ) : NULL ,
+                'to'                       => $this->destination_warehouse ? new WarehouseResource( $destination_warehouse ) : NULL ,
                 'model_id'                 => $this->model_id ,
                 'item_type'                => $this->item_type ,
                 'item_id'                  => $this->item_id ,
