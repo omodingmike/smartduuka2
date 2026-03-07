@@ -129,7 +129,7 @@
         public function takings(PaginateRequest $request)
         {
             try {
-                return RawStockResource::collection( $this->stockService->transfers( $request ) );
+                return RawStockResource::collection( $this->stockService->transfers( $request ) ?? collect() );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -327,24 +327,24 @@
         {
             try {
                 $totalLoss = 0;
-                $wastage = $this->stockService->wastage($request, $totalLoss);
-                return WastageResource::collection($wastage)->additional([
+                $wastage   = $this->stockService->wastage( $request , $totalLoss );
+                return WastageResource::collection( $wastage )->additional( [
                     'meta' => [
-                        'total_value_lost' => currency($totalLoss)
+                        'total_value_lost' => currency( $totalLoss )
                     ]
-                ]);
-            } catch (Exception $exception) {
-                return response(['status' => false, 'message' => $exception->getMessage()], 422);
+                ] );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
         public function stockCapture(Request $request)
         {
             try {
-                $stockTakes = $this->stockService->stockCapture($request);
-                return StockTakeResource::collection($stockTakes);
-            } catch (Exception $exception) {
-                return response(['status' => false, 'message' => $exception->getMessage()], 422);
+                $stockTakes = $this->stockService->stockCapture( $request );
+                return StockTakeResource::collection( $stockTakes );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
