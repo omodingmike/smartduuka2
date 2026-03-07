@@ -129,8 +129,8 @@
         public function takings(Request $request)
         {
             try {
-                return RawStockResource::collection( $this->stockService->transfers( $request ) );
-//                return $this->stockService->transfers( $request ) ;
+//                return RawStockResource::collection( $this->stockService->transfers( $request ) );
+                return $this->stockService->transfers( $request ) ;
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
