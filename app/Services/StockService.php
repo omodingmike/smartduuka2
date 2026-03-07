@@ -335,7 +335,7 @@
 
         private function groupedStock($group , $batch)
         {
-            $first = $group->first();
+            $first = $group?->first();
 
             $productsWithQuantity = $group->map( function ($stock) {
                 $product = $stock->product;
