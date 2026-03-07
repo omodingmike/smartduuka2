@@ -139,53 +139,10 @@
             }
         }
 
-        protected function transformStockGroup($group)
-        {
-            $first = $group->first();
-            if ( ! $first->product ) return NULL;
-
-            $isPurchasable = $first->product->can_purchasable !== Ask::NO;
-            $status        = $first->status;
-
-            return [
-                'product_id'               => $first->product_id ,
-                'products'                 => $first->products ,
-                'stock_status'             => [
-                    'value' => $status->value ,
-                    'label' => $status->label() ,
-                ] ,
-                'product_name'             => $first->product->name ,
-                'unit'                     => $first->product->unit ,
-                'other_unit'               => $first->product->otherUnit ,
-                'units_nature'             => $first->product->units_nature ,
-                'variation_names'          => $first->variation_names ,
-                'variation_id'             => $first->variation_id ,
-                'status'                   => $first->product->status ,
-                'warehouse_id'             => $first->warehouse_id ,
-                'reference'                => $first->reference ,
-                'delivery'                 => $first->delivery ,
-                'system_stock'             => $first->system_stock ,
-                'physical_stock'           => $first->physical_stock ,
-                'difference'               => $first->difference ,
-                'discrepancy'              => $first->discrepancy ,
-                'classification'           => $first->classification ,
-                'creator'                  => $first->user ,
-                'batch'                    => $first->batch ,
-                'weight'                   => $first->product->weight ,
-                'source_warehouse_id'      => $first->source_warehouse_id ,
-                'total'                    => $first->total ,
-                'destination_warehouse_id' => $first->destination_warehouse_id ,
-                'created_at'               => $first->created_at ,
-                'description'              => $first->description ,
-                'stock'                    => $isPurchasable ? $group->sum( 'quantity' ) : 'N/C' ,
-                'other_stock'              => $isPurchasable ? $group->sum( 'other_quantity' ) : 'N/C' ,
-            ];
-        }
-
         protected function transformStockGrouped($group)
         {
+            if ( ! $group ) return NULL;
             $first = $group->first();
-            if ( ! $first->product ) return NULL;
 
             $isPurchasable = $first->product->can_purchasable !== Ask::NO;
             $status        = $first->status;
@@ -591,6 +548,7 @@
 
 
                 $formattedTakes = $stockTakes->map( function ($stocks , $batch) {
+                    if ( ! $stocks ) return NULL;
                     $first = $stocks->first();
                     return (object) [
                         'id'           => $batch ,
