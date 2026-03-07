@@ -21,9 +21,10 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
                 'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
-                'location'                 => new WarehouseResource( Warehouse::find( $this->warehouse_id ) ) ,
-                'from'                     => new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) ,
-                'to'                       => new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) ) ,
+                'location'                 => $this->warehouse_id ? new WarehouseResource( Warehouse::find( $this->warehouse_id ) ) : NULL ,
+                'from'                     => $this->source_warehouse_id ? new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) : NULL ,
+                'to'                       => $this->destination_warehouse_id ? new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) )
+                    : NULL ,
                 'model_id'                 => $this->model_id ,
                 'item_type'                => $this->item_type ,
                 'item_id'                  => $this->item_id ,
