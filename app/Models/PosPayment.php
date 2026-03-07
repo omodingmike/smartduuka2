@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\PosPaymentType;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,15 +12,16 @@
         use HasFactory;
 
         protected $fillable = [ 'date' , 'reference_no' , 'amount' , 'order_id' , 'payment_method' , 'payment_method_id' ,
-            'register_id'
+            'register_id' , 'pos_payment_type'
         ];
         protected $casts    = [
-            'id'             => 'integer' ,
-            'order_id'       => 'integer' ,
-            'date'           => 'datetime' ,
-            'reference_no'   => 'string' ,
-            'amount'         => 'decimal:6' ,
-            'payment_method' => 'integer'
+            'id'               => 'integer' ,
+            'order_id'         => 'integer' ,
+            'date'             => 'datetime' ,
+            'reference_no'     => 'string' ,
+            'amount'           => 'decimal:6' ,
+            'payment_method'   => 'integer' ,
+            'pos_payment_type' => PosPaymentType::class
         ];
 
         public function getFileAttribute()

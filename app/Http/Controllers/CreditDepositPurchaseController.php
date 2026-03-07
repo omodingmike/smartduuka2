@@ -4,6 +4,7 @@
 
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
+    use App\Enums\PosPaymentType;
     use App\Http\Resources\OrderResource;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
@@ -98,6 +99,7 @@
                         'date'              => now() ,
                         'reference_no'      => time() ,
                         'amount'            => $net_amount ,
+                        'pos_payment_type'  => PosPaymentType::DEBT ,
                         'payment_method_id' => $payment->id ,
                         'register_id'       => auth()->user()->openRegister()->id
                     ] );

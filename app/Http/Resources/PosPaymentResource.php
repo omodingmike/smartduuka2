@@ -3,20 +3,25 @@
     namespace App\Http\Resources;
 
     use App\Libraries\AppLibrary;
+    use App\Models\PosPayment;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /**
+     * @mixin PosPayment
+     */
     class PosPaymentResource extends JsonResource
     {
         public function toArray(Request $request) : array
         {
             return [
-                'date'            => AppLibrary::datetime2( $this->date ) ,
-                'reference_no'    => $this->reference_no ,
-                'amount'          => $this->amount ,
-                'order'           => $this->order_id ,
-                'amount_currency' => AppLibrary::currencyAmountFormat( $this->amount ) ,
-                'payment_method'  => new PaymentMethodResource( $this->paymentMethod ) ,
+                'date'             => AppLibrary::datetime2( $this->date ) ,
+                'reference_no'     => $this->reference_no ,
+                'amount'           => $this->amount ,
+                'pos_payment_type' => $this->pos_payment_type ,
+                'order'            => $this->order_id ,
+                'amount_currency'  => AppLibrary::currencyAmountFormat( $this->amount ) ,
+                'payment_method'   => new PaymentMethodResource( $this->paymentMethod ) ,
             ];
         }
     }

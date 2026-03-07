@@ -3,6 +3,7 @@
     namespace App\Http\Resources;
 
     use App\Enums\PaymentType;
+    use App\Enums\PosPaymentType;
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use App\Models\ProductVariation;
@@ -104,6 +105,7 @@
                 'payment_summary'              => $paymentSummary ,
                 'total_cost_of_goods'          => $grandTotalCost ,
                 'total_credit'                 => $totalCreditRemaining ,
+                'total_debt_paid'              => currency( $this->posPayments()->where( 'pos_payment_type' , PosPaymentType::DEBT )->sum( 'amount' ) ) ,
                 'deposits'                     => $deposits ,
                 'deposits_currency'            => currency( $deposits ) ,
                 'total_credit_currency'        => AppLibrary::currencyAmountFormat( $totalCreditRemaining ) ,
