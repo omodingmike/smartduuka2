@@ -20,7 +20,7 @@
                 'number_plate'             => $this->number_plate ,
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
-                'products'                 => ProductAdminResource::collection( $this->products ) ,
+                'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
                 'location'                 => new WarehouseResource( Warehouse::find( $this->warehouse_id ) ) ,
                 'from'                     => new WarehouseResource( Warehouse::find( $this->source_warehouse_id ) ) ,
                 'to'                       => new WarehouseResource( Warehouse::find( $this->destination_warehouse_id ) ) ,
