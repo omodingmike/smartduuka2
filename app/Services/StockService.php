@@ -255,8 +255,8 @@
         {
             try {
                 $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
+                $perPage     = $request->get( 'perPage' , 10 );
+                $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
                 $stocks      = Stock::with( [ 'product.sellingUnits:id,short_name' , 'product.unit:id,short_name' , 'warehouse:name,id' ] )
@@ -282,24 +282,10 @@
                                     ->where( 'expiry_date' , '<>' , NULL )
                                     ->where( function ($query) use ($requests) {
                                         $query->where( 'model_type' , '<>' , Ingredient::class );
-                                        foreach ( $requests as $key => $request ) {
-                                            if ( in_array( $key , $this->stockFilter ) ) {
-                                                if ( $key == 'product_name' ) {
-                                                    $query->whereHas( 'product' , function ($query) use ($request) {
-                                                        $query->where( 'name' , 'like' , '%' . $request . '%' );
-                                                    } );
-                                                }
-                                                else {
-                                                    $query->where( $key , 'like' , '%' . $request . '%' );
-                                                }
-                                            }
-                                        }
                                     } )->orderBy( $orderColumn , $orderType )->get();
 
-                if ( $method == 'paginate' ) {
-                    return $this->paginate( $stocks , $methodValue , NULL , URL::to( '/' ) . '/api/admin/stock/expiryList' );
-                }
-                return $stocks;
+
+                return $this->paginate( $stocks , $perPage , $page );
 
             } catch ( Exception $exception ) {
                 info( $exception->getMessage() );
@@ -311,22 +297,19 @@
         public function transfers(Request $request)
         {
             try {
-                $perPage     = $request->integer( 'per_page' , 10 );
-                $isPaginated = $request->boolean( 'paginate' );
-                $type        = $request->type;
-                $stocks      = $this->stockQuery( $request )
-                                    ->when( $type , fn($q) => $q->where( 'type' , $type ) )
-                                    ->get();
+                $perPage = $request->integer( 'perPage' , 10 );
+                $page    = $request->integer( 'page' , 1 );
+                $type    = $request->type;
+                $stocks  = $this->stockQuery( $request )
+                                ->when( $type , fn($q) => $q->where( 'type' , $type ) )
+                                ->get();
 
                 $processedItems = $stocks->groupBy( 'batch' )
                                          ->map( fn($group , $batch) => $this->groupedStock( $group , $batch ) )
                                          ->values();
 
-                if ( $isPaginated ) {
-                    return $this->paginate( $processedItems , $perPage , NULL , url( '/api/admin/stock/transfers' ) );
-                }
+                return $this->paginate( $processedItems , $perPage , $page );
 
-                return $processedItems;
             } catch ( Exception $exception ) {
                 Log::error( 'Transfer List Error: ' . $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -335,7 +318,11 @@
 
         private function groupedStock($group , $batch)
         {
-            $first = $group?->first();
+
+            if ( ! $group ) {
+                return NULL;
+            }
+            $first = $group->first();
 
             $productsWithQuantity = $group->map( function ($stock) {
                 $product = $stock->product;
