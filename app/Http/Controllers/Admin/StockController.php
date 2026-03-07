@@ -129,7 +129,8 @@
         public function takings(PaginateRequest $request)
         {
             try {
-                return RawStockResource::collection( $this->stockService->transfers( $request ) ?? collect() );
+//                return RawStockResource::collection( $this->stockService->transfers( $request ) ?? collect() );
+                return $this->stockService->transfers( $request ) ?? collect() ;
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -139,7 +140,7 @@
         {
             try {
 //                return $this->stockService->transfers($request);
-                return RawStockResource::collection( $this->stockService->transfers( $request ) );
+                return RawStockResource::collection( $this->stockService->transfers( $request ) ?? collect() );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
