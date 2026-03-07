@@ -60,7 +60,7 @@
                     return $item[ 'stock' ] <= $item[ 'low_stock_quantity_warning' ];
                 } )->count();
 
-                return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock' ) );
+                return $this->paginate( $processedItems , $perPage , $page );
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -105,7 +105,6 @@
                 'stockProducts.item' ,
                 'user'
             ] )
-                        ->whereNull( 'user_id' )
                         ->where( 'model_type' , '<>' , Ingredient::class )
                         ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
                         ->whereHas( 'product' , function (Builder $query) {

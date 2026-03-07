@@ -3,7 +3,6 @@
     namespace App\Services;
 
 
-    use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductCategoryRequest;
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\ProductCategory;
@@ -75,12 +74,12 @@
         /**
          * @throws Exception
          */
-        public function list(PaginateRequest $request)
+        public function list(Request $request)
         {
             try {
                 $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
+                $perPage     = $request->get( 'perPage' , 10 );
+                $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
 
@@ -100,9 +99,7 @@
                                                   }
                                               }
                                           }
-                                      } )->orderBy( $orderColumn , $orderType )->$method(
-                        $methodValue
-                    );
+                                      } )->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

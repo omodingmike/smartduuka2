@@ -53,8 +53,6 @@
         public function index(PaginateRequest $request) : \Illuminate\Http\Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-//            $query = ProductCategory::tree()->depthFirst()->with( 'parent_category' , 'media' , 'products' )
-//            $filtered =
                 return ProductCategoryResource::collection( $this->productCategoryService->list( $request ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
