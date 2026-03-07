@@ -21,6 +21,7 @@
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Response;
     use Maatwebsite\Excel\Facades\Excel;
 
@@ -72,7 +73,7 @@
             try {
                 return new ProductAdminResource( $this->productService->store( $request ) );
             } catch ( Exception $exception ) {
-                info($exception->getMessage());
+                info( $exception->getMessage() );
                 return response( [ 'status' => FALSE , 'message' => 'Internal Server Error!' ] , 500 );
             }
         }
@@ -204,5 +205,39 @@
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
+        }
+
+        public function updatePrice(Request $request)
+        {
+            DB::transaction( function () use ($request) {
+                $product_id                = $request->integer( 'product_id' );
+                $standard_prices           = json_decode( $request->standard_prices , TRUE );
+                $standard_wholesale_prices = json_decode( $request->standard_wholesale_prices , TRUE );
+                $productModel              = Product::find( $product_id );
+
+                $productModel->update( [
+                    'selling_price' => $standard_prices[ 0 ][ 'selling_price' ] ,
+                    'buying_price'  => $standard_prices[ 0 ][ 'buying_price' ] ,
+                ] );
+
+                $productModel->retailPrices()->delete();
+
+                $productModel->retailPrices()->create(
+                    [
+                        'buying_price'  => $standard_prices[ 0 ][ 'buying_price' ] ,
+                        'selling_price' => $standard_prices[ 0 ][ 'selling_price' ] ,
+                        'unit_id'       => $standard_prices[ 0 ][ 'unit_id' ] ,
+                    ]
+                );
+
+                $productModel->wholesalePrices()->delete();
+
+                foreach ( $standard_wholesale_prices as $standard_wholesale_price ) {
+                    $productModel->wholesalePrices()->create( [
+                        'minQuantity' => $standard_wholesale_price[ 'minQuantity' ] ,
+                        'price'       => $standard_wholesale_price[ 'price' ]
+                    ] );
+                }
+            } );
         }
     }

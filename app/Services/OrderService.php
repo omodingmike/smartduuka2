@@ -77,7 +77,12 @@
                 $query          = $query ? trim( $query ) : NULL;
                 $type           = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
-                $orders = Order::with( [ 'orderProducts.item' , 'user' , 'creator' , 'paymentMethods.paymentMethod' ] )
+                $orders = Order::with( [
+                    'orderProducts.item' => function ($query) {
+                        $query->withTrashed();
+                    } ,
+                    'user' , 'creator' , 'paymentMethods.paymentMethod'
+                ] )
                                ->when( $query , function (Builder $q) use ($query) {
                                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
                                      ->orWhereHas( 'user' , function ($q) use ($query) {

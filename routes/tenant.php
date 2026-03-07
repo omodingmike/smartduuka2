@@ -433,6 +433,7 @@
                 Route::get( '/show/{product}' , [ ProductController::class , 'show' ] );
                 Route::get( '/pos-product/{product}' , [ ProductController::class , 'posProduct' ] );
                 Route::post( '/' , [ ProductController::class , 'store' ] );
+                Route::post( '/price-update' , [ ProductController::class , 'updatePrice' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/{product}' , [ ProductController::class , 'update' ] );
                 Route::delete( '/' , [ ProductController::class , 'destroy' ] );
                 Route::post( '/upload-image/{product}' , [ ProductController::class , 'uploadImage' ] );
