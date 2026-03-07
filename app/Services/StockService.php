@@ -103,13 +103,14 @@
         {
             return Stock::with( [
                 'stockProducts.item' ,
-                'stockProducts.item' ,
                 'user'
             ] )
                         ->whereNull( 'user_id' )
                         ->where( 'model_type' , '<>' , Ingredient::class )
                         ->when( $request->warehouse_id , fn($q) => $q->where( 'warehouse_id' , $request->warehouse_id ) )
-                        ->whereHas( 'product' )
+                        ->whereHas( 'product' , function (Builder $query) {
+                            $query->withoutTrashed();
+                        } )
                         ->orderBy( 'created_at' , 'desc' );
         }
 

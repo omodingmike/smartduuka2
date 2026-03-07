@@ -84,6 +84,7 @@
 
         public function products() : Stock | Builder | HasMany
         {
+//            return $this->hasMany( Product::class , 'id' , 'product_id' )->withTrashed();
             return $this->hasMany( Product::class , 'id' , 'product_id' )->withTrashed();
         }
 

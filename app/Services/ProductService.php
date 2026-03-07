@@ -438,36 +438,32 @@
             try {
                 DB::transaction( function () use ($product) {
                     // 1. Delete Product-level Pricing and Taxes
-                    $product->wholesalePrices()->delete();
-                    $product->retailPrices()->delete();
-                    $product->productTaxes()->delete();
-                    $product->commissionTargets()->delete();
+//                    $product->wholesalePrices()->delete();
+//                    $product->retailPrices()->delete();
+//                    $product->productTaxes()->delete();
+//                    $product->commissionTargets()->delete();
 
                     // 2. Delete POS and Inventory Records
                     // This cleans up records from OrderService::posOrderStore
-                    $product->orderProducts()->delete();
-                    $product->stocks()->delete();
+//                    $product->orderProducts()->delete();
+//                    $product->stocks()->delete();
 
                     // 3. Delete Metadata and Reviews
-                    $product->tags()->delete();
-                    $product->reviews()->delete();
+//                    $product->tags()->delete();
+//                    $product->reviews()->delete();
 
                     // 4. Handle Variations and their specific related data
                     // Each variation has its own polymorphic prices and stocks
-                    foreach ( $product->variations as $variation ) {
-                        $variation->wholesalePrices()->delete();
-                        $variation->retailPrices()->delete();
-                        $variation->stocks()->delete();
-                        $variation->orderProducts()->delete();
-                        $variation->delete();
-                    }
 
-                    // 5. Clean up many-to-many pivots
-                    $product->rawMaterials()->detach();
+//                    foreach ( $product->variations as $variation ) {
+//                        $variation->wholesalePrices()->delete();
+//                        $variation->retailPrices()->delete();
+//                        $variation->stocks()->delete();
+//                        $variation->orderProducts()->delete();
+//                        $variation->delete();
+//                    }
 
-                    // 6. Finally, delete the product
-                    // Note: Since the model uses SoftDeletes, this sets deleted_at.
-                    // Use forceDelete() if you want to permanently remove it.
+//                    $product->rawMaterials()->detach();
                     activityLog( "Deleted Product {$product->name}" );
                     $product->delete();
                 } );
