@@ -24,6 +24,7 @@
                 "type"                       => $this->type ,
                 "unit"                       => $this->unit ,
                 "barcode"                    => $this->barcode ,
+                "deposited"                  => $this->deposited ,
                 'approve_quantity'           => number_format( $this->approve_quantity ) ,
                 'request_quantity'           => number_format( $this->request_quantity ) ,
                 'quantity'                   => abs( $this->transfer_quantity ) ?? 0 ,

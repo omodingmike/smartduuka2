@@ -28,7 +28,7 @@
 
         protected       $table   = 'products';
         protected       $guarded = [];
-        protected       $appends = [ 'stock' , 'single_tree' , 'image' , 'low_stock' ];
+        protected       $appends = [ 'stock' , 'single_tree' , 'image' , 'low_stock' , 'deposited' ];
         protected array $dates   = [ 'deleted_at' ];
         protected       $casts   = [
             'id'                         => 'integer' ,
@@ -71,13 +71,21 @@
         {
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
-                                ->sum( \DB::raw('quantity') );
+                                ->sum( \DB::raw( 'quantity' ) );
         }
+
+        public function getDepositedAttribute() : float
+        {
+            return (float) $this->stocks()
+                                ->where( 'status' , StockStatus::RECEIVED )
+                                ->sum( \DB::raw( 'COALESCE(quantity_ordered, 0) - COALESCE(quantity_received, 0)' ) );
+        }
+
         public function getStockAttribute1() : float
         {
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
-                                ->sum( \DB::raw('quantity - COALESCE(quantity_received, 0)') );
+                                ->sum( \DB::raw( 'COALESCE(quantity, 0) - COALESCE(quantity_received, 0)' ) );
         }
 
         public function getLowStockAttribute() : bool
@@ -473,11 +481,11 @@
             return $this->hasOne( ProductReview::class , 'product_id' , 'id' )->where( 'user_id' , Auth::user()->id );
         }
 
-        public function damages(): HasManyThrough
+        public function damages() : HasManyThrough
         {
-            return $this->hasManyThrough(Damage::class, Stock::class, 'item_id', 'id', 'id', 'model_id')
-                ->where('stocks.item_type', Product::class)
-                ->where('stocks.model_type', Damage::class);
+            return $this->hasManyThrough( Damage::class , Stock::class , 'item_id' , 'id' , 'id' , 'model_id' )
+                        ->where( 'stocks.item_type' , Product::class )
+                        ->where( 'stocks.model_type' , Damage::class );
         }
 
         public function orderProducts() : MorphMany

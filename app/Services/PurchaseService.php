@@ -8,6 +8,7 @@
     use App\Enums\PurchaseStatus;
     use App\Enums\PurchaseType;
     use App\Enums\Status;
+    use App\Enums\StockReconciliationType;
     use App\Enums\StockStatus;
     use App\Enums\StockType;
     use App\Http\Requests\PaginateRequest;
@@ -307,24 +308,24 @@
                         foreach ( $products as $product ) {
                             $expiryDate = isset( $product[ 'expiry' ] ) ? ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay() : NULL;
                             Stock::create( [
-                                'model_type'       => Purchase::class ,
-                                'reference'        => "S" . time() ,
-                                'model_id'         => $model_id ,
-                                'expiry_date'      => $expiryDate ,
-                                'item_type'        => Product::class ,
-                                'product_id'       => $product[ 'product_id' ] ,
-                                'item_id'          => $product[ 'product_id' ] ,
-                                'variation_names'  => 'variation_names' ,
-                                'price'            => $product[ 'price' ] ,
-                                'quantity'         => ($status == PurchaseStatus::RECEIVED->value) ? $product[ 'quantity' ] : 0 ,
+                                'model_type'      => Purchase::class ,
+                                'reference'       => "S" . time() ,
+                                'model_id'        => $model_id ,
+                                'expiry_date'     => $expiryDate ,
+                                'item_type'       => Product::class ,
+                                'product_id'      => $product[ 'product_id' ] ,
+                                'item_id'         => $product[ 'product_id' ] ,
+                                'variation_names' => 'variation_names' ,
+                                'price'           => $product[ 'price' ] ,
+                                'quantity'        => ( $status == PurchaseStatus::RECEIVED->value ) ? $product[ 'quantity' ] : 0 ,
 //                                'quantity_ordered' => $product[ 'quantity' ] ,
-                                'discount'         => 0 ,
-                                'tax'              => 0 ,
-                                'subtotal'         => $product[ 'price' ] ,
-                                'total'            => $product[ 'price' ] ,
-                                'sku'              => 'sku' ,
-                                'warehouse_id'     => $warehouse_id ,
-                                'status'           => $status == PurchaseStatus::RECEIVED->value ? StockStatus::RECEIVED->value : StockStatus::IN_TRANSIT->value
+                                'discount'        => 0 ,
+                                'tax'             => 0 ,
+                                'subtotal'        => $product[ 'price' ] ,
+                                'total'           => $product[ 'price' ] ,
+                                'sku'             => 'sku' ,
+                                'warehouse_id'    => $warehouse_id ,
+                                'status'          => $status == PurchaseStatus::RECEIVED->value ? StockStatus::RECEIVED->value : StockStatus::IN_TRANSIT->value
                             ] );
 
                             $productModel = Product::find( $product[ 'product_id' ] );
@@ -830,10 +831,13 @@
                         $batch    = "B" . time();
                         $type     = $request->type;
                         foreach ( $products as $product ) {
+                            $action_type  = (int) $product[ 'action_type' ];
                             $base_product = Product::find( $product[ 'product_id' ] );
 //                            $base_units_per_top_unit = $base_product->base_units_per_top_unit;
-                            $stock       = $base_product->stocks->sum( 'quantity' );
+//                            $stock       = $base_product->stocks->sum( 'quantity' );
+                            $stock       = $base_product->stock;
                             $difference  = $product[ 'physical_count' ] - $stock;
+                            $quantity    = $product[ 'physical_count' ];
                             $total       = $base_product->buying_price * $difference;
                             $this->stock = Stock::create( [
                                 'model_type'      => Purchase::class ,
@@ -856,7 +860,7 @@
                                 'classification'  => 'classification' ,
                                 'variation_names' => 'variation_names' ,
                                 'price'           => $base_product->buying_price * $difference ,
-                                'quantity'        => $difference ,
+                                'quantity'        => 0 ,
                                 'discount'        => 0 ,
                                 'tax'             => 0 ,
                                 'subtotal'        => $total ,
@@ -864,6 +868,16 @@
                                 'sku'             => $base_product->sku ,
                                 'status'          => StockStatus::RECEIVED
                             ] );
+
+                            match ( $action_type ) {
+                                StockReconciliationType::SELLABLE->value => $this->stock->update( [ 'quantity' => $difference ] ) ,
+                                StockReconciliationType::RESERVED->value => $this->stock->increment( 'quantity_ordered' , $quantity - $base_product->deposited ) ,
+                                default                                  => ( function () use ($difference,$quantity) {
+                                    $this->stock->increment( 'quantity' , $quantity );
+                                    $this->stock->decrement( 'quantity_ordered' , $quantity );
+                                } )() ,
+                            };
+
                             activityLog( "Added stock Reconciliation for: $base_product->name" );
                         }
                     }
