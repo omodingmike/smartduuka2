@@ -559,7 +559,7 @@
                             ] )->first();
 
                             $qtyToDecrement = $product[ 'quantity' ];
-                            $stock->decrement( 'quantity' , $qtyToDecrement );
+                            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
 
                             if ( $status == SaleOrderType::DEPOSIT->value ) {
                                 $stock->increment( 'quantity_ordered' , $qtyToDecrement );
