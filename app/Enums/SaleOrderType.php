@@ -16,6 +16,7 @@
                 self::CREDIT    => 'Credit' ,
                 self::DEPOSIT   => 'Deposit' ,
                 self::COMPLETED => 'Completed' ,
+                self::PREORDER => 'Pre-Order' ,
             };
         }
 
