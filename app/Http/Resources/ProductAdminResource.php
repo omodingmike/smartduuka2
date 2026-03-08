@@ -62,12 +62,12 @@
                         [ 'options' => $options ]
                     );
                 } ) ,
-                "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
-                "retailPrices"               => RetailPriceResource::collection( $this->retailPrices ) ,
+//                "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
+//                "retailPrices"               => RetailPriceResource::collection( $this->retailPrices ) ,
                 "track_stock"                => $this->track_stock ,
                 "returnable"                 => $this->returnable ,
                 "weight_unit_id"             => $this->weight_unit_id ,
-                "tax_id"                     => ProductTaxResource::collection( $this->taxes ) ,
+//                "tax_id"                     => ProductTaxResource::collection( $this->taxes ) ,
                 "flat_buying_price"          => AppLibrary::currencyAmountFormat( $this->buying_price ) ,
                 "buying_price"               => $this->buying_price ,
                 "flat_selling_price"         => AppLibrary::currencyAmountFormat( $this->selling_price ) ,
