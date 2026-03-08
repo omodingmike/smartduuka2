@@ -7,6 +7,7 @@
         case CREDIT = 20;
         case DEPOSIT = 25;
         case COMPLETED = 40;
+        case PREORDER = 1;
 
 
         public function label() : string

@@ -4,10 +4,14 @@
 
 
     use App\Libraries\AppLibrary;
+    use App\Models\Order;
     use App\Models\Warehouse;
     use Illuminate\Http\Resources\Json\JsonResource;
 
 
+    /**
+     * @mixin Order
+     */
     class RawStockResource extends JsonResource
     {
         public function toArray($request) : array
@@ -23,10 +27,10 @@
                 'number_plate'             => $this->number_plate ,
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
-//                'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
-//                'location'                 => $warehouse ? new WarehouseResource( $warehouse ) : NULL ,
-//                'from'                     => $source_warehouse ? new WarehouseResource( $source_warehouse ) : NULL ,
-//                'to'                       => $this->destination_warehouse ? new WarehouseResource( $destination_warehouse ) : NULL ,
+                'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
+                'location'                 => $warehouse ? new WarehouseResource( $warehouse ) : NULL ,
+                'from'                     => $source_warehouse ? new WarehouseResource( $source_warehouse ) : NULL ,
+                'to'                       => $this->destination_warehouse ? new WarehouseResource( $destination_warehouse ) : NULL ,
                 'model_id'                 => $this->model_id ,
                 'item_type'                => $this->item_type ,
                 'item_id'                  => $this->item_id ,

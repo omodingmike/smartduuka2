@@ -295,7 +295,7 @@
                 'id'                       => $first->id ,
                 'batch'                    => $batch ,
                 'reference'                => $first->reference ,
-                'products'                 => $productsWithQuantity ,
+                'products'                 => $productsWithQuantity ?? [] ,
                 'user'                     => $first->user ,
                 'warehouse_id'             => $first->warehouse_id ,
                 'source_warehouse_id'      => $first->source_warehouse_id ,
