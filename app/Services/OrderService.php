@@ -434,6 +434,7 @@
             try {
                 DB::transaction( function () use ($request) {
                     $status           = $request->integer( 'status' );
+                    $is_preorder      = $request->integer( 'is_preorder' );
                     $change           = $request->change;
                     $delivery_address = $request->delivery_address;
                     $delivery_fee     = $request->delivery_fee;
