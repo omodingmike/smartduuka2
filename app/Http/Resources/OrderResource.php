@@ -3,11 +3,17 @@
     namespace App\Http\Resources;
 
 
+    use App\Enums\OrderType;
+    use App\Enums\PaymentType;
+    use App\Enums\SaleOrderType;
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use Illuminate\Http\Resources\Json\JsonResource;
     use Illuminate\Support\Str;
 
+    /**
+     * @mixin Order
+     */
     class OrderResource extends JsonResource
     {
         /**
@@ -21,10 +27,11 @@
         public function toArray($request) : array
         {
             $last_paid = $this->posPayments()?->latest()?->first();
+            $prefix    = $this->payment_type == PaymentType::PREORDER ? 'PRE-' : 'ORD-';
             return [
                 'id'                             => $this->id ,
 //                'order_serial_no'                => $this->order_serial_no,
-                'order_serial_no'                => 'ORD-' . Str::padLeft( $this->id , 6 , '0' ) ,
+                'order_serial_no'                => $prefix . Str::padLeft( $this->id , 6 , '0' ) ,
                 'user_id'                        => $this->user_id ,
                 "total_amount_price"             => AppLibrary::flatAmountFormat( $this->total ) ,
                 "total_currency_price"           => AppLibrary::currencyAmountFormat( $this->total ) ,
