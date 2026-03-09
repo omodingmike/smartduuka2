@@ -4,6 +4,7 @@
 
     use App\Enums\Ask;
     use App\Enums\ExpenseType;
+    use App\Enums\PreOrderStatus;
     use App\Enums\PurchasePaymentStatus;
     use App\Enums\PurchaseStatus;
     use App\Enums\PurchaseType;
@@ -21,6 +22,7 @@
     use App\Models\Expense;
     use App\Models\ExpenseCategory;
     use App\Models\Ingredient;
+    use App\Models\Order;
     use App\Models\Product;
     use App\Models\ProductAttributeOption;
     use App\Models\ProductVariation;
@@ -335,43 +337,111 @@
                                 'selling_price' => $product[ 'retailPrices' ][ 0 ][ 'new_price' ] ,
                             ] );
 
-                            // Update Retail Prices
-                            if ( isset( $product[ 'retailPrices' ] ) && ! empty( $product[ 'retailPrices' ] ) ) {
-                                $productModel->retailPrices()->delete();
-                                foreach ( $product[ 'retailPrices' ] as $retailPrice ) {
-                                    $productModel->retailPrices()->create(
-                                        [
-                                            'buying_price'  => $product[ 'price' ] ,
-                                            'selling_price' => $retailPrice[ 'new_price' ] ,
-                                            'unit_id'       => $retailPrice[ 'unit_id' ]
-                                        ]
-                                    );
+                            if (isset($product['retailPrices']) && !empty($product['retailPrices'])) {
+                                $retailPriceData = [];
+                                $retailUpdateLogs = [];
 
-                                    $productModel->retailPriceUpdates()->create( [
-                                        'new_price'   => $retailPrice[ 'new_price' ] ,
-                                        'unit_id'     => $retailPrice[ 'unit_id' ] ,
-                                        'old_price'   => $retailPrice[ 'old_price' ] ,
-                                        'purchase_id' => $this->purchase->id
-                                    ] );
+                                foreach ($product['retailPrices'] as $retailPrice) {
+                                    $retailPriceData[] = [
+                                        'id'            => $retailPrice['id'] ?? null, // From payload
+                                        'item_id'       => $productModel->id,
+                                        'item_type'     => get_class($productModel),   // e.g., 'App\Models\Product'
+                                        'unit_id'       => $retailPrice['unit_id'],
+                                        'buying_price'  => $product['price'],          // 'price' from outer item loop
+                                        'selling_price' => $retailPrice['new_price'],
+                                    ];
+
+                                    $retailUpdateLogs[] = [
+                                        'product_id'  => $productModel->id,
+                                        'new_price'   => $retailPrice['new_price'],
+                                        'unit_id'     => $retailPrice['unit_id'],
+                                        'old_price'   => $retailPrice['old_price'],
+                                        'purchase_id' => $this->purchase->id,
+                                        'created_at'  => now(),
+                                        'updated_at'  => now(),
+                                    ];
                                 }
+
+                                // Bulk Upsert: If ID exists, update prices and unit. If not, insert.
+                                $productModel->retailPrices()->upsert(
+                                    $retailPriceData,
+                                    ['id'],
+                                    ['buying_price', 'selling_price', 'unit_id']
+                                );
+
+//                                $productModel->retailPriceUpdates()->insert($retailUpdateLogs);
                             }
 
-                            // Update Wholesale Prices
-                            if ( isset( $product[ 'wholesalePrices' ] ) && ! empty( $product[ 'wholesalePrices' ] ) ) {
-                                $productModel->wholesalePrices()->delete();
-                                foreach ( $product[ 'wholesalePrices' ] as $wholesalePrice ) {
-                                    $productModel->wholesalePrices()->create( [
-                                        'minQuantity' => $wholesalePrice[ 'min_quantity' ] ,
-                                        'price'       => $wholesalePrice[ 'new_price' ]
-                                    ] );
-                                    $productModel->wholesalePriceUpdates()->create( [
-                                        'min_quantity' => $wholesalePrice[ 'min_quantity' ] ,
-                                        'new_price'    => $wholesalePrice[ 'new_price' ] ,
-                                        'old_price'    => $wholesalePrice[ 'old_price' ] ,
-                                        'purchase_id'  => $this->purchase->id
-                                    ] );
-                                }/**/
+                            // Update Retail Prices
+//                            if ( isset( $product[ 'retailPrices' ] ) && ! empty( $product[ 'retailPrices' ] ) ) {
+//                                $productModel->retailPrices()->delete();
+//                                foreach ( $product[ 'retailPrices' ] as $retailPrice ) {
+//                                    $productModel->retailPrices()->create(
+//                                        [
+//                                            'buying_price'  => $product[ 'price' ] ,
+//                                            'selling_price' => $retailPrice[ 'new_price' ] ,
+//                                            'unit_id'       => $retailPrice[ 'unit_id' ]
+//                                        ]
+//                                    );
+//
+//                                    $productModel->retailPriceUpdates()->create( [
+//                                        'new_price'   => $retailPrice[ 'new_price' ] ,
+//                                        'unit_id'     => $retailPrice[ 'unit_id' ] ,
+//                                        'old_price'   => $retailPrice[ 'old_price' ] ,
+//                                        'purchase_id' => $this->purchase->id
+//                                    ] );
+//                                }
+//                            }
+
+                            if (isset($product['wholesalePrices']) && !empty($product['wholesalePrices'])) {
+                                $wholesalePriceData = [];
+                                $wholesaleUpdateLogs = [];
+
+                                foreach ($product['wholesalePrices'] as $wholesalePrice) {
+                                    $wholesalePriceData[] = [
+                                        'id'           => $wholesalePrice['id'] ?? null,
+                                        'item_id'      => $productModel->id,
+                                        'item_type'    => get_class($productModel),
+                                        'minQuantity'  => $wholesalePrice['min_quantity'],
+                                        'price'        => $wholesalePrice['new_price'],
+                                    ];
+
+                                    $wholesaleUpdateLogs[] = [
+                                        'product_id'   => $productModel->id,
+                                        'min_quantity' => $wholesalePrice['min_quantity'],
+                                        'new_price'    => $wholesalePrice['new_price'],
+                                        'old_price'    => $wholesalePrice['old_price'],
+                                        'purchase_id'  => $this->purchase->id,
+                                        'created_at'   => now(),
+                                        'updated_at'   => now(),
+                                    ];
+                                }
+
+                                // Bulk Upsert: Match on ID, update minQuantity and price
+                                $productModel->wholesalePrices()->upsert(
+                                    $wholesalePriceData,
+                                    ['id'],
+                                    ['minQuantity', 'price']
+                                );
+
+//                                $productModel->wholesalePriceUpdates()->insert($wholesaleUpdateLogs);
                             }
+
+//                            if ( isset( $product[ 'wholesalePrices' ] ) && ! empty( $product[ 'wholesalePrices' ] ) ) {
+//                                $productModel->wholesalePrices()->delete();
+//                                foreach ( $product[ 'wholesalePrices' ] as $wholesalePrice ) {
+//                                    $productModel->wholesalePrices()->create( [
+//                                        'minQuantity' => $wholesalePrice[ 'min_quantity' ] ,
+//                                        'price'       => $wholesalePrice[ 'new_price' ]
+//                                    ] );
+//                                    $productModel->wholesalePriceUpdates()->create( [
+//                                        'min_quantity' => $wholesalePrice[ 'min_quantity' ] ,
+//                                        'new_price'    => $wholesalePrice[ 'new_price' ] ,
+//                                        'old_price'    => $wholesalePrice[ 'old_price' ] ,
+//                                        'purchase_id'  => $this->purchase->id
+//                                    ] );
+//                                }
+//                            }
                         }
                     }
                 } );
@@ -714,7 +784,6 @@
                         }
                     }
                     else {
-                        // SIMPLE PRODUCT LOGIC (Identical to previous version)
                         $targetModel = $product;
                         $targetClass = Product::class;
                         $price       = $product->buying_price;
@@ -746,6 +815,26 @@
                         'creator'         => auth()->id() ,
                         'user_id'         => auth()->id()
                     ] );
+
+                    $pre_orders = Order::with( 'orderProducts.item' )->where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
+                                       ->whereHas( 'orderProducts' , function ($query) use ($targetModel) {
+                                           $query->where( 'item_id' , $targetModel->id );
+                                       } )->get();
+
+                    foreach ( $pre_orders as $pre_order ) {
+                        $allProductsHaveEnoughStock = TRUE;
+                        foreach ( $pre_order->orderProducts as $orderProduct ) {
+                            $orderProduct->item->refresh();
+                            if ( $orderProduct->item->stock < $orderProduct->quantity ) {
+                                $allProductsHaveEnoughStock = FALSE;
+                                break;
+                            }
+                        }
+
+                        if ( $allProductsHaveEnoughStock ) {
+                            $pre_order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
+                        }
+                    }
                 }
                 return response()->json( [ 'message' => 'Stock stored successfully' ] );
             } catch ( Exception $e ) {
@@ -872,7 +961,7 @@
                             match ( $action_type ) {
                                 StockReconciliationType::SELLABLE->value => $this->stock->update( [ 'quantity' => $difference ] ) ,
                                 StockReconciliationType::RESERVED->value => $this->stock->increment( 'quantity_ordered' , $quantity - $base_product->deposited ) ,
-                                default                                  => ( function () use ($difference,$quantity) {
+                                default                                  => ( function () use ($difference , $quantity) {
                                     $this->stock->increment( 'quantity' , $quantity );
                                     $this->stock->decrement( 'quantity_ordered' , $quantity );
                                 } )() ,

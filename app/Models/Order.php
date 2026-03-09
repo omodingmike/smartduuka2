@@ -7,6 +7,7 @@
     use App\Enums\OrderType;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
+    use App\Enums\PreOrderStatus;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -45,7 +46,8 @@
             'payment_type' ,
             'channel' ,
             'register_id' ,
-            'warehouse_id'
+            'warehouse_id' ,
+            'pre_order_status'
         ];
 
         protected $casts = [
@@ -65,6 +67,7 @@
             'status'             => OrderStatus::class ,
             'payment_type'       => PaymentType::class ,
             'channel'            => OrderChannel::class ,
+            'pre_order_status'   => PreOrderStatus::class ,
             'reason'             => 'string' ,
             'source'             => 'integer' ,
             'pos_payment_method' => 'integer' ,
@@ -76,7 +79,7 @@
             return $this->hasMany( OrderProduct::class );
         }
 
-        
+
         public function stocks() : MorphMany
         {
             return $this->morphMany( Stock::class , 'model' );

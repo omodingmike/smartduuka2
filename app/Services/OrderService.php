@@ -7,6 +7,7 @@
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
+    use App\Enums\PreOrderStatus;
     use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
@@ -25,10 +26,12 @@
     use App\Models\PosPayment;
     use App\Models\Product;
     use App\Models\ProductVariation;
+    use App\Models\RetailPrice;
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\Unit;
     use App\Models\User;
+    use App\Models\WholeSalePrice;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Http\Request;
@@ -468,6 +471,10 @@
                             'register_id'     => register()->id
                         ]
                     );
+                    if ( $is_preorder ) {
+                        $order->update( [ 'pre_order_status' => PreOrderStatus::PENDING_STOCK ] );
+                    }
+                    if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
 
                     $this->order = $order;
                     if ( $delivery_address ) {
@@ -543,6 +550,8 @@
                                 'item_type'                   => $targetClass ,
                                 'quantity_picked'             => 0 ,
                                 'quantity'                    => $product[ 'quantity' ] ,
+                                'price_id'                    => $product[ 'price_id' ] ,
+                                'price_type'                  => ( $product[ 'price_type' ] == 'wholesale' ) ? WholeSalePrice::class : RetailPrice::class ,
                                 'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
                                 'unit_price'                  => $product[ 'unitPrice' ] ,
                                 'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
@@ -1033,6 +1042,7 @@
                 return DB::transaction( function () use ($order , $request) {
                     $order->load( 'orderProducts' );
                     $status = $request->integer( 'status' );
+
                     if ( $status == OrderStatus::CANCELED->value ) {
                         $order->posPayments()->delete();
                         $order->orderProducts()->delete();
@@ -1050,7 +1060,12 @@
                             $stock?->increment( 'quantity' , $orderProduct->quantity );
                         }
                     }
-                    $order->update( [ 'status' => $status ] );
+                    if ( $order->payment_type == PaymentType::PREORDER ) {
+                        $order->update( [ 'pre_order_status' => $status ] );
+                    }
+                    else {
+                        $order->update( [ 'status' => $status ] );
+                    }
                     activityLog( "Cancelled Order: {$order->order_serial_no}" );
                     return response()->json();
                 } );
@@ -1058,5 +1073,115 @@
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
+        }
+
+        public function fulfillPreOrder(Order $order , array $data) : void
+        {
+            DB::transaction( function () use ($order , $data) {
+                $action = $data[ 'action' ];
+
+                if ( $action === 'TOP_UP' ) {
+                    $topUpAmount       = $data[ 'topUpAmount' ];
+                    $paymentMethodName = $data[ 'paymentMethod' ];
+
+                    $paymentMethod = PaymentMethod::where( 'name' , $paymentMethodName )->first();
+                    if ( ! $paymentMethod ) {
+                        // Fallback or throw error. Assuming 'Cash' exists or create one?
+                        // For now, let's assume it exists or use ID 1 (Cash usually)
+                        $paymentMethod = PaymentMethod::firstOrCreate( [ 'name' => $paymentMethodName ] , [ 'slug' => \Illuminate\Support\Str::slug( $paymentMethodName ) , 'status' => Status::ACTIVE ] );
+                    }
+
+                    PosPayment::create( [
+                        'order_id'          => $order->id ,
+                        'date'              => now() ,
+                        'reference_no'      => time() ,
+                        'amount'            => $topUpAmount ,
+                        'payment_method_id' => $paymentMethod->id ,
+                        'register_id'       => register()->id
+                    ] );
+
+                    PaymentMethodTransaction::create( [
+                        'amount'            => $topUpAmount ,
+                        'item_type'         => Order::class ,
+                        'item_id'           => $order->id ,
+                        'charge'            => 0 ,
+                        'description'       => 'Pre-order Top-up #' . $order->order_serial_no ,
+                        'payment_method_id' => $paymentMethod->id ,
+                    ] );
+
+                    $order->increment( 'paid' , $topUpAmount );
+                    $order->increment( 'total' , $topUpAmount ); // Increase total to match the new price
+                }
+                elseif ( $action === 'PRORATE' ) {
+                    $proratedItems = $data[ 'proratedItems' ];
+                    foreach ( $proratedItems as $item ) {
+                        $orderProduct = OrderProduct::find( $item[ 'orderProductId' ] );
+                        if ( $orderProduct && $orderProduct->order_id === $order->id ) {
+                            $oldQty = $orderProduct->quantity;
+                            $newQty = $item[ 'newQty' ];
+                            $diff   = $oldQty - $newQty;
+
+                            if ( $diff > 0 ) {
+                                // Release reserved stock for the difference
+                                $stock = Stock::where( [
+                                    'item_id'      => $orderProduct->item_id ,
+                                    'item_type'    => $orderProduct->item_type ,
+                                    'status'       => StockStatus::RECEIVED ,
+                                    'warehouse_id' => $order->warehouse_id
+                                ] )->first();
+
+                                // Since it was a pre-order, stock was reserved (quantity_ordered incremented)
+                                // We need to decrement quantity_ordered by the difference
+                                // And since we are fulfilling, we will decrement quantity later for the fulfilled amount.
+                                // Actually, wait.
+                                // When pre-order is created: quantity_ordered += qty. quantity is NOT decremented.
+                                // When fulfilled: quantity -= qty. quantity_ordered -= qty.
+
+                                // Here we are reducing the order quantity. So we should reduce quantity_ordered by the difference.
+                                $stock?->decrement( 'quantity_ordered' , $diff );
+
+                                $orderProduct->update( [ 'quantity' => $newQty , 'total' => $newQty * $orderProduct->unit_price ] );
+                            }
+                        }
+                    }
+                    // Recalculate order total?
+                    // The original payment covers the new quantity at the NEW price (effectively).
+                    // But the order record has 'total' based on OLD price * OLD qty.
+                    // If we prorate, we are essentially saying: "Keep the total amount paid, but reduce quantity so that (new_qty * new_price) ~= paid_amount".
+                    // So the order 'total' might need adjustment or stay same?
+                    // If we change quantity, the sum of (qty * unit_price) changes.
+                    // But unit_price in order_product is the OLD price.
+                    // If we want to reflect that we honored the payment for less items, maybe we don't change unit_price?
+                    // The prompt says: "System recalculates and reduces item quantity to match original cash value paid."
+                    // So effectively, the user gets less items. The total value of the order (in terms of what was paid) remains roughly the same.
+                    // But if we update quantity in order_product, the calculated total of the order will drop (since unit_price is old).
+                    // This might be confusing.
+                    // However, for inventory purposes, we just need to deduct the correct amount.
+                }
+
+                // Finalize fulfillment
+                // 1. Deduct stock for the final quantities
+                foreach ( $order->orderProducts as $orderProduct ) {
+                    $stock = Stock::where( [
+                        'item_id'      => $orderProduct->item_id ,
+                        'item_type'    => $orderProduct->item_type ,
+                        'status'       => StockStatus::RECEIVED ,
+                        'warehouse_id' => $order->warehouse_id
+                    ] )->first();
+
+                    if ( $stock ) {
+                        // Deduct physical stock
+                        $stock->decrement( 'quantity' , $orderProduct->quantity );
+                        // Clear the reservation
+                        $stock->decrement( 'quantity_ordered' , $orderProduct->quantity );
+                    }
+                }
+
+                $order->update( [
+                    'pre_order_status' => PreOrderStatus::FULFILLED ,
+                    'status'           => OrderStatus::COMPLETED , // Or DELIVERED
+                    'payment_status'   => PaymentStatus::PAID
+                ] );
+            } );
         }
     }

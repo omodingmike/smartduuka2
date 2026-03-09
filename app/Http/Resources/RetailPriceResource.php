@@ -11,8 +11,10 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'                 => rand() ,
+//                'id'                 => rand() ,
+                'id'                 => $this->id ,
                 'unit_id'            => $this->unit_id ,
+                'batch'              => $this->batch ,
                 'unit'               => new UnitResource( $this->whenLoaded( 'unit' ) ) ,
                 'buying_price'       => $this->buying_price ,
                 'buying_price_text'  => AppLibrary::currencyAmountFormat( $this->buying_price ) ,

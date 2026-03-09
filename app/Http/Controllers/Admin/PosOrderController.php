@@ -2,6 +2,7 @@
 
     namespace App\Http\Controllers\Admin;
 
+    use App\Enums\PreOrderStatus;
     use App\Enums\SettingsEnum;
     use App\Enums\StockStatus;
     use App\Exports\OrderExport;
@@ -12,9 +13,11 @@
     use App\Http\Resources\OrderResource;
     use App\Jobs\SendInvoiceMailJob;
     use App\Models\Order;
-    use App\Models\OrderProduct;
-    use App\Models\Product;
+    use App\Models\PaymentMethodTransaction;
+    use App\Models\PosPayment;
+    use App\Models\RetailPrice;
     use App\Models\Stock;
+    use App\Models\WholeSalePrice;
     use App\Services\OrderService;
     use App\Services\PdfExportService;
     use Exception;
@@ -197,27 +200,124 @@
 
         public function fullFill(Request $request)
         {
+//            return 1;
             try {
                 DB::transaction( function () use ($request) {
-                    $items = json_decode( $request->items , TRUE );
-                    $order = Order::find( $request->integer( 'order_id' ) );
-                    foreach ( $items as $item ) {
+                    $proratedItems = json_decode( $request->proratedItems , TRUE );
+                    $action        = $request->string( 'action' );
+                    $topUpAmount   = $request->integer( 'topUpAmount' );
+                    $difference    = $request->integer( 'difference' );
+                    $paymentMethod = $request->integer( 'paymentMethod' );
+                    $order         = Order::find( $request->integer( 'order_id' ) );
+                    $order->update( [
+                        'pre_order_status' => PreOrderStatus::FULFILLED
+                    ] );
+                    $new_order_total = 0;
 
-                        $product_id    = $item[ 'product_id' ];
-                        $order_product = OrderProduct::where( 'order_id' , $order->id );
-                        $order_product->increment( 'quantity_picked' , $item[ 'picking_now' ] );
-
-                        $warehouse_id = $order->warehouse_id;
-                        if ( $warehouse_id ) {
-                            $stock = Stock::where( [
-                                'item_id'      => $product_id ,
-                                'item_type'    => Product::class ,
+                    if ( $action == 'HONOR' ) {
+                        foreach ( $order->orderProducts as $order_product ) {
+                            Stock::create( [
+                                'product_id'   => $order_product->item_id ,
+                                'item_id'      => $order_product->item_id ,
+                                'model_id'     => $order_product->item_id ,
+                                'item_type'    => $order_product->item_type ,
+                                'model_type'   => $order_product->item_type ,
                                 'status'       => StockStatus::RECEIVED ,
-                                'warehouse_id' => $warehouse_id
-                            ] )->first();
-
-                            $stock->increment( 'quantity_received' , $item[ 'picking_now' ] );
+                                'warehouse_id' => $order->warehouse_id ,
+                                'quantity'     => -$order_product->quantity ,
+                            ] );
                         }
+                    }
+                    if ( $action == 'PRORATE' ) {
+                        foreach ( $proratedItems as $prorated_item ) {
+                            $order->orderProducts()
+                                  ->where( 'id' , $prorated_item[ 'orderProductId' ] )
+                                  ->update( [ 'quantity' => $prorated_item[ 'newQty' ] ] );
+                        }
+
+                        foreach ( $order->orderProducts as $order_product ) {
+                            $price         = $order_product->price;
+                            $current_price = 0;
+
+                            if ( $price instanceof RetailPrice ) {
+                                $current_price = $price->selling_price;
+                            }
+
+                            if ( $price instanceof WholeSalePrice ) {
+                                $current_price = $price->price;
+                            }
+
+                            $new_total = $current_price * $order_product->quantity;
+
+                            $order_product->update( [
+                                'unit_price' => $current_price ,
+                                'total'      => $new_total ,
+                            ] );
+
+                            $new_order_total += $new_total;
+
+                            Stock::create( [
+                                'product_id'   => $order_product->item_id ,
+                                'item_id'      => $order_product->item_id ,
+                                'model_id'     => $order_product->item_id ,
+                                'item_type'    => $order_product->item_type ,
+                                'model_type'   => $order_product->item_type ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id ,
+                                'quantity'     => -$order_product->quantity ,
+                            ] );
+                        }
+                        $order->update( [ 'total' => $new_order_total ] );
+                    }
+
+
+                    if ( $action == 'TOP_UP' ) {
+                        $order->increment( 'paid' , $topUpAmount );
+
+                        foreach ( $order->orderProducts as $order_product ) {
+                            $price         = $order_product->price;
+                            $current_price = 0;
+                            if ( $price instanceof RetailPrice ) {
+                                $current_price = $price->selling_price;
+                            }
+                            if ( $price instanceof WholeSalePrice ) {
+                                $current_price = $price->price;
+                            }
+                            $new_total = $current_price * $order_product->quantity;
+                            $order_product->update( [
+                                'unit_price' => $current_price ,
+                                'total'      => $new_total ,
+                            ] );
+                            $new_order_total += $new_total;
+                            Stock::create( [
+                                'product_id'   => $order_product->item_id ,
+                                'item_id'      => $order_product->item_id ,
+                                'model_id'     => $order_product->item_id ,
+                                'item_type'    => $order_product->item_type ,
+                                'model_type'   => $order_product->item_type ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id ,
+                                'quantity'     => -$order_product->quantity ,
+                            ] );
+                        }
+                        PosPayment::create( [
+                            'order_id'          => $order->id ,
+                            'date'              => now() ,
+                            'reference_no'      => time() ,
+                            'amount'            => $difference ,
+                            'payment_method_id' => $paymentMethod ,
+                            'register_id'       => register()->id
+                        ] );
+
+                        PaymentMethodTransaction::create( [
+                            'amount'            => $difference ,
+                            'item_type'         => Order::class ,
+                            'item_id'           => $order->id ,
+                            'charge'            => 0 ,
+                            'description'       => 'Order Payment #' . $order->order_serial_no ,
+                            'payment_method_id' => $paymentMethod ,
+                        ] );
+                        $order->update( [ 'total' => $new_order_total ] );
                     }
                 } );
             } catch ( Exception $e ) {

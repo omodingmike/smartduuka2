@@ -2,7 +2,9 @@
 
     namespace App\Enums;
 
-    enum PaymentType : int
+    use JsonSerializable;
+
+    enum PaymentType : int implements JsonSerializable
     {
         case CREDIT   = 1;
         case DEPOSIT  = 2;
@@ -17,5 +19,13 @@
                 self::CASH     => 'Cash' ,
                 self::PREORDER => 'Pre-Order' ,
             };
+        }
+
+        public function jsonSerialize() : mixed
+        {
+            return [
+                'value' => $this->value ,
+                'label' => $this->label() ,
+            ];
         }
     }

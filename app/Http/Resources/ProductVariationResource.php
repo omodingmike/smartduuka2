@@ -22,7 +22,8 @@
             $product = $this->product; // Parent product
 
             // Price logic for variation
-            $price = $this->price;
+            $retailPrice = $this->retailPrices->first();
+            $price       = $retailPrice ? $retailPrice->selling_price : $this->price;
 
             // Offer logic (usually on parent product, but could be on variation if supported)
             // Assuming offer is on parent product for now

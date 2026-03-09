@@ -24,7 +24,9 @@
             'product_attribute_id' ,
             'product_attribute_option_id' ,
             'variation_id' ,
-            'product_id'
+            'product_id' ,
+            'price_id' ,
+            'price_type'
         ];
 
         public function order() : BelongsTo
@@ -50,5 +52,10 @@
         public function productAttributeOption() : BelongsTo
         {
             return $this->belongsTo( ProductAttributeOption::class )->withTrashed();
+        }
+
+        public function price() : MorphTo
+        {
+            return $this->morphTo();
         }
     }

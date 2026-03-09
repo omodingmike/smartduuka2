@@ -7,16 +7,12 @@
 
     class ProductAdminResource extends JsonResource
     {
-        /**
-         * Transform the resource into an array.
-         *
-         * @param \Illuminate\Http\Request $request
-         *
-         * @return array
-         */
         public function toArray($request) : array
         {
-            $price = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
+            $price         = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
+            $allBatches    = $this->wholesalePrices->pluck( 'batch' )->unique()->values();
+            $latestBatch   = $allBatches->get( 0 );
+            $previousBatch = $allBatches->get( 1 );
             return [
                 "id"                         => $this->id ,
                 "name"                       => $this->name ,
@@ -62,8 +58,17 @@
                         [ 'options' => $options ]
                     );
                 } ) ,
-                "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
-                "retailPrices"               => RetailPriceResource::collection( $this->retailPrices ) ,
+//                "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
+                "wholesalePrices"            => WholeSalePriceResource::collection(
+                    $this->wholesalePrices->where( 'batch' , $latestBatch )
+                ) ,
+                'old_wholesale_prices'       => WholeSalePriceResource::collection(
+                    $this->wholesalePrices->where( 'batch' , $previousBatch ?? $latestBatch )
+                ) ,
+                "retailPrices"               => RetailPriceResource::collection( collect( [ $this->retailPrices->first() ] ) ) ,
+                "old_retail_prices"          => RetailPriceResource::collection(
+                    $this->retailPrices->count() > 1 ? $this->retailPrices->skip( 1 )->take( 1 ) : $this->retailPrices->take( 1 )
+                ) ,
                 "track_stock"                => $this->track_stock ,
                 "returnable"                 => $this->returnable ,
                 "weight_unit_id"             => $this->weight_unit_id ,

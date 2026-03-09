@@ -22,7 +22,9 @@
 
             // Fix: Check if variations is null before counting
             $variationsCount = $this->variations ? count( $this->variations ) : 0;
-            $price           = $variationsCount > 0 ? $this->variation_price : $this->selling_price;
+            
+            $retailPrice = $this->retailPrices->first();
+            $price = $retailPrice ? $retailPrice->selling_price : ($variationsCount > 0 ? $this->variation_price : $this->selling_price);
 
             $stock = max( 0 , $this->stock_items_sum_quantity );
 
@@ -95,6 +97,5 @@
                 "retailPrices"               => $this->retailPrices ? RetailPriceResource::collection( $this->retailPrices ) : [] ,
                 "single_tree"                => $this->single_tree ,
             ];
-
         }
     }

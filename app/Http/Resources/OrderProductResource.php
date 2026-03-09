@@ -4,17 +4,15 @@
 
     use App\Enums\Ask;
     use App\Libraries\AppLibrary;
+    use App\Models\OrderProduct;
     use App\Models\ProductVariation;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /**
+     * @mixin OrderProduct
+     */
     class OrderProductResource extends JsonResource
     {
-        /**
-         * Transform the resource into an array.
-         *
-         * @param \Illuminate\Http\Request $request
-         * @return array
-         */
         public function toArray($request) : array
         {
             return [
@@ -25,7 +23,8 @@
                 'product_image'           => $this->item?->thumb ,
                 'product_slug'            => $this->item?->slug ,
                 'category_name'           => $this?->item?->category?->name ,
-                'price'                   => $this->unit_price ,
+//                'price'                   => $this->unit_price ,˘
+                'price'                   => $this->price ,
                 'currency_price'          => AppLibrary::currencyAmountFormat($this->unit_price) ,
                 'quantity'                => abs($this->quantity) ,
                 'discount'                => 0 ,

@@ -9,6 +9,7 @@
     use App\Http\Resources\WholeSalePriceResource;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
+    use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -79,13 +80,6 @@
             return (float) $this->stocks()
                                 ->where( 'status' , StockStatus::RECEIVED )
                                 ->sum( \DB::raw( 'COALESCE(quantity_ordered, 0) - COALESCE(quantity_received, 0)' ) );
-        }
-
-        public function getStockAttribute1() : float
-        {
-            return (float) $this->stocks()
-                                ->where( 'status' , StockStatus::RECEIVED )
-                                ->sum( \DB::raw( 'COALESCE(quantity, 0) - COALESCE(quantity_received, 0)' ) );
         }
 
         public function getLowStockAttribute() : bool
@@ -200,10 +194,45 @@
             return $this->belongsToMany( Unit::class , 'product_units' , 'product_id' , 'unit_id' );
         }
 
+        protected function sellingPrice() : Attribute
+        {
+            return Attribute::make(
+                get: function ($value) {
+                    $retailPrice = $this->retailPrices()->first();
+                    return $retailPrice ? $retailPrice->selling_price : $value;
+                }
+            );
+        }
+
+        protected function buyingPrice() : Attribute
+        {
+            return Attribute::make(
+                get: function ($value) {
+                    $retailPrice = $this->retailPrices()->first();
+                    return $retailPrice ? $retailPrice->buying_price : $value;
+                }
+            );
+        }
+
+        public function wholesalePrices1() : MorphMany
+        {
+            return $this->morphMany( WholeSalePrice::class , 'item' )->orderByRaw( 'batch DESC' );
+        }
+
         public function wholesalePrices() : MorphMany
         {
-            return $this->morphMany( WholeSalePrice::class , 'item' );
+            return $this->morphMany(WholeSalePrice::class, 'item')
+                        ->whereNotNull('batch') //
+                        ->orderBy('batch', 'desc') //
+                        ->orderBy('id', 'asc'); //
         }
+
+
+
+//        public function wholesalePrices() : MorphMany
+//        {
+//            return $this->morphMany( WholeSalePrice::class , 'item' );
+//        }
 
         public function retailPriceUpdates() : MorphMany
         {
@@ -217,13 +246,8 @@
 
         public function retailPrices() : MorphMany
         {
-            return $this->morphMany( RetailPrice::class , 'item' );
+            return $this->morphMany( RetailPrice::class , 'item' )->latest( 'id' );
         }
-
-//        public function prices() : Builder | HasMany | Product
-//        {
-//            return $this->hasMany( RetailPrice::class , 'product_id' , 'id' );
-//        }
 
         public function commissionTargets() : Builder | HasMany | Product
         {

@@ -38,8 +38,7 @@
         {
             try {
                 $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $perPage     = $request->get( 'perPage' , '*' );
+                $perPage     = $request->get( 'perPage' , 10 );
                 $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';

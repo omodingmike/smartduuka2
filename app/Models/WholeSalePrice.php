@@ -14,7 +14,7 @@
             'minQuantity' ,
             'price' ,
             'item_id' ,
-            'item_type' ,
+            'item_type' ,'batch'
         ];
 
         public function item() : MorphTo

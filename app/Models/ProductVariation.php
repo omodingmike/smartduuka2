@@ -16,7 +16,7 @@
 
     class ProductVariation extends Model implements HasMedia
     {
-        use HasRecursiveRelationships ,  HasImageMedia;
+        use HasRecursiveRelationships , HasImageMedia;
 
         protected $table    = "product_variations";
         protected $fillable = [
@@ -116,12 +116,29 @@
 
         public function wholesalePrices() : MorphMany
         {
-            return $this->morphMany( WholeSalePrice::class , 'item' );
+            return $this->morphMany( WholeSalePrice::class , 'item' )
+                        ->where( function ($query) {
+                            $query->where( 'batch' , function ($subQuery) {
+                                $subQuery->selectRaw( 'MAX(batch)' )
+                                         ->from( 'whole_sale_prices' )
+                                         ->whereColumn( 'item_id' , 'whole_sale_prices.item_id' )
+                                         ->whereColumn( 'item_type' , 'whole_sale_prices.item_type' );
+                            } )->orWhereNull( 'batch' );
+                        } );
         }
 
         public function retailPrices() : MorphMany
         {
-            return $this->morphMany( RetailPrice::class , 'item' );
+            return $this->morphMany(RetailPrice::class, 'item')
+                        ->where(function ($query) {
+                            $query->where('batch', function ($subQuery) {
+                                $subQuery->selectRaw('MAX(batch)')
+                                         ->from('retail_prices')
+                                         ->whereColumn('item_id', 'retail_prices.item_id')
+                                         ->whereColumn('item_type', 'retail_prices.item_type');
+                            })->orWhereNull('batch');
+                        })
+                        ->latest('id');
         }
 
         public function getStockAttribute() : float
@@ -148,36 +165,38 @@
         {
             return $this->stocks()->where( 'status' , Status::ACTIVE );
         }
-        public function productAttribute(): BelongsTo
+
+        public function productAttribute() : BelongsTo
         {
-            return $this->belongsTo(ProductAttribute::class);
+            return $this->belongsTo( ProductAttribute::class );
         }
 
-        public function productAttributeOption(): BelongsTo
+        public function productAttributeOption() : BelongsTo
         {
-            return $this->belongsTo(ProductAttributeOption::class);
+            return $this->belongsTo( ProductAttributeOption::class );
         }
 
         public function otherStockItems() : MorphMany
         {
             return $this->stocks()->where( 'status' , Status::ACTIVE );
         }
+
         public function productAttributeOptions()
         {
             // Adjust 'product_variation_options' to match your actual pivot table name
-            return $this->belongsToMany(ProductAttributeOption::class, 'product_variation_options');
+            return $this->belongsToMany( ProductAttributeOption::class , 'product_variation_options' );
         }
 
         // Keep existing productAttributeOption (singular) if used for single-attribute logic
 
-        public function damages(): HasManyThrough
+        public function damages() : HasManyThrough
         {
-            return $this->hasManyThrough(Damage::class, Stock::class, 'item_id', 'id', 'id', 'model_id')
-                ->where('stocks.item_type', ProductVariation::class)
-                ->where('stocks.model_type', Damage::class);
+            return $this->hasManyThrough( Damage::class , Stock::class , 'item_id' , 'id' , 'id' , 'model_id' )
+                        ->where( 'stocks.item_type' , ProductVariation::class )
+                        ->where( 'stocks.model_type' , Damage::class );
         }
 
-        public function unit(): BelongsTo
+        public function unit() : BelongsTo
         {
             return $this->product->unit();
         }

@@ -31,6 +31,7 @@
     use App\Http\Controllers\Admin\PermissionController;
     use App\Http\Controllers\Admin\PosController;
     use App\Http\Controllers\Admin\PosOrderController;
+    use App\Http\Controllers\Admin\PreOrderFulfillmentController;
     use App\Http\Controllers\Admin\ProductAttributeController;
     use App\Http\Controllers\Admin\ProductAttributeOptionController;
     use App\Http\Controllers\Admin\ProductBrandController;
@@ -82,7 +83,6 @@
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\WarehouseController;
-    use App\Services\StockService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
@@ -689,6 +689,7 @@
                 Route::get( '/export-quotation' , [ PosOrderController::class , 'exportOrder' ] );
                 Route::post( '/mail-quotation' , [ PosOrderController::class , 'mailQuotation' ] );
                 Route::post( '/fulfill' , [ PosOrderController::class , 'fullFill' ] );
+                Route::post( '/fulfill-preorder/{order}' , [ PreOrderFulfillmentController::class , 'fulfill' ] );
                 Route::post( '/quotation-css-variables' , [ PosOrderController::class , 'updateCssVariables' ] );
                 Route::get( '/deposits' , [ PosOrderController::class , 'indexDeposit' ] );
                 Route::get( 'show/{order}' , [ PosOrderController::class , 'show' ] );

@@ -3,9 +3,8 @@
     namespace App\Http\Resources;
 
 
-    use App\Enums\OrderType;
     use App\Enums\PaymentType;
-    use App\Enums\SaleOrderType;
+    use App\Enums\PreOrderStatus;
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,23 +15,21 @@
      */
     class OrderResource extends JsonResource
     {
-        /**
-         * Transform the resource into an array.
-         * @mixin Order
-         *
-         * @param \Illuminate\Http\Request $request
-         *
-         * @return array
-         */
         public function toArray($request) : array
         {
             $last_paid = $this->posPayments()?->latest()?->first();
             $prefix    = $this->payment_type == PaymentType::PREORDER ? 'PRE-' : 'ORD-';
+            $new_total = $this->orderProducts->sum( function ($product) {
+                return $product->unit_price * $product->quantity;
+            } );
             return [
                 'id'                             => $this->id ,
 //                'order_serial_no'                => $this->order_serial_no,
-                'order_serial_no'                => $prefix . Str::padLeft( $this->id , 6 , '0' ) ,
+                'order_serial_no'                => $prefix . Str::padLeft( $this->id , 5 , '0' ) ,
                 'user_id'                        => $this->user_id ,
+                'currency'                       => currencySymbol() ,
+                'payment_type'                   => $this->payment_type ,
+                'pre_order_status'               => $this->pre_order_status ?? PreOrderStatus::PENDING_STOCK ,
                 "total_amount_price"             => AppLibrary::flatAmountFormat( $this->total ) ,
                 "total_currency_price"           => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'status'                         => [ 'label' => $this->status?->label() , 'value' => $this->status?->value ] ,
@@ -77,6 +74,9 @@
                 'pos_payment_method'             => $this->pos_payment_method ,
                 'pos_payment_method_name'        => trans( "posPaymentMethod." . $this->pos_payment_method ) ,
                 'pos_payment_note'               => $this->pos_payment_note ,
+                'new_total'                      => $new_total ,
+                'difference'                     => $new_total - $this->total ,
+                'difference_currency'            => currency( $new_total - $this->total ) ,
             ];
         }
     }

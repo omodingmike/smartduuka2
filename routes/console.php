@@ -1,6 +1,7 @@
 <?php
 
     use App\Enums\OrderType;
+    use App\Enums\PreOrderStatus;
     use App\Enums\StockStatus;
     use App\Events\TestEvent;
     use App\Http\Controllers\WhatsAppController;
@@ -39,20 +40,6 @@
         }
     } )->daily();
 
-    Schedule::call( function () {
-        Tenant::all()->runForEach( function ($tenant) {
-            TestEvent::dispatch( "Scheduled event for tenant [{$tenant->id}] at " . now()->toDateTimeString() );
-        } );
-    } )->everyMinute();
-
-    Schedule::call( function () use ($now) {
-        Expense::where( [
-            'isRecurring' => 1 ,
-        ] )->where( 'repeats_on' , '<=' , $now->format( 'Y-m-d H:i:s' ) )
-               ->chunkById( 100 , function (Collection $expenses) use ($now) {
-                   $expenses->each( function ($expense) {} );
-               } );
-    } )->daily();
     if ( config( 'app.main_app' ) ) {
         Schedule::call( function () use ($now) {
             $request              = new Request();
@@ -124,7 +111,7 @@
         } )->everyFiveMinutes();
 
         Schedule::call( function () {
-            updateCoa();
+//            updateCoa();
             Stock::where( 'expiry_date' , '<>' , NULL )
                  ->where( 'expiry_date' , '<' , now()->copy()->endOfDay() )
                  ->where( 'quantity' , '>' , 0 )
@@ -176,3 +163,22 @@
 
         Schedule::command( 'commissions:calculate' )->everyMinute();
     }
+
+    Schedule::call( function () {
+        Order::with( 'orderProducts.item' )
+             ->where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
+             ->each( function (Order $order) {
+                 $allProductsHaveEnoughStock = TRUE;
+                 foreach ( $order->orderProducts as $orderProduct ) {
+                     $orderProduct->item->refresh();
+                     if ( $orderProduct->item->stock < $orderProduct->quantity ) {
+                         $allProductsHaveEnoughStock = FALSE;
+                         break;
+                     }
+                 }
+
+                 if ( $allProductsHaveEnoughStock ) {
+                     $order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
+                 }
+             } );
+    } )->everyMinute();

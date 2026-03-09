@@ -213,31 +213,69 @@
                 $product_id                = $request->integer( 'product_id' );
                 $standard_prices           = json_decode( $request->standard_prices , TRUE );
                 $standard_wholesale_prices = json_decode( $request->standard_wholesale_prices , TRUE );
+                $variation_prices          = json_decode( $request->variation_prices , TRUE );
                 $productModel              = Product::find( $product_id );
+                $batch                     = time();
 
-                $productModel->update( [
-                    'selling_price' => $standard_prices[ 0 ][ 'selling_price' ] ,
-                    'buying_price'  => $standard_prices[ 0 ][ 'buying_price' ] ,
-                ] );
+//                $productModel->retailPrices()->delete();
+//                $productModel->wholesalePrices()->delete();
 
-                $productModel->retailPrices()->delete();
-
-                $productModel->retailPrices()->create(
-                    [
-                        'buying_price'  => $standard_prices[ 0 ][ 'buying_price' ] ,
-                        'selling_price' => $standard_prices[ 0 ][ 'selling_price' ] ,
-                        'unit_id'       => $standard_prices[ 0 ][ 'unit_id' ] ,
-                    ]
-                );
-
-                $productModel->wholesalePrices()->delete();
-
-                foreach ( $standard_wholesale_prices as $standard_wholesale_price ) {
-                    $productModel->wholesalePrices()->create( [
-                        'minQuantity' => $standard_wholesale_price[ 'minQuantity' ] ,
-                        'price'       => $standard_wholesale_price[ 'price' ]
-                    ] );
+                if ( $standard_prices ) {
+                    $productModel->retailPrices()->upsert(
+                        array_map( function ($price) use ($batch) {
+                            return [
+                                'id'            => $price[ 'id' ] ,
+                                'buying_price'  => $price[ 'buying_price' ] ,
+                                'selling_price' => $price[ 'selling_price' ] ,
+                                'unit_id'       => $price[ 'unit_id' ] ,
+                                'batch'         => $batch
+                            ];
+                        } , $standard_prices ) ,
+                        [ 'id' ] ,
+                        [ 'buying_price' , 'selling_price' , 'unit_id' , 'batch' ]
+                    );
                 }
+
+                if ( $standard_wholesale_prices ) {
+                    $productModel->wholesalePrices()->upsert(
+                        array_map( function ($price) use ($batch) {
+                            return [
+                                'id'          => $price[ 'id' ] ,
+                                'minQuantity' => $price[ 'minQuantity' ] ,
+                                'price'       => $price[ 'price' ] ,
+                                'batch'       => $batch
+                            ];
+                        } , $standard_wholesale_prices ) ,
+                        [ 'id' ] ,
+                        [ 'minQuantity' , 'price' , 'batch' ]
+                    );
+                }
+
+//                if ( $variation_prices ) {
+//                    foreach ( $variation_prices as $variation_price ) {
+//                        $variation = ProductVariation::find( $variation_price[ 'variation_id' ] );
+//                        if ( $variation ) {
+//                            if ( isset( $variation_price[ 'prices' ] ) && ! empty( $variation_price[ 'prices' ] ) ) {
+//                                $variation->retailPrices()->create( [
+//                                    'buying_price'  => $variation_price[ 'prices' ][ 0 ][ 'buying_price' ] ,
+//                                    'selling_price' => $variation_price[ 'prices' ][ 0 ][ 'selling_price' ] ,
+//                                    'unit_id'       => $variation_price[ 'prices' ][ 0 ][ 'unit_id' ] ,
+//                                    'batch'         => $batch
+//                                ] );
+//                            }
+//
+//                            if ( isset( $variation_price[ 'wholesale_prices' ] ) && ! empty( $variation_price[ 'wholesale_prices' ] ) ) {
+//                                foreach ( $variation_price[ 'wholesale_prices' ] as $wholesale_price ) {
+//                                    $variation->wholesalePrices()->create( [
+//                                        'minQuantity' => $wholesale_price[ 'minQuantity' ] ,
+//                                        'price'       => $wholesale_price[ 'price' ] ,
+//                                        'batch'       => $batch
+//                                    ] );
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
             } );
         }
     }

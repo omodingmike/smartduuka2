@@ -13,8 +13,10 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'          => rand() ,
+//                'id'          => rand() ,
+                'id'          => $this->id ,
                 'minQuantity' => $this->minQuantity ,
+                'batch'       => $this->batch ,
                 'price'       => $this->price ,
                 'price_text'  => AppLibrary::currencyAmountFormat( $this->price ) ,
                 'item_id'     => $this->item_id ,
