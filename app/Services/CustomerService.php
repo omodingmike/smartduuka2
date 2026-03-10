@@ -38,10 +38,8 @@
         {
             try {
                 $requests    = $request->all();
-                $perPage     = $request->get( 'perPage' , 10 );
+                $perPage     = $request->get( 'perPage' , 10000 );
                 $page        = $request->get( 'page' , 1 );
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
                 $query       = $request->get( 'query' ) ?? NULL;
 
                 return User::with( [ 'media' , 'addresses' ] )->role( EnumRole::CUSTOMER )
