@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\ExpenseNature;
     use App\Enums\ExpenseType;
     use App\Enums\MediaEnum;
     use App\Enums\PaymentStatus;
@@ -16,13 +17,15 @@
     {
         use HasFactory , InteractsWithMedia;
 
-        protected $fillable = [ 'name' , 'amount' , 'date' , 'note' , 'attachment' , 'recurs' , 'repetitions' , 'paid' , 'paid_on' , 'repeats_on' , 'count' , 'register_id' , 'expense_category_id' , 'reference_no' , 'is_recurring' , 'base_amount' , 'extra_charge' , 'expense_type' , 'expense_id' , 'registerMediaConversionsUsingModelInstance'
+        protected $fillable = [ 'name' , 'amount' , 'date' , 'note' , 'attachment' , 'recurs' , 'repetitions' , 'paid' , 'paid_on' , 'repeats_on' , 'count' ,
+            'register_id' , 'expense_category_id' , 'reference_no' , 'is_recurring' , 'base_amount' , 'extra_charge' , 'expense_nature' , 'expense_type' , 'expense_id' , 'registerMediaConversionsUsingModelInstance'
         ];
         protected $casts    = [
             'date'         => 'datetime' ,
             'paid_on'      => 'datetime' ,
             'amount'       => 'integer' ,
             'expense_type' => ExpenseType::class ,
+            'expenses'     => ExpenseNature::class ,
             'paid'         => 'integer' ,
         ];
         protected $appends  = [ 'image' , 'balance' , 'payment_status' ];
@@ -30,6 +33,11 @@
         public function expenseCategory() : HasOne
         {
             return $this->hasOne( ExpenseCategory::class , 'id' , 'expense_category_id' );
+        }
+
+        public function expensePayments() : HasMany | Expense
+        {
+            return $this->hasMany( ExpensePayment::class , 'expense_id' , 'id' );
         }
 
         public function registers() : HasMany | Expense

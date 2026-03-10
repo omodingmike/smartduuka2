@@ -36,7 +36,12 @@
             return $this->hasMany( Order::class , 'register_id' , 'id' );
         }
 
-        public function expenses() : HasMany | Register
+        public function expensesPayments() : HasMany | ExpensePayment
+        {
+            return $this->hasMany( ExpensePayment::class , 'register_id' , 'id' );
+        }
+
+        public function expenses() : HasMany | ExpensePayment
         {
             return $this->hasMany( Expense::class , 'register_id' , 'id' );
         }

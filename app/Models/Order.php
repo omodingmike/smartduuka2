@@ -124,4 +124,11 @@
         {
             return $this->morphMany( PaymentMethodTransaction::class , 'item' );
         }
+
+        public function totalCost()
+        {
+            return $this->orderProducts->sum( function (OrderProduct $orderProduct) {
+                return $orderProduct->totalCost();
+            } );
+        }
     }

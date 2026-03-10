@@ -311,6 +311,7 @@
                             $expiryDate = isset( $product[ 'expiry' ] ) ? ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay() : NULL;
                             Stock::create( [
                                 'model_type'      => Purchase::class ,
+//                                'model_type'      => Product::class ,
                                 'reference'       => "S" . time() ,
                                 'model_id'        => $model_id ,
                                 'expiry_date'     => $expiryDate ,
@@ -368,30 +369,7 @@
                                     ['id'],
                                     ['buying_price', 'selling_price', 'unit_id']
                                 );
-
-//                                $productModel->retailPriceUpdates()->insert($retailUpdateLogs);
                             }
-
-                            // Update Retail Prices
-//                            if ( isset( $product[ 'retailPrices' ] ) && ! empty( $product[ 'retailPrices' ] ) ) {
-//                                $productModel->retailPrices()->delete();
-//                                foreach ( $product[ 'retailPrices' ] as $retailPrice ) {
-//                                    $productModel->retailPrices()->create(
-//                                        [
-//                                            'buying_price'  => $product[ 'price' ] ,
-//                                            'selling_price' => $retailPrice[ 'new_price' ] ,
-//                                            'unit_id'       => $retailPrice[ 'unit_id' ]
-//                                        ]
-//                                    );
-//
-//                                    $productModel->retailPriceUpdates()->create( [
-//                                        'new_price'   => $retailPrice[ 'new_price' ] ,
-//                                        'unit_id'     => $retailPrice[ 'unit_id' ] ,
-//                                        'old_price'   => $retailPrice[ 'old_price' ] ,
-//                                        'purchase_id' => $this->purchase->id
-//                                    ] );
-//                                }
-//                            }
 
                             if (isset($product['wholesalePrices']) && !empty($product['wholesalePrices'])) {
                                 $wholesalePriceData = [];
@@ -423,25 +401,28 @@
                                     ['id'],
                                     ['minQuantity', 'price']
                                 );
-
-//                                $productModel->wholesalePriceUpdates()->insert($wholesaleUpdateLogs);
                             }
 
-//                            if ( isset( $product[ 'wholesalePrices' ] ) && ! empty( $product[ 'wholesalePrices' ] ) ) {
-//                                $productModel->wholesalePrices()->delete();
-//                                foreach ( $product[ 'wholesalePrices' ] as $wholesalePrice ) {
-//                                    $productModel->wholesalePrices()->create( [
-//                                        'minQuantity' => $wholesalePrice[ 'min_quantity' ] ,
-//                                        'price'       => $wholesalePrice[ 'new_price' ]
-//                                    ] );
-//                                    $productModel->wholesalePriceUpdates()->create( [
-//                                        'min_quantity' => $wholesalePrice[ 'min_quantity' ] ,
-//                                        'new_price'    => $wholesalePrice[ 'new_price' ] ,
-//                                        'old_price'    => $wholesalePrice[ 'old_price' ] ,
-//                                        'purchase_id'  => $this->purchase->id
-//                                    ] );
-//                                }
-//                            }
+
+                            $pre_orders = Order::with( 'orderProducts.item' )->where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
+                                               ->whereHas( 'orderProducts' , function ($query) use ($productModel) {
+                                                   $query->where( 'item_id' , $productModel->id );
+                                               } )->get();
+
+                            foreach ( $pre_orders as $pre_order ) {
+                                $allProductsHaveEnoughStock = TRUE;
+                                foreach ( $pre_order->orderProducts as $orderProduct ) {
+                                    $orderProduct->item->refresh();
+                                    if ( $orderProduct->item->stock < $orderProduct->quantity ) {
+                                        $allProductsHaveEnoughStock = FALSE;
+                                        break;
+                                    }
+                                }
+
+                                if ( $allProductsHaveEnoughStock ) {
+                                    $pre_order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
+                                }
+                            }
                         }
                     }
                 } );

@@ -38,6 +38,7 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
+    use PhpParser\Node\Expr\Isset_;
 
     class OrderService
     {
@@ -88,6 +89,7 @@
                 ] )
                                ->when( $query , function (Builder $q) use ($query) {
                                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                                       ->orWhere( 'id' , 'ilike' , "%$query%" )
                                      ->orWhereHas( 'user' , function ($q) use ($query) {
                                          $q->where( 'name' , 'ilike' , "%$query%" );
                                      } );

@@ -4,6 +4,7 @@ https://github.com/brick/money
 
               chmod +x ~/deploy.sh && ./deploy.sh
 
+
               ssh-keygen -t ed25519 -C "deploy@gmail.com"
 
               ssh-keygen -t ed25519 -C "bar"

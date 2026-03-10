@@ -58,4 +58,25 @@
         {
             return $this->morphTo();
         }
+
+        public function totalCost()
+        {
+            $total = 0;
+            if ( $this->item_type === Product::class ) {
+                $product = Product::find( $this->item_id );
+                if ( $product ) {
+                    $total += $product->buying_price * $this->quantity;
+                }
+            }
+            elseif ( $this->item_type === ProductVariation::class ) {
+                $variation = ProductVariation::find( $this->item_id );
+                if ( $variation ) {
+                    $retailPrice = $variation->retailPrices()->first();
+                    if ( $retailPrice ) {
+                        $total += $retailPrice->buying_price * $this->quantity;
+                    }
+                }
+            }
+            return $total;
+        }
     }

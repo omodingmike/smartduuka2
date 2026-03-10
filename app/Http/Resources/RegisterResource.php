@@ -2,9 +2,11 @@
 
     namespace App\Http\Resources;
 
+    use App\Enums\ExpenseNature;
     use App\Enums\PaymentType;
     use App\Enums\PosPaymentType;
     use App\Libraries\AppLibrary;
+    use App\Models\ExpensePayment;
     use App\Models\Order;
     use App\Models\ProductVariation;
     use App\Models\Register;
@@ -21,7 +23,7 @@
                 return $order->orderProducts;
             } );
 
-            $groupedItems         = $allProducts->groupBy( function ($item) {
+            $groupedItems   = $allProducts->groupBy( function ($item) {
                 return $item->item_id . '-' . $item->item_type;
             } )->map( function ($group) {
                 $firstItem       = $group->first()->item;
@@ -55,7 +57,7 @@
                     'total_cost_currency'  => AppLibrary::currencyAmountFormat( $totalCost ) ,
                 ];
             } )->values();
-            $paymentSummary       = $this->posPayments->groupBy( 'payment_method_id' )->map( function ($group) {
+            $paymentSummary = $this->posPayments->groupBy( 'payment_method_id' )->map( function ($group) {
                 $methodName  = $group->first()->paymentMethod?->name ?? 'Unknown';
                 $totalAmount = $group->sum( 'amount' );
 
@@ -66,16 +68,39 @@
                     'total_currency'    => AppLibrary::currencyAmountFormat( $totalAmount ) ,
                 ];
             } )->values();
-            $grandTotalCost       = $groupedItems->sum( 'total_cost' );
-            $reserved_value       = $groupedItems->sum( 'reserved_value' );
-            $damages_value        = $groupedItems->sum( 'damages_value' );
-            $profit               = $this->posPayments()->sum( 'amount' ) - $grandTotalCost;
+
+            $grandTotalCost = $groupedItems->sum( 'total_cost' );
+            $reserved_value = $groupedItems->sum( 'reserved_value' );
+            $damages_value  = $groupedItems->sum( 'damages_value' );
+            $total_revenue  = $this->posPayments()->sum( 'amount' );
+            $profit         = $total_revenue - $grandTotalCost;
+
+            $expenses_items = $this->expensesPayments->map( function (ExpensePayment $expense_payment) {
+                return $expense_payment->expense;
+            } )->filter( function ($expense) {
+                return $expense && ($expense->expense_nature === ExpenseNature::OPERATIONAL);
+            } )->unique( 'id' )->values();
+
+            $expenses = $this->expensesPayments->sum( function (ExpensePayment $expense_payment) {
+                if ( $expense_payment->expense && ($expense_payment->expense->expense_nature === ExpenseNature::OPERATIONAL->value) ) {
+                    return $expense_payment->amount;
+                }
+                return 0;
+            } );
+
+            $net_profit = $profit - $expenses;
+
             $totalCreditRemaining = $this->orders
                 ->where( 'payment_type' , PaymentType::CREDIT )
                 ->sum( 'balance' );
             $deposits             = $this->orders()->where( 'payment_type' , '<>' , PaymentType::CASH )->get()->sum( function (Order $order) {
                 return $order->posPayments()->sum( 'amount' );
             } );
+
+            $total_order_cost = $this->orders->sum( function (Order $order) {
+                return $order->totalCost();
+            } );
+
             return [
 //                'id'                           => $this->id ,
                 'id'                           => 'REG-' . Str::padLeft( $this->id , 5 , '0' ) ,
@@ -96,9 +121,9 @@
                 'user_id'                      => $this->user_id ,
                 'sales'                        => $this->posPayments()->sum( 'amount' ) ,
                 'sales_currency'               => AppLibrary::currencyAmountFormat( $this->posPayments()->sum( 'amount' ) ) ,
-                'expense'                      => $this->expenses()->sum( 'paid' ) ,
-                'expenses'                     => ExpenseResource::collection( $this->expenses ) ,
-                'expense_currency'             => AppLibrary::currencyAmountFormat( $this->expenses()->sum( 'amount' ) ) ,
+                'expense'                      => $expenses ,
+                'expenses'                     => ExpenseResource::collection( $expenses_items ) ,
+                'expense_currency'             => currency( $expenses ) ,
                 'user'                         => new UserResource( $this->whenLoaded( 'user' ) ) ,
                 'posPayments'                  => PosPaymentResource::collection( $this->posPayments ) ,
                 'item_summary'                 => $groupedItems ,
@@ -113,6 +138,11 @@
                 'profit'                       => $profit ,
                 'profit_currency'              => AppLibrary::currencyAmountFormat( $profit ) ,
                 'orders'                       => OrderResource::collection( $this->orders ) ,
+                'total_order_cost'             => $total_order_cost ,
+                'total_revenue'                => $total_revenue ,
+                'net_profit'                   => $net_profit ,
+                'net_profit_currency'          => currency( $net_profit ) ,
+                'total_revenue_currency'       => currency( $total_revenue ) ,
             ];
         }
     }

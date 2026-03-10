@@ -31,7 +31,7 @@
                     ExpensePayment::create( [
                         'amount'        => $validated[ 'amount' ] ,
                         'date'          => now() ,
-                        'paymentMethod' => $validated[ 'method' ] ,
+                        'payment_method_id' => $validated[ 'method' ] ,
                         'expense_id'    => $validated[ 'expenseId' ] ,
                         'register_id'   => register()->id
                     ] );

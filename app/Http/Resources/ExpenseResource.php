@@ -16,6 +16,7 @@
                 'id'                   => $this->id ,
                 'expense_id'           => $this->expense_id ?? $this->id ,
                 'name'                 => $this->name ,
+                'expense_nature'       => $this->expense_nature ,
                 'payment_status'       => $this->payment_status ,
                 'amount'               => $this->amount ,
                 'amount_currency'      => AppLibrary::currencyAmountFormat( $this->amount ) ,

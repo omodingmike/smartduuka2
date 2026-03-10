@@ -266,7 +266,7 @@
         public function store(ProductVariationRequest $request , Product $product) : object
         {
             try {
-                DB::beginTransaction(); // Manual control for clearer flow
+                DB::beginTransaction();
 
                 $order      = 1;
                 $parentId   = NULL;
