@@ -17,6 +17,7 @@ https://github.com/brick/money
               truncate -s 0 $(docker inspect --format='{{.LogPath}}' smartduuka_next)
 
               docker exec -it db psql -U smartduuka -d tenant_techpulsespares
+
               docker exec -it db psql -U smartduuka -d tenant_zakayo
 
               docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
