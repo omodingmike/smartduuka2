@@ -7,22 +7,26 @@
     return new class extends Migration {
         public function up() : void
         {
-            Schema::table( 'stocks' , function (Blueprint $table) {
-                $table->unsignedBigInteger( 'creator' )->nullable()->change();
+            if ( Schema::hasColumn( 'stocks' , 'creator' ) ) {
+                Schema::table( 'stocks' , function (Blueprint $table) {
+                    $table->unsignedBigInteger( 'creator' )->nullable()->change();
 
-                // Add the foreign key constraint
-                $table->foreign( 'creator' )
-                      ->references( 'id' )
-                      ->on( 'users' )
-                      ->onDelete( 'set null' );
-            } );
+                    // Add the foreign key constraint
+                    $table->foreign( 'creator' )
+                          ->references( 'id' )
+                          ->on( 'users' )
+                          ->onDelete( 'set null' );
+                } );
+            }
         }
 
         public function down() : void
         {
-            Schema::table( 'stocks' , function (Blueprint $table) {
-                $table->dropForeign( [ 'creator' ] );
-                $table->integer( 'creator' )->nullable()->change();
-            } );
+            if ( Schema::hasColumn( 'stocks' , 'creator' ) ) {
+                Schema::table( 'stocks' , function (Blueprint $table) {
+                    $table->dropForeign( [ 'creator' ] );
+                    $table->integer( 'creator' )->nullable()->change();
+                } );
+            }
         }
     };
