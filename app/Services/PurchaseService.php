@@ -286,6 +286,7 @@
                 DB::transaction( function () use ($request) {
                     $warehouse_id   = Warehouse::first()->id;
                     $status         = $request->integer( 'status' );
+                    $shipping         = $request->integer( 'shipping' );
                     $this->purchase = Purchase::create( [
                         'supplier_id'    => $request->supplier_id ,
                         'date'           => $request->date ,
@@ -294,7 +295,7 @@
                         'total'          => $request->total ,
                         'notes'          => $request->note ? $request->note : "" ,
                         'status'         => $status ,
-                        'shipping'       => $request->shipping ?? 0 ,
+                        'shipping'       => $shipping ,
                         'payment_status' => PurchasePaymentStatus::PENDING->value ,
                         'warehouse_id'   => $warehouse_id ,
                         'tax'            => 0 ,
@@ -311,7 +312,6 @@
                             $expiryDate = isset( $product[ 'expiry' ] ) ? ( Carbon::parse( $product[ 'expiry' ] ) )->copy()->endOfDay() : NULL;
                             Stock::create( [
                                 'model_type'      => Purchase::class ,
-//                                'model_type'      => Product::class ,
                                 'reference'       => "S" . time() ,
                                 'model_id'        => $model_id ,
                                 'expiry_date'     => $expiryDate ,

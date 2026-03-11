@@ -214,18 +214,18 @@
             );
         }
 
-        public function wholesalePrices1() : MorphMany
+        public function wholesalePrices() : MorphMany
         {
             return $this->morphMany( WholeSalePrice::class , 'item' )->orderByRaw( 'batch DESC' );
         }
 
-        public function wholesalePrices() : MorphMany
-        {
-            return $this->morphMany(WholeSalePrice::class, 'item')
-                        ->whereNotNull('batch') //
-                        ->orderBy('batch', 'desc') //
-                        ->orderBy('id', 'asc'); //
-        }
+//        public function wholesalePrices() : MorphMany
+//        {
+//            return $this->morphMany(WholeSalePrice::class, 'item')
+//                        ->whereNotNull('batch') //
+//                        ->orderBy('batch', 'desc') //
+//                        ->orderBy('id', 'asc'); //
+//        }
 
 
 

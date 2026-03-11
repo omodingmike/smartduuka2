@@ -2,6 +2,7 @@
 
     namespace App\Console\Commands;
 
+    use App\Models\Tenant;
     use Illuminate\Console\Command;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Schema;
@@ -44,7 +45,7 @@
 
             // 2. Initialize Tenancy Context
             if ( $tenantId ) {
-                $tenantModel = config( 'tenancy.tenant_model' , \App\Models\Tenant::class );
+                $tenantModel = config( 'tenancy.tenant_model' , Tenant::class );
                 $tenant      = $tenantModel::find( $tenantId );
 
                 if ( ! $tenant ) {
