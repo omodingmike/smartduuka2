@@ -93,3 +93,4 @@ product: posho 50kg remove, leave 50k
 $tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
 $tenant1->domains()->create(['domain' => 'techpulsespares-api']);
 php artisan tenants:seed --force --tenants=techpulsespares
+php artisan tenants:migrate-fresh --force --tenants=techpulsespares
