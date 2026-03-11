@@ -125,6 +125,7 @@ $COMPOSE exec -T api php artisan storage:link --relative || true
 log "🧹 Optimizing application..."
 # 1. Clear everything to remove stale/corrupt cache files
 $COMPOSE exec -T api php artisan optimize:clear
+$COMPOSE exec -T api php artisan tenants:run optimize:clear
 
 # 2. Re-cache Configuration and Events
 $COMPOSE exec -T api php artisan config:cache
@@ -137,6 +138,8 @@ $COMPOSE exec -T api php artisan event:cache
 $COMPOSE exec -T api php artisan view:cache
 
 $COMPOSE exec -T api php artisan route:clear
+
+$COMPOSE exec -T api php artisan tenants:run optimize
 
 # --------------------------------------------------
 # 6. RELOAD PHP-FPM (THE FIX)

@@ -97,3 +97,5 @@ $tenant1->domains()->create(['domain' => 'techpulsespares-api']);
 php artisan tenants:seed --force --tenants=techpulsespares
 php artisan tenants:migrate-fresh --force --tenants=techpulsespares
 php artisan tenants:migrate-fresh --force --tenants=zakayo
+php artisan tenants:run optimize:clear --tenants=zakayo
+php artisan tenants:run optimize:clear --tenants=demoshop
