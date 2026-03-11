@@ -2,6 +2,8 @@
 
     namespace App\Http\Controllers\Admin;
 
+    use App\Enums\OrderStatus;
+    use App\Enums\PaymentStatus;
     use App\Enums\PreOrderStatus;
     use App\Enums\SettingsEnum;
     use App\Enums\StockStatus;
@@ -28,6 +30,7 @@
     use Illuminate\Http\Response;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\File;
+    use Illuminate\Support\Facades\Log;
     use Maatwebsite\Excel\Facades\Excel;
     use Smartisan\Settings\Facades\Settings;
     use Spatie\Browsershot\Browsershot;
@@ -322,6 +325,43 @@
                 } );
             } catch ( Exception $e ) {
                 throw new Exception( $e->getMessage() );
+            }
+        }
+
+        public function preOrderRefund(Order $order , Request $request)
+        {
+            try {
+                return DB::transaction(function () use ($order) {
+                    // Update order statuses to reflect the refund/cancellation.
+                    $order->update([
+                        'pre_order_status' => PreOrderStatus::REFUNDED,
+                    ]);
+
+                    // Reverse all payments associated with this order.
+                    $order->paymentMethodTransactions()->delete();
+                    $order->posPayments()->delete();
+
+                    // Release any reserved stock.
+                    // This assumes that creating a pre-order increments the 'quantity_ordered' on the stock record.
+
+//                    foreach ($order->orderProducts as $orderProduct) {
+//                        $stock = Stock::where([
+//                            'item_id'      => $orderProduct->item_id,
+//                            'item_type'    => $orderProduct->item_type,
+//                            'warehouse_id' => $order->warehouse_id,
+//                        ])->first();
+//
+//                        if ($stock && $stock->quantity_ordered >= $orderProduct->quantity) {
+//                            $stock->decrement('quantity_ordered', $orderProduct->quantity);
+//                        }
+//                    }
+
+                    activityLog("Refunded Pre-Order: {$order->order_serial_no}");
+                    return response()->json();
+                });
+            } catch (Exception $exception) {
+                Log::info($exception->getMessage());
+                throw new Exception($exception->getMessage(), 422);
             }
         }
     }
