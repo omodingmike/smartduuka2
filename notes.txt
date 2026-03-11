@@ -17,6 +17,7 @@ https://github.com/brick/money
               truncate -s 0 $(docker inspect --format='{{.LogPath}}' smartduuka_next)
 
               docker exec -it db psql -U smartduuka -d tenant_techpulsespares
+              docker exec -it db psql -U smartduuka -d tenant_zakayo
 
               docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
               docker compose exec -T api php artisan optimize
@@ -94,3 +95,4 @@ $tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
 $tenant1->domains()->create(['domain' => 'techpulsespares-api']);
 php artisan tenants:seed --force --tenants=techpulsespares
 php artisan tenants:migrate-fresh --force --tenants=techpulsespares
+php artisan tenants:migrate-fresh --force --tenants=zakayo
