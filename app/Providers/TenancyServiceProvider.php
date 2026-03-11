@@ -52,7 +52,7 @@
                         Jobs\DeleteDatabase::class ,
                     ] )->send( function (Events\TenantDeleted $event) {
                         return $event->tenant;
-                    } )->shouldBeQueued( FALSE ) , // `false` by default, but you probably want to make this `true` for production.
+                    } )->shouldBeQueued(  ) , // `false` by default, but you probably want to make this `true` for production.
                 ] ,
 
                 // Domain events

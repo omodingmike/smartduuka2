@@ -15,7 +15,7 @@ https://github.com/brick/money
               truncate -s 0 laravel.log
               docker exec -it smartduuka_next /bin/bash
               truncate -s 0 $(docker inspect --format='{{.LogPath}}' smartduuka_next)
-              docker exec -it db psql -U smartduuka -d tenant_zakayo
+              docker exec -it db psql -U smartduuka -d tenant_techpulsespares
               docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
               docker compose exec -T api php artisan optimize
 
@@ -87,3 +87,7 @@ available = stock + remaining deposited stock
 53,800
 
 product: posho 50kg remove, leave 50k
+
+$tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
+$tenant1->domains()->create(['domain' => 'techpulsespares-api']);
+php artisan tenants:seed --force --tenants=techpulsespares
