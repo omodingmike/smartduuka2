@@ -72,17 +72,18 @@
 
         public function closeRegister(Request $request)
         {
-            $register = auth()->user()->openRegister();
+            $register       = register();
+            $closing_amount = $request->integer( 'closing_amount' );
 
-            $sales = $register->posPayments();
+            $sales = $register->posPayments()->sum( 'amount' );
 
-            $expectedFloat = ( $register->opening_float + $sales->sum( 'amount' ) );
+            $expectedFloat = $register->opening_float + $sales;
 
-            $difference = $request->closing_amount - $expectedFloat;
+            $difference = $closing_amount - $expectedFloat;
 
             $register->update( [
                 'expected_float' => $expectedFloat ,
-                'closing_float'  => $request->closing_amount ,
+                'closing_float'  => $closing_amount ,
                 'difference'     => $difference ,
                 'status'         => RegisterStatus::CLOSED->value ,
                 'closed_at'      => now() ,

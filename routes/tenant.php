@@ -704,19 +704,37 @@
             } );
 
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
+                // 1. SPECIFIC ENDPOINTS FIRST
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
-                Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
                 Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
-                Route::post( '/update' , [ PosController::class , 'update' ] );
+                Route::post( '/update' , [ PosController::class , 'update' ] ); // Note: You might not need this if you use the dynamic route below
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
                 Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );
                 Route::post( '/close-register' , [ PosController::class , 'closeRegister' ] );
                 Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
                 Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
                 Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
+
+                // 2. DYNAMIC ENDPOINTS LAST
                 Route::put( '/customer/{customer}' , [ PosController::class , 'updateCustomer' ] );
+                Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
                 Route::get( '/{order}' , [ PosController::class , 'index' ] );
             } );
+
+//            Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
+//                Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
+//                Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
+//                Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
+//                Route::post( '/update' , [ PosController::class , 'update' ] );
+//                Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
+//                Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );
+//                Route::post( '/close-register' , [ PosController::class , 'closeRegister' ] );
+//                Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
+//                Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
+//                Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
+//                Route::put( '/customer/{customer}' , [ PosController::class , 'updateCustomer' ] );
+//                Route::get( '/{order}' , [ PosController::class , 'index' ] );
+//            } );
         } );
 
         Route::prefix( 'frontend' )->name( 'frontend.' )->group( function () {
