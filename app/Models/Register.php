@@ -28,9 +28,13 @@
         {
             return $this->hasMany( PosPayment::class , 'register_id' , 'id' )
                         ->whereHas( 'order' , function (Builder $q) {
-                            $q->where( 'status' , '<>' , OrderStatus::CANCELED )
-                              ->where( 'pre_order_status' , '<>' , PreOrderStatus::REFUNDED )
-                              ->where( 'pre_order_status' , '<>' , PreOrderStatus::CANCELED );
+                            $q->where( function ($query) {
+                                $query->where( 'status' , '<>' , OrderStatus::CANCELED )
+                                      ->orWhereNull( 'status' );
+                            } )->where( function ($query) {
+                                $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+                                      ->orWhereNull( 'pre_order_status' );
+                            } );
                         } );
         }
 
@@ -42,9 +46,13 @@
         public function orders() : HasMany | Register
         {
             return $this->hasMany( Order::class , 'register_id' , 'id' )
-                        ->where( 'status' , '<>' , OrderStatus::CANCELED )
-                        ->where( 'pre_order_status' , '<>' , PreOrderStatus::REFUNDED )
-                        ->where( 'pre_order_status' , '<>' , PreOrderStatus::CANCELED );
+                        ->where( function ($query) {
+                            $query->where( 'status' , '<>' , OrderStatus::CANCELED )
+                                  ->orWhereNull( 'status' );
+                        } )->where( function ($query) {
+                    $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+                          ->orWhereNull( 'pre_order_status' );
+                } );
         }
 
         public function expensesPayments() : HasMany | ExpensePayment
