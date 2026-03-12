@@ -705,6 +705,7 @@
 
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
+                Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
                 Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
                 Route::post( '/update' , [ PosController::class , 'update' ] );
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );

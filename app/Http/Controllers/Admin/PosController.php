@@ -52,10 +52,10 @@
             }
         }
 
-        public function update(PosOrderRequest $request) : Response | OrderDetailsResource | Application | ResponseFactory
+        public function update(Order $order , PosOrderRequest $request)
         {
             try {
-                return new OrderDetailsResource( $this->orderService->posOrderUpdate( $request ) );
+                return new OrderResource( $this->orderService->posOrderUpdate( $order , $request ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

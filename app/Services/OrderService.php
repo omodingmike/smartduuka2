@@ -8,6 +8,7 @@
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
+    use App\Enums\PriceType;
     use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
@@ -38,7 +39,6 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
-    use PhpParser\Node\Expr\Isset_;
 
     class OrderService
     {
@@ -89,7 +89,7 @@
                 ] )
                                ->when( $query , function (Builder $q) use ($query) {
                                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
-                                       ->orWhere( 'id' , 'ilike' , "%$query%" )
+                                     ->orWhere( 'id' , 'ilike' , "%$query%" )
                                      ->orWhereHas( 'user' , function ($q) use ($query) {
                                          $q->where( 'name' , 'ilike' , "%$query%" );
                                      } );
@@ -553,7 +553,8 @@
                                 'quantity_picked'             => 0 ,
                                 'quantity'                    => $product[ 'quantity' ] ,
                                 'price_id'                    => $product[ 'price_id' ] ,
-                                'price_type'                  => ( $product[ 'price_type' ] == 'wholesale' ) ? WholeSalePrice::class : RetailPrice::class ,
+                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
+                                    RetailPrice::class ,
                                 'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
                                 'unit_price'                  => $product[ 'unitPrice' ] ,
                                 'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
@@ -588,66 +589,158 @@
             }
         }
 
-        public function posOrderUpdate(PosOrderRequest $request) : object
+        public function posOrderUpdate(Order $order , PosOrderRequest $request) : object
         {
             try {
-                DB::transaction( function () use ($request) {
-                    $order = Order::find( $request->order_id );
-                    $order->update( $request->validated() + [
-                            'user_id'        => $request->customer_id ,
-                            'status'         => $request->order_type == PaymentMethodEnum::QUOTATION ? OrderStatus::PENDING : OrderStatus::CONFIRMED ,
-                            'payment_status' => ( $request->order_type == PaymentMethodEnum::CREDIT || $request->order_type == PaymentMethodEnum::DEPOSIT ||
-                                $request->order_type == PaymentMethodEnum::QUOTATION ) ?
-                                PaymentStatus::UNPAID :
-                                PaymentStatus::PAID ,
-                            'order_datetime' => $request->date ?? date( 'Y-m-d H:i:s' ) ,
-                            ''               => $request->date ?? date( 'Y-m-d H:i:s' )
-                        ] );
-                    $this->order = $order;
-                    $products    = json_decode( $request->products );
-                    if ( ! blank( $products ) ) {
-                        Stock::where( 'model_id' , $this->order->id )->delete();
-                        foreach ( $products as $product ) {
-                            $order_product = Product::find( $product->product_id );
-                            $base_unit     = Unit::find( $order_product->unit_id );
-                            $selling_unit  = $product->sellingUnit ?? $product->unit_id ?? $base_unit?->id;
-                            $mid_unit_id   = $order_product->mid_unit_id;
-                            $top_unit_id   = $order_product->top_unit_id;
+                DB::transaction( function () use ($request , $order) {
+                    $status           = $request->integer( 'status' );
+                    $change           = $request->change;
+                    $delivery_address = $request->delivery_address;
+                    $delivery_fee     = $request->delivery_fee;
+                    $is_preorder      = $request->integer( 'is_preorder' );
 
-                            if ( $order_product->base_units_per_top_unit && $order_product->mid_units_per_top_unit ) {
-                                $quantity = match ( $selling_unit ) {
-                                    $mid_unit_id => ( $product->quantity * $order_product->units_per_mid_unit ) ,
-                                    $top_unit_id => ( $product->quantity * $order_product->base_units_per_top_unit ) ,
-                                    default      => $product->quantity
-                                };
-                            }
-                            else {
-                                $quantity = $product->quantity;
-                            }
-                            Stock::create( [
-                                'product_id'          => $product->product_id ,
-                                'unit_id'             => $product->sellingUnit ?? $product->unit_id ?? $base_unit->id ,
-                                'other_quantity'      => $product->quantity ,
-                                'purchase_quantity'   => $product->quantity ,
-                                'model_type'          => Order::class ,
-                                'model_id'            => $this->order->id ,
-                                'item_type'           => $product->variation_id > 0 ? ProductVariation::class : Product::class ,
-                                'item_id'             => $product->variation_id > 0 ? $product->variation_id : $product->product_id ,
-                                'variation_names'     => $product->variation_names ,
-                                'sku'                 => $product->sku ,
-                                'price'               => $product->price ,
-                                'quantity'            => -$quantity ,
-                                'fractional_quantity' => $quantity ,
-                                'discount'            => clean_amount( $product->discount ) ,
-                                'delivery'            => $product->delivery ?? 0 ,
-                                'tax'                 => number_format( $product->total_tax , 2 , '.' , '' ) ,
-                                'subtotal'            => $product->subtotal ,
-                                'total'               => $product->total ,
-                                'status'              => Status::INACTIVE ,
+                    $paymentStatus = match ( $status ) {
+                        SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
+                        default                         => PaymentStatus::UNPAID
+                    };
+
+                    if ( $status == SaleOrderType::DEPOSIT->value ) {
+                        $paymentStatus = PaymentStatus::PARTIALLY_PAID;
+                    }
+
+                    $order->update(
+                        $request->validated() + [
+                            'paid'            => $request->received ?? 0 ,
+                            'balance'         => 0 ,
+                            'shipping_charge' => $request->shipping_charge ?? 0 ,
+                            'user_id'         => $request->customer_id ,
+                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
+                            'change'          => $request->change ,
+                            'payment_type'    => $request->paymentType ,
+                            'channel'         => $request->channel ,
+                            'creator_id'      => auth()->id() ,
+                            'payment_status'  => $paymentStatus->value ,
+                            'warehouse_id'    => $request->warehouse_id ,
+                            'register_id'     => register()->id
+                        ]
+                    );
+
+                    if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
+
+                    if ( $delivery_address ) {
+                        $order->delivery_address = $delivery_address;
+                    }
+                    if ( $delivery_fee ) {
+                        $order->delivery_fee = $delivery_fee;
+                    }
+                    $order->save();
+
+                    // Restore stock from old order products
+                    foreach ( $order->orderProducts as $oldProduct ) {
+                        $stock = Stock::where( [
+                            'item_id'      => $oldProduct->item_id ,
+                            'item_type'    => $oldProduct->item_type ,
+                            'status'       => StockStatus::RECEIVED ,
+                            'warehouse_id' => $order->warehouse_id
+                        ] )->first();
+
+                        if ( ! $order->pre_order_status ) { // If it wasn't a pre-order, restore physical stock
+                            $stock?->increment( 'quantity' , $oldProduct->quantity );
+                        }
+                    }
+                    // For simplicity in update, we often delete old items and recreate new ones.
+                    $order->orderProducts()->delete();
+                    $order->posPayments()->delete();
+                    $order->paymentMethodTransactions()->delete();
+
+                    $payments = json_decode( $request->payments , TRUE );
+                    foreach ( $payments as $p ) {
+                        $amount     = $p[ 'amount' ];
+                        $net_amount = $amount - $change;
+                        if ( $amount > 0 ) {
+                            $payment = PaymentMethod::find( $p[ 'id' ] );
+
+                            PosPayment::create( [
+                                'order_id'          => $order->id ,
+                                'date'              => now() ,
+                                'reference_no'      => $p[ 'reference' ] ?? time() ,
+                                'amount'            => $net_amount ,
+                                'payment_method_id' => $p[ 'id' ] ,
+                                'register_id'       => register()->id
+                            ] );
+
+                            PaymentMethodTransaction::create( [
+                                'amount'            => $net_amount ,
+                                'item_type'         => Order::class ,
+                                'item_id'           => $order->id ,
+                                'charge'            => 0 ,
+                                'description'       => 'Order Payment #' . $order->order_serial_no ,
+                                'payment_method_id' => $payment->id ,
                             ] );
                         }
                     }
+
+                    $products = json_decode( $request->items , TRUE );
+                    if ( ! blank( $products ) ) {
+                        foreach ( $products as $product ) {
+                            $p = Product::find( $product[ 'item_id' ] );
+
+                            $is_variation = isset( $product[ 'variation_id' ] );
+                            $variation    = NULL;
+                            $targetModel  = $p;
+                            $targetClass  = Product::class;
+                            $itemId       = $product[ 'item_id' ];
+
+                            if ( $is_variation ) {
+                                $variation_id = $product[ 'variation_id' ];
+                                $variation    = ProductVariation::find( $variation_id );
+                                if ( $variation ) {
+                                    $targetModel = $variation;
+                                    $targetClass = ProductVariation::class;
+                                    $itemId      = $variation->id;
+                                }
+                            }
+
+                            // Check stock
+                            if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
+                                $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
+                                throw  new Exception( "{$name} stock not enough" );
+                            }
+
+                            $order_product = OrderProduct::create( [
+                                'order_id'                    => $order->id ,
+                                'item_id'                     => $itemId ,
+                                'item_type'                   => $targetClass ,
+                                'quantity_picked'             => 0 ,
+                                'quantity'                    => $product[ 'quantity' ] ,
+                                'price_id'                    => $product[ 'price_id' ] ,
+                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
+                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price'                  => $product[ 'unitPrice' ] ,
+                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
+                            ] );
+
+                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+
+                            $stock = Stock::where( [
+                                'item_id'      => $itemId ,
+                                'item_type'    => $targetClass ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $request->warehouse_id
+                            ] )->first();
+
+                            $qtyToDecrement = $product[ 'quantity' ];
+                            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
+
+                            if ( $status == SaleOrderType::DEPOSIT->value ) {
+                                $stock->increment( 'quantity_ordered' , $qtyToDecrement );
+                            }
+                        }
+                    }
+                    $this->order = $order;
                 } );
+                activityLog( "Updated Order: {$order->id}" );
                 return $this->order;
             } catch ( Exception $exception ) {
                 DB::rollBack();
@@ -1046,8 +1139,8 @@
                     $status = $request->integer( 'status' );
 
                     if ( $status == OrderStatus::CANCELED->value ) {
-                        $order->posPayments()->delete();
-                        $order->orderProducts()->delete();
+//                        $order->posPayments()->delete();
+//                        $order->orderProducts()->delete();
                         foreach ( $order->orderProducts as $orderProduct ) {
                             $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
                                 ? ProductVariation::class

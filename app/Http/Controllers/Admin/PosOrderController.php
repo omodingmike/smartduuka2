@@ -2,8 +2,6 @@
 
     namespace App\Http\Controllers\Admin;
 
-    use App\Enums\OrderStatus;
-    use App\Enums\PaymentStatus;
     use App\Enums\PreOrderStatus;
     use App\Enums\SettingsEnum;
     use App\Enums\StockStatus;
@@ -207,6 +205,7 @@
             try {
                 DB::transaction( function () use ($request) {
                     $proratedItems = json_decode( $request->proratedItems , TRUE );
+                    $extraItems    = json_decode( $request->extraItems , TRUE );
                     $action        = $request->string( 'action' );
                     $topUpAmount   = $request->integer( 'topUpAmount' );
                     $difference    = $request->integer( 'difference' );
@@ -236,6 +235,48 @@
                             $order->orderProducts()
                                   ->where( 'id' , $prorated_item[ 'orderProductId' ] )
                                   ->update( [ 'quantity' => $prorated_item[ 'newQty' ] ] );
+                        }
+
+                        foreach ( $order->orderProducts as $order_product ) {
+                            $price         = $order_product->price;
+                            $current_price = 0;
+
+                            if ( $price instanceof RetailPrice ) {
+                                $current_price = $price->selling_price;
+                            }
+
+                            if ( $price instanceof WholeSalePrice ) {
+                                $current_price = $price->price;
+                            }
+
+                            $new_total = $current_price * $order_product->quantity;
+
+                            $order_product->update( [
+                                'unit_price' => $current_price ,
+                                'total'      => $new_total ,
+                            ] );
+
+                            $new_order_total += $new_total;
+
+                            Stock::create( [
+                                'product_id'   => $order_product->item_id ,
+                                'item_id'      => $order_product->item_id ,
+                                'model_id'     => $order_product->item_id ,
+                                'item_type'    => $order_product->item_type ,
+                                'model_type'   => $order_product->item_type ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id ,
+                                'quantity'     => -$order_product->quantity ,
+                            ] );
+                        }
+                        $order->update( [ 'total' => $new_order_total ] );
+                    }
+
+                    if ( $action == 'GIVE_MORE_AMOUNT' ) {
+                        foreach ( $extraItems as $extraItem ) {
+                            $order->orderProducts()
+                                  ->where( 'id' , $extraItem[ 'orderProductId' ] )
+                                  ->update( [ 'quantity' => $extraItem[ 'newQty' ] ] );
                         }
 
                         foreach ( $order->orderProducts as $order_product ) {
@@ -322,6 +363,58 @@
                         ] );
                         $order->update( [ 'total' => $new_order_total ] );
                     }
+
+                    if ( $action == 'REFUND_BALANCE' ) {
+                        $refundAmount = $request->integer( 'refundAmount' );
+                        $refundMethod = $request->integer( 'refundMethod' );
+                        $order->decrement( 'paid' , $refundAmount );
+
+                        foreach ( $order->orderProducts as $order_product ) {
+                            $price         = $order_product->price;
+                            $current_price = 0;
+                            if ( $price instanceof RetailPrice ) {
+                                $current_price = $price->selling_price;
+                            }
+                            if ( $price instanceof WholeSalePrice ) {
+                                $current_price = $price->price;
+                            }
+                            $new_total = $current_price * $order_product->quantity;
+                            $order_product->update( [
+                                'unit_price' => $current_price ,
+                                'total'      => $new_total ,
+                            ] );
+                            $new_order_total += $new_total;
+                            Stock::create( [
+                                'product_id'   => $order_product->item_id ,
+                                'item_id'      => $order_product->item_id ,
+                                'model_id'     => $order_product->item_id ,
+                                'item_type'    => $order_product->item_type ,
+                                'model_type'   => $order_product->item_type ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id ,
+                                'quantity'     => -$order_product->quantity ,
+                            ] );
+                        }
+
+                        PosPayment::create( [
+                            'order_id'          => $order->id ,
+                            'date'              => now() ,
+                            'reference_no'      => time() ,
+                            'amount'            => -$refundAmount ,
+                            'payment_method_id' => $refundMethod ,
+                            'register_id'       => register()->id
+                        ] );
+
+                        PaymentMethodTransaction::create( [
+                            'amount'            => $refundAmount ,
+                            'item_type'         => Order::class ,
+                            'item_id'           => $order->id ,
+                            'charge'            => 0 ,
+                            'description'       => 'Order Payment #' . $order->order_serial_no ,
+                            'payment_method_id' => $refundMethod ,
+                        ] );
+                        $order->update( [ 'total' => $new_order_total ] );
+                    }
                 } );
             } catch ( Exception $e ) {
                 throw new Exception( $e->getMessage() );
@@ -331,15 +424,14 @@
         public function preOrderRefund(Order $order , Request $request)
         {
             try {
-                return DB::transaction(function () use ($order) {
+                return DB::transaction( function () use ($order) {
                     // Update order statuses to reflect the refund/cancellation.
-                    $order->update([
-                        'pre_order_status' => PreOrderStatus::REFUNDED,
-                    ]);
+                    $order->update( [
+                        'pre_order_status' => PreOrderStatus::REFUNDED ,
+                    ] );
 
-                    // Reverse all payments associated with this order.
-                    $order->paymentMethodTransactions()->delete();
-                    $order->posPayments()->delete();
+//                    $order->paymentMethodTransactions()->delete();
+//                    $order->posPayments()->delete();
 
                     // Release any reserved stock.
                     // This assumes that creating a pre-order increments the 'quantity_ordered' on the stock record.
@@ -356,12 +448,12 @@
 //                        }
 //                    }
 
-                    activityLog("Refunded Pre-Order: {$order->order_serial_no}");
+                    activityLog( "Refunded Pre-Order: {$order->order_serial_no}" );
                     return response()->json();
-                });
-            } catch (Exception $exception) {
-                Log::info($exception->getMessage());
-                throw new Exception($exception->getMessage(), 422);
+                } );
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
             }
         }
     }

@@ -2,7 +2,10 @@
 
     namespace App\Models;
 
+    use App\Enums\OrderStatus;
+    use App\Enums\PreOrderStatus;
     use App\Enums\RegisterStatus;
+    use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,9 +24,14 @@
             'notes' ,
         ];
 
-        public function posPayments()
+        public function posPayments() : HasMany | Register
         {
-            return $this->hasMany( PosPayment::class , 'register_id' , 'id' );
+            return $this->hasMany( PosPayment::class , 'register_id' , 'id' )
+                        ->whereHas( 'order' , function (Builder $q) {
+                            $q->where( 'status' , '<>' , OrderStatus::CANCELED )
+                              ->where( 'pre_order_status' , '<>' , PreOrderStatus::REFUNDED )
+                              ->where( 'pre_order_status' , '<>' , PreOrderStatus::CANCELED );
+                        } );
         }
 
         public function getExpectedFloatAttribute()
@@ -33,7 +41,10 @@
 
         public function orders() : HasMany | Register
         {
-            return $this->hasMany( Order::class , 'register_id' , 'id' );
+            return $this->hasMany( Order::class , 'register_id' , 'id' )
+                        ->where( 'status' , '<>' , OrderStatus::CANCELED )
+                        ->where( 'pre_order_status' , '<>' , PreOrderStatus::REFUNDED )
+                        ->where( 'pre_order_status' , '<>' , PreOrderStatus::CANCELED );
         }
 
         public function expensesPayments() : HasMany | ExpensePayment

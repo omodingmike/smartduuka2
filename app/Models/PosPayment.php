@@ -32,7 +32,7 @@
             }
         }
 
-        public function paymentMethod()
+        public function paymentMethod() : BelongsTo
         {
             return $this->belongsTo( PaymentMethod::class , 'payment_method_id' );
         }
