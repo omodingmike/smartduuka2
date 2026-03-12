@@ -29,11 +29,11 @@
             return $this->hasMany( PosPayment::class , 'register_id' , 'id' )
                         ->whereHas( 'order' , function (Builder $q) {
                             $q->where( function ($query) {
-                                $query->where( 'status' , '<>' , OrderStatus::CANCELED );
-//                                      ->orWhereNull( 'status' );
+                                $query->where( 'status' , '<>' , OrderStatus::CANCELED )
+                                      ->orWhereNull( 'status' );
                             } )->where( function ($query) {
-                                $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] );
-//                                      ->orWhereNull( 'pre_order_status' );
+                                $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+                                      ->orWhereNull( 'pre_order_status' );
                             } );
                         } );
         }
