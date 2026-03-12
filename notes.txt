@@ -80,11 +80,7 @@ Sanctum::actingAs(
 demoshop.smartduuka.com
 demoshop-api.smartduuka.com
 
-only name is required.
-
-806
-Cash
-UGX 24,500
+pre_order_status in stocks
 
 available = stock + remaining deposited stock
 
@@ -95,7 +91,9 @@ $tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
 $tenant1->domains()->create(['domain' => 'techpulsespares-api']);
 php artisan tenants:seed --force --tenants=techpulsespares
 php artisan tenants:seed --force --tenants=app1
-php artisan tenants:migrate-fresh --force --tenants=techpulsespares
+php artisan tenants:migrate-fresh --tenants=techpulsespares
 php artisan tenants:migrate-fresh --tenants=app1
 php artisan tenants:run optimize:clear --tenants=zakayo
 php artisan tenants:run optimize:clear --tenants=demoshop
+
+php artisan tenants:seed --force --tenants=techpulsespares

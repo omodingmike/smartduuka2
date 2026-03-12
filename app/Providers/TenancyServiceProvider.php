@@ -4,9 +4,7 @@
 
     namespace App\Providers;
 
-    use App\Events\TenantCreatedEvent;
     use Illuminate\Contracts\Http\Kernel;
-    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\ServiceProvider;
@@ -52,7 +50,7 @@
                         Jobs\DeleteDatabase::class ,
                     ] )->send( function (Events\TenantDeleted $event) {
                         return $event->tenant;
-                    } )->shouldBeQueued(  ) , // `false` by default, but you probably want to make this `true` for production.
+                    } )->shouldBeQueued() , // `false` by default, but you probably want to make this `true` for production.
                 ] ,
 
                 // Domain events
@@ -128,11 +126,12 @@
                 return redirect( config( 'app.url' ) );
             };
 
-            TenantConfig::$storageToConfigMap  = [
+            TenantConfig::$storageToConfigMap = [
                 // From app.php
                 'APP_NAME'                   => 'app.name' ,
                 'PROJECT_ID'                 => 'app.project_id' ,
-                'BUSINESS_ID'                => 'app.business_id' ,
+                'BUSINESS_ID'                => time() ,
+                'PRINT_AGENT_TOKEN'          => time() ,
                 'TIMEZONE'                   => 'app.timezone' ,
 
                 // From at.php

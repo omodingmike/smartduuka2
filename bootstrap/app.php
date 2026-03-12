@@ -1,15 +1,13 @@
 <?php
 
     use App\Http\Middleware\AddCurrencySymbol;
+    use App\Http\Middleware\AfterMiddleware;
     use App\Http\Middleware\CheckActiveRegister;
     use App\Http\Middleware\ForceAdminLogin;
     use App\Http\Middleware\PermissionMiddleware;
-    use App\Jobs\SendExceptionJob;
-    use Illuminate\Auth\AuthenticationException;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
-    use Illuminate\Validation\ValidationException;
     use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 
     return Application::configure( basePath: dirname( __DIR__ ) )
@@ -22,12 +20,14 @@
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->alias( [
-                              'permission' => PermissionMiddleware::class ,
-                              'local.auth' => ForceAdminLogin::class ,
-                              'register'   => CheckActiveRegister::class ,
+                              'permission'      => PermissionMiddleware::class ,
+                              'local.auth'      => ForceAdminLogin::class ,
+                              'register'        => CheckActiveRegister::class ,
+                              'afterMiddleware' => AfterMiddleware::class ,
                           ] );
                           $middleware->append( [
-                              AddCurrencySymbol::class
+                              AddCurrencySymbol::class,
+                              AfterMiddleware::class
                           ] );
                           $middleware->statefulApi();
                       } )
