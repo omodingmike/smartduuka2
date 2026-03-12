@@ -94,6 +94,7 @@ print_agent_token,business_id
 $tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
 $tenant1->domains()->create(['domain' => 'techpulsespares-api']);
 php artisan tenants:seed --force --tenants=techpulsespares
+php artisan tenants:seed --force --tenants=app1
 php artisan tenants:migrate-fresh --force --tenants=techpulsespares
 php artisan tenants:migrate-fresh --tenants=app1
 php artisan tenants:run optimize:clear --tenants=zakayo

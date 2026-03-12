@@ -7,20 +7,21 @@
     return new class extends Migration {
         public function up() : void
         {
-            Schema::table('stocks' , function (Blueprint $table) {
-                $table->unsignedBigInteger('warehouse_id')->nullable()->after('id');
-                $table->foreign('warehouse_id')
-                      ->references('id')
-                      ->on('warehouses')
-                      ->onDelete('RESTRICT');
-            });
+            Schema::table( 'stocks' , function (Blueprint $table) {
+                $table->unsignedBigInteger( 'warehouse_id' )->nullable()->after( 'id' );
+                $table->foreign( 'warehouse_id' )
+                      ->references( 'id' )
+                      ->on( 'warehouses' )
+                      ->nullOnDelete();
+//                      ->onDelete('RESTRICT');
+            } );
         }
 
         public function down() : void
         {
-            Schema::table('stocks' , function (Blueprint $table) {
-                $table->dropForeign('warehouse_id');
-                $table->dropColumn('warehouse_id');
-            });
+            Schema::table( 'stocks' , function (Blueprint $table) {
+                $table->dropForeign( 'warehouse_id' );
+                $table->dropColumn( 'warehouse_id' );
+            } );
         }
     };
