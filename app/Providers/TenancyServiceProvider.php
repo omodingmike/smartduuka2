@@ -94,6 +94,10 @@
                 Events\BootstrappingTenancy::class                   => [] ,
                 Events\TenancyBootstrapped::class                    => [
                     function (Events\TenancyBootstrapped $event) {
+                        config( [
+                            'app.business_id'       => $event->tenancy->tenant->business_id ,
+                            'app.print_agent_token' => $event->tenancy->tenant->print_agent_token ,
+                        ] );
                         $permissionRegistrar           = app( PermissionRegistrar::class );
                         $permissionRegistrar->cacheKey = 'spatie.permission.cache.tenant.' . $event->tenancy->tenant->getTenantKey();
                     }
@@ -130,8 +134,6 @@
                 // From app.php
                 'APP_NAME'                   => 'app.name' ,
                 'PROJECT_ID'                 => 'app.project_id' ,
-                'BUSINESS_ID'                => time() ,
-                'PRINT_AGENT_TOKEN'          => time() ,
                 'TIMEZONE'                   => 'app.timezone' ,
 
                 // From at.php
