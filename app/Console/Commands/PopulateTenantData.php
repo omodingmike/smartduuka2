@@ -15,7 +15,7 @@
         /**
          * @throws TenantCouldNotBeIdentifiedById
          */
-        public function handle()
+        public function handle() : int
         {
             $tenants = Tenant::whereNull( 'business_id' )->get();
 
@@ -25,12 +25,10 @@
 //                tenancy()->initialize( $tenant );
 
                 // Update the tenant with the new data
-//                $tenant->update( [
-//                    'business_id'       => Str::uuid()->getHex() ,
-//                    'print_agent_token' => Str::random( 32 ) ,
-//                ] );
-
-                info($tenant);
+                $tenant->update( [
+                    'business_id'       => time() ,
+                    'print_agent_token' => Str::uuid()->getHex() ,
+                ] );
 
                 $this->info( "Tenant {$tenant->id} updated successfully." );
             }

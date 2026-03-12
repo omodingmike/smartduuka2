@@ -118,6 +118,7 @@ $COMPOSE exec -T api php artisan migrate --force
 $COMPOSE exec -T api php artisan tenants:migrate --force
 $COMPOSE exec -T api php artisan db:seed --force
 $COMPOSE exec -T api php artisan tenants:seed --force
+$COMPOSE exec -T api php artisan tenants:populate-data
 
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true
