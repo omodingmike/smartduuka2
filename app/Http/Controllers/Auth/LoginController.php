@@ -152,7 +152,7 @@
             }
 
             // 6. Token Generation
-            $user->tokens()->delete();
+//            $user->tokens()->delete();
             $token = $user->createToken( 'auth_token' )->plainTextToken;
 
             // Update last login date
