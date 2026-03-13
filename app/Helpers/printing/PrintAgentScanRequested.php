@@ -7,17 +7,15 @@
     use Illuminate\Foundation\Events\Dispatchable;
     use Illuminate\Queue\SerializesModels;
 
-    class PrintJobDispatched implements ShouldBroadcastNow
+    class PrintAgentScanRequested implements ShouldBroadcastNow
     {
         use Dispatchable , SerializesModels;
 
         public $businessId;
-        public $payload;
 
-        public function __construct($businessId , $payload)
+        public function __construct($businessId)
         {
             $this->businessId = $businessId;
-            $this->payload    = $payload;
         }
 
         public function broadcastOn() : PrivateChannel
@@ -27,11 +25,6 @@
 
         public function broadcastAs()
         {
-            return 'print-job';
-        }
-
-        public function broadcastWith()
-        {
-            return $this->payload;
+            return 'cloud-scan-printers';
         }
     }

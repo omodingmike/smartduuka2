@@ -2,6 +2,7 @@
 
     declare( strict_types = 1 );
 
+    use App\Helpers\printing\PrintAgentController;
     use App\Http\Controllers\ActivityLogController;
     use App\Http\Controllers\Admin\AdministratorAddressController;
     use App\Http\Controllers\Admin\AdministratorController;
@@ -158,6 +159,28 @@
             Route::match( [ 'post' , 'put' , 'patch' ] , '/' , [ ProfileController::class , 'update' ] );
             Route::match( [ 'put' , 'patch' ] , '/change-password' , [ ProfileController::class , 'changePassword' ] );
             Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
+        } );
+
+        Route::prefix( 'print-agent' )->group( function () {
+
+            // React Dashboard Routes
+            Route::post( '/trigger-scan' , [ PrintAgentController::class , 'triggerScan' ] );
+            Route::get( '/latest-scan' , [ PrintAgentController::class , 'latestScan' ] );
+            Route::post( '/print' , [ PrintAgentController::class , 'print' ] );
+            Route::post( '/open-drawer' , [ PrintAgentController::class , 'openDrawer' ] );
+            Route::get( '/status' , [ PrintAgentController::class , 'status' ] );
+
+            // Electron Agent Routes
+            Route::post( '/report-printers' , [ PrintAgentController::class , 'reportPrinters' ] );
+            Route::post( '/status' , [ PrintAgentController::class , 'updateJobStatus' ] ); // Job success/fail reports
+
+            // Agent Authentication Profile Fetch (From your previous logs)
+            Route::get( '/me' , function (Request $request) {
+                return response()->json( [
+                    'business_id' => $request->user()->business_id ,
+                    'currency'    => 'UGX'
+                ] );
+            } );
         } );
 
         Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
