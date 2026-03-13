@@ -23,7 +23,7 @@
             foreach ( $tenants as $tenant ) {
                 // Update the tenant with the new data
                 $tenant->update( [
-                    'business_id'       => time() ,
+                    'business_id'       => time() + rand( 10 , 1000 ) ,
                     'print_agent_token' => Str::uuid()->getHex() ,
                 ] );
 

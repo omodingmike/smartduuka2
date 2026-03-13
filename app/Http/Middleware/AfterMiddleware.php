@@ -24,10 +24,11 @@
 //                    $originalData[ 'app_settings' ][ $color ] = settingValue( $color );
 //                }
 
-                $originalData[ 'currency' ] = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
-                $originalData[ 'business_id' ] = config( 'app.business_id' );
+                $originalData[ 'currency' ]          = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
+                $originalData[ 'business_id' ]       = config( 'app.business_id' );
+                $originalData[ 'print_agent_token' ] = config( 'app.print_agent_token' );
 
-                $originalData[ 'app_modules' ] = [
+//                $originalData[ 'app_modules' ] = [
 //                    Modules::COMMISSION        => moduleEnabled( Modules::COMMISSION ) ,
 //                    Modules::DISTRIBUTION      => moduleEnabled( Modules::DISTRIBUTION ) ,
 //                    'module_wholesale'         => Settings::group( 'module' )->get( 'module_wholesale' ) == Activity::ENABLE ,
@@ -40,7 +41,7 @@
 //                    'code'                     => ledgerCode() ,
 //                    'subscription'             => [ 'status' => $subscription?->status , 'name' => $subscription?->plan?->name ] ,
 //                    'accounting'               => (boolean) config( 'app.accounting' ) ,
-                ];
+//                ];
 //                $originalData[ 'system' ]      = [
 //                    'credits'    => config( 'system.credit' ) ,
 //                    'quotations' => config( 'system.quotations' ) ,
