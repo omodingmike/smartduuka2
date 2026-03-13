@@ -97,3 +97,9 @@ php artisan tenants:run optimize:clear --tenants=zakayo
 php artisan tenants:run optimize:clear --tenants=demoshop
 
 php artisan tenants:seed --force --tenants=techpulsespares
+
+  "business_id": 1773384020,
+    "print_agent_token": "7f76239debaf4717924a8bf815f93643",
+
+        "business_id": 1773383922,
+        "print_agent_token": "25e2b8fc180e4b5a9a0ad04ec648fd71",

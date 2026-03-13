@@ -17,13 +17,12 @@
          */
         public function handle() : int
         {
-//            $tenants = Tenant::whereNull( 'business_id' )->get();
-            $tenants = Tenant::all();
+            $tenants = Tenant::whereNull( 'business_id' )->get();
 
             foreach ( $tenants as $tenant ) {
                 // Update the tenant with the new data
                 $tenant->update( [
-                    'business_id'       => time() + rand( 10 , 1000 ) ,
+                    'business_id'       => time() + rand( 0 , 1000000000 ) ,
                     'print_agent_token' => Str::uuid()->getHex() ,
                 ] );
 
