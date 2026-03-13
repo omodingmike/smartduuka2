@@ -53,7 +53,7 @@
             'notes' ,
             'pin' ,
             'last_login_date' ,
-            'department' ,
+            'department' , 'device_token' , 'web_token' , 'balance' , 'remember_token' , 'creator_type' , 'creator_id' , 'editor_type' , 'editor_id' , 'commission_paid' , 'two_factor_secret' , 'two_factor_recovery_codes' , 'two_factor_confirmed_at' , 'average_order_value' , 'credit_orders' , 'credits' , 'sales' , 'total_revenue' , 'registerMediaConversionsUsingModelInstance' ,
             'force_reset'
         ];
 

@@ -5,9 +5,7 @@
     use App\Enums\Status;
     use App\Http\Controllers\Controller;
     use App\Http\Resources\MenuResource;
-    use App\Http\Resources\PermissionResource;
     use App\Http\Resources\UserResource;
-    use App\Libraries\AppLibrary;
     use App\Models\User;
     use App\Services\DefaultAccessService;
     use App\Services\MenuService;
@@ -17,6 +15,7 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Validator;
+    use Laravel\Sanctum\PersonalAccessToken;
 
     class LoginController extends Controller
     {
@@ -34,67 +33,6 @@
             $this->menuService          = $menuService;
             $this->permissionService    = $permissionService;
             $this->defaultAccessService = $defaultAccessService;
-        }
-
-        public function login1(Request $request) : JsonResponse
-        {
-            // 1. Validation
-            $isPinLogin = $request->filled( 'pin' );
-            $rules      = $isPinLogin
-                ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
-                : [ 'email' => [ 'required' , 'string' ] , 'password' => [ 'required' , 'string' ] ];
-
-            $validator = Validator::make( $request->all() , $rules );
-            if ( $validator->fails() ) {
-                return new JsonResponse( [ 'errors' => $validator->errors() ] , 422 );
-            }
-
-            $user = NULL;
-
-            // 2. Authentication Logic
-            if ( $isPinLogin ) {
-                // WARNING: This is slow. Consider a unique 'device_id' + 'pin' combo instead.
-                $user = User::where( 'status' , Status::ACTIVE )
-                            ->whereNotNull( 'pin' )
-                            ->get() // Fetching all to check hash (still heavy)
-                            ->first( fn($u) => Hash::check( $request->pin , $u->pin ) );
-            }
-            else {
-                $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-
-                if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] ) ) {
-                    $user = Auth::user();
-                }
-            }
-
-            // 3. Validation of Credentials
-            if ( ! $user ) {
-                return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.credentials_invalid' ) ] ] , 401 );
-            }
-
-            // 4. Role Check
-            $role = $user->roles()->first();
-            if ( ! $role ) {
-                return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.role_exist' ) ] ] , 400 );
-            }
-
-            // 5. Token Generation (The Sanctum way)
-            // Revoke old tokens if you want to allow only one device
-            $user->tokens()->delete();
-            $token = $user->createToken( 'auth_token' )->plainTextToken;
-
-            // Update last login date
-            $user->update( [ 'last_login_date' => now() ] );
-
-            return new JsonResponse( [
-                'message'           => trans( 'all.message.login_success' ) ,
-                'token'             => $token ,
-                'subscribed'        => $subscription->status ?? NULL ,
-                'user'              => new UserResource( $user ) ,
-                'menu'              => MenuResource::collection( collect( $this->menuService->menu( $role ) ) ) ,
-                'permission'        => PermissionResource::collection( $this->permissionService->permission( $role ) ) ,
-                'defaultPermission' => AppLibrary::defaultPermission( $permission ?? [] ) ,
-            ] , 200 );
         }
 
         public function login(Request $request) : JsonResponse
@@ -152,8 +90,18 @@
             }
 
             // 6. Token Generation
-//            $user->tokens()->delete();
-            $token = $user->createToken( 'auth_token' )->plainTextToken;
+            $token = $user->web_token;
+            if ( $token ) {
+                $accessToken = PersonalAccessToken::findToken( $token );
+                if ( ! $accessToken ) {
+                    $token = NULL;
+                }
+            }
+
+            if ( ! $token ) {
+                $token = $user->createToken( 'auth_token' )->plainTextToken;
+                $user->update( [ 'web_token' => $token ] );
+            }
 
             // Update last login date
             $user->update( [ 'last_login_date' => now() ] );
