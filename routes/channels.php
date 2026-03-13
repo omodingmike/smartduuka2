@@ -1,26 +1,11 @@
 <?php
 
-    use App\Models\Tenant;
     use Illuminate\Support\Facades\Broadcast;
 
-    Broadcast::channel( 'channel.{id}' , function ($user , $id) {
-        return (int) $user->id === (int) $id;
-    } );
+    Broadcast::channel('business.{identifier}', function ($user, $identifier) {
+        // 1. Get the current tenant (Requires your broadcast auth route to use Stancl middleware)
+        $tenant = tenant();
 
-    Broadcast::channel( 'business.{identifier}' , function ($user , $identifier) {
-        $token = request()->bearerToken();
-
-        if ( ! $token ) {
-            return FALSE;
-        }
-
-        $tenant = Tenant::where( 'custom_domain' , $identifier )
-                        ->orWhere( 'business_id' , $identifier )
-                        ->first();
-
-        if ( ! $tenant || empty( $tenant->print_agent_token ) ) {
-            return FALSE;
-        }
-
-        return hash_equals( $tenant->print_agent_token , $token );
-    } );
+        // 2. Authorize ONLY if the tenant exists and its business_id matches the requested channel
+        return $tenant && (string) $tenant->business_id === (string) $identifier;
+    });

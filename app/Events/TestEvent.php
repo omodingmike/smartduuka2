@@ -1,51 +1,50 @@
 <?php
 
-namespace App\Events;
+    namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+    use Illuminate\Broadcasting\InteractsWithSockets;
+    use Illuminate\Broadcasting\PrivateChannel;
+    use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+    use Illuminate\Foundation\Events\Dispatchable;
+    use Illuminate\Queue\SerializesModels;
 
-class TestEvent implements ShouldBroadcastNow
-{
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $message;
-    public $time;
-
-    /**
-     * Create a new event instance.
-     */
-    public function __construct($message = 'Hello from Reverb!')
+    class TestEvent implements ShouldBroadcastNow
     {
-        $this->message = $message;
-        $this->time = now()->toDateTimeString();
-    }
+        use Dispatchable , InteractsWithSockets , SerializesModels;
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new Channel('channel'),
-        ];
-    }
+        public $message;
+        public $time;
+        public $businessId; // Added to store the tenant identifier
 
-    /**
-     * The event's broadcast name.
-     *
-     * @return string
-     */
-    public function broadcastAs(): string
-    {
-        return 'TestEvent';
+        /**
+         * Create a new event instance.
+         * We now require the businessId to target the correct private channel.
+         */
+        public function __construct($businessId , $message = 'Hello from Reverb!')
+        {
+            $this->businessId = $businessId;
+            $this->message    = $message;
+            $this->time       = now()->toDateTimeString();
+        }
+
+        /**
+         * Get the channels the event should broadcast on.
+         * Changed from public Channel to PrivateChannel with the business identifier.
+         */
+        public function broadcastOn() : array
+        {
+            // This must match the pattern in channels.php: 'business.{identifier}'
+            return [
+                new PrivateChannel( 'business.' . $this->businessId ) ,
+            ];
+        }
+
+        /**
+         * The event's broadcast name.
+         */
+        public function broadcastAs() : string
+        {
+            // This matches '.TestEvent' in your Next.js page.tsx
+            return 'TestEvent';
+        }
     }
-}

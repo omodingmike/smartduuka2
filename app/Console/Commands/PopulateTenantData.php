@@ -18,6 +18,7 @@
         public function handle() : int
         {
             $tenants = Tenant::whereNull( 'business_id' )->get();
+//            $tenants = Tenant::all();
 
             foreach ( $tenants as $tenant ) {
                 // Update the tenant with the new data

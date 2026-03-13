@@ -8,28 +8,18 @@
     use App\Libraries\AppLibrary;
     use App\Models\Business;
     use App\Models\Damage;
-    use App\Models\Expense;
     use App\Models\Order;
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\Stock;
     use App\Models\Subscription;
     use App\Models\Tenant;
-    use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Http\Request;
     use Illuminate\Support\Arr;
     use Illuminate\Support\Facades\Schedule;
 
     $now = now( config( 'app.timezone' ) );
 
-    // Schedule tenant backups
-//    Schedule::command( 'tenants:backup' )->hourly();
-
-    // Schedule Reverb Test Event
-//    Schedule::call(function () {
-//        $tenantId = tenant('id') ?? 'central';
-//        TestEvent::dispatch("Scheduled event for tenant [{$tenantId}] at " . now()->toDateTimeString());
-//    })->everyMinute();
 
     Schedule::call( function () {
         $logPath = storage_path( 'logs' );
@@ -39,6 +29,15 @@
             }
         }
     } )->daily();
+
+    Schedule::call( function () {
+        Tenant::all()->runForEach( function ($tenant) {
+            $businessId = $tenant->business_id;
+            if ( $businessId ) {
+                event( new TestEvent( $businessId , 'Automated heartbeat from ' . $tenant->id ) );
+            }
+        } );
+    } )->everyMinute();
 
     if ( config( 'app.main_app' ) ) {
         Schedule::call( function () use ($now) {
