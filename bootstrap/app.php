@@ -9,14 +9,28 @@
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
     use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+    use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+    use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
     return Application::configure( basePath: dirname( __DIR__ ) )
                       ->withRouting(
                           web: __DIR__ . '/../routes/web.php' ,
                           api: __DIR__ . '/../routes/api.php' ,
                           commands: __DIR__ . '/../routes/console.php' ,
-                          channels: __DIR__ . '/../routes/channels.php' ,
+//                          channels: __DIR__ . '/../routes/channels.php' ,
                           health: '/up' ,
+                      )
+                      ->withBroadcasting(
+                          __DIR__ . '/../routes/channels.php' ,
+                          [
+                              'prefix'     => 'api' ,
+                              'middleware' => [
+                                  'api' ,
+                                  InitializeTenancyByDomain::class ,
+                                  PreventAccessFromCentralDomains::class ,
+                                  'auth:sanctum'
+                              ] ,
+                          ]
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->alias( [
@@ -26,23 +40,12 @@
                               'afterMiddleware' => AfterMiddleware::class ,
                           ] );
                           $middleware->append( [
-                              AddCurrencySymbol::class,
+                              AddCurrencySymbol::class ,
                               AfterMiddleware::class
                           ] );
                           $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
-//                          $exceptions->reportable( function (Throwable $e) {
-//                              if (
-//                                  app()->isProduction() &&
-//                                  ! in_array( get_class( $e ) , [
-//                                      ValidationException::class ,
-//                                      AuthenticationException::class ,
-//                                  ] )
-//                              ) {
-//                                  SendExceptionJob::dispatchException( $e );
-//                              }
-//                          } );
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
