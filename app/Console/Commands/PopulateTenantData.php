@@ -21,10 +21,6 @@
             $tenants = Tenant::all();
 
             foreach ( $tenants as $tenant ) {
-                $this->info( "Processing tenant: {$tenant->id}" );
-
-                tenancy()->initialize( $tenant );
-
                 // Update the tenant with the new data
                 $tenant->update( [
                     'business_id'       => time() ,

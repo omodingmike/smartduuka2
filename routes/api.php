@@ -8,23 +8,30 @@
     use App\Http\Controllers\WhatsAppController;
     use Illuminate\Support\Facades\Route;
 
-    Route::post( 'success' , [ IotecController::class , 'success' ] );
-    Route::post( 'pay' , [ IotecController::class , 'pay' ] );
 
-    Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
-    Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
+    foreach ( config( 'tenancy.central_domains' , [] ) as $domain ) {
+        Route::domain( $domain )->group( function () {
 
-    Route::apiResource( 'subscriptions' , SubscriptionController::class );
-    Route::get( 'subscriptionPlans' , [ SubscriptionController::class , 'subscriptionPlans' ] );
-    Route::apiResource( 'tenants' , TenantController::class );
+            Route::post( 'success' , [ IotecController::class , 'success' ] );
+            Route::post( 'pay' , [ IotecController::class , 'pay' ] );
 
-    Route::prefix( 'frontend' )->name( 'frontend.' )->group( function () {
-        Route::prefix( 'setting' )->name( 'setting.' )->group( function () {
-            Route::get( '/' , [ FrontendSettingController::class , 'index' ] );
+            Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
+            Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
+
+            Route::apiResource( 'subscriptions' , SubscriptionController::class );
+            Route::get( 'subscriptionPlans' , [ SubscriptionController::class , 'subscriptionPlans' ] );
+            Route::apiResource( 'tenants' , TenantController::class );
+
+            Route::prefix( 'frontend' )->name( 'frontend.' )->group( function () {
+                Route::prefix( 'setting' )->name( 'setting.' )->group( function () {
+                    Route::get( '/' , [ FrontendSettingController::class , 'index' ] );
+                } );
+
+                Route::prefix( 'language' )->name( 'language.' )->group( function () {
+                    Route::get( '/' , [ FrontendLanguageController::class , 'index' ] );
+                    Route::get( '/show/{language}' , [ FrontendLanguageController::class , 'show' ] );
+                } );
+            } );
+
         } );
-
-        Route::prefix( 'language' )->name( 'language.' )->group( function () {
-            Route::get( '/' , [ FrontendLanguageController::class , 'index' ] );
-            Route::get( '/show/{language}' , [ FrontendLanguageController::class , 'show' ] );
-        } );
-    } );
+    }

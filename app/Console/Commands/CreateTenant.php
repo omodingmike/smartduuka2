@@ -4,6 +4,7 @@
 
     use App\Models\Tenant;
     use Illuminate\Console\Command;
+    use Illuminate\Support\Str;
 
 
     class CreateTenant extends Command
@@ -20,7 +21,7 @@
 
             $this->info( "Creating tenant {$id} with domain {$domain}..." );
 
-            $tenant = Tenant::create( [ 'id' => $id ] );
+            $tenant = Tenant::create( [ 'id' => $id , 'business_id' => time() , 'print_agent_token' => Str::uuid()->getHex() ] );
             $tenant->domains()->create( [ 'domain' => $domain ] );
 
             $this->info( "Tenant {$id} created successfully." );
