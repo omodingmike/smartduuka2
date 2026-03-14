@@ -6,6 +6,7 @@
     use Illuminate\Database\Seeder;
     use Illuminate\Support\Str;
     use Spatie\Permission\Models\Permission;
+    use Spatie\Permission\Models\Role;
 
     class PermissionTableSeeder extends Seeder
     {
@@ -298,5 +299,12 @@
             $permissions = AppLibrary::recursiveFlattenPermissions($permissions);
 
             Permission::insert($permissions);
+
+            // Give all permissions to the 'Admin' role
+            $adminRole = Role::where('name', \App\Enums\Role::ADMIN->value ?? 'Admin')->first();
+            if ($adminRole) {
+                $allPermissions = Permission::all();
+                $adminRole->syncPermissions($allPermissions);
+            }
         }
     }

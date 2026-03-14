@@ -4,6 +4,7 @@
 
 
     use Illuminate\Database\Seeder;
+    use Illuminate\Support\Facades\DB;
 
     class DatabaseSeeder extends Seeder
     {
@@ -13,15 +14,15 @@
             $this->call( UserTableSeeder::class );
             $this->call( WarehouseSeeder::class );
             $this->call( LocationSeed::class );
-//            $this->call( RoleTableSeeder::class );
 //        $this->call(CompanyTableSeeder::class);
 //        $this->call(ThemeTableSeeder::class);
 //        $this->call(SiteTableSeeder::class);
 //        $this->call(MenuTableSeeder::class);
 
 
-//            DB::statement( 'TRUNCATE TABLE roles, permissions, users RESTART IDENTITY CASCADE' );
-//            $this->call( PermissionTableSeeder::class );
+            DB::statement( 'TRUNCATE TABLE roles, permissions RESTART IDENTITY CASCADE' );
+            $this->call( RoleTableSeeder::class );
+            $this->call( PermissionTableSeeder::class );
 //            $this->call( UserTableSeeder::class );
 //            $this->call( PaymentMethodSeeder::class );
 
