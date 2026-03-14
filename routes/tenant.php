@@ -162,7 +162,6 @@
         } );
 
         Route::prefix( 'print-agent' )->group( function () {
-
             // React Dashboard Routes
             Route::post( '/trigger-scan' , [ PrintAgentController::class , 'triggerScan' ] );
             Route::get( '/latest-scan' , [ PrintAgentController::class , 'latestScan' ] );
