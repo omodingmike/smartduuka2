@@ -8,23 +8,18 @@
 
     class PrintAgentController extends Controller
     {
-        /**
-         * Get the Business ID from the currently authenticated user/token.
-         * (Adjust this based on how your multi-tenant DB is structured)
-         */
-        private function getBusinessId(Request $request)
+        private function getBusinessId()
         {
-            // Example: If using a standard user relationship
-            return $request->user()->business_id;
+//            return $request->user()->business_id;
+            return config( 'app.business_id' );
         }
 
         // 1. React tells Laravel to broadcast a scan request
         public function triggerScan(Request $request)
         {
-            $businessId = $this->getBusinessId( $request );
+            $businessId = $request->string( 'business_id' );
 
-            // Clear any old scan data and set status to pending
-            Cache::put( "printer_scan_{$businessId}" , [ 'status' => 'pending' ] , now()->addMinutes( 1 ) );
+//            Cache::put( "printer_scan_{$businessId}" , [ 'status' => 'pending' ] , now()->addMinutes( 1 ) );
 
             // Fire the WebSocket event to wake up the Agent
             event( new PrintAgentScanRequested( $businessId ) );
@@ -40,7 +35,7 @@
             $domain = $request->header( 'X-Agent-Identifier' ) ?? $request->identifier;
 
             // Example logic: $businessId = Business::where('domain', $domain)->value('id');
-            $businessId = $this->getBusinessId( $request ); // Assuming the Agent's Bearer token identifies the user/business
+            $businessId = $this->getBusinessId(); // Assuming the Agent's Bearer token identifies the user/business
 
             // Save the printers to the cache for the React app to fetch
             Cache::put(
@@ -55,7 +50,7 @@
         // 3. React continuously polls this to get the latest scan results
         public function latestScan(Request $request)
         {
-            $businessId = $this->getBusinessId( $request );
+            $businessId = $this->getBusinessId();
 
             $data = Cache::get( "printer_scan_{$businessId}" , [ 'status' => 'pending' ] );
 
@@ -65,7 +60,7 @@
         // 4. React sends a print job
         public function print(Request $request)
         {
-            $businessId = $this->getBusinessId( $request );
+            $businessId = $this->getBusinessId();
 
             $payload = $request->only( [ 'jobId' , 'type' , 'printerName' , 'htmlContent' , 'data' ] );
 
@@ -78,7 +73,7 @@
         // 5. React kicks the cash drawer
         public function openDrawer(Request $request)
         {
-            $businessId = $this->getBusinessId( $request );
+            $businessId = $this->getBusinessId();
 
             event( new PrintDrawerOpenRequested( $businessId , $request->printerName ) );
 
