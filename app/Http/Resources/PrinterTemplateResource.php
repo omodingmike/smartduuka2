@@ -1,20 +1,21 @@
 <?php
 
-    namespace App\Http\Resources;
+namespace App\Http\Resources;
 
-    use App\Models\PrinterTemplate;
-    use Illuminate\Http\Request;
-    use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\PrinterTemplate;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-    /** @mixin PrinterTemplate */
-    class PrinterTemplateResource extends JsonResource
+/** @mixin PrinterTemplate */
+class PrinterTemplateResource extends JsonResource
+{
+    public function toArray(Request $request) : array
     {
-        public function toArray(Request $request) : array
-        {
-            return [
-                'id'         => $this->id ,
-                'label'      => $this->label ,
-                'value'      => $this->value
-            ];
-        }
+        return [
+            'id'            => $this->id ,
+            'label'         => $this->label ,
+            'value'         => $this->value ,
+            'document_type' => $this->document_type // FIXED: Added to response
+        ];
     }
+}
