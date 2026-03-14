@@ -15,21 +15,21 @@
         private function resolveBusinessId(Request $request)
         {
             // 1. From React request body/query
-            if ($request->filled('business_id')) {
-                return $request->input('business_id');
-            }
-            // 2. From Agent request body
-            if ($request->filled('identifier')) {
-                return $request->input('identifier');
-            }
-            // 3. From Agent headers
-            if ($request->hasHeader('X-Agent-Identifier')) {
-                return $request->header('X-Agent-Identifier');
-            }
-            // 4. Fallback to Auth User
-            if ($request->user() && $request->user()->business_id) {
-                return $request->user()->business_id;
-            }
+//            if ($request->filled('business_id')) {
+//                return $request->input('business_id');
+//            }
+//            // 2. From Agent request body
+//            if ($request->filled('identifier')) {
+//                return $request->input('identifier');
+//            }
+//            // 3. From Agent headers
+//            if ($request->hasHeader('X-Agent-Identifier')) {
+//                return $request->header('X-Agent-Identifier');
+//            }
+//            // 4. Fallback to Auth User
+//            if ($request->user() && $request->user()->business_id) {
+//                return $request->user()->business_id;
+//            }
             // 5. Absolute fallback
             return config('app.business_id');
         }
