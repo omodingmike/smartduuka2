@@ -38,9 +38,7 @@
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
                 $query = User::with( [ 'media' , 'addresses' , 'roles' ] )
-                           ->whereDoesntHave('roles', function ($query) {
-                               $query->whereIn('name', $this->blockRoles);
-                           });
+                           ->withoutRole( $this->blockRoles);
 
                 return $query->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
