@@ -10,7 +10,6 @@
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
     use Illuminate\Http\Request;
-    use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
     use Spatie\Permission\Models\Role;
 
@@ -25,11 +24,11 @@
 //            $this->middleware( [ 'permission:settings' ] )->only( 'show' , 'store' , 'update' , 'destroy' );
         }
 
-        public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function index(PaginateRequest $request)
         {
             try {
-                $methods      = $this->filter( new Role(),$request , [ 'name' ]  );
-                return RoleResource::collection( $methods );
+                $roles = $this->filter( Role::withCount( 'users' ) , $request , [ 'name' ] );
+                return RoleResource::collection( $roles );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
