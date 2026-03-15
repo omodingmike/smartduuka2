@@ -3,7 +3,6 @@
     namespace App\Services;
 
     use App\Enums\Ask;
-    use App\Enums\Role;
     use App\Enums\Role as EnumRole;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\EmployeeRequest;
@@ -15,6 +14,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
+    use Spatie\Permission\Models\Role;
 
 
     class EmployeeService
@@ -37,9 +37,12 @@
                 $orderColumn = $request->input( 'order_column' ) ?? 'id';
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
-                return User::with( [ 'media' , 'addresses' , 'roles' ] )
-                           ->withoutRole( [ Role::ADMIN , Role::CUSTOMER ] )
-                           ->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
+                $query = User::with( [ 'media' , 'addresses' , 'roles' ] )
+                           ->whereDoesntHave('roles', function ($query) {
+                               $query->whereIn('name', $this->blockRoles);
+                           });
+
+                return $query->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -49,8 +52,10 @@
         public function store(EmployeeRequest $request)
         {
             try {
-                if ( ! in_array( (int) $request->role_id , $this->blockRoles ) ) {
-                    DB::transaction( function () use ($request) {
+                $role = Role::findById((int) $request->role_id);
+                
+                if ( ! in_array( $role->name , $this->blockRoles ) ) {
+                    DB::transaction( function () use ($request, $role) {
                         $this->user = User::create( [
                             'name'              => $request->name ,
                             'email'             => $request->email ,
@@ -66,8 +71,7 @@
                             'force_reset'       => $request->boolean( 'forceReset' ) ,
                         ] );
 
-                        // Ensure role_id is an integer
-                        $this->user->assignRole( (int) $request->role_id );
+                        $this->user->assignRole( $role );
 
 //                        if ( $request->has( 'permissions' ) ) {
 //                            $permissions = json_decode( $request->permissions , TRUE );
@@ -105,11 +109,14 @@
         public function update(EmployeeRequest $request , User $employee)
         {
             try {
-                if ( ! in_array( (int) $request->role_id , $this->blockRoles ) && ! in_array(
-                        optional( $employee->roles[ 0 ] )->id ,
+                $role = Role::findById((int) $request->role_id);
+                $employeeRoleName = optional($employee->roles->first())->name;
+
+                if ( ! in_array( $role->name , $this->blockRoles ) && ! in_array(
+                        $employeeRoleName,
                         $this->blockRoles
                     ) ) {
-                    DB::transaction( function () use ($employee , $request) {
+                    DB::transaction( function () use ($employee , $request, $role) {
                         $this->user               = $employee;
                         $this->user->name         = $request->name;
                         $this->user->email        = $request->email;
@@ -124,10 +131,10 @@
                             $this->user->password = Hash::make( $request->password );
                         }
                         $this->user->save();
+                        
+                        $this->user->syncRoles( $role );
                     } );
 
-                    // Ensure role_id is an integer
-                    $this->user->syncRoles( (int) $request->role_id );
 
                     if ( $request->has( 'permissions' ) ) {
                         $permissions = json_decode( $request->permissions , TRUE );
@@ -164,7 +171,8 @@
         public function show(User $employee) : User
         {
             try {
-                if ( ! in_array( optional( $employee->roles[ 0 ] )->id , $this->blockRoles ) ) {
+                $employeeRoleName = optional($employee->roles->first())->name;
+                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
                     return $employee;
                 }
                 else {
@@ -183,8 +191,9 @@
         public function destroy(User $employee)
         {
             try {
-                if ( ! in_array( optional( $employee->roles[ 0 ] )->id , $this->blockRoles ) ) {
-                    if ( $employee->hasRole( optional( $employee->roles[ 0 ] )->id ) ) {
+                $employeeRoleName = optional($employee->roles->first())->name;
+                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
+                    if ( $employee->hasRole( $employeeRoleName ) ) {
                         DB::transaction( function () use ($employee) {
                             $employee->addresses()->delete();
                             $employee->delete();
@@ -216,7 +225,8 @@
         public function changePassword(UserChangePasswordRequest $request , User $employee) : User
         {
             try {
-                if ( ! in_array( optional( $employee->roles[ 0 ] )->id , $this->blockRoles ) ) {
+                $employeeRoleName = optional($employee->roles->first())->name;
+                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
                     $employee->password = Hash::make( $request->password );
                     $employee->save();
                     return $employee;
@@ -236,7 +246,8 @@
         public function changeImage(ChangeImageRequest $request , User $employee) : User
         {
             try {
-                if ( ! in_array( optional( $employee->roles[ 0 ] )->id , $this->blockRoles ) ) {
+                $employeeRoleName = optional($employee->roles->first())->name;
+                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
                     if ( $request->image ) {
                         $employee->clearMediaCollection( 'profile' );
                         $employee->addMediaFromRequest( 'image' )->toMediaCollection( 'profile' );
