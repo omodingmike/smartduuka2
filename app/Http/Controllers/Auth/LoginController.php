@@ -37,7 +37,6 @@
 
         public function login(Request $request) : JsonResponse
         {
-            // 1. Validation (remains the same)
             $isPinLogin = $request->filled( 'pin' );
             $rules      = $isPinLogin
                 ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
@@ -77,17 +76,9 @@
                 return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.credentials_invalid' ) ] ] , 401 );
             }
 
-            // 4. Session Regeneration (Critical for SPA/Cookie-based Auth)
-            // This prevents session fixation attacks and ensures the session is active
             if ( $request->hasSession() ) {
                 $request->session()->regenerate();
             }
-
-            // 5. Role Check
-            // We load roles directly to bypass guard-specific default filtering if needed,
-            // though normally $user->roles()->first() should work if the guard in DB matches the default guard for the model.
-            // If your seeders used 'sanctum' but default guard is 'web', this might be empty.
-            $role = $user->roles()->first();
 
             // 6. Token Generation
             $token = $user->web_token;
@@ -136,14 +127,11 @@
 
         public function logout(Request $request) : JsonResponse
         {
-            // 1. Revoke the token used for the current request
             $user = $request->user();
             if ( $user ) {
                 $user->tokens()->delete();
             }
 
-            // 2. Invalidate the session and regenerate the CSRF token
-            // This is critical for SPA/Cookie-based auth to prevent session fixation
             Auth::guard( 'web' )->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -156,11 +144,4 @@
             ] , 200 );
         }
 
-//        public function logout(Request $request) : JsonResponse
-//        {
-//            $request->user()->currentAccessToken()->delete();
-//            return new JsonResponse( [
-//                'message' => trans( 'all.message.logout_success' )
-//            ] , 200 );
-//        }
     }
