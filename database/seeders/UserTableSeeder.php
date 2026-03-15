@@ -30,9 +30,11 @@
                     'is_guest'          => Ask::NO
                 ]
             );
-            $admin->assignRole( Role::find( EnumRole::ADMIN ) );
+            // Since EnumRole::ADMIN is now a string name, we can pass it directly or find by name and guard
+            $adminRole = Role::findByName( EnumRole::ADMIN, 'sanctum' );
+            $admin->assignRole( $adminRole );
 
-            $customer = User::updateOrCreate(
+            $customer     = User::updateOrCreate(
                 [
                     'username' => 'default-customer'
                 ] ,
@@ -46,6 +48,7 @@
                     'is_guest'          => Ask::NO
                 ]
             );
-            $customer->assignRole( Role::find( EnumRole::CUSTOMER ) );
+            $customerRole = Role::findByName( EnumRole::CUSTOMER, 'sanctum' );
+            $customer->assignRole( $customerRole );
         }
     }

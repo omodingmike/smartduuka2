@@ -33,7 +33,7 @@
             'balance' , 'address'
         ];
 
-        protected function getMediaCollection() : string
+        protected function getMediaCollectionName() : string
         {
             return MediaEnum::ORDERS_COLLECTION;
         }

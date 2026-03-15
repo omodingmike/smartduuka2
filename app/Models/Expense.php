@@ -59,15 +59,15 @@
 //            }
         }
 
-        protected function getMediaCollection() : string
+        protected function getMediaCollectionName() : string
         {
             return MediaEnum::IMAGES_COLLECTION;
         }
 
         public function getImageAttribute() : ?string
         {
-            if ( $this->getMediaCollection() && ! empty( $this->getLastMediaUrl( $this->getMediaCollection() ) ) ) {
-                return asset( $this->getLastMediaUrl( $this->getMediaCollection() ) );
+            if ( $this->getMediaCollectionName() && ! empty( $this->getLastMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                return asset( $this->getLastMediaUrl( $this->getMediaCollectionName() ) );
             }
             return NULL;
         }

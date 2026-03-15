@@ -38,7 +38,7 @@
             'note'     => 'string' ,
             'status'   => DamageStatus::class
         ];
-        protected function getMediaCollection() : string
+        protected function getMediaCollectionName() : string
         {
             return MediaEnum::DAMAGES;
         }

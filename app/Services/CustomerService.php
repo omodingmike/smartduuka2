@@ -3,7 +3,6 @@
     namespace App\Services;
 
     use App\Enums\Ask;
-    use App\Enums\OrderType;
     use App\Enums\PaymentStatus;
     use App\Enums\Role as EnumRole;
     use App\Enums\Status;
@@ -25,10 +24,7 @@
     class CustomerService
     {
         public object $user;
-        public array  $phoneFilter = [ 'phone' ];
-        public array  $roleFilter  = [ 'role_id' ];
-        public array  $userFilter  = [ 'name' , 'email' , 'username' , 'status' , 'phone' ];
-        public array  $blockRoles  = [ EnumRole::ADMIN ];
+        public array  $blockRoles = [ EnumRole::ADMIN ];
 
 
         /**
@@ -37,21 +33,16 @@
         public function list(PaginateRequest $request)
         {
             try {
-                $requests    = $request->all();
-                $perPage     = $request->get( 'perPage' , 10000 );
-                $page        = $request->get( 'page' , 1 );
-                $query       = $request->get( 'query' ) ?? NULL;
+                $perPage = $request->integer( 'perPage' , 10000 );
+                $page    = $request->integer( 'page' , 1 );
+                $query   = $request->input( 'query' ) ?? NULL;
 
                 return User::with( [ 'media' , 'addresses' ] )->role( EnumRole::CUSTOMER )
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
-                           } )->where( function ($query) use ($requests) {
-                        foreach ( $requests as $key => $request ) {
-                            if ( in_array( $key , $this->userFilter ) ) {
-                                $query->where( $key , 'like' , '%' . $request . '%' );
-                            }
-                        }
-                    } )->orderBy( 'created_at' , 'desc' )->paginate( perPage: $perPage , page: $page );
+                           } )
+                           ->orderBy( 'created_at' , 'desc' )
+                           ->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -165,51 +156,51 @@
 //                                 $query->orWhere( 'order_type' , '=' , OrderType::DEPOSIT );
 //                             } )
                              ->chunkById( 100 , function ($orders) use (&$amount , $payment_method , $date) {
-                                 foreach ( $orders as $order ) {
-                                     if ( $amount <= 0 ) {
-                                         return FALSE;
-                                     }
-                                     $creditDepositPurchase = CreditDepositPurchase::where( 'order_id' , $order->id )->latest()->first();
-                                     $previousBalance       = $creditDepositPurchase->balance;
+                            foreach ( $orders as $order ) {
+                                if ( $amount <= 0 ) {
+                                    return FALSE;
+                                }
+                                $creditDepositPurchase = CreditDepositPurchase::where( 'order_id' , $order->id )->latest()->first();
+                                $previousBalance       = $creditDepositPurchase->balance;
 //                                     $balance                               = $order->balance;
-                                     $balance                               = $previousBalance;
-                                     $saveCreditPurchase                    = new CreditDepositPurchase();
-                                     $saveCreditPurchase->order_id          = $order->id;
-                                     $saveCreditPurchase->user_id           = $order->user_id;
-                                     $saveCreditPurchase->payment_method_id = $payment_method;
-                                     $saveCreditPurchase->date              = $date;
-                                     $saveCreditPurchase->type              = 'credit';
-                                     if ( $amount >= $balance ) {
-                                         $new_balance = 0;
-                                         $order->update(
-                                             [
-                                                 'balance'        => $new_balance ,
-                                                 'payment_status' => PaymentStatus::PAID ,
+                                $balance                               = $previousBalance;
+                                $saveCreditPurchase                    = new CreditDepositPurchase();
+                                $saveCreditPurchase->order_id          = $order->id;
+                                $saveCreditPurchase->user_id           = $order->user_id;
+                                $saveCreditPurchase->payment_method_id = $payment_method;
+                                $saveCreditPurchase->date              = $date;
+                                $saveCreditPurchase->type              = 'credit';
+                                if ( $amount >= $balance ) {
+                                    $new_balance = 0;
+                                    $order->update(
+                                        [
+                                            'balance'        => $new_balance ,
+                                            'payment_status' => PaymentStatus::PAID ,
 //                                                 'order_type'     => OrderType::POS ,
-                                                 'paid'           => $balance ,
-                                             ] );
-                                         $saveCreditPurchase->paid    = $balance;
-                                         $saveCreditPurchase->balance = $new_balance;
-                                         $saveCreditPurchase->save();
-                                         $amount -= $balance;
-                                     }
-                                     else {
-                                         $order->update(
-                                             [
-                                                 'balance'        => $balance - $amount ,
-                                                 'payment_status' => PaymentStatus::PARTIALLY_PAID ,
-                                                 'paid'           => $order->paid + $amount ,
-                                             ] );
+                                            'paid'           => $balance ,
+                                        ] );
+                                    $saveCreditPurchase->paid    = $balance;
+                                    $saveCreditPurchase->balance = $new_balance;
+                                    $saveCreditPurchase->save();
+                                    $amount -= $balance;
+                                }
+                                else {
+                                    $order->update(
+                                        [
+                                            'balance'        => $balance - $amount ,
+                                            'payment_status' => PaymentStatus::PARTIALLY_PAID ,
+                                            'paid'           => $order->paid + $amount ,
+                                        ] );
 
-                                         $saveCreditPurchase->paid    = $amount;
-                                         $newCreditBalance            = $previousBalance - $amount;
-                                         $saveCreditPurchase->balance = max( $newCreditBalance , 0 );
-                                         $saveCreditPurchase->save();
-                                         $amount = 0;
-                                         return FALSE;
-                                     }
-                                 }
-                             } );
+                                    $saveCreditPurchase->paid    = $amount;
+                                    $newCreditBalance            = $previousBalance - $amount;
+                                    $saveCreditPurchase->balance = max( $newCreditBalance , 0 );
+                                    $saveCreditPurchase->save();
+                                    $amount = 0;
+                                    return FALSE;
+                                }
+                            }
+                        } );
                 } );
                 return $customer;
 

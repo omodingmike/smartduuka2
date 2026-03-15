@@ -38,7 +38,7 @@
             return $this->belongsTo( Tax::class );
         }
 
-        public function getMediaCollection() : string
+        public function getMediaCollectionName() : string
         {
             return MediaEnum::SERVICES_MEDIA_COLLECTION;
         }

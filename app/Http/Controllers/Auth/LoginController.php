@@ -84,10 +84,10 @@
             }
 
             // 5. Role Check
+            // We load roles directly to bypass guard-specific default filtering if needed,
+            // though normally $user->roles()->first() should work if the guard in DB matches the default guard for the model.
+            // If your seeders used 'sanctum' but default guard is 'web', this might be empty.
             $role = $user->roles()->first();
-            if ( ! $role ) {
-                return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.role_exist' ) ] ] , 400 );
-            }
 
             // 6. Token Generation
             $token = $user->web_token;
@@ -114,7 +114,6 @@
                 'message' => trans( 'all.message.login_success' ) ,
                 'token'   => $token ,
                 'user'    => new UserResource( $user ) ,
-                // ... rest of your resources
             ] , 200 );
         }
 

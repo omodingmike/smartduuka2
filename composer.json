@@ -24,7 +24,7 @@
     "maatwebsite/excel": "^3.1",
     "picqer/php-barcode-generator": "^3.2",
     "pragmarx/countries": "^1.0",
-    "smartisan/laravel-settings": "dev-main",
+    "smartisan/laravel-settings": "^3.0",
     "spatie/browsershot": "^5.0",
     "spatie/laravel-activitylog": "^4.11",
     "spatie/laravel-medialibrary": "^11.15",
@@ -32,12 +32,6 @@
     "stancl/tenancy": "^3.9",
     "staudenmeir/laravel-adjacency-list": "^1.25"
   },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/omodingmike/laravel-settings.git"
-    }
-  ],
   "require-dev": {
     "fakerphp/faker": "^1.23",
     "laravel/breeze": "^2.3",

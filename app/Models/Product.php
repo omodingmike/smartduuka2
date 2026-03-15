@@ -58,7 +58,7 @@
             'offer_end_date'             => 'string' ,
         ];
 
-        protected function getMediaCollection() : string
+        public function getMediaCollectionName() : string
         {
             return MediaEnum::PRODUCTS_MEDIA_COLLECTION;
         }
@@ -97,8 +97,8 @@
 
         public function getImageAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                return asset( $this->getFirstMediaUrl( $this->getMediaCollection() ) );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
             }
             return asset( 'images/default/product/thumb.png' );
         }
@@ -106,8 +106,8 @@
         public function getImagesAttribute() : array
         {
             $response = [];
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                $images = $this->getMedia( $this->getMediaCollection() );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                $images = $this->getMedia( $this->getMediaCollectionName() );
                 foreach ( $images as $image ) {
                     $response[] = $image[ 'original_url' ];
                 }
@@ -117,8 +117,8 @@
 
         public function getThumbAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                $product = $this->getMedia( $this->getMediaCollection() )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollectionName() )->first();
                 return $product->getUrl( 'thumb' );
             }
             return asset( 'images/default/product/thumb.png' );
@@ -126,8 +126,8 @@
 
         public function getCoverAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                $product = $this->getMedia( $this->getMediaCollection() )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollectionName() )->first();
                 return $product->getUrl( 'cover' );
             }
             return asset( 'images/default/product/cover.png' );
@@ -135,8 +135,8 @@
 
         public function getPreviewAttribute() : string
         {
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                $product = $this->getMedia( $this->getMediaCollection() )->first();
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                $product = $this->getMedia( $this->getMediaCollectionName() )->first();
                 return $product->getUrl( 'preview' );
             }
             return asset( 'images/default/product/preview.png' );
@@ -145,8 +145,8 @@
         public function getPreviewsAttribute() : array
         {
             $response = [];
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollection() ) ) ) {
-                $images = $this->getMedia( $this->getMediaCollection() );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                $images = $this->getMedia( $this->getMediaCollectionName() );
                 foreach ( $images as $image ) {
                     $response[] = $image->getUrl( 'preview' );
                 }

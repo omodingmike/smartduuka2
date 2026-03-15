@@ -3,6 +3,7 @@
     namespace App\Services;
 
     use App\Enums\Ask;
+    use App\Enums\Role;
     use App\Enums\Role as EnumRole;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\EmployeeRequest;
@@ -31,32 +32,14 @@
         public function list(PaginateRequest $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $perPage     = $request->integer( 'perPage' , 10000 );
+                $page        = $request->integer( 'page' , 1 );
+                $orderColumn = $request->input( 'order_column' ) ?? 'id';
+                $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
-                return User::with( 'media' , 'addresses' , 'roles' )->where(
-                    function ($query) use ($requests) {
-                        $query->whereHas( 'roles' , function ($query) {
-                            $query->where( 'id' , '!=' , EnumRole::ADMIN );
-                            $query->where( 'id' , '!=' , EnumRole::CUSTOMER );
-                        } );
-                        foreach ( $requests as $key => $request ) {
-                            if ( in_array( $key , $this->roleFilter ) ) {
-                                $query->whereHas( 'roles' , function ($query) use ($request , $key) {
-                                    $query->where( 'id' , '=' , $request );
-                                } );
-                            }
-                            if ( in_array( $key , $this->userFilter ) ) {
-                                $query->where( $key , 'like' , '%' . $request . '%' );
-                            }
-                        }
-                    }
-                )->orderBy( $orderColumn , $orderType )->$method(
-                    $methodValue
-                );
+                return User::with( [ 'media' , 'addresses' , 'roles' ] )
+                           ->withoutRole( [ Role::ADMIN , Role::CUSTOMER ] )
+                           ->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -104,8 +87,9 @@
 //                        }
                     } );
                     return $this->user;
-                } else {
-                     throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
+                }
+                else {
+                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
                 }
 
             } catch ( Exception $exception ) {
@@ -141,7 +125,7 @@
                         }
                         $this->user->save();
                     } );
-                    
+
                     // Ensure role_id is an integer
                     $this->user->syncRoles( (int) $request->role_id );
 

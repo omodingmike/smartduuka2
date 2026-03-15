@@ -83,6 +83,7 @@
     use App\Http\Controllers\PurchaseReturnController;
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\UnitConversionController;
+    use App\Http\Controllers\UserController;
     use App\Http\Controllers\WarehouseController;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -115,9 +116,7 @@
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 
-        Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , function (Request $request) {
-            return $request->user();
-        } );
+        Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , [ UserController::class , 'user' ] );
 
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
         Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
@@ -571,7 +570,6 @@
                 Route::delete( '/delete' , [ WarehouseController::class , 'destroy' ] );
                 Route::get( '/export' , [ WarehouseController::class , 'export' ] );
             } );
-
 
             Route::prefix( 'employee' )->name( 'employee.' )->group( function () {
                 Route::get( '/' , [ EmployeeController::class , 'index' ] );

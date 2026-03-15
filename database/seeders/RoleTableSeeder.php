@@ -2,6 +2,7 @@
 
     namespace Database\Seeders;
 
+    use App\Enums\Role as EnumRole;
     use Illuminate\Database\Seeder;
     use Spatie\Permission\Models\Role;
 
@@ -11,37 +12,37 @@
         {
             Role::insert( [
                 [
-                    'name'       => 'Admin' ,
+                    'name'       => EnumRole::ADMIN ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
-                    'name'       => 'Customer' ,
+                    'name'       => EnumRole::CUSTOMER ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
-                    'name'       => 'Manager' ,
+                    'name'       => EnumRole::MANAGER ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
-                    'name'       => 'POS Operator' ,
+                    'name'       => EnumRole::POS_OPERATOR ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
-                    'name'       => 'Stuff' ,
+                    'name'       => EnumRole::STUFF ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,
                 ] ,
                 [
-                    'name'       => 'Distributor' ,
+                    'name'       => EnumRole::DISTRIBUTOR ,
                     'guard_name' => 'sanctum' ,
                     'created_at' => now() ,
                     'updated_at' => now() ,

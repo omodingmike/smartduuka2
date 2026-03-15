@@ -4,10 +4,10 @@
 
     interface Role
     {
-        const ADMIN        = 1;
-        const CUSTOMER     = 2;
-        const MANAGER      = 3;
-        const POS_OPERATOR = 4;
-        const STUFF        = 5;
-        const DISTRIBUTOR  = 6;
+        const ADMIN        = 'Admin';
+        const CUSTOMER     = 'Customer';
+        const MANAGER      = 'Manager';
+        const POS_OPERATOR = 'POS Operator';
+        const STUFF        = 'Staff';
+        const DISTRIBUTOR  = 'Distributor';
     }
