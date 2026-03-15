@@ -321,6 +321,7 @@
             $permissions = [];
             $now         = now();
 
+            // First, process all parent/group permissions
             foreach ( $data as $group ) {
                 $groupName = Str::slug( $group[ 'group' ] , '_' );
                 $groupUrl  = Str::slug( $group[ 'group' ] , '-' );
@@ -367,9 +368,15 @@
             }
 
             // Convert the nested associative array into a numeric array with parent IDs for database insertion
-            $permissions = AppLibrary::recursiveFlattenPermissions( $permissions );
+            $flattenedPermissions = AppLibrary::recursiveFlattenPermissions( $permissions );
 
-            Permission::insert( $permissions );
+            // Check existence to prevent duplicates
+            foreach ( $flattenedPermissions as $perm ) {
+                Permission::firstOrCreate(
+                    [ 'name' => $perm[ 'name' ] , 'guard_name' => $perm[ 'guard_name' ] ] ,
+                    $perm
+                );
+            }
 
             $adminRole = Role::where( 'name' , EnumRole::ADMIN )->first();
             if ( $adminRole ) {

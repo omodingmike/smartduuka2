@@ -10,43 +10,38 @@
     {
         public function run() : void
         {
-            Role::insert( [
+            $roles = [
                 [
                     'name'       => EnumRole::ADMIN ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => EnumRole::CUSTOMER ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => EnumRole::MANAGER ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => EnumRole::POS_OPERATOR ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => EnumRole::STUFF ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
                 [
                     'name'       => EnumRole::DISTRIBUTOR ,
                     'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
                 ] ,
-            ] );
+            ];
+
+            foreach ( $roles as $roleData ) {
+                Role::firstOrCreate(
+                    [ 'name' => $roleData[ 'name' ] , 'guard_name' => $roleData[ 'guard_name' ] ] ,
+                    $roleData
+                );
+            }
         }
     }
