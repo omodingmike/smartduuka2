@@ -85,55 +85,46 @@
         public function update(EmployeeRequest $request , User $employee)
         {
             try {
-                $role             = Role::findById( (int) $request->role_id );
-                $employeeRoleName = optional( $employee->roles->first() )->name;
+                $role = Role::findById( (int) $request->role_id );
 
-                if ( ! in_array( $role->name , $this->blockRoles ) && ! in_array(
-                        $employeeRoleName ,
-                        $this->blockRoles
-                    ) ) {
-                    DB::transaction( function () use ($employee , $request , $role) {
-                        $this->user               = $employee;
-                        $this->user->name         = $request->name;
-                        $this->user->email        = $request->email;
-                        $this->user->phone        = $request->phone;
-                        $this->user->status       = $request->status;
-                        $this->user->country_code = $request->country_code;
-                        $this->user->department   = $request->department;
-                        $this->user->pin          = $request->pin;
-                        $this->user->force_reset  = $request->boolean( 'forceReset' );
+                DB::transaction( function () use ($employee , $request , $role) {
+                    $this->user               = $employee;
+                    $this->user->name         = $request->name;
+                    $this->user->email        = $request->email;
+                    $this->user->phone        = $request->phone;
+                    $this->user->status       = $request->status;
+                    $this->user->country_code = $request->country_code;
+                    $this->user->department   = $request->department;
+                    $this->user->pin          = $request->pin;
+                    $this->user->force_reset  = $request->boolean( 'forceReset' );
 
-                        if ( $request->password ) {
-                            $this->user->password = Hash::make( $request->password );
-                        }
-                        $this->user->save();
-
-                        $this->user->syncRoles( $role );
-                    } );
-
-
-                    if ( $request->has( 'permissions' ) ) {
-                        $permissions = json_decode( $request->permissions , TRUE );
-                        if ( $permissions ) {
-                            // Flatten the permissions array if it's grouped
-                            $flatPermissions = [];
-                            foreach ( $permissions as $group => $perms ) {
-                                if ( is_array( $perms ) ) {
-                                    $flatPermissions = array_merge( $flatPermissions , $perms );
-                                }
-                                else {
-                                    $flatPermissions[] = $perms;
-                                }
-                            }
-                            $this->user->syncPermissions( $flatPermissions );
-                        }
+                    if ( $request->password ) {
+                        $this->user->password = Hash::make( $request->password );
                     }
+                    $this->user->save();
 
-                    return $this->user;
+                    $this->user->syncRoles( $role );
+                } );
+
+
+                if ( $request->has( 'permissions' ) ) {
+                    $permissions = json_decode( $request->permissions , TRUE );
+                    if ( $permissions ) {
+                        $flatPermissions = [];
+                        foreach ( $permissions as $group => $perms ) {
+                            if ( is_array( $perms ) ) {
+                                $flatPermissions = array_merge( $flatPermissions , $perms );
+                            }
+                            else {
+                                $flatPermissions[] = $perms;
+                            }
+                        }
+                        $this->user->syncPermissions( $flatPermissions );
+                    }
                 }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
+
+                return $this->user;
+
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();
@@ -147,13 +138,7 @@
         public function show(User $employee) : User
         {
             try {
-                $employeeRoleName = optional( $employee->roles->first() )->name;
-                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
-                    return $employee;
-                }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
+                return $employee;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -167,21 +152,11 @@
         public function destroy(User $employee)
         {
             try {
-                $employeeRoleName = optional( $employee->roles->first() )->name;
-                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
-                    if ( $employee->hasRole( $employeeRoleName ) ) {
-                        DB::transaction( function () use ($employee) {
-                            $employee->addresses()->delete();
-                            $employee->delete();
-                        } );
-                    }
-                    else {
-                        throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                    }
-                }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
+                DB::transaction( function () use ($employee) {
+                    $employee->addresses()->delete();
+                    $employee->delete();
+                } );
+
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 DB::rollBack();
@@ -201,15 +176,9 @@
         public function changePassword(UserChangePasswordRequest $request , User $employee) : User
         {
             try {
-                $employeeRoleName = optional( $employee->roles->first() )->name;
-                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
-                    $employee->password = Hash::make( $request->password );
-                    $employee->save();
-                    return $employee;
-                }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
+                $employee->password = Hash::make( $request->password );
+                $employee->save();
+                return $employee;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -222,17 +191,13 @@
         public function changeImage(ChangeImageRequest $request , User $employee) : User
         {
             try {
-                $employeeRoleName = optional( $employee->roles->first() )->name;
-                if ( ! in_array( $employeeRoleName , $this->blockRoles ) ) {
-                    if ( $request->image ) {
-                        $employee->clearMediaCollection( 'profile' );
-                        $employee->addMediaFromRequest( 'image' )->toMediaCollection( 'profile' );
-                    }
-                    return $employee;
+
+                if ( $request->image ) {
+                    $employee->clearMediaCollection( 'profile' );
+                    $employee->addMediaFromRequest( 'image' )->toMediaCollection( 'profile' );
                 }
-                else {
-                    throw new Exception( trans( 'all.message.permission_denied' ) , 422 );
-                }
+                return $employee;
+
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
