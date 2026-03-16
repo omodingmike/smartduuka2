@@ -103,3 +103,5 @@ php artisan tenants:seed --force --tenants=techpulsespares
 
         "business_id": 1773383922,
         "print_agent_token": "25e2b8fc180e4b5a9a0ad04ec648fd71",
+
+        php artisan tenants:run app:fix-user-roles --tenants=zakayo

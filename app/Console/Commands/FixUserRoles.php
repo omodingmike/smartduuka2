@@ -10,19 +10,33 @@
     {
         protected $signature = 'app:fix-user-roles';
 
-        protected $description = 'Change all user roles to customer except for a specific user.';
+        protected $description = 'Assign Admin role to specific users and Customer role to everyone else.';
 
-        public function handle() : void
+        public function handle(): void
         {
-            $this->info( 'Fixing user roles...' );
+            $this->info('Fixing user roles...');
 
-            User::where( 'email' , '!=' , 'sandramuhumuza53@gmail.com' )->chunk( 100 , function ($users) {
-                foreach ( $users as $user ) {
-                    $user->syncRoles( [ Role::CUSTOMER ] );
-                    $this->info( "User {$user->email} role changed to customer." );
+            $adminEmails = [
+                'sandramuhumuza53@gmail.com',
+                'support@smartduuka.com'
+            ];
+
+            // 1. Assign Admin role to the specific users
+            $admins = User::whereIn('email', $adminEmails)->get();
+
+            foreach ($admins as $admin) {
+                $admin->syncRoles([Role::ADMIN]);
+                $this->info("User {$admin->email} role changed to Admin.");
+            }
+
+            // 2. Assign Customer role to everyone else
+            User::whereNotIn('email', $adminEmails)->chunk(100, function ($users) {
+                foreach ($users as $user) {
+                    $user->syncRoles([Role::CUSTOMER]);
+                    $this->info("User {$user->email} role changed to Customer.");
                 }
-            } );
+            });
 
-            $this->info( 'User roles fixed successfully.' );
+            $this->info('User roles fixed successfully.');
         }
     }
