@@ -37,7 +37,8 @@
                 $page    = $request->integer( 'page' , 1 );
                 $query   = $request->input( 'query' ) ?? NULL;
 
-                return User::with( [ 'media' , 'addresses' ] )->role( EnumRole::CUSTOMER )
+                return User::with( [ 'media' , 'addresses' ] )
+                           ->role( EnumRole::CUSTOMER )
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
                            } )

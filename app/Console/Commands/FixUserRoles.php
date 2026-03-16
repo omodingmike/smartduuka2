@@ -31,13 +31,18 @@
             }
 
             // 2. Assign Customer role to everyone else
-            User::whereNotIn( 'email' , $adminEmails )->chunk( 100 , function ($users) {
-                foreach ( $users as $user ) {
-                    // syncRoles safely replaces all existing roles with Customer
-                    $user->syncRoles( [ Role::CUSTOMER ] );
-                    $this->info( "User {$user->email} role changed to Customer." );
+            User::where(function ($query) use ($adminEmails) {
+                $query->whereNotIn('email', $adminEmails)
+                      ->orWhereNull('email');
+            })->chunkById(100, function ($users) {
+                foreach ($users as $user) {
+                    $user->syncRoles([Role::CUSTOMER]);
+
+                    // Added a fallback so the console outputs something if the email is null
+                    $identifier = $user->email ?? "ID: {$user->id} (No Email)";
+                    $this->info("User {$identifier} role changed to Customer.");
                 }
-            } );
+            });
 
             $this->info( 'User roles fixed successfully.' );
         }
