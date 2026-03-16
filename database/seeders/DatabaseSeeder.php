@@ -11,7 +11,6 @@
         public function run() : void
         {
             $this->call( PrinterTemplateSeeder::class );
-            $this->call( UserTableSeeder::class );
             $this->call( WarehouseSeeder::class );
             $this->call( LocationSeed::class );
 //        $this->call(CompanyTableSeeder::class);
@@ -20,10 +19,13 @@
 //        $this->call(MenuTableSeeder::class);
 
 
-            DB::statement( 'TRUNCATE TABLE roles, permissions RESTART IDENTITY CASCADE' );
-//            $this->call( RoleTableSeeder::class );
-//            $this->call( PermissionTableSeeder::class );
-//            $this->call( UserTableSeeder::class );
+            // The line below was causing errors by deleting roles after they were needed.
+            // DB::statement( 'TRUNCATE TABLE roles, permissions RESTART IDENTITY CASCADE' );
+            
+            // Correct order is to seed roles and permissions before users.
+            $this->call( RoleTableSeeder::class );
+            $this->call( PermissionTableSeeder::class );
+            $this->call( UserTableSeeder::class );
 
 //            $this->call( PaymentMethodSeeder::class );
 
