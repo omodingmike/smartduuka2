@@ -48,6 +48,7 @@
                     'is_guest'          => Ask::NO
                 ]
             );
+
             $customerRole = Role::findByName( EnumRole::CUSTOMER, 'sanctum' );
             $customer->assignRole( $customerRole );
         }
