@@ -70,6 +70,7 @@
     use App\Http\Controllers\ExpensesController;
     use App\Http\Controllers\Frontend\LanguageController as FrontendLanguageController;
     use App\Http\Controllers\Frontend\ProfileController;
+    use App\Http\Controllers\Frontend\SettingController;
     use App\Http\Controllers\Frontend\SettingController as FrontendSettingController;
     use App\Http\Controllers\LedgerController;
     use App\Http\Controllers\ModuleController;
@@ -265,6 +266,7 @@
                     Route::get( '/' , [ PaymentGatewayController::class , 'index' ] );
                     Route::match( [ 'put' , 'patch' ] , '/' , [ PaymentGatewayController::class , 'update' ] );
                 } );
+
                 Route::prefix( 'site' )->name( 'site.' )->group( function () {
                     Route::get( '/' , [ SiteController::class , 'index' ] );
                     Route::match( [ 'post' , 'patch' ] , '/' , [ SiteController::class , 'update' ] );
@@ -277,11 +279,7 @@
 
                 Route::prefix( 'module' )->name( 'module.' )->group( function () {
                     Route::get( '/' , [ ModuleController::class , 'index' ] );
-                    Route::match( [ 'put' , 'patch' ] , '/' , [ ModuleController::class , 'update' ] );
-                } );
-                Route::prefix( 'appSettings' )->name( 'appSettings.' )->group( function () {
-                    Route::get( '/' , [ ModuleController::class , 'appSettings' ] );
-                    Route::match( [ 'put' , 'patch' ] , '/' , [ ModuleController::class , 'updateAppSettings' ] );
+                    Route::match( [ 'put' , 'post' ] , '/' , [ ModuleController::class , 'update' ] );
                 } );
 
                 Route::prefix( 'theme' )->name( 'theme.' )->group( function () {

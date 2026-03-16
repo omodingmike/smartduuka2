@@ -1,37 +1,35 @@
 Money package
 https://github.com/brick/money
 
+  chmod +x ~/deploy.sh && ./deploy.sh
 
-              chmod +x ~/deploy.sh && ./deploy.sh
+  ssh-keygen -t ed25519 -C "deploy@gmail.com"
 
+  ssh-keygen -t ed25519 -C "bar"
+  docker exec -it db createdb -U smartduuka smartduuka_main
+  docker exec -it db psql -U smartduuka -l
 
-              ssh-keygen -t ed25519 -C "deploy@gmail.com"
+  docker exec -it api /bin/bash
+  truncate -s 0 laravel.log
+  docker exec -it smartduuka_next /bin/bash
+  truncate -s 0 $(docker inspect --format='{{.LogPath}}' smartduuka_next)
 
-              ssh-keygen -t ed25519 -C "bar"
-              docker exec -it db createdb -U smartduuka smartduuka_main
-              docker exec -it db psql -U smartduuka -l
+  docker exec -it db psql -U smartduuka -d tenant_techpulsespares
 
-              docker exec -it api /bin/bash
-              truncate -s 0 laravel.log
-              docker exec -it smartduuka_next /bin/bash
-              truncate -s 0 $(docker inspect --format='{{.LogPath}}' smartduuka_next)
+  docker exec -it db psql -U smartduuka -d tenant_zakayo
 
-              docker exec -it db psql -U smartduuka -d tenant_techpulsespares
+  docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
+  docker compose exec -T api php artisan optimize
 
-              docker exec -it db psql -U smartduuka -d tenant_zakayo
+  php artisan tenants:migrate
 
-              docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
-              docker compose exec -T api php artisan optimize
+  docker exec -it nginx sh
+  docker exec -it smartduuka_next sh
+  cd storage/logs
 
-              php artisan tenants:migrate
-
-              docker exec -it nginx sh
-              docker exec -it smartduuka_next sh
-              cd storage/logs
-
-              cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
-              chmod 600 ~/.ssh/authorized_keys
-              chmod 700 ~/.ssh
+  cat  ~/.ssh/backend_key.pub >> ~/.ssh/authorized_keys
+  chmod 600 ~/.ssh/authorized_keys
+  chmod 700 ~/.ssh
 
 https://medium.com/@zulfikarditya/using-php-enums-in-laravel-12-a-comprehensive-guide-af75689f88e8
 
@@ -46,18 +44,7 @@ TRUNCATE TABLE domains RESTART IDENTITY CASCADE;
 drop database if exists tenant_shop;
 drop database if exists tenantshop;
 
-show close reminder of register 24 hours since last opened,
-gross is total sales - cost of goods
-net profit = gross - expenses
-
 php artisan tinker --execute="echo config('system.currency_symbol');
-https://github.com/dr5hn/countries-states-cities-database
-
-  'regions.sql' ,
-                'subregions.sql' ,
-                'countries.sql' ,
-                'states.sql' ,
-                'cities.sql' ,
 
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/countries.sql
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql
@@ -67,41 +54,12 @@ curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-datab
 curl -L -O https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/psql/cities.sql.gz
 gzip -d cities.sql.gz
 
-Sanctum::actingAs(
-        User::factory()->create(),
-        ['view-tasks']
-    );
-    herd proxy shop-frontend http://localhost:3000
-
-      app( 'cache' )
-                    ->store( config( 'permission.cache.store' ) != 'default' ? config( 'permission.cache.store' ) : NULL )
-                    ->forget( config( 'permission.cache.key' ) );
-
-demoshop.smartduuka.com
-demoshop-api.smartduuka.com
-
-pre_order_status in stocks
-
-available = stock + remaining deposited stock
-
-Add columns to tenants table
-print_agent_token,business_id
-
-$tenant1 = App\Models\Tenant::create(['id' => 'techpulsespares']);
-$tenant1->domains()->create(['domain' => 'techpulsespares-api']);
-php artisan tenants:seed --force --tenants=techpulsespares
-php artisan tenants:seed --force --tenants=app1
-php artisan tenants:migrate-fresh --tenants=techpulsespares
 php artisan tenants:migrate-fresh --tenants=app1
-php artisan tenants:run optimize:clear --tenants=zakayo
+
 php artisan tenants:run optimize:clear --tenants=demoshop
 
 php artisan tenants:seed --force --tenants=techpulsespares
 
-  "business_id": 1773384020,
-    "print_agent_token": "7f76239debaf4717924a8bf815f93643",
+php artisan tenants:run app:fix-user-roles --tenants=zakayo
 
-        "business_id": 1773383922,
-        "print_agent_token": "25e2b8fc180e4b5a9a0ad04ec648fd71",
-
-        php artisan tenants:run app:fix-user-roles --tenants=zakayo
+php artisan tenants:run tinker --tenants=techpulsespares
