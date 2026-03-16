@@ -37,7 +37,7 @@
                 $orderColumn = $request->input( 'order_column' ) ?? 'id';
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
-                $query = User::with( [ 'media' , 'addresses' , 'roles' ] )
+                $query = User::with( [ 'media' , 'addresses' ] )
                              ->withoutRole( $this->blockRoles );
 
                 return $query->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
