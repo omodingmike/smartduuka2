@@ -21,9 +21,10 @@
 
 
             DB::statement( 'TRUNCATE TABLE roles, permissions RESTART IDENTITY CASCADE' );
-            $this->call( RoleTableSeeder::class );
-            $this->call( PermissionTableSeeder::class );
-            $this->call( UserTableSeeder::class );
+//            $this->call( RoleTableSeeder::class );
+//            $this->call( PermissionTableSeeder::class );
+//            $this->call( UserTableSeeder::class );
+
 //            $this->call( PaymentMethodSeeder::class );
 
 //        $this->call(RolePermissionTableSeeder::class);

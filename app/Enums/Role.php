@@ -8,6 +8,6 @@
         const CUSTOMER     = 'Customer';
         const MANAGER      = 'Manager';
         const POS_OPERATOR = 'POS Operator';
-        const STAFF        = 'Staff';
+        const STUFF        = 'Staff';
         const DISTRIBUTOR  = 'Distributor';
     }

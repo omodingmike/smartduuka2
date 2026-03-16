@@ -18,7 +18,7 @@
             'excepts'
         ];
         protected array $roleArray    = [
-            EnumsRole::ADMIN , EnumsRole::CUSTOMER , EnumsRole::MANAGER , EnumsRole::POS_OPERATOR , EnumsRole::STAFF
+            EnumsRole::ADMIN , EnumsRole::CUSTOMER , EnumsRole::MANAGER , EnumsRole::POS_OPERATOR , EnumsRole::STUFF
         ];
 
         /**

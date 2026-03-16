@@ -28,7 +28,7 @@
                     'guard_name' => 'sanctum' ,
                 ] ,
                 [
-                    'name'       => EnumRole::STAFF ,
+                    'name'       => EnumRole::STUFF ,
                     'guard_name' => 'sanctum' ,
                 ] ,
                 [
