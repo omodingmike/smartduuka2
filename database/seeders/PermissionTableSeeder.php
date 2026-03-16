@@ -367,21 +367,45 @@
                 $permissions[] = $parentPermission;
             }
 
-            // Convert the nested associative array into a numeric array with parent IDs for database insertion
+//            $flattenedPermissions = AppLibrary::recursiveFlattenPermissions( $permissions );
+//
+//            foreach ( $flattenedPermissions as $perm ) {
+//                Permission::firstOrCreate(
+//                    [ 'name' => $perm[ 'name' ] , 'guard_name' => $perm[ 'guard_name' ] ] ,
+//                    $perm
+//                );
+//            }
+//
+//            $adminRole = Role::where( 'name' , EnumRole::ADMIN )->first();
+//            if ( $adminRole ) {
+//                $allPermissions = Permission::all();
+//                $adminRole->syncPermissions( $allPermissions );
+//            }
+
             $flattenedPermissions = AppLibrary::recursiveFlattenPermissions( $permissions );
 
-            // Check existence to prevent duplicates
+            $definedPermNames = array_column( $flattenedPermissions , 'name' );
+
+            $existingPermNames = Permission::where( 'guard_name' , 'sanctum' )->pluck( 'name' )->toArray();
+
+            $missingPerms = array_diff( $definedPermNames , $existingPermNames );
+
+            if ( empty( $missingPerms ) ) {
+                return;
+            }
+
             foreach ( $flattenedPermissions as $perm ) {
-                Permission::firstOrCreate(
-                    [ 'name' => $perm[ 'name' ] , 'guard_name' => $perm[ 'guard_name' ] ] ,
-                    $perm
-                );
+                if ( in_array( $perm[ 'name' ] , $missingPerms ) ) {
+                    Permission::firstOrCreate(
+                        [ 'name' => $perm[ 'name' ] , 'guard_name' => $perm[ 'guard_name' ] ] ,
+                        $perm
+                    );
+                }
             }
 
             $adminRole = Role::where( 'name' , EnumRole::ADMIN )->first();
             if ( $adminRole ) {
-                $allPermissions = Permission::all();
-                $adminRole->syncPermissions( $allPermissions );
+                $adminRole->givePermissionTo( $missingPerms );
             }
         }
     }

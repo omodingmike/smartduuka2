@@ -9,12 +9,18 @@
     use Illuminate\Database\Seeder;
     use Spatie\Permission\Models\Role;
 
-
     class UserTableSeeder extends Seeder
     {
-
         public function run() : void
         {
+            $targetUsernames = ['admin', 'default-customer'];
+
+            $existingCount = User::whereIn('username', $targetUsernames)->count();
+
+            if ($existingCount === count($targetUsernames)) {
+                return;
+            }
+
             $admin = User::updateOrCreate(
                 [
                     'username' => 'admin'
@@ -30,11 +36,11 @@
                     'is_guest'          => Ask::NO
                 ]
             );
-            // Since EnumRole::ADMIN is now a string name, we can pass it directly or find by name and guard
-            $adminRole = Role::findByName( EnumRole::ADMIN, 'sanctum' );
-            $admin->assignRole( $adminRole );
 
-            $customer     = User::updateOrCreate(
+            $adminRole = Role::findByName( EnumRole::ADMIN, 'sanctum' );
+            $admin->syncRoles( [$adminRole] );
+
+            $customer = User::updateOrCreate(
                 [
                     'username' => 'default-customer'
                 ] ,
@@ -50,6 +56,6 @@
             );
 
             $customerRole = Role::findByName( EnumRole::CUSTOMER, 'sanctum' );
-            $customer->assignRole( $customerRole );
+            $customer->syncRoles( [$customerRole] );
         }
     }
