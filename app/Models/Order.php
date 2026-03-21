@@ -109,18 +109,21 @@
         #[Scope]
         protected function active(Builder $query) : void
         {
-            $query->whereNotIn( 'return_status' , [ ReturnStatus::CANCELED->value , ReturnStatus::REJECTED->value ] )
-                  ->where( 'is_returned' , FALSE )
-
+            $query->where( function (Builder $q) {
+                $q->whereNull( 'return_status' )
+                  ->orWhereNotIn( 'return_status' , [
+                      ReturnStatus::CANCELED->value ,
+                      ReturnStatus::REJECTED->value
+                  ] );
+            } )
                   ->where( function (Builder $q) {
-                    $q->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
-                      ->orWhereNull( 'pre_order_status' );
-                } )
-
+                      $q->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+                        ->orWhereNull( 'pre_order_status' );
+                  } )
                   ->where( function (Builder $q) {
-                    $q->where( 'status' , '!=' , OrderStatus::CANCELED )
-                      ->orWhereNull( 'status' );
-                } );
+                      $q->where( 'status' , '!=' , OrderStatus::CANCELED )
+                        ->orWhereNull( 'status' );
+                  } );
         }
 
 
