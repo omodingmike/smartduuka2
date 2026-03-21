@@ -26,3 +26,8 @@ Thumbs.db
 *.pem
 /storage/media-library
 /storage
+CLAUDE.md
+AGENTS.md
+junie/
+.mcp.json
+boost.json

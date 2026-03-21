@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\ReturnType;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,8 +27,13 @@
             'variation_id' ,
             'product_id' ,
             'price_id' ,
-            'price_type'
+            'price_type' ,
+            'is_return' ,
+            'is_exchange' ,
+            'return_type' ,
+            'return_quantity'
         ];
+        protected $casts    = [ 'return_type' => ReturnType::class ];
 
         public function order() : BelongsTo
         {

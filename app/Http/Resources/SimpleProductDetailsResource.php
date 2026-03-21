@@ -5,12 +5,14 @@
 
     use App\Enums\Activity;
     use App\Enums\Ask;
+    use App\Enums\PriceType;
     use App\Libraries\AppLibrary;
     use App\Models\Product;
     use App\Models\Unit;
     use Carbon\Carbon;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /** @mixin Product */
     class SimpleProductDetailsResource extends JsonResource
     {
 
@@ -22,9 +24,9 @@
 
             // Fix: Check if variations is null before counting
             $variationsCount = $this->variations ? count( $this->variations ) : 0;
-            
+
             $retailPrice = $this->retailPrices->first();
-            $price = $retailPrice ? $retailPrice->selling_price : ($variationsCount > 0 ? $this->variation_price : $this->selling_price);
+            $price       = $retailPrice ? $retailPrice->selling_price : ( $variationsCount > 0 ? $this->variation_price : $this->selling_price );
 
             $stock = max( 0 , $this->stock_items_sum_quantity );
 
@@ -35,6 +37,30 @@
             $discountedPrice = $offerActive
                 ? $price - ( ( $price / 100 ) * $this->discount )
                 : $price;
+
+            $retail = $this->retailPrices->map( function ($pr) {
+                return [
+                    'price'      => $pr->selling_price ,
+                    'price_text' => $pr->selling_price_text ,
+                    'id'         => $pr->id ,
+                    'type'       => PriceType::RETAIL->value ,
+                ];
+            } );
+
+            $wholesale = $this->wholesalePrices->map( function ($pw) {
+                return [
+                    'price'      => $pw->price ,
+                    'price_text' => $pw->price_text ,
+                    'id'         => $pw->id ,
+                    'type'       => PriceType::WHOLESALE->value ,
+                ];
+            } );
+
+            $prices = $retail->merge( $wholesale )
+                             ->unique( 'price' )
+                             ->sortBy( 'price' )
+                             ->values()
+                             ->toArray();
 
             return [
                 'id'                         => $this->id ,
@@ -60,7 +86,7 @@
                 'category_slug'              => $this->category?->slug ,
                 'unit'                       => $this->unit ? new UnitResource( $this->unit ) : NULL ,
                 'stock_unit'                 => $this->unit?->code ,
-                'prices'                     => $this->prices ,
+                'prices'                     => $prices ,
                 'retail_unit_id'             => $this->retail_unit_id ,
                 'retail_unit'                => $this->retail_unit_id ? new UnitResource( Unit::find( $this->retail_unit_id ) ) : NULL ,
                 'mid_unit'                   => $this->mid_unit_id ? new UnitResource( Unit::find( $this->mid_unit_id ) ) : NULL ,

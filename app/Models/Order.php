@@ -5,16 +5,23 @@
     use App\Enums\OrderChannel;
     use App\Enums\OrderStatus;
     use App\Enums\OrderType;
+    use App\Enums\Pad;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
+    use App\Enums\RefundStatus;
+    use App\Enums\ReturnStatus;
+    use App\Enums\ReturnType;
+    use Illuminate\Database\Eloquent\Attributes\Scope;
     use Illuminate\Database\Eloquent\Builder;
+    use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Database\Eloquent\Relations\morphMany;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
+    use Illuminate\Support\Str;
 
     class Order extends Model
     {
@@ -47,7 +54,8 @@
             'channel' ,
             'register_id' ,
             'warehouse_id' ,
-            'pre_order_status'
+            'pre_order_status' , 'active' , 'user_type' , 'editor_type' , 'editor_id' , 'delivery_address' , 'delivery_fee' , 'refund_status' , 'return_status' , 'return_type' , 'original_order_id' ,
+            'is_returned'
         ];
 
         protected $casts = [
@@ -68,6 +76,9 @@
             'payment_type'       => PaymentType::class ,
             'channel'            => OrderChannel::class ,
             'pre_order_status'   => PreOrderStatus::class ,
+            'refund_status'      => RefundStatus::class ,
+            'return_status'      => ReturnStatus::class ,
+            'return_type'        => ReturnType::class ,
             'reason'             => 'string' ,
             'source'             => 'integer' ,
             'pos_payment_method' => 'integer' ,
@@ -77,6 +88,39 @@
         public function orderProducts() : HasMany
         {
             return $this->hasMany( OrderProduct::class );
+        }
+
+        protected function orderSerialNo() : Attribute
+        {
+            return Attribute::make(
+                get: function () {
+                    $id           = $this->id;
+                    $payment_type = $this->payment_type;
+                    $prefix       = match ( $payment_type ) {
+                        PaymentType::PREORDER => 'PRE-' ,
+                        PaymentType::RETURN   => 'RTN-' ,
+                        default               => 'ORD-'
+                    };
+                    return $prefix . Str::padLeft( $id , Pad::LENGTH , '0' );
+                } ,
+            );
+        }
+
+        #[Scope]
+        protected function active(Builder $query) : void
+        {
+            $query->whereNotIn( 'return_status' , [ ReturnStatus::CANCELED->value , ReturnStatus::REJECTED->value ] )
+                  ->where( 'is_returned' , FALSE )
+
+                  ->where( function (Builder $q) {
+                    $q->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+                      ->orWhereNull( 'pre_order_status' );
+                } )
+
+                  ->where( function (Builder $q) {
+                    $q->where( 'status' , '!=' , OrderStatus::CANCELED )
+                      ->orWhereNull( 'status' );
+                } );
         }
 
 
@@ -98,6 +142,11 @@
         public function paymentMethods()
         {
             return $this->hasMany( PosPayment::class , 'order_id' , 'id' );
+        }
+
+        public function originalOrder()
+        {
+            return $this->belongsTo( Order::class , 'original_order_id' , 'id' );
         }
 
         public function user() : BelongsTo

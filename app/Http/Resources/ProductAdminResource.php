@@ -2,6 +2,7 @@
 
     namespace App\Http\Resources;
 
+    use App\Enums\PriceType;
     use App\Libraries\AppLibrary;
     use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -10,9 +11,30 @@
         public function toArray($request) : array
         {
             $price         = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
-            $allBatches    = $this->wholesalePrices->pluck( 'batch' )->unique()->values();
-            $latestBatch   = $allBatches->get( 0 );
-            $previousBatch = $allBatches->get( 1 );
+
+            $retail        = $this->retailPrices->map( function ($pr) {
+                return [
+                    'price'      => $pr->selling_price ,
+                    'price_text' => currency($pr->selling_price) ,
+                    'id'         => $pr->id ,
+                    'type'       => PriceType::RETAIL->value ,
+                ];
+            } );
+
+            $wholesale = $this->wholesalePrices->map( function ($pw) {
+                return [
+                    'price'      => $pw->price ,
+                    'price_text' => currency($pw->price) ,
+                    'id'         => $pw->id ,
+                    'type'       => PriceType::WHOLESALE->value ,
+                ];
+            } );
+
+            $prices = $retail->merge( $wholesale )
+                             ->unique( 'price' )
+                             ->sortBy( 'price' )
+                             ->values()
+                             ->toArray();
             return [
                 "id"                         => $this->id ,
                 "name"                       => $this->name ,
@@ -28,6 +50,7 @@
                 "stock"                      => $this->stock ,
                 "stock_text"                 => number_format( $this->stock ) ,
                 "slug"                       => $this->slug ,
+                "prices"                     => $prices ,
                 "product_category_id"        => $this->product_category_id ,
                 "barcode_id"                 => $this->barcode_id ,
                 "product_brand_id"           => $this->product_brand_id ,

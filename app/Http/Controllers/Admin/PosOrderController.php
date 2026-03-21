@@ -46,7 +46,7 @@
 //            $this->middleware( [ 'permission:pos-orders' ] )->only( 'index' , 'show' , 'destroy' , 'export' , 'changeStatus' , 'changePaymentStatus' );
         }
 
-        public function index(PaginateRequest $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
+        public function index(Request $request) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
                 return $this->orderService->list( $request );

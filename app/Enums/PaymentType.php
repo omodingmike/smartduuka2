@@ -10,6 +10,7 @@
         case DEPOSIT  = 2;
         case CASH     = 3;
         case PREORDER = 4;
+        case RETURN   = 5;
 
         public function label() : string
         {
@@ -18,6 +19,7 @@
                 self::DEPOSIT  => 'Deposit' ,
                 self::CASH     => 'Cash' ,
                 self::PREORDER => 'Pre-Order' ,
+                self::RETURN   => 'Return' ,
             };
         }
 

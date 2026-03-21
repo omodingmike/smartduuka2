@@ -9,9 +9,12 @@
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
+    use App\Enums\RefundStatus;
+    use App\Enums\ReturnStatus;
     use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Http\Requests\OrderReturnRequest;
     use App\Http\Requests\OrderStatusRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PaymentStatusRequest;
@@ -30,7 +33,6 @@
     use App\Models\RetailPrice;
     use App\Models\Stock;
     use App\Models\StockTax;
-    use App\Models\Unit;
     use App\Models\User;
     use App\Models\WholeSalePrice;
     use Exception;
@@ -74,56 +76,68 @@
                 $status         = $request->integer( 'status' );
                 $payment_status = $request->integer( 'payment_status' );
                 $order_type     = $request->integer( 'order_type' );
-                $query          = $request->get( 'query' );
+                $query          = $request->input( 'query' );
                 $start          = $request->date( 'start' );
                 $end            = $request->date( 'end' );
                 $report         = $request->string( 'report' );
+                $exclude        = $request->integer( 'exclude' );
                 $query          = $query ? trim( $query ) : NULL;
                 $type           = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
-                $orders = Order::with( [
+                $orders                   = Order::with( [
                     'orderProducts.item' => function ($query) {
                         $query->withTrashed();
                     } ,
-                    'user' , 'creator' , 'paymentMethods.paymentMethod'
+                    'user' , 'creator' , 'paymentMethods.paymentMethod' , 'originalOrder'
                 ] )
-                               ->when( $query , function (Builder $q) use ($query) {
-                                   $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
-                                     ->orWhere( 'id' , 'ilike' , "%$query%" )
-                                     ->orWhereHas( 'user' , function ($q) use ($query) {
-                                         $q->where( 'name' , 'ilike' , "%$query%" );
-                                     } );
-                               } )
-                               ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
-                                   $q->where( 'payment_status' , $payment_status );
-                               } )
-                               ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
-                                   $q->where( 'status' , $status );
-                               } )
-                               ->when( ( $report == 'sales' ) , function (Builder $q) {
-                                   $q->where( 'status' , '<>' , OrderStatus::CANCELED );
-                               } )
-                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
-                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-                               } )
-                               ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-                               } )
-                               ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
-                                   $q->where( 'order_type' , $order_type );
-                               } )
-                               ->when( $type , function (Builder $q) use ($type) {
-                                   $q->where( 'payment_type' , $type );
-                               } );
-
-                $totalSales = $orders->sum( 'total' );
+                                                 ->when( $query , function (Builder $q) use ($query) {
+                                                     $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                                                       ->orWhere( 'id' , 'ilike' , "%$query%" )
+                                                       ->orWhereHas( 'user' , function ($q) use ($query) {
+                                                           $q->where( 'name' , 'ilike' , "%$query%" );
+                                                       } );
+                                                 } )
+                                                 ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
+                                                     $q->where( 'payment_status' , $payment_status );
+                                                 } )
+                                                 ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
+                                                     $q->where( 'status' , $status );
+                                                 } )
+                                                 ->when( ( $report == 'sales' ) , function (Builder $q) {
+                                                     $q->where( 'status' , '<>' , OrderStatus::CANCELED );
+                                                 } )
+                                                 ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                                     $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                                 } )
+                                                 ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                                     $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                                 } )
+                                                 ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
+                                                     $q->where( 'order_type' , $order_type );
+                                                 } )
+                                                 ->when( $type , function (Builder $q) use ($type) {
+                                                     $q->where( 'payment_type' , $type );
+                                                 } )
+                                                 ->when( $exclude , function (Builder $q) use ($type) {
+                                                     $q->whereIn( 'payment_type' , [ $type ] );
+                                                 } );
+                $baseQuery                = clone $orders;
+                $totalSales               = $baseQuery->sum( 'total' );
+                $totalPendingReturnOrders = ( clone $baseQuery )
+                    ->where( 'return_status' , ReturnStatus::PENDING->value )
+                    ->sum( 'total' );
+                $totalPendingRefundOrders = ( clone $baseQuery )
+                    ->where( 'refund_status' , RefundStatus::REFUNDED->value )
+                    ->sum( 'total' );
 
                 return OrderResource::collection( $orders->orderBy( $orderColumn , $orderBy )
                                                          ->paginate( $perPage , [ '*' ] , 'page' , $page ) )
                                     ->additional(
                                         [
                                             'meta' => [
-                                                'totalSales' => currency( $totalSales ) ,
+                                                'totalSales'                  => currency( $totalSales ) ,
+                                                'total_pending_return_orders' => currency($totalPendingReturnOrders) ,
+                                                'total_refund_orders' => currency($totalPendingRefundOrders) ,
                                             ]
                                         ] );
 
@@ -585,6 +599,219 @@
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function returnOrderStore(OrderReturnRequest $request) : object
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    $originalOrder   = Order::findOrFail( $request->orderId );
+                    $returnItems     = json_decode( $request->returnItems , TRUE ) ?? [];
+                    $exchangeItems   = json_decode( $request->exchangeItems , TRUE ) ?? [];
+                    $reason          = $request->input( 'reason' );
+                    $paymentMethodId = $request->refundMethod;
+
+                    $originalOrder->update( [ 'is_returned' => TRUE ] );
+
+                    $totalReturnValue = collect( $returnItems )->sum( function ($item) {
+                        return $item[ 'qty' ] * $item[ 'price' ];
+                    } );
+
+                    $totalExchangeValue = collect( $exchangeItems )->sum( function ($item) {
+                        return $item[ 'qty' ] * $item[ 'price' ];
+                    } );
+
+                    $balance = $totalReturnValue - $totalExchangeValue;
+
+                    $order = new Order( [
+                        'user_id'           => $originalOrder->user_id ,
+                        'total'             => $balance ,
+                        'paid'              => $originalOrder->paid ,
+                        'subtotal'          => $originalOrder->subtotal ,
+                        'balance'           => $balance ,
+                        'refund_status'     => RefundStatus::PENDING ,
+                        'return_status'     => ReturnStatus::PENDING ,
+                        'status'            => OrderStatus::COMPLETED ,
+                        'payment_status'    => PaymentStatus::PAID ,
+                        'payment_type'      => PaymentType::RETURN ,
+                        'order_type'        => $originalOrder->order_type ,
+                        'warehouse_id'      => $originalOrder->warehouse_id ,
+                        'creator_id'        => auth()->id() ,
+                        'creator_type'      => User::class ,
+                        'order_datetime'    => now() ,
+                        'reason'            => $reason ,
+                        'payment_method'    => $paymentMethodId ,
+                        'register_id'       => register()->id ,
+                        'original_order_id' => $originalOrder->id ,
+                    ] );
+
+                    $order->save();
+
+                    foreach ( $originalOrder->orderProducts as $order_product ) {
+                        $return_item = collect( $returnItems )->firstWhere( 'id' , $order_product->id );
+                        if ( $return_item ) {
+                            $return_item_quantity  = $return_item[ 'qty' ];
+                            $return_item_condition = $return_item[ 'condition' ];
+                            $price                 = $return_item[ 'price' ];
+                            $quantity              = $order_product->quantity - $return_item_quantity;
+
+                            OrderProduct::create( [
+                                'order_id'        => $order->id ,
+                                'is_return'       => TRUE ,
+                                'return_type'     => $return_item_condition ,
+                                'item_id'         => $order_product->item_id ,
+                                'item_type'       => $order_product->item_type ,
+                                'quantity'        => $quantity ,
+                                'return_quantity' => $return_item_quantity ,
+                                'unit_price'      => $price ,
+                                'total'           => ( $return_item_quantity * $price ) ,
+                                'price_id'        => $order_product->price_id ,
+                                'price_type'      => $order_product->price_type ,
+                            ] );
+//                            $stock = Stock::where( [
+//                                'item_id'      => $order_product->item_id ,
+//                                'item_type'    => $order_product->item_type ,
+//                                'warehouse_id' => $order->warehouse_id ,
+//                                'status'       => StockStatus::RECEIVED
+//                            ] )->first();
+//
+//                            if ( $stock && $return_item_condition == ReturnType::RESELLABLE->value ) {
+//                                $stock->increment( 'quantity' , $return_item_quantity );
+//                            }
+
+//                            if ( $return_item_condition == ReturnType::DAMAGED->value ) {
+//                                $damage = Damage::create( [
+//                                    'date'         => now() ,
+//                                    'reference_no' => 'D-' . time() ,
+//                                    'subtotal'     => 0 ,
+//                                    'creator_id'   => auth()->id() ,
+//                                    'tax'          => 0 ,
+//                                    'discount'     => 0 ,
+//                                    'total'        => 0 ,
+//                                    'note'         => '' ,
+//                                    'reason'       => $reason
+//                                ] );
+//
+//                                $damage->update( [ 'reference_no' => 'D-' . Str::padLeft( $damage->id , Pad::LENGTH , '0' ) ] );
+//
+//                                Stock::create( [
+//                                    'model_type'      => Damage::class ,
+//                                    'model_id'        => $damage->id ,
+//                                    'warehouse_id'    => $originalOrder->warehouse_id ,
+//                                    'item_type'       => $order_product->item_type ,
+//                                    'product_id'      => $order_product->id ,
+//                                    'variation_names' => 'variation_names' ,
+//                                    'item_id'         => $order_product->id ,
+//                                    'price'           => 0 ,
+//                                    'quantity'        => -$return_item_quantity ,
+//                                    'discount'        => 0 ,
+//                                    'tax'             => 0 ,
+//                                    'subtotal'        => 0 ,
+//                                    'total'           => 0 ,
+//                                    'sku'             => 'sku' ,
+//                                    'status'          => StockStatus::RECEIVED
+//                                ] );
+//                            }
+                        }
+                        else {
+                            OrderProduct::create( [
+                                'order_id'    => $order->id ,
+                                'is_return'   => FALSE ,
+                                'is_exchange' => FALSE ,
+                                'item_id'     => $order_product->item_id ,
+                                'item_type'   => $order_product->item_type ,
+                                'quantity'    => $order_product->quantity ,
+                                'unit_price'  => $order_product->unit_price ,
+                                'total'       => $order_product->total ,
+                                'price_id'    => $order_product->price_id ,
+                                'price_type'  => $order_product->price_type ,
+                            ] );
+                        }
+                    }
+
+                    foreach ( $exchangeItems as $item ) {
+                        $product    = Product::find( $item[ 'product_id' ] );
+                        $price_id   = (int) $item[ 'price_id' ];
+                        $price_type = (int) $item[ 'price_type' ];
+                        if ( ! $product ) continue;
+                        $targetModel = $product;
+                        $targetClass = Product::class;
+                        $itemId      = $item[ 'product_id' ];
+
+                        $is_variation = isset( $item[ 'variation_id' ] ) && $item[ 'variation_id' ];
+
+                        if ( $is_variation ) {
+                            $variation_id = $item[ 'variation_id' ];
+                            $variation    = ProductVariation::find( $variation_id );
+                            if ( $variation ) {
+                                $targetModel = $variation;
+                                $targetClass = ProductVariation::class;
+                                $itemId      = $variation->id;
+                            }
+                        }
+
+                        if ( $targetModel->stock < $item[ 'qty' ] ) {
+                            $name = $is_variation ? $product->name . ' (' . $variation?->name . ')' : $product->name;
+                            throw new Exception( "{$name} stock not enough for exchange." );
+                        }
+//
+                        OrderProduct::create( [
+                            'order_id'    => $order->id ,
+                            'is_exchange' => TRUE ,
+                            'item_id'     => $itemId ,
+                            'item_type'   => $targetClass ,
+                            'price_id'    => $price_id ,
+                            'price_type'  => ( $price_type == PriceType::RETAIL->value ) ? RetailPrice::class : WholeSalePrice::class ,
+                            'quantity'    => $item[ 'qty' ] ,
+                            'unit_price'  => $item[ 'price' ] ,
+                            'total'       => $item[ 'qty' ] * $item[ 'price' ] ,
+                        ] );
+//
+//                        // Deduct Physical Stock
+//                        $stock = Stock::where( [
+//                            'item_id'      => $itemId ,
+//                            'item_type'    => $targetClass ,
+//                            'warehouse_id' => $order->warehouse_id ,
+//                            'status'       => StockStatus::RECEIVED
+//                        ] )->first();
+//
+//                        $stock?->decrement( 'quantity' , $item[ 'qty' ] );
+//                    }
+
+//                    if ( $balance > 0 ) {
+//                        $paymentMethodId = $request->refundMethod;
+//
+//                        PosPayment::create( [
+//                            'order_id'          => $order->id ,
+//                            'date'              => now() ,
+//                            'reference_no'      => time() ,
+//                            'amount'            => -$balance ,
+//                            'payment_method_id' => $paymentMethodId ,
+//                            'register_id'       => register()->id
+//                        ] );
+//
+//                        PaymentMethodTransaction::create( [
+//                            'amount'            => $balance ,
+//                            'item_type'         => Order::class ,
+//                            'item_id'           => $order->id ,
+//                            'charge'            => 0 ,
+//                            'description'       => 'Order Return/Exchange #' . $originalOrder->order_serial_no ,
+//                            'payment_method_id' => $paymentMethodId ,
+//                        ] );
+//
+//                        $order->paid = $balance;
+                    }
+                    $order->total = $order->orderProducts()->where( 'is_return' , TRUE )->sum( 'total' );
+                    $order->save();
+                    $this->order = $order;
+                } );
+
+                return $this->order;
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::error( 'Return Order Error: ' . $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }
@@ -1244,12 +1471,7 @@
                     // But the order record has 'total' based on OLD price * OLD qty.
                     // If we prorate, we are essentially saying: "Keep the total amount paid, but reduce quantity so that (new_qty * new_price) ~= paid_amount".
                     // So the order 'total' might need adjustment or stay same?
-                    // If we change quantity, the sum of (qty * unit_price) changes.
-                    // But unit_price in order_product is the OLD price.
-                    // If we want to reflect that we honored the payment for less items, maybe we don't change unit_price?
-                    // The prompt says: "System recalculates and reduces item quantity to match original cash value paid."
-                    // So effectively, the user gets less items. The total value of the order (in terms of what was paid) remains roughly the same.
-                    // But if we update quantity in order_product, the calculated total of the order will drop (since unit_price is old).
+                    // If we change quantity in order_product, the calculated total of the order will drop (since unit_price is old).
                     // This might be confusing.
                     // However, for inventory purposes, we just need to deduct the correct amount.
                 }

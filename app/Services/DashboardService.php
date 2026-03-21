@@ -47,43 +47,39 @@
                 }
 
                 // Unpaid Invoices (Assuming 'UNPAID' or 'PARTIALLY_PAID' status)
-                $unpaidInvoicesQuery = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+                $unpaidInvoicesQuery = Order::active()->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
                                             ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
 
                 $totalUnpaidInvoices = $unpaidInvoicesQuery->sum( 'balance' );
 
-                $paidInvoiceAmount = PosPayment::whereHas( 'order' , function ($query) use ($startDate , $endDate) {
-                    $query->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
-                          ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
-                } )->sum( 'amount' );
+//                $paidInvoiceAmount = PosPayment::whereHas( 'order' , function ($query) use ($startDate , $endDate) {
+//                    $query->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+//                          ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
+//                } )->sum( 'amount' );
 
                 // Overdue Invoices (Due date < Today)
-                $overdueInvoices = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+                $overdueInvoices = Order::active()
+                                        ->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
                                         ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
                                         ->where( 'due_date' , '<' , Carbon::now() )
                                         ->sum( 'balance' );
                 $overdueAmount   = $overdueInvoices;
 
                 // Not Due Yet Invoices (Due date >= Today)
-                $notDueInvoices = Order::whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
+                $notDueInvoices = Order::active()->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
                                        ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
                                        ->where( 'due_date' , '>=' , Carbon::now() )
                                        ->sum( 'balance' );
                 $notDueAmount   = $notDueInvoices;
 
-                // Deposit Orders (Assuming specific logic for deposits, e.g., order_type or just partial payments)
-                // For this example, let's assume 'PARTIALLY_PAID' orders are deposit orders or there's a specific flag.
-                // If there isn't a specific 'DEPOSIT' type in OrderType enum provided in context, we might need to infer.
-                // However, the user prompt mentions "Deposit Orders". Let's assume orders with partial payments.
-                $depositOrdersQuery = Order::where( 'payment_type' , PaymentType::DEPOSIT )
+                $depositOrdersQuery = Order::active()->where( 'payment_type' , PaymentType::DEPOSIT )
                                            ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
 
                 $totalDepositOrdersValue = $depositOrdersQuery->sum( 'total' );
 
-                // Calculate paid amount for deposit orders using PosPayment model
-                // We need to join with orders table to filter by date and payment type
                 $paidDepositAmount = PosPayment::whereHas( 'order' , function ($query) use ($startDate , $endDate) {
                     $query->where( 'payment_type' , PaymentType::DEPOSIT )
+                          ->where( 'is_returned' , FALSE )
                           ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
                 } )->sum( 'amount' );
 
@@ -136,11 +132,11 @@
                 $prevEndDate   = $endDate->copy()->subDays( $duration );
 
                 // Sales
-                $currentSales = Order::where( 'payment_status' , PaymentStatus::PAID )
+                $currentSales = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                      ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
                                      ->sum( 'total' );
 
-                $prevSales = Order::where( 'payment_status' , PaymentStatus::PAID )
+                $prevSales = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                   ->whereBetween( 'order_datetime' , [ $prevStartDate , $prevEndDate ] )
                                   ->sum( 'total' );
 
@@ -163,7 +159,7 @@
                         if ( $monthStart->lt( $startDate ) ) $monthStart = $startDate->copy();
                         if ( $monthEnd->gt( $endDate ) ) $monthEnd = $endDate->copy();
 
-                        $salesChart[] = (float) Order::where( 'payment_status' , PaymentStatus::PAID )
+                        $salesChart[] = (float) Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                                      ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                      ->sum( 'total' );
 
@@ -179,7 +175,7 @@
                 else {
                     $period = CarbonPeriod::create( $startDate , $endDate );
                     foreach ( $period as $date ) {
-                        $salesChart[] = (float) Order::where( 'payment_status' , PaymentStatus::PAID )
+                        $salesChart[] = (float) Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                                      ->whereDate( 'order_datetime' , $date )
                                                      ->sum( 'total' );
 
@@ -284,29 +280,31 @@
                         if ( $monthEnd->gt( $endDate ) ) $monthEnd = $endDate->copy();
 
                         // Sales Queries
-                        $posSalesData[] = (float) Order::where( 'payment_type' , PaymentType::CASH )
+                        $posSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::CASH )
                                                        ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                        ->sum( 'total' );
 
-                        $creditSalesData[] = (float) Order::where( 'payment_type' , PaymentType::CREDIT )
+                        $creditSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::CREDIT )
                                                           ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                           ->sum( 'total' );
 
-                        $depositSalesData[] = (float) Order::where( 'payment_type' , PaymentType::DEPOSIT )
+                        $depositSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::DEPOSIT )
                                                            ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                            ->sum( 'total' );
 
                         // Order Queries
-                        $fullyPaidOrdersData[] = Order::where( 'payment_status' , PaymentStatus::PAID )
+                        $fullyPaidOrdersData[] = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                                       ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                       ->count();
 
-                        $creditOrdersData[] = Order::where( 'payment_type' , PaymentType::CREDIT )
+                        $creditOrdersData[] = Order::active()->where( 'payment_type' , PaymentType::CREDIT )
                                                    ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
+                                                   ->where( 'is_returned' , FALSE )
                                                    ->count();
 
-                        $depositOrdersData[] = Order::where( 'payment_type' , PaymentType::DEPOSIT )
+                        $depositOrdersData[] = Order::active()->where( 'payment_type' , PaymentType::DEPOSIT )
                                                     ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
+                                                    ->where( 'is_returned' , FALSE )
                                                     ->count();
 
                         $current->addMonth();
@@ -319,28 +317,28 @@
                         $categories[] = [ 'label' => $date->format( 'M d' ) ];
 
                         // Sales Queries
-                        $posSalesData[] = (float) Order::where( 'payment_type' , PaymentType::CASH )
+                        $posSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::CASH )
                                                        ->whereDate( 'order_datetime' , $date )
                                                        ->sum( 'total' );
 
-                        $creditSalesData[] = (float) Order::where( 'payment_type' , PaymentType::CREDIT )
+                        $creditSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::CREDIT )
                                                           ->whereDate( 'order_datetime' , $date )
                                                           ->sum( 'total' );
 
-                        $depositSalesData[] = (float) Order::where( 'payment_type' , PaymentType::DEPOSIT )
+                        $depositSalesData[] = (float) Order::active()->where( 'payment_type' , PaymentType::DEPOSIT )
                                                            ->whereDate( 'order_datetime' , $date )
                                                            ->sum( 'total' );
 
                         // Order Queries
-                        $fullyPaidOrdersData[] = Order::where( 'payment_status' , PaymentStatus::PAID )
+                        $fullyPaidOrdersData[] = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
                                                       ->whereDate( 'order_datetime' , $date )
                                                       ->count();
 
-                        $creditOrdersData[] = Order::where( 'payment_type' , PaymentType::CREDIT )
+                        $creditOrdersData[] = Order::active()->where( 'payment_type' , PaymentType::CREDIT )
                                                    ->whereDate( 'order_datetime' , $date )
                                                    ->count();
 
-                        $depositOrdersData[] = Order::where( 'payment_type' , PaymentType::DEPOSIT )
+                        $depositOrdersData[] = Order::active()->where( 'payment_type' , PaymentType::DEPOSIT )
                                                     ->whereDate( 'order_datetime' , $date )
                                                     ->count();
                     }
@@ -362,7 +360,8 @@
                     'categories'  => $categories ,
                     'salesSeries' => $salesSeries ,
                     'orderSeries' => $orderSeries ,
-                    'totalOrders' => number_format( Order::whereBetween( 'order_datetime' , [ $startDate , $endDate ] )->count() )
+                    'totalOrders' => number_format( Order::active()->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
+                                                         ->count() )
                 ];
 
             } catch ( Exception $exception ) {

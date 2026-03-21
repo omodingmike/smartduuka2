@@ -45,14 +45,18 @@
 
         public function orders() : HasMany | Register
         {
-            return $this->hasMany( Order::class , 'register_id' , 'id' )
-                        ->where( function ($query) {
-                            $query->where( 'status' , '<>' , OrderStatus::CANCELED )
-                                  ->orWhereNull( 'status' );
-                        } )->where( function ($query) {
-                    $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
-                          ->orWhereNull( 'pre_order_status' );
-                } );
+            return $this->hasMany( Order::class , 'register_id' , 'id' )->active();
+
+//                        ->where( function ($query) {
+//                            $query->where( 'status' , '<>' , OrderStatus::CANCELED )
+//                                  ->orWhereNull( 'status' );
+//                        } );
+//                        ->where( function ($query) {
+//                    $query->whereNotIn( 'pre_order_status' , [ PreOrderStatus::REFUNDED , PreOrderStatus::CANCELED ] )
+//                          ->orWhereNull( 'pre_order_status' );
+//                    $query->where( 'is_returned' , FALSE );
+//                    $query->whereNotIn( 'return_status' , [ ReturnStatus::CANCELED->value , ReturnStatus::REJECTED->value ] );
+//                } );
         }
 
         public function expensesPayments() : HasMany | ExpensePayment

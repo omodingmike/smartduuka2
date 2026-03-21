@@ -4,10 +4,10 @@
 
     enum SaleOrderType : int
     {
-        case CREDIT = 20;
-        case DEPOSIT = 25;
+        case CREDIT    = 20;
+        case DEPOSIT   = 25;
         case COMPLETED = 40;
-        case PREORDER = 1;
+        case PREORDER  = 1;
 
 
         public function label() : string
@@ -16,7 +16,7 @@
                 self::CREDIT    => 'Credit' ,
                 self::DEPOSIT   => 'Deposit' ,
                 self::COMPLETED => 'Completed' ,
-                self::PREORDER => 'Pre-Order' ,
+                self::PREORDER  => 'Pre-Order' ,
             };
         }
 

@@ -3,6 +3,7 @@
     namespace App\Services;
 
     use App\Enums\MediaEnum;
+    use App\Enums\Pad;
     use App\Enums\Status;
     use App\Enums\StockStatus;
     use App\Http\Requests\DamageRequest;
@@ -18,6 +19,7 @@
     use Exception;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Str;
 
 
     class DamageService
@@ -97,6 +99,8 @@
                     if ( $request->notes ) {
                         $this->damage->note = $request->notes;
                     }
+                    $this->damage->reference_no = 'D-' . Str::padLeft( $this->damage->id , Pad::LENGTH , '0' );
+                    $this->damage->save();
                     $model_id   = $this->damage->id;
                     $product_id = $request->input( 'product_id' );
 

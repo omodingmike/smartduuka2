@@ -70,7 +70,6 @@
     use App\Http\Controllers\ExpensesController;
     use App\Http\Controllers\Frontend\LanguageController as FrontendLanguageController;
     use App\Http\Controllers\Frontend\ProfileController;
-    use App\Http\Controllers\Frontend\SettingController;
     use App\Http\Controllers\Frontend\SettingController as FrontendSettingController;
     use App\Http\Controllers\LedgerController;
     use App\Http\Controllers\ModuleController;
@@ -724,6 +723,9 @@
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
                 // 1. SPECIFIC ENDPOINTS FIRST
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
+                Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );
+                Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
+                Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );
                 Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
                 Route::post( '/update' , [ PosController::class , 'update' ] ); // Note: You might not need this if you use the dynamic route below
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );

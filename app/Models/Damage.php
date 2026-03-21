@@ -4,10 +4,13 @@
 
     use App\Enums\DamageStatus;
     use App\Enums\MediaEnum;
+    use App\Enums\Pad;
     use App\Traits\HasImageMedia;
+    use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\morphMany;
+    use Illuminate\Support\Str;
     use Spatie\MediaLibrary\HasMedia;
 
     class Damage extends Model implements HasMedia
@@ -38,9 +41,20 @@
             'note'     => 'string' ,
             'status'   => DamageStatus::class
         ];
+
         protected function getMediaCollectionName() : string
         {
             return MediaEnum::DAMAGES;
+        }
+
+        protected function referenceNo() : Attribute
+        {
+            return Attribute::make(
+                get: function (string $value) {
+                    $id = $this->id;
+                    return 'D-' . Str::padLeft( $id , Pad::LENGTH , '0' );
+                } ,
+            );
         }
 
         public function stocks() : morphMany

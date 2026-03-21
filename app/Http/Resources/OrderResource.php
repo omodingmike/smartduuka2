@@ -3,12 +3,10 @@
     namespace App\Http\Resources;
 
 
-    use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use Illuminate\Http\Resources\Json\JsonResource;
-    use Illuminate\Support\Str;
 
     /**
      * @mixin Order
@@ -18,15 +16,19 @@
         public function toArray($request) : array
         {
             $last_paid = $this->posPayments()?->latest()?->first();
-            $prefix    = $this->payment_type == PaymentType::PREORDER ? 'PRE-' : 'ORD-';
             $new_total = $this->orderProducts->sum( function ($product) {
                 return $product->unit_price * $product->quantity;
             } );
+
             return [
                 'id'                             => $this->id ,
-//                'order_serial_no'                => $this->order_serial_no,
-                'order_serial_no'                => $prefix . Str::padLeft( $this->id , 5 , '0' ) ,
+                'order_serial_no'                => $this->order_serial_no ,
                 'user_id'                        => $this->user_id ,
+                'refund_status'                  => $this->refund_status ,
+                'is_returned'                    => $this->is_returned ,
+                'original_order_id'              => $this->when( $this->original_order_id , $this->originalOrder?->order_serial_no ) ,
+                'return_status'                  => $this->return_status ,
+                'return_type'                    => $this->return_type ,
                 'currency'                       => currencySymbol() ,
                 'payment_type'                   => $this->payment_type ,
                 'pre_order_status'               => $this->pre_order_status ?? PreOrderStatus::PENDING_STOCK ,
@@ -42,7 +44,7 @@
                     'amount'           => currency( $last_paid?->amount ?? 0 ) ,
                     'previous_balance' => currency( $this->balance + ( $last_paid?->amount ?? 0 ) ) ,
                     'method'           => $last_paid->paymentMethod
-                ] : [] ,
+                ] : NULL ,
                 'net_paid_currency'              => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
                 'paid_currency'                  => AppLibrary::currencyAmountFormat( $this->paid ) ,
                 'change'                         => AppLibrary::currencyAmountFormat( $this->change ) ,
@@ -70,7 +72,7 @@
                 'source'                         => $this->source ,
                 'unit'                           => new UnitResource ( $this->unit ) ,
                 'change_currency'                => AppLibrary::currencyAmountFormat( $this->change ) ,
-                'active'                         => $this->active ,
+//                'active'                         => $this->active ,
                 'pos_payment_method'             => $this->pos_payment_method ,
                 'pos_payment_method_name'        => trans( "posPaymentMethod." . $this->pos_payment_method ) ,
                 'pos_payment_note'               => $this->pos_payment_note ,
