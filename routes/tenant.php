@@ -727,6 +727,7 @@
                 Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
                 Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );
                 Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
+                Route::delete( '/deleteRefundOrder' , [ PosController::class , 'deleteRefundOrder' ] );
                 Route::post( '/update' , [ PosController::class , 'update' ] ); // Note: You might not need this if you use the dynamic route below
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
                 Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );

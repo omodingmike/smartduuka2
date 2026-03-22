@@ -87,7 +87,7 @@
                             $stock->increment( 'quantity' , $order_product->return_quantity );
                         }
 
-                        if ($order_product->is_return && $order_product->return_type->value == ReturnType::DAMAGED->value ) {
+                        if ( $order_product->is_return && $order_product->return_type->value == ReturnType::DAMAGED->value ) {
                             $damage = Damage::create( [
                                 'date'         => now() ,
                                 'reference_no' => 'D-' . time() ,
@@ -313,6 +313,24 @@
                 } );
             } catch ( Exception $e ) {
                 return $this->APIError( 422 , 'Error' , $e->getMessage() );
+            }
+        }
+
+        public function deleteRefundOrder(Request $request)
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    $ids = $request->array( 'ids' );
+                    foreach ( $ids as $id ) {
+                        $order = Order::find( $id );
+                        $order->originalOrder()->update( [ 'is_returned' => FALSE ] );
+                        $order->delete();
+                    }
+                } );
+            } catch ( Exception $e ) {
+                return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
+            } catch ( \Throwable $e ) {
+                return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
             }
         }
     }
