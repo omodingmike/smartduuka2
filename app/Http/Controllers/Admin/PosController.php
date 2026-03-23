@@ -155,27 +155,30 @@
             }
         }
 
-        public function returnOrderRefundPaymentStatus(Order $order)
+        public function returnOrderRefundPaymentStatus(Order $order , Request $request)
         {
             try {
-                PosPayment::create( [
-                    'order_id'          => $order->id ,
-                    'date'              => now() ,
-                    'reference_no'      => time() ,
-                    'amount'            => $order->total ,
-                    'payment_method_id' => $order->payment_method ,
-                    'register_id'       => register()->id
-                ] );
+                DB::transaction( function () use ($order , $request) {
+                    $payment_method = $request->integer( 'payment_method' );
+                    PosPayment::create( [
+                        'order_id'          => $order->id ,
+                        'date'              => now() ,
+                        'reference_no'      => time() ,
+                        'amount'            => $order->total ,
+                        'payment_method_id' => $payment_method ,
+                        'register_id'       => register()->id
+                    ] );
 
-                PaymentMethodTransaction::create( [
-                    'amount'            => $order->total ,
-                    'item_type'         => Order::class ,
-                    'item_id'           => $order->id ,
-                    'charge'            => 0 ,
-                    'description'       => 'Order Return/Exchange #' . $order->order_serial_no ,
-                    'payment_method_id' => $order->payment_method ,
-                ] );
-                $order->update( [ 'refund_status' => RefundStatus::REFUNDED ] );
+                    PaymentMethodTransaction::create( [
+                        'amount'            => $order->total ,
+                        'item_type'         => Order::class ,
+                        'item_id'           => $order->id ,
+                        'charge'            => 0 ,
+                        'description'       => 'Order Return/Exchange #' . $order->order_serial_no ,
+                        'payment_method_id' => $payment_method ,
+                    ] );
+                    $order->update( [ 'refund_status' => RefundStatus::REFUNDED ] );
+                } );
 
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );

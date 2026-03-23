@@ -67,6 +67,10 @@
                         'pin'               => $request->pin ,
                         'force_reset'       => $request->boolean( 'forceReset' ) ,
                     ] );
+                    if ( $request->pin ) {
+                        $this->user->pin = Hash::make( $request->pin );
+                    }
+                    $this->user->save();
 
                     $this->user->assignRole( $role );
                 } );
@@ -100,6 +104,9 @@
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
+                    }
+                    if ( $request->pin ) {
+                        $this->user->pin = Hash::make( $request->pin );
                     }
                     $this->user->save();
 

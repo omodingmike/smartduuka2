@@ -62,6 +62,10 @@
                         'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
                     ] );
+                    if ( $request->pin ) {
+                        $this->user->pin = Hash::make( $request->pin );
+                    }
+                    $this->user->save();
                     $this->user->assignRole( EnumRole::ADMIN );
                 } );
                 return $this->user;
@@ -88,6 +92,9 @@
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
+                    }
+                    if ( $request->pin ) {
+                        $this->user->pin = Hash::make( $request->pin );
                     }
                     $this->user->save();
                 } );

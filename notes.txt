@@ -1,4 +1,4 @@
-Money package
+Demo business id: 1747935798
 https://github.com/brick/money
 
   chmod +x ~/deploy.sh && ./deploy.sh
