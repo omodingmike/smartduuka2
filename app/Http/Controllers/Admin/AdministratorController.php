@@ -13,6 +13,7 @@
     use App\Models\User;
     use App\Services\AdministratorService;
     use App\Services\OrderService;
+    use App\Services\PinService;
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
@@ -48,23 +49,21 @@
             }
         }
 
-        public function store(AdministratorRequest $request) : AdministratorResource | Response | Application | ResponseFactory
+        public function store(AdministratorRequest $request,PinService $pin_service) : AdministratorResource | Response | Application | ResponseFactory
         {
             try {
-                $user = $this->administratorService->store( $request );
-                if ( $request->boolean( 'emailCredentials' ) ) {
-                    SendUserCredentialsJob::dispatch( $user , $request->password, $request->pin );
-                }
+                $user = $this->administratorService->store( $request,$pin_service );
                 return new AdministratorResource( $user );
             } catch ( \Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
 
-        public function update(AdministratorRequest $request , User $administrator) : AdministratorResource | Response | Application | ResponseFactory
+        public function update(AdministratorRequest $request , User $administrator,PinService $pin_service) : AdministratorResource | Response | Application |
+        ResponseFactory
         {
             try {
-                $user = $this->administratorService->update( $request , $administrator );
+                $user = $this->administratorService->update( $request , $administrator,$pin_service );
                 if ( $request->boolean( 'emailCredentials' ) && $request->filled( 'password' ) ) {
                     SendUserCredentialsJob::dispatch( $user , $request->password, $request->pin );
                 }

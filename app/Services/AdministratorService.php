@@ -8,6 +8,7 @@
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\UserChangePasswordRequest;
+    use App\Jobs\SendMailJob;
     use App\Libraries\AppLibrary;
     use App\Models\User;
     use Exception;
@@ -15,6 +16,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
+    use Smartisan\Settings\Facades\Settings;
 
     class AdministratorService
     {
@@ -47,17 +49,22 @@
         /**
          * @throws Exception
          */
-        public function store(AdministratorRequest $request)
+        public function store(AdministratorRequest $request , PinService $pin_service)
         {
             try {
-                DB::transaction( function () use ($request) {
-                    $this->user = User::create( [
+                DB::transaction( function () use ($request , $pin_service) {
+                    $forceReset       = $request->boolean( 'forceReset' );
+                    $emailCredentials = $request->boolean( 'emailCredentials' );
+//                    $pin              = $pin_service->generateUniquePin();
+                    $this->user       = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
                         'phone'             => $request->phone ,
                         'username'          => AppLibrary::username( $request->name ) ,
                         'password'          => Hash::make( $request->password ) ,
                         'status'            => $request->status ,
+                        'force_reset'       => $forceReset ,
+//                        'raw_pin'           => $pin ,
                         'email_verified_at' => now() ,
                         'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
@@ -67,6 +74,16 @@
                     }
                     $this->user->save();
                     $this->user->assignRole( EnumRole::ADMIN );
+                    if ( $emailCredentials ) {
+                        SendMailJob::dispatch( [
+                            'name'         => $this->user->name ,
+                            'email'        => $this->user->email ,
+                            'password'     => $request->password ,
+                            'pin'          => '' ,
+                            'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                            'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                        ] );
+                    }
                 } );
                 return $this->user;
             } catch ( Exception $exception ) {
@@ -79,19 +96,33 @@
         /**
          * @throws Exception
          */
-        public function update(AdministratorRequest $request , User $administrator)
+        public function update(AdministratorRequest $request , User $administrator , PinService $pin_service)
         {
             try {
-                DB::transaction( function () use ($administrator , $request) {
+                DB::transaction( function () use ($administrator , $request , $pin_service) {
+                    $forceReset               = $request->boolean( 'forceReset' );
+                    $emailCredentials         = $request->boolean( 'emailCredentials' );
+//                    $pin                      = $pin_service->generateUniquePin();
                     $this->user               = $administrator;
                     $this->user->name         = $request->name;
                     $this->user->email        = $request->email;
                     $this->user->phone        = $request->phone;
                     $this->user->status       = $request->status;
+                    $this->user->force_reset  = $forceReset;
                     $this->user->country_code = $request->country_code;
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
+                        if ( $emailCredentials ) {
+                            SendMailJob::dispatch( [
+                                'name'         => $this->user->name ,
+                                'email'        => $this->user->email ,
+                                'password'     => $request->password ,
+                                'pin'          => '',
+                                'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                                'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                            ] );
+                        }
                     }
                     if ( $request->pin ) {
                         $this->user->pin = Hash::make( $request->pin );

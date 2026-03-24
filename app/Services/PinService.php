@@ -40,4 +40,19 @@
             } while ( ! $isUnique );
             return $rawPin;
         }
+
+        public function verifyPin(string $pin_hash , string $rawPin) : bool
+        {
+            $hashedInput = $this->hashPin( $rawPin );
+
+            return hash_equals( $pin_hash , $hashedInput );
+        }
+
+        /**
+         * Internal helper to ensure consistent hashing logic.
+         */
+        public function hashPin(string $rawPin) : string
+        {
+            return hash_hmac( 'sha256' , $rawPin , config( 'app.pin_pepper' ) );
+        }
     }

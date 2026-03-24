@@ -2,6 +2,7 @@
 
     namespace App\Http\Controllers\Auth;
 
+    use App\Enums\Role;
     use App\Enums\Status;
     use App\Http\Controllers\Controller;
     use App\Http\Resources\MenuResource;
@@ -10,10 +11,10 @@
     use App\Services\DefaultAccessService;
     use App\Services\MenuService;
     use App\Services\PermissionService;
+    use App\Services\PinService;
     use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
-    use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Validator;
     use Laravel\Sanctum\PersonalAccessToken;
 
@@ -35,9 +36,10 @@
             $this->defaultAccessService = $defaultAccessService;
         }
 
-        public function login(Request $request) : JsonResponse
+        public function login(Request $request , PinService $pin_service) : JsonResponse
         {
             $isPinLogin = $request->filled( 'pin' );
+            $pin        = $request->string( 'pin' );
             $rules      = $isPinLogin
                 ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
                 : [ 'email' => [ 'required' , 'string' ] , 'password' => [ 'required' , 'string' ] ];
@@ -49,17 +51,17 @@
 
             $user = NULL;
 
-            // 2. Authentication Logic
             if ( $isPinLogin ) {
-                // Optimized check: only fetch users with the matching status and PIN
-                $user = User::where( 'status' , Status::ACTIVE )
-                            ->whereNotNull( 'pin' )
-                            ->get()
-                            ->first( fn($u) => Hash::check( $request->pin , $u->pin ) );
-
-                if ( $user ) {
-                    // CRITICAL: Manually log the user into the session guard
+                $pin_hash = $pin_service->hashPin( $pin );
+                $user     = User::where( 'pin' , $pin_hash )->first();
+                if ( $user && $pin_service->verifyPin( $user->pin , $pin ) ) {
+                    if ( $user->hasRole( Role::ADMIN ) ) {
+                        return new JsonResponse( [ 'errors' => [ 'validation' => 'Administrators must log in with email and password.' ] ] , 401 );
+                    }
                     Auth::login( $user , TRUE );
+                }
+                else {
+                    $user = NULL;
                 }
             }
             else {

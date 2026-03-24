@@ -11,6 +11,7 @@
     use App\Services\MenuService;
     use App\Services\OtpManagerService;
     use App\Services\PermissionService;
+    use App\Services\PinService;
     use App\Traits\ApiResponse;
     use Carbon\Carbon;
     use Exception;
@@ -200,18 +201,16 @@
         public function resetPassword(Request $request)
         {
             $validator = Validator::make( $request->all() , [
-                'identifier'            => 'required|string|max:255' ,
+                'identifier'            => 'sometimes|string|max:255' ,
                 'password'              => 'required|string|min:6|confirmed' ,
                 'password_confirmation' => 'required|string|min:6' ,
             ] );
 
             if ( $validator->fails() ) {
-                // Return the first validation error message
                 return $this->error( $validator->errors()->first() , 422 );
             }
 
             $identifier = $request->input( 'identifier' );
-            $user       = NULL;
 
             // 1. Check if identifier is an Email
             if ( filter_var( $identifier , FILTER_VALIDATE_EMAIL ) ) {
@@ -227,12 +226,17 @@
 
                 // Search by phone (ignoring country_code column if you store full normalized numbers)
                 $user = User::where( 'phone' , $phone )->first();
+                if ( ! $user ) {
+                    $user = $request->user();
+                }
             }
+
 
             // 3. Update Password if user exists
             if ( $user ) {
                 $user->update( [
-                    'password' => Hash::make( $request->post( 'password' ) )
+                    'password' => Hash::make( $request->post( 'password' ) ) ,
+                    'is_reset' => TRUE ,
                 ] );
 
                 return $this->success( trans( 'all.message.reset_successfully' ) );
@@ -242,10 +246,10 @@
             return $this->error( trans( 'all.message.user_does_not_exist' ) , 422 );
         }
 
-        public function resetPin(Request $request)
+        public function resetPin(Request $request , PinService $pin_service)
         {
             $validator = Validator::make( $request->all() , [
-                'identifier' => 'required|string|max:255' ,
+                'identifier' => 'sometimes|string|max:255' ,
                 'pin'        => 'required|string|digits:5' ,
             ] );
 
@@ -266,11 +270,15 @@
                     $phone = '0' . substr( $phone , 3 );
                 }
                 $user = User::where( 'phone' , $phone )->first();
+                if ( ! $user ) {
+                    $user = $request->user();
+                }
             }
 
             if ( $user ) {
                 $user->update( [
-                    'pin' => Hash::make( $request->post( 'pin' ) )
+                    'pin'      => $pin_service->hashPin( $request->pin ) ,
+                    'is_reset' => TRUE
                 ] );
                 return $this->success(
                     trans( 'all.message.pin_reset_successfully' ) );

@@ -63,3 +63,5 @@ php artisan tenants:seed --force --tenants=techpulsespares
 php artisan tenants:run app:fix-user-roles --tenants=zakayo
 
 php artisan tenants:run tinker --tenants=zakayo
+duqihozol@gmail.com
+

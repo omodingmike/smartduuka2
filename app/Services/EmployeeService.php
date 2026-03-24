@@ -55,6 +55,7 @@
                 $role = Role::findById( (int) $request->role_id );
 
                 DB::transaction( function () use ($request , $role , $pin_service) {
+                    $pin        = $pin_service->generateUniquePin();
                     $this->user = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
@@ -66,12 +67,11 @@
                         'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
                         'department'        => $request->department ,
-                        'pin'               => $request->pin ,
+                        'raw_pin'           => $pin ,
+                        'pin'               => $pin_service->hashPin( $pin ) ,
                         'force_reset'       => $request->boolean( 'forceReset' ) ,
                     ] );
-                    if ( $request->pin ) {
-                        $this->user->pin = Hash::make( $request->pin );
-                    }
+
                     $this->user->save();
 
                     $emailCredentials = $request->boolean( 'emailCredentials' );
@@ -82,7 +82,7 @@
                             'name'         => $this->user->name ,
                             'email'        => $this->user->email ,
                             'password'     => $request->password ,
-                            'pin'          => $pin_service->generateUniquePin() ,
+                            'pin'          => $pin ,
                             'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                             'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                         ] );
@@ -113,15 +113,23 @@
                     $this->user->status       = $request->status;
                     $this->user->country_code = $request->country_code;
                     $this->user->department   = $request->department;
-                    $this->user->pin          = $request->pin;
                     $this->user->force_reset  = $request->boolean( 'forceReset' );
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
+                        $emailCredentials = $request->boolean( 'emailCredentials' );
+                        if ( $emailCredentials ) {
+                            SendMailJob::dispatch( [
+                                'name'         => $this->user->name ,
+                                'email'        => $this->user->email ,
+                                'password'     => $request->password ,
+                                'pin'          => $pin ,
+                                'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                                'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                            ] );
+                        }
                     }
-                    if ( $request->pin ) {
-                        $this->user->pin = Hash::make( $request->pin );
-                    }
+
                     $this->user->save();
 
                     $this->user->syncRoles( $role );

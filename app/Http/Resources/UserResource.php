@@ -27,6 +27,7 @@
                 'username'         => $this->username ,
                 'force_reset'      => $this->force_reset ,
                 'is_reset'         => $this->is_reset ,
+                'raw_pin'          => $this->raw_pin ,
                 'commission'       => $this->commission ,
                 "balance"          => AppLibrary::flatAmountFormat( $this->balance ) ,
                 "currency_balance" => AppLibrary::currencyAmountFormat( $this->balance ) ,
