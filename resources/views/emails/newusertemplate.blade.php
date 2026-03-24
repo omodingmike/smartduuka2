@@ -86,7 +86,6 @@
                                        style="display: inline-block; background-color: #ea580c; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 6px;">Login
                                         to System</a>
                                 </td>
-                                <td>{{$data['login_url']}}</td>
                             </tr>
                         </table>
 
