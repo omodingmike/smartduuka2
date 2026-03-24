@@ -4,8 +4,10 @@
 
 
     use App\Libraries\AppLibrary;
+    use App\Models\User;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /** @mixin User */
     class UserResource extends JsonResource
     {
         /**
@@ -23,6 +25,8 @@
                 "phone"            => $this->phone === NULL ? '' : $this->phone ,
                 "email"            => $this->email ,
                 'username'         => $this->username ,
+                'force_reset'      => $this->force_reset ,
+                'is_reset'         => $this->is_reset ,
                 'commission'       => $this->commission ,
                 "balance"          => AppLibrary::flatAmountFormat( $this->balance ) ,
                 "currency_balance" => AppLibrary::currencyAmountFormat( $this->balance ) ,

@@ -2,7 +2,6 @@
 
     declare( strict_types = 1 );
 
-    use App\Helpers\printing\PrintAgentController;
     use App\Http\Controllers\ActivityLogController;
     use App\Http\Controllers\Admin\AdministratorAddressController;
     use App\Http\Controllers\Admin\AdministratorController;
@@ -76,6 +75,7 @@
     use App\Http\Controllers\PaymentAccountController;
     use App\Http\Controllers\PaymentController;
     use App\Http\Controllers\PaymentMethodController;
+    use App\Http\Controllers\PrintAgentController;
     use App\Http\Controllers\PrinterController;
     use App\Http\Controllers\ProductionController;
     use App\Http\Controllers\ProductionProcessController;
@@ -85,10 +85,12 @@
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\WarehouseController;
+    use App\Mail\SendEmail;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
     use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
+    use Smartisan\Settings\Facades\Settings;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
     use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -100,10 +102,22 @@
         Route::get( '/' , function () {
             return 'This is your multi-tenant application. The id of the current tenant is ' . tenant( 'id' );
         } );
+        Route::get( '/mail' , function () {
+            return ( new SendEmail( 'emails.newusertemplate' , 'New user' ,
+                [
+                    'name'         => 'Mike' ,
+                    'email'        => 'omodingmike@gmail.com' ,
+                    'password'     => 'omodingmike@gmail.com' ,
+                    'pin'          => 'omodingmike@gmail.com' ,
+                    'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                    'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                ]
+            ) )->render();
+        } );
         Route::get( 'sanctum/csrf-cookie' , [ CsrfCookieController::class , 'show' ] )
              ->middleware( [
                  'web' ,
-                 InitializeTenancyByDomain::class // Use tenancy initialization middleware of your choice
+                 InitializeTenancyByDomain::class
              ] )->name( 'sanctum.csrf-cookie' );
     } );
 
@@ -127,7 +141,7 @@
         Route::match( [ 'get' , 'post' ] , '/refresh-token' , [ RefreshTokenController::class , 'refreshToken' ] )->middleware( [ 'installed' ] );
 
         Route::prefix( 'auth' )->name( 'auth.' )->namespace( 'Auth' )->group( function () {
-            Route::post( '/login' , [ LoginController::class , 'login' ] );
+            Route::post( '/login' , [ LoginController::class , 'login' ] )->name( 'auth.login' );
             Route::post( 'token' , [ LoginController::class , 'token' ] );
             Route::prefix( 'forgot-password' )->name( 'forgot-password-auth.' )->group( function () {
                 Route::post( '/' , [ ForgotPasswordController::class , 'forgotPassword' ] );

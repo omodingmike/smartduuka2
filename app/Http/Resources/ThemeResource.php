@@ -29,7 +29,6 @@
             return [
                 "theme_logo"    => $this->themeImage( 'theme_logo' )?->logo ?? '' ,
                 "theme_favicon" => $this->themeImage( 'theme_favicon' )->faviconLogo ?? '' ,
-//                "theme_footer_logo" => $this->themeImage( 'theme_footer_logo' )->footerLogo ,
             ];
         }
 

@@ -87,6 +87,7 @@
             'credits'           => 'decimal' ,
             'last_login_date'   => 'datetime' ,
             'force_reset'       => 'boolean' ,
+            'is_reset'          => 'boolean' ,
         ];
 
         public function guardName() : string

@@ -129,6 +129,7 @@
                 'PROJECT_ID'                 => 'app.project_id' ,
                 'TIMEZONE'                   => 'app.timezone' ,
                 'business_id'                => 'app.business_id' ,
+                'pin_pepper'                 => 'app.pin_pepper' ,
                 'print_agent_token'          => 'app.print_agent_token' ,
 
                 // From at.php

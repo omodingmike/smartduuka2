@@ -8,12 +8,14 @@
     use App\Http\Requests\EmployeeRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\UserChangePasswordRequest;
+    use App\Jobs\SendMailJob;
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\User;
     use Exception;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
+    use Smartisan\Settings\Facades\Settings;
     use Spatie\Permission\Models\Role;
 
 
@@ -47,12 +49,12 @@
             }
         }
 
-        public function store(EmployeeRequest $request)
+        public function store(EmployeeRequest $request , PinService $pin_service)
         {
             try {
                 $role = Role::findById( (int) $request->role_id );
 
-                DB::transaction( function () use ($request , $role) {
+                DB::transaction( function () use ($request , $role , $pin_service) {
                     $this->user = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
@@ -72,7 +74,19 @@
                     }
                     $this->user->save();
 
+                    $emailCredentials = $request->boolean( 'emailCredentials' );
+
                     $this->user->assignRole( $role );
+                    if ( $emailCredentials ) {
+                        SendMailJob::dispatch( [
+                            'name'         => $this->user->name ,
+                            'email'        => $this->user->email ,
+                            'password'     => $request->password ,
+                            'pin'          => $pin_service->generateUniquePin() ,
+                            'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                            'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                        ] );
+                    }
                 } );
                 return $this->user;
 
@@ -86,7 +100,7 @@
         /**
          * @throws Exception
          */
-        public function update(EmployeeRequest $request , User $employee)
+        public function update(EmployeeRequest $request , User $employee , PinService $pin_service)
         {
             try {
                 $role = Role::findById( (int) $request->role_id );
@@ -128,6 +142,17 @@
                         }
                         $this->user->syncPermissions( $flatPermissions );
                     }
+                }
+                $emailCredentials = $request->boolean( 'emailCredentials' );
+                if ( $emailCredentials ) {
+                    SendMailJob::dispatch( [
+                        'name'         => $this->user->name ,
+                        'email'        => $this->user->email ,
+                        'password'     => $request->password ,
+                        'pin'          => $pin_service->generateUniquePin() ,
+                        'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                        'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                    ] );
                 }
 
                 return $this->user;

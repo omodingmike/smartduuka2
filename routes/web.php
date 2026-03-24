@@ -1,5 +1,6 @@
 <?php
 
+    use App\Mail\SendEmail;
     use Illuminate\Support\Facades\Route;
 
     foreach ( config( 'tenancy.central_domains' , [] ) as $domain ) {

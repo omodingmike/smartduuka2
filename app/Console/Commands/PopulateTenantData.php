@@ -4,22 +4,22 @@
 
     use App\Models\Tenant;
     use Illuminate\Console\Command;
+    use Illuminate\Support\Str;
 
     class PopulateTenantData extends Command
     {
         protected $signature   = 'tenants:populate-data';
-        protected $description = 'Populate business_id and print_agent_token for existing tenants';
+        protected $description = 'Populate tenant data.';
 
-        public function handle() : int
+        public function handle() : void
         {
-            $tenants = Tenant::all();
-
-            foreach ( $tenants as $tenant ) {
-                $businessId = $tenant->business_id;
-                if ( ! $businessId ) {
-                    $tenant->update( [ 'business_id' => time() + rand( 10 , 100000000 ) ] );
-                }
-            }
-            return 0;
+            Tenant::all()->runForEach( function (Tenant $tenant) {
+                $tenant->update(
+                    [
+                        'business_id'  => time() + rand( 1 , 1000000000 ) ,
+                        'pin_pepper'   => Str::uuid()->getHex() ,
+                        'frontend_url' => tenant( 'id' ) . config( 'session.domain' )
+                    ] );
+            } );
         }
     }

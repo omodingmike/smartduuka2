@@ -20,6 +20,7 @@
         'dev'         => env( 'DEV' ) ,
         'accounting'  => env( 'ACCOUNTING_ENABLED' ) ,
         'chrome_path' => env( 'CHROME_PATH' ) ,
+        'pin_pepper'  => env( 'PIN_PEPPER' ) ,
 
         /*
         |--------------------------------------------------------------------------

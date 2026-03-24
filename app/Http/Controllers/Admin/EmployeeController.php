@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Services\PinService;
 use Exception;
 use App\Models\User;
 use App\Services\OrderService;
@@ -47,26 +48,21 @@ class EmployeeController extends AdminController
         }
     }
 
-    public function store(EmployeeRequest $request): Response | EmployeeResource | Application | ResponseFactory
+    public function store(EmployeeRequest $request,PinService $pin_service): Response | EmployeeResource | Application | ResponseFactory
     {
         try {
-            $user = $this->employeeService->store($request);
-            if ($request->boolean('emailCredentials')) {
-                SendUserCredentialsJob::dispatch($user, $request->password, $request->pin);
-            }
+            $user = $this->employeeService->store($request, $pin_service);
             return new EmployeeResource($user);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);
         }
     }
 
-    public function update(EmployeeRequest $request, User $employee): Response | EmployeeResource | Application | ResponseFactory
+    public function update(EmployeeRequest $request, User $employee,PinService $pin_service): Response | EmployeeResource | Application | ResponseFactory
     {
         try {
-            $user = $this->employeeService->update($request, $employee);
-            if ($request->boolean('emailCredentials') && $request->filled('password')) {
-                SendUserCredentialsJob::dispatch($user, $request->password, $request->pin);
-            }
+            $user = $this->employeeService->update($request, $employee, $pin_service);
+
             return new EmployeeResource($user);
         } catch (Exception $exception) {
             return response(['status' => false, 'message' => $exception->getMessage()], 422);

@@ -1,4 +1,4 @@
-Demo business id: 1747935798
+Demo business id: 1747935798,1775992658
 https://github.com/brick/money
 
   chmod +x ~/deploy.sh && ./deploy.sh
@@ -62,4 +62,4 @@ php artisan tenants:seed --force --tenants=techpulsespares
 
 php artisan tenants:run app:fix-user-roles --tenants=zakayo
 
-php artisan tenants:run tinker --tenants=techpulsespares
+php artisan tenants:run tinker --tenants=zakayo
