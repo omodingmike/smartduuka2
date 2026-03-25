@@ -55,8 +55,8 @@
                 DB::transaction( function () use ($request , $pin_service) {
                     $forceReset       = $request->boolean( 'forceReset' );
                     $emailCredentials = $request->boolean( 'emailCredentials' );
-//                    $pin              = $pin_service->generateUniquePin();
-                    $this->user = User::create( [
+                    $pin              = $pin_service->generateUniquePin();
+                    $this->user       = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
                         'phone'             => $request->phone ,
@@ -64,7 +64,7 @@
                         'password'          => Hash::make( $request->password ) ,
                         'status'            => $request->status ,
                         'force_reset'       => $forceReset ,
-//                        'raw_pin'           => $pin ,
+                        'raw_pin'           => $pin ,
                         'email_verified_at' => now() ,
                         'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
@@ -79,7 +79,7 @@
                             'name'         => $this->user->name ,
                             'email'        => $this->user->email ,
                             'password'     => $request->password ,
-                            'pin'          => '' ,
+                            'pin'          => $pin ,
                             'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                             'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                         ] );
