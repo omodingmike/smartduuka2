@@ -105,7 +105,7 @@
             try {
                 $role = Role::findById( (int) $request->role_id );
 
-                DB::transaction( function () use ($employee , $request , $role) {
+                DB::transaction( function () use ($employee , $request , $role,$pin_service) {
                     $this->user               = $employee;
                     $this->user->name         = $request->name;
                     $this->user->email        = $request->email;
@@ -118,13 +118,15 @@
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
                         $emailCredentials = $request->boolean( 'emailCredentials' );
+                        $pin                  = $pin_service->generateUniquePin();
+                        $this->user->pin      = $pin_service->hashPin( $pin );
                         if ( $emailCredentials ) {
                             SendMailJob::dispatch( [
                                 'name'         => $this->user->name ,
                                 'email'        => $this->user->email ,
                                 'password'     => $request->password ,
                                 'pin'          => $pin ,
-                                'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                                'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                                 'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                             ] );
                         }

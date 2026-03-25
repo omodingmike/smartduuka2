@@ -55,9 +55,9 @@
                 $pin_hash = $pin_service->hashPin( $pin );
                 $user     = User::where( 'pin' , $pin_hash )->first();
                 if ( $user && $pin_service->verifyPin( $user->pin , $pin ) ) {
-                    if ( $user->hasRole( Role::ADMIN ) ) {
-                        return new JsonResponse( [ 'errors' => [ 'validation' => 'Administrators must log in with email and password.' ] ] , 401 );
-                    }
+//                    if ( $user->hasRole( Role::ADMIN ) ) {
+//                        return new JsonResponse( [ 'errors' => [ 'validation' => 'Administrators must log in with email and password.' ] ] , 401 );
+//                    }
                     Auth::login( $user , TRUE );
                 }
                 else {

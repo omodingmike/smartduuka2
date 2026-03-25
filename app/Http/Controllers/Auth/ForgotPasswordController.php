@@ -278,7 +278,8 @@
             if ( $user ) {
                 $user->update( [
                     'pin'      => $pin_service->hashPin( $request->pin ) ,
-                    'is_reset' => TRUE
+                    'is_reset' => TRUE ,
+                    'raw_pin'  => NULL
                 ] );
                 return $this->success(
                     trans( 'all.message.pin_reset_successfully' ) );

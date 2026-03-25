@@ -4,6 +4,7 @@
 
     use Illuminate\Bus\Queueable;
     use Illuminate\Mail\Mailable;
+    use Illuminate\Mail\Mailables\Address;
     use Illuminate\Mail\Mailables\Content;
     use Illuminate\Mail\Mailables\Envelope;
     use Illuminate\Queue\SerializesModels;
@@ -12,12 +13,14 @@
     {
         use Queueable , SerializesModels;
 
-        public function __construct(public string $template ,public string $subj, public array $data) {}
+        public function __construct(public string $template , public string $subj , public array $data) {}
 
         public function envelope() : Envelope
         {
+            $tenant = tenant( 'id' );
             return new Envelope(
-                subject:$this->subj ,
+                from: new Address( config( 'mail.from.address' ) , "Smartduuka($tenant)" ) ,
+                subject: $this->subj ,
             );
         }
 

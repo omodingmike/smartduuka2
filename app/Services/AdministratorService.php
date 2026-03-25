@@ -56,7 +56,7 @@
                     $forceReset       = $request->boolean( 'forceReset' );
                     $emailCredentials = $request->boolean( 'emailCredentials' );
 //                    $pin              = $pin_service->generateUniquePin();
-                    $this->user       = User::create( [
+                    $this->user = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
                         'phone'             => $request->phone ,
@@ -102,7 +102,6 @@
                 DB::transaction( function () use ($administrator , $request , $pin_service) {
                     $forceReset               = $request->boolean( 'forceReset' );
                     $emailCredentials         = $request->boolean( 'emailCredentials' );
-//                    $pin                      = $pin_service->generateUniquePin();
                     $this->user               = $administrator;
                     $this->user->name         = $request->name;
                     $this->user->email        = $request->email;
@@ -113,12 +112,14 @@
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
+                        $pin                  = $pin_service->generateUniquePin();
+                        $this->user->pin      = $pin_service->hashPin( $pin );
                         if ( $emailCredentials ) {
                             SendMailJob::dispatch( [
                                 'name'         => $this->user->name ,
                                 'email'        => $this->user->email ,
                                 'password'     => $request->password ,
-                                'pin'          => '',
+                                'pin'          => $pin ,
                                 'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                                 'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                             ] );
