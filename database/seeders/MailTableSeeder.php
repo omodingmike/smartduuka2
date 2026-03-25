@@ -27,7 +27,7 @@ class MailTableSeeder extends Seeder
             'mail_username'   => $envService->getValue('DEMO') ? 'inilabsd@inilabs.dev' : '',
             'mail_password'   => $envService->getValue('DEMO') ? 'rb-XO$3~dc4q' : '',
             'mail_encryption' => $envService->getValue('DEMO') ? 'ssl' : '',
-            'mail_from_name'  => $envService->getValue('DEMO') ? 'PosKing - Laravel POS System with Inventory Management and Retail Business ERP' : '',
+            'mail_from_name'  => $envService->getValue('DEMO') ? 'SmartDuuka - Laravel POS System with Inventory Management and Retail Business ERP' : '',
             'mail_from_email' => $envService->getValue('DEMO') ? 'inilabsd@inilabs.dev' : ''
         ]);
 
@@ -38,7 +38,7 @@ class MailTableSeeder extends Seeder
             'MAIL_USERNAME'     => $envService->getValue('DEMO') ? 'inilabsd@inilabs.dev' : '',
             'MAIL_PASSWORD'     => $envService->getValue('DEMO') ? 'rb-XO$3~dc4q' : '',
             'MAIL_ENCRYPTION'   => $envService->getValue('DEMO') ? 'ssl' : '',
-            'MAIL_FROM_NAME'    => $envService->getValue('DEMO') ? 'PosKing - Laravel POS System with Inventory Management and Retail Business ERP' : '',
+            'MAIL_FROM_NAME'    => $envService->getValue('DEMO') ? 'SmartDuuka - Laravel POS System with Inventory Management and Retail Business ERP' : '',
             'MAIL_FROM_ADDRESS' => $envService->getValue('DEMO') ? 'inilabsd@inilabs.dev' : ''
         ]);
         Artisan::call('optimize:clear');

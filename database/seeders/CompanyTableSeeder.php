@@ -18,7 +18,7 @@ class CompanyTableSeeder extends Seeder
     public function run()
     {
         Settings::group('company')->set([
-            'company_name'         => 'PosKing - Laravel POS System with Inventory Management and Retail Business ERP',
+            'company_name'         => 'SmartDuuka - Laravel POS System with Inventory Management and Retail Business ERP',
             'company_email'        => 'info@inilabs.net',
             'company_calling_code' => '+880',
             'company_phone'        => '13333846282',
@@ -34,7 +34,7 @@ class CompanyTableSeeder extends Seeder
 
         $envService = new EnvEditor();
         $envService->addData([
-            'APP_NAME' => "PosKing - Laravel POS System with Inventory Management and Retail Business ERP"
+            'APP_NAME' => "SmartDuuka - Laravel POS System with Inventory Management and Retail Business ERP"
         ]);
         Artisan::call('optimize:clear');
     }
