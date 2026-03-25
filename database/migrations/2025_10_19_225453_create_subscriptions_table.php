@@ -7,9 +7,6 @@
     return new class extends Migration {
         protected $connection = 'pgsql2';
 
-        /**
-         * Run the migrations.
-         */
         public function up() : void
         {
             Schema::dropIfExists( 'subscriptions' );

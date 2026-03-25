@@ -6,6 +6,8 @@ sshpass -p "81ZJwQGFZ5lz3GAt900y" scp /Users/mike/Desktop/valet/smartduuka2/setu
  161.97.184.49
  ssh -p 7589 -i ~/.ssh/erudite deploy@161.97.184.49
 
+ docker compose exec db psql -U smartduuka -c "CREATE DATABASE smartduuka_main;"
+
   chmod +x ~/deploy.sh && ./deploy.sh
 
   ssh-keygen -t ed25519 -C "deploy@gmail.com"
