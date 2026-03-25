@@ -50,13 +50,18 @@ else
   echo "User $NEW_USER added to docker group."
 fi
 
-# 5. Passwordless Docker Sudo (Check if file exists)
-if [ -f /etc/sudoers.d/deploy-docker ]; then
-  echo "Passwordless Docker sudo rule already exists."
+# 5. Passwordless Sudo for the User (Check if file exists)
+if [ -f /etc/sudoers.d/"$NEW_USER" ]; then
+  echo "Passwordless sudo rule already exists for $NEW_USER."
 else
-  echo "$NEW_USER ALL=(ALL) NOPASSWD: /usr/bin/docker" > /etc/sudoers.d/deploy-docker
-  chmod 440 /etc/sudoers.d/deploy-docker
-  echo "Passwordless Docker sudo rule created."
+  echo "$NEW_USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$NEW_USER"
+  chmod 440 /etc/sudoers.d/"$NEW_USER"
+  echo "Passwordless sudo rule created for $NEW_USER."
+fi
+
+# Clean up the old docker-only sudoers file if you ran the previous script
+if [ -f /etc/sudoers.d/deploy-docker ]; then
+  rm /etc/sudoers.d/deploy-docker
 fi
 
 # 6. Harden SSH Configuration

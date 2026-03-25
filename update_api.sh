@@ -33,15 +33,12 @@ $COMPOSE version >/dev/null 2>&1 || fail "Docker Compose plugin not found"
 log "🚀 Starting deployment for ${APP_NAME}"
 cd "$BACKEND_DIR"
 
-log "🔐 Reclaiming ownership for the deploy user..."
-# This ensures 'deploy' can modify/delete files during git pull
-sudo chown -R $(whoami):$(whoami) "$BACKEND_DIR"
-
 # --------------------------------------------------
 # PULL LATEST CODE
 # --------------------------------------------------
 log "📥 Fetching latest changes from Git..."
-sudo chown -R $(whoami):$(whoami) .git
+# Reclaim ownership of the entire directory (including .git) to prevent pull errors
+sudo chown -R "$(whoami):$(whoami)" "$BACKEND_DIR"
 
 git fetch origin "$BRANCH"
 git reset --hard origin/"$BRANCH"
@@ -64,7 +61,7 @@ WRITABLE_DIRS=(
 for DIR in "${WRITABLE_DIRS[@]}"; do
   if [ ! -d "$DIR" ]; then
     echo "  ⚠️  Creating $DIR"
-    mkdir -p "$DIR"
+    sudo mkdir -p "$DIR"
   fi
   # Assign to www-data (33) so the container can write
   sudo chown -R 33:33 "$DIR"
@@ -74,26 +71,17 @@ done
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
-
 log "📦 Performing clean vendor installation..."
-$COMPOSE run --rm api bash -c "
-    composer install --no-dev --no-interaction
-"
+$COMPOSE run --rm api bash -c "composer install --no-dev --no-interaction"
 
 # --------------------------------------------------
 # 2. BUILD & RECREATE CONTAINERS
 # --------------------------------------------------
 log "🔨 Building and recreating api & nginx containers..."
-$COMPOSE up -d --build --force-recreate --force-recreate api nginx
-
-log "🧹 Truncating log files inside the container..."
-# This finds all .log files in the container's storage path and empties them
-#$COMPOSE exec -T api bash -c 'for f in /app/storage/logs/*.log; do [ -e "$f" ] && truncate -s 0 "$f"; done'
-
-log "🗄 Running database migrations..."
+$COMPOSE up -d --build --force-recreate api nginx
 
 # --------------------------------------------------
-# 3. NGINX CONFIG TESTd
+# 3. NGINX CONFIG TEST
 # --------------------------------------------------
 log "🧪 Validating Nginx configuration..."
 $COMPOSE exec -T nginx nginx -t || fail "Nginx configuration test failed"
@@ -113,7 +101,7 @@ done
 # --------------------------------------------------
 # 5. DATABASE & POST-DEPLOY TASKS
 # --------------------------------------------------
-log "🗄 Running database migrations..."
+log "🗄 Running database migrations and seeders..."
 $COMPOSE exec -T api php artisan migrate --force
 $COMPOSE exec -T api php artisan tenants:migrate --force
 $COMPOSE exec -T api php artisan db:seed --force
@@ -123,32 +111,20 @@ $COMPOSE exec -T api php artisan tenants:populate-data
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true
 
-log "🧹 Optimizing application..."
-# 1. Clear everything to remove stale/corrupt cache files
+log "🧹 Optimizing Laravel application..."
+# Clear stale/corrupt cache files
 $COMPOSE exec -T api php artisan optimize:clear
 
-#$COMPOSE exec -T api php artisan tenants:run optimize:clear
-
-# 2. Re-cache Configuration and Events
+# Build fresh caches for production performance
 $COMPOSE exec -T api php artisan config:cache
 $COMPOSE exec -T api php artisan event:cache
-
-# 3. Cache Routes (This replaces the route:clear/route:cache loop)
-# We run this after config is cached to ensure the environment is stable
-
-# 4. Cache Views
+$COMPOSE exec -T api php artisan route:cache
 $COMPOSE exec -T api php artisan view:cache
 
-$COMPOSE exec -T api php artisan route:clear
-
-#$COMPOSE exec -T api php artisan tenants:run optimize
-
 # --------------------------------------------------
-# 6. RELOAD PHP-FPM (THE FIX)
+# 6. RELOAD PHP-FPM
 # --------------------------------------------------
 log "🔄 Reloading PHP-FPM to clear OPcache..."
-# This sends the USR2 signal to the master process (PID 1) to reload workers
-# This ensures they pick up the 'config.php' changes made in Step 5
 $COMPOSE exec -T api php -r "opcache_reset();"
 $COMPOSE exec -T api kill -USR2 1 || echo "⚠️  Could not reload PHP-FPM automatically, verify manually."
 

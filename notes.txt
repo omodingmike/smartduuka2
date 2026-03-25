@@ -1,5 +1,10 @@
-Demo business id: 1747935798,1775992658
+Demo business id: 2270116975
 https://github.com/brick/money
+
+sshpass -p "81ZJwQGFZ5lz3GAt900y" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@161.97.184.49:./setup.sh
+ chmod +x ~/deploy.sh && ./deploy.sh
+ 161.97.184.49
+ ssh -p 7589 -i ~/.ssh/erudite deploy@161.97.184.49
 
   chmod +x ~/deploy.sh && ./deploy.sh
 
@@ -33,7 +38,7 @@ https://github.com/brick/money
 
 https://medium.com/@zulfikarditya/using-php-enums-in-laravel-12-a-comprehensive-guide-af75689f88e8
 
- chmod +x ~/setup.sh && ./setup.sh
+
 
 TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
 TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
@@ -64,4 +69,21 @@ php artisan tenants:run app:fix-user-roles --tenants=zakayo
 
 php artisan tenants:run tinker --tenants=zakayo
 duqihozol@gmail.com
+
+
+    Host github-api
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/smartduuka-api-key
+    IdentitiesOnly yes
+
+    Host github-web
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/smartduuka-web-key
+    IdentitiesOnly yes
+
+    git@github-api:omodingmike/smartduuka2.git
+    git@github-web:kimdigitary/smartduukanewfront.git
+
 

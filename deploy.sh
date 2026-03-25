@@ -6,10 +6,10 @@ set -Eeuo pipefail # Better error handling
 # ----------------------------
 PROJECT_DIR=~/smartduuka
 WEB_DIR="$PROJECT_DIR/web"
-WEB_REPO_URL="git@kimdigitary:kimdigitary/smartduukanewfront.git"
+WEB_REPO_URL="git@github-web:kimdigitary/smartduukanewfront.git"
 
 BACKEND_DIR="$PROJECT_DIR/api"
-BACKEND_REPO_URL="git@omodingmike:omodingmike/smartduuka2.git"
+BACKEND_REPO_URL="git@github-api:omodingmike/smartduuka2.git"
 
 SWAP_SIZE="1G"
 NETWORK_NAME="smartduuka_network"
@@ -47,20 +47,47 @@ else
 fi
 
 # ----------------------------
-# INSTALL DOCKER (Modern Method)
+# ENSURE DOCKER REPOSITORY IS ADDED
 # ----------------------------
-if ! command -v docker &> /dev/null; then
-  log "🐳 Installing Docker..."
+# This must run even if Docker is installed, so apt can find buildx-plugin
+if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
+  log "🔑 Adding official Docker repository..."
   sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
   sudo chmod a+r /etc/apt/keyrings/docker.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
     sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
   sudo apt-get update
-  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+fi
+
+# ----------------------------
+# INSTALL DOCKER ENGINE
+# ----------------------------
+if ! command -v docker &> /dev/null; then
+  log "🐳 Installing Docker Engine..."
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 fi
 
 sudo systemctl enable docker --now
+
+# ----------------------------
+# ENSURE BUILDX IS INSTALLED
+# ----------------------------
+if ! docker buildx version &> /dev/null; then
+  log "📦 Installing Docker Buildx plugin..."
+  sudo apt-get update
+  sudo apt-get install -y docker-buildx-plugin
+fi
+
+# ----------------------------
+# FETCH & INSTALL LATEST DOCKER COMPOSE
+# ----------------------------
+log "🐳 Fetching the absolute latest Docker Compose V2..."
+COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+log "✅ Docker Compose dynamically updated to ${COMPOSE_VERSION}"
 
 # ----------------------------
 # SETUP NETWORK
@@ -94,7 +121,6 @@ clone_or_pull "$BACKEND_REPO_URL" "$BACKEND_DIR"
 # FIX PERMISSIONS & SYMLINKS
 # ----------------------------
 log "🔐 Fixing Laravel permissions..."
-# Added .cache for Puppeteer/Chrome
 WRITABLE_DIRS=(
   "$BACKEND_DIR/storage"
   "$BACKEND_DIR/bootstrap/cache"
@@ -110,9 +136,7 @@ for DIR in "${WRITABLE_DIRS[@]}"; do
 done
 
 log "🔗 Ensuring storage symlink..."
-# Using --relative is best practice for Docker volumes
 cd "$BACKEND_DIR"
-# Remove if exists (to avoid nested links) and recreate
 rm -f public/storage
 ln -s ../storage/app/public public/storage
 
@@ -120,7 +144,6 @@ ln -s ../storage/app/public public/storage
 # DOCKER BUILD & START
 # ----------------------------
 log "🔨 Building and starting containers..."
-# Use 'docker compose' (plugin version) instead of 'docker-compose'
 sudo docker compose up -d --build --force-recreate --remove-orphans
 
 # ----------------------------
