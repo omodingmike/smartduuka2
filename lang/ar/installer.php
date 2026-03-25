@@ -2,11 +2,11 @@
 
 
 return [
-    'title'       => 'مثبت Posking',
+    'title'       => 'مثبت SmartDuuka',
     'next'        => 'الخطوة التالية',
     'welcome'     => [
         'templateTitle' => 'مرحبا',
-        'title'         => 'مثبت Posking',
+        'title'         => 'مثبت SmartDuuka',
         'message'       => 'معالج التثبيت والإعداد السهل.',
         'next'          => 'التحقق من المتطلبات',
     ],

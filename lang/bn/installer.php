@@ -2,11 +2,11 @@
 
 
 return [
-    'title'       => 'Posking ইনস্টলার',
+    'title'       => 'SmartDuuka ইনস্টলার',
     'next'        => 'পরবর্তী ধাপ',
     'welcome'     => [
         'templateTitle' => 'স্বাগতম',
-        'title'         => 'Posking ইনস্টলার',
+        'title'         => 'SmartDuuka ইনস্টলার',
         'message'       => 'সহজ ইনস্টলেশন এবং সেটআপ উইজার্ড।',
         'next'          => 'পরিশীলন প্রয়োজনীয়তা',
     ],

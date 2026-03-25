@@ -34,7 +34,7 @@ class SiteTableSeeder extends Seeder
             'site_default_language'                      => 1,
 //            'site_android_app_link'                      => $envService->getValue('DEMO') ? 'http://android.com' : '',
 //            'site_ios_app_link'                          => $envService->getValue('DEMO') ? 'http://ios.com' : '',
-            'site_copyright'                             => '© Posking by iNiLabs 2023, All Rights Reserved',
+            'site_copyright'                             => '© SmartDuuka by iNiLabs 2023, All Rights Reserved',
             'site_language_switch'                       => Activity::ENABLE,
             'site_app_debug'                             => Activity::DISABLE,
             'site_auto_update'                           => Activity::DISABLE,

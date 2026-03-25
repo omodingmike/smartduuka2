@@ -2,11 +2,11 @@
 
 
 return [
-    'title'       => 'Posking Installer',
+    'title'       => 'SmartDuuka Installer',
     'next'        => 'Next Step',
     'welcome'     => [
         'templateTitle' => 'Welcome',
-        'title'         => 'Posking Installer',
+        'title'         => 'SmartDuuka Installer',
         'message'       => 'Easy Installation and Setup Wizard.',
         'next'          => 'Check Requirements',
     ],
