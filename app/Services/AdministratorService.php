@@ -65,6 +65,7 @@
                         'status'            => $request->status ,
                         'force_reset'       => $forceReset ,
                         'raw_pin'           => $pin ,
+                        'pin'               => $pin_service->hashPin( $pin ) ,
                         'email_verified_at' => now() ,
                         'country_code'      => $request->country_code ,
                         'is_guest'          => Ask::NO ,
