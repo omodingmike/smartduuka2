@@ -88,4 +88,10 @@ duqihozol@gmail.com
     git@github-api:omodingmike/smartduuka2.git
     git@github-web:kimdigitary/smartduukanewfront.git
 
+    docker exec -t db pg_dumpall -U smartduuka | gzip > full_backup.sql.gz
+
+    scp -P 7589 -i ~/.ssh/erudite deploy@45.151.122.187:~/full_backup.sql.gz ~/Downloads/
+
+    scp -P 7589 -i ~/.ssh/erudite ~/Downloads/full_backup.sql.gz deploy@161.97.184.49:~/
+
 

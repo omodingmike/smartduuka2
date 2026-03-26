@@ -64,6 +64,25 @@ services:
     networks:
       - smartduuka_network
 
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartduuka_network
+
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -81,6 +100,7 @@ services:
 
 volumes:
   postgres_data:
+  mysql_data:
   redis_data:
   app_storage:
   assets_static:
