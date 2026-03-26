@@ -94,4 +94,6 @@ duqihozol@gmail.com
 
     scp -P 7589 -i ~/.ssh/erudite ~/Downloads/full_backup.sql.gz deploy@161.97.184.49:~/
 
+    cat ~/.ssh/smartduuka-api-key.pub >> ~/.ssh/authorized_keys
+
 

@@ -65,7 +65,7 @@ services:
       - smartduuka_network
 
   mysql:
-    image: mysql:latest
+    image: mysql:9.6
     container_name: mysql
     restart: unless-stopped
     environment:
