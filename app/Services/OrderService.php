@@ -69,10 +69,10 @@
         public function list(Request $request)
         {
             try {
-                $orderColumn    = $request->get( 'order_column' ) ?? 'id';
-                $orderBy        = $request->get( 'order_by' ) ?? 'desc';
-                $page           = $request->get( 'page' ) ?? 1;
-                $perPage        = $request->get( 'perPage' ) ?? 10;
+                $orderColumn    = $request->input( 'order_column' ) ?? 'id';
+                $orderBy        = $request->input( 'order_by' ) ?? 'desc';
+                $page           = $request->input( 'page' ) ?? 1;
+                $perPage        = $request->input( 'perPage' ) ?? 10;
                 $status         = $request->integer( 'status' );
                 $payment_status = $request->integer( 'payment_status' );
                 $order_type     = $request->integer( 'order_type' );
@@ -136,8 +136,8 @@
                                         [
                                             'meta' => [
                                                 'totalSales'                  => currency( $totalSales ) ,
-                                                'total_pending_return_orders' => currency($totalPendingReturnOrders) ,
-                                                'total_refund_orders' => currency($totalPendingRefundOrders) ,
+                                                'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
+                                                'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
                                             ]
                                         ] );
 
@@ -509,24 +509,7 @@
                         $net_amount = $amount - $change;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-
-                            PosPayment::create( [
-                                'order_id'          => $order->id ,
-                                'date'              => now() ,
-                                'reference_no'      => $p[ 'reference' ] ?? time() ,
-                                'amount'            => $net_amount ,
-                                'payment_method_id' => $p[ 'id' ] ,
-                                'register_id'       => register()->id
-                            ] );
-
-                            PaymentMethodTransaction::create( [
-                                'amount'            => $net_amount ,
-                                'item_type'         => Order::class ,
-                                'item_id'           => $order->id ,
-                                'charge'            => 0 ,
-                                'description'       => 'Order Payment #' . $this->order->order_serial_no ,
-                                'payment_method_id' => $payment->id ,
-                            ] );
+                            addPayment( $order , $net_amount , $payment->id,$p[ 'reference' ] );
                         }
                     }
 

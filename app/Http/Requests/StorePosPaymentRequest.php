@@ -11,14 +11,13 @@
 
         public function authorize() : bool
         {
-            return true;
+            return TRUE;
         }
 
         public function rules() : array
         {
             return [
                 'purchase_id'    => [ 'required' , 'not_in:0' , 'not_in:null' ] ,
-//            'date'           => ['required', 'string'],
                 'reference_no'   => [ 'nullable' , 'string' ] ,
                 'amount'         => [ 'required' , 'numeric' ] ,
                 'paid'           => [ 'sometimes' , 'numeric' ] ,
@@ -31,23 +30,23 @@
 
         public function withValidator($validator)
         {
-            $validator->after(function ($validator) {
-                $status  = false;
+            $validator->after( function ($validator) {
+                $status  = FALSE;
                 $message = '';
 
-                $purchasePaymentAmount = PosPayment::where('order_id' , request('purchase_id'))->sum('amount');
-                $order                 = Order::findOrFail(request('purchase_id'));
+                $purchasePaymentAmount = PosPayment::where( 'order_id' , request( 'purchase_id' ) )->sum( 'amount' );
+                $order                 = Order::findOrFail( request( 'purchase_id' ) );
 
                 $paymentDue = (float) $order->total - (float) $purchasePaymentAmount;
 
-                if ( $paymentDue < request('amount') ) {
-                    $status  = true;
-                    $message = trans('all.message.price_total_invalid');
+                if ( $paymentDue < request( 'amount' ) ) {
+                    $status  = TRUE;
+                    $message = trans( 'all.message.price_total_invalid' );
                 }
 
                 if ( $status ) {
-                    $validator->errors()->add('global' , $message);
+                    $validator->errors()->add( 'global' , $message );
                 }
-            });
+            } );
         }
     }

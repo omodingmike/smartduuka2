@@ -2,9 +2,12 @@
 
     namespace App\Models;
 
+    use App\Enums\CustomerPaymentType;
     use App\Enums\OrderStatus;
+    use App\Enums\PaymentType;
     use App\Enums\Status;
     use App\Services\CommissionCalculator;
+    use Carbon\Carbon;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,7 +37,7 @@
          * @var array<int, string>
          */
         protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value' , 'credit_orders' ];
+        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value' , 'credit_orders' , 'oldest_credit_order' ];
 
         protected $fillable = [
             'name' ,
@@ -117,7 +120,7 @@
             return asset( 'images/required/profile.png' );
         }
 
-        public function openRegister()
+        public function openRegister() : User | Register | \stdClass | null
         {
             return $this->registers()->whereNull( 'closed_at' )->latest()->first();
         }
@@ -132,7 +135,7 @@
             return $this->hasMany( CommissionTarget::class );
         }
 
-        public function payouts()
+        public function payouts() : User | HasMany
         {
             return $this->hasMany( CommissionPayout::class , 'user_id' , 'id' );
         }
@@ -181,11 +184,34 @@
         public function payments() : HasMany
         {
             return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' );
+
+        }
+
+        public function debtPayments() : HasMany
+        {
+            return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' )
+                        ->where( 'customer_payment_type' , CustomerPaymentType::DEBT );
         }
 
         protected function credits() : Attribute
         {
-            return Attribute::make( get: fn() => $this->orders()->sum( 'balance' ) );
+            return Attribute::make(
+                get: function () {
+                    $orderDebt = (float) $this->orders()
+                                              ->active()
+                                              ->selectRaw('SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id))) as total_debt')
+                                              ->value('total_debt');
+
+                    $legacyDebt = (float) $this->legacyDebts()->sum('amount');
+
+                    return $orderDebt + $legacyDebt;
+                }
+            );
+        }
+
+        public function legacyDebts() : User | HasMany
+        {
+            return $this->hasMany( LegacyDebt::class , 'user_id' , 'id' );
         }
 
         public function addresses() : HasMany
@@ -218,13 +244,29 @@
             );
         }
 
+        public function creditAndDeposit()
+        {
+            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+        }
+
         protected function creditOrders() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->orders->filter( function ($order) {
-                    return ( $order->balance > 0 ) && ( $order->status !== OrderStatus::CANCELED );
-                } )
+                get: fn() => $this->orders()
+                                  ->active()
+                                  ->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' )
+                                  ->orderBy( 'order_datetime' )
+                                  ->get()
             );
         }
 
+        protected function oldestCreditOrder() : Attribute
+        {
+            return Attribute::make(
+                get: function () {
+                    $oldestOrder = $this->creditOrders->sortBy( 'order_datetime' )->first();
+                    return $oldestOrder ? round( Carbon::parse( $oldestOrder->order_datetime )->diffInHours( now() ) / 24 ) : 0;
+                }
+            );
+        }
     }

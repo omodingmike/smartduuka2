@@ -71,6 +71,7 @@
     use App\Http\Controllers\Frontend\ProfileController;
     use App\Http\Controllers\Frontend\SettingController as FrontendSettingController;
     use App\Http\Controllers\LedgerController;
+    use App\Http\Controllers\LegacyDebtController;
     use App\Http\Controllers\ModuleController;
     use App\Http\Controllers\PaymentAccountController;
     use App\Http\Controllers\PaymentController;
@@ -554,6 +555,7 @@
             Route::prefix( 'customer' )->name( 'customer.' )->group( function () {
                 Route::get( '/' , [ CustomerController::class , 'index' ] );
                 Route::post( '/' , [ CustomerController::class , 'store' ] );
+                Route::post( '/debt' , [ LegacyDebtController::class , 'store' ] );
                 Route::get( '/show/{customer}' , [ CustomerController::class , 'show' ] );
                 Route::get( '/credits/{customer}' , [ CustomerController::class , 'credits' ] );
                 Route::post( '/payment/{customer}' , [ CustomerController::class , 'payment' ] );

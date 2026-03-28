@@ -31,24 +31,22 @@
             parent::__construct();
             $this->customerService = $customerService;
             $this->orderService    = $orderService;
-//            $this->middleware( [ 'permission:customers' ] )->only(
-//                'index' ,
-//                'export' ,
-//                'changePassword' ,
-//                'changeImage' ,
-//                'myOrder'
-//            );
-//            $this->middleware( [ 'permission:customers_create' ] )->only( 'store' );
-//            $this->middleware( [ 'permission:customers_edit' ] )->only( 'update' );
-//            $this->middleware( [ 'permission:customers_delete' ] )->only( 'destroy' );
-//            $this->middleware( [ 'permission:customers_show' ] )->only( 'show' );
         }
 
-        public function index(PaginateRequest $request
+        public function index(Request $request
         ) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                return CustomerResource::collection( $this->customerService->list( $request ) );
+                $customerQuery = $this->customerService->list( $request );
+                $totalCredit   = ( clone $customerQuery )->get()->sum( 'credits' );
+                $customers     = $customerQuery->paginate(
+                    perPage: $request->input( 'perPage' , 10 ) ,
+                    page: $request->input( 'page' , 1 )
+                );
+
+                return CustomerResource::collection( $customers )->additional( [
+                    'total_credit' => currency($totalCredit)
+                ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

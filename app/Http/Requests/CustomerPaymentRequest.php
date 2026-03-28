@@ -8,15 +8,14 @@
     {
         public function authorize() : bool
         {
-            return true;
+            return TRUE;
         }
 
         public function rules() : array
         {
             return [
-                'amount'        => 'required' ,
-                'date'          => 'required' ,
-                'paymentMethod' => 'required' ,
+                'amount' => 'required|numeric:' ,
+                'method' => 'required|numeric:' ,
             ];
         }
     }

@@ -18,6 +18,8 @@
     use App\Models\Order;
     use App\Models\PaymentAccount;
     use App\Models\PaymentMethod;
+    use App\Models\PaymentMethodTransaction;
+    use App\Models\PosPayment;
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
     use Carbon\Carbon;
@@ -140,6 +142,26 @@
     function settingValue(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : string | null
     {
         return Settings::group( $group )->get( $key );
+    }
+
+    function addPayment(Order $order , int $amount , int $payment_method , string $reference = NULL) : void
+    {
+        PosPayment::create( [
+            'order_id'          => $order->id ,
+            'date'              => now() ,
+            'reference_no'      => $reference ?? time() ,
+            'amount'            => $amount ,
+            'payment_method_id' => $payment_method ,
+            'register_id'       => register()?->id
+        ] );
+        PaymentMethodTransaction::create( [
+            'amount'            => $amount ,
+            'item_type'         => Order::class ,
+            'item_id'           => $order->id ,
+            'charge'            => 0 ,
+            'description'       => 'Order Payment #' . $order->order_serial_no ,
+            'payment_method_id' => $payment_method ,
+        ] );
     }
 
     function register() : Register

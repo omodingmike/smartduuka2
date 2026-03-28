@@ -3,6 +3,7 @@ https://github.com/brick/money
 
 sshpass -p "81ZJwQGFZ5lz3GAt900y" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@161.97.184.49:./setup.sh
  chmod +x ~/deploy.sh && ./deploy.sh
+ chmod +x ~/backup_and_push.sh && ./backup_and_push.sh
  161.97.184.49
  ssh -p 7589 -i ~/.ssh/erudite deploy@161.97.184.49
 
@@ -90,10 +91,9 @@ duqihozol@gmail.com
 
     docker exec -t db pg_dumpall -U smartduuka | gzip > full_backup.sql.gz
 
-    scp -P 7589 -i ~/.ssh/erudite deploy@45.151.122.187:~/full_backup.sql.gz ~/Downloads/
+    Run this command from your ~/backups folder on the destination VPS:
+    zcat $(ls -v full_backup_*.sql.gz | tail -n 1) | docker exec -i db psql -U smartduuka -d postgres
 
-    scp -P 7589 -i ~/.ssh/erudite ~/Downloads/full_backup.sql.gz deploy@161.97.184.49:~/
-
-    cat ~/.ssh/smartduuka-api-key.pub >> ~/.ssh/authorized_keys
+    cat ~/.ssh/smartduuka-web-key.pub >> ~/.ssh/authorized_keys
 
 

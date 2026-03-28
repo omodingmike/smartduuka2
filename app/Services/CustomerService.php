@@ -3,19 +3,20 @@
     namespace App\Services;
 
     use App\Enums\Ask;
+    use App\Enums\CustomerPaymentType;
     use App\Enums\PaymentStatus;
     use App\Enums\Role as EnumRole;
     use App\Enums\Status;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\CustomerPaymentRequest;
     use App\Http\Requests\CustomerRequest;
-    use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\UserChangePasswordRequest;
     use App\Libraries\QueryExceptionLibrary;
-    use App\Models\CreditDepositPurchase;
     use App\Models\CustomerPayment;
     use App\Models\User;
     use Exception;
+    use Illuminate\Database\Eloquent\Builder;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
@@ -30,20 +31,23 @@
         /**
          * @throws Exception
          */
-        public function list(PaginateRequest $request)
+        public function list(Request $request) : Builder
         {
             try {
-                $perPage = $request->integer( 'perPage' , 10000 );
-                $page    = $request->integer( 'page' , 1 );
                 $query   = $request->input( 'query' ) ?? NULL;
+                $debtors = $request->boolean( 'debtors' );
 
-                return User::with( [ 'media' , 'addresses' ] )
+                return User::with( [ 'media' , 'addresses' , 'debtPayments' ] )
                            ->role( EnumRole::CUSTOMER )
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
                            } )
-                           ->orderBy( 'created_at' , 'desc' )
-                           ->paginate( perPage: $perPage , page: $page );
+                           ->when( $debtors , function ($q) {
+                               $q->whereHas( 'orders' , function ($query) {
+                                   $query->active()->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' );
+                               } );
+                           } )
+                           ->orderBy( 'created_at' , 'desc' );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -148,62 +152,67 @@
             try {
                 DB::transaction( function () use ($customer , $request) {
                     $amount         = $request->validated()[ 'amount' ];
-                    $payment_method = $request->validated()[ 'paymentMethod' ];
-                    $date           = parseDate( $request->validated()[ 'date' ] );
-                    CustomerPayment::create( [ 'date' => $date , 'amount' => $amount , 'payment_method_id' => $payment_method , 'user_id' => $customer->id ] );
-                    $customer->orders()->where( 'balance' , '>' , 0 )
-//                             ->where( function ($query) use ($date , $payment_method) {
-//                                 $query->whereOrderType( OrderType::CREDIT );
-//                                 $query->orWhere( 'order_type' , '=' , OrderType::DEPOSIT );
-//                             } )
-                             ->chunkById( 100 , function ($orders) use (&$amount , $payment_method , $date) {
-                            foreach ( $orders as $order ) {
-                                if ( $amount <= 0 ) {
-                                    return FALSE;
-                                }
-                                $creditDepositPurchase = CreditDepositPurchase::where( 'order_id' , $order->id )->latest()->first();
-                                $previousBalance       = $creditDepositPurchase->balance;
-//                                     $balance                               = $order->balance;
-                                $balance                               = $previousBalance;
-                                $saveCreditPurchase                    = new CreditDepositPurchase();
-                                $saveCreditPurchase->order_id          = $order->id;
-                                $saveCreditPurchase->user_id           = $order->user_id;
-                                $saveCreditPurchase->payment_method_id = $payment_method;
-                                $saveCreditPurchase->date              = $date;
-                                $saveCreditPurchase->type              = 'credit';
-                                if ( $amount >= $balance ) {
-                                    $new_balance = 0;
-                                    $order->update(
-                                        [
-                                            'balance'        => $new_balance ,
-                                            'payment_status' => PaymentStatus::PAID ,
-//                                                 'order_type'     => OrderType::POS ,
-                                            'paid'           => $balance ,
-                                        ] );
-                                    $saveCreditPurchase->paid    = $balance;
-                                    $saveCreditPurchase->balance = $new_balance;
-                                    $saveCreditPurchase->save();
-                                    $amount -= $balance;
-                                }
-                                else {
-                                    $order->update(
-                                        [
-                                            'balance'        => $balance - $amount ,
-                                            'payment_status' => PaymentStatus::PARTIALLY_PAID ,
-                                            'paid'           => $order->paid + $amount ,
-                                        ] );
+                    $payment_method = $request->validated()[ 'method' ];
+                    $date           = now();
+                    $customer->load( [
+                        'legacyDebts' => function ($query) {
+                            $query->whereNotIn( 'payment_status' , [ PaymentStatus::PAID ] )
+                                  ->latest();
+                        } ,
+                        'orders'      => function ($query) {
+                            $query->active()
+                                  ->withSum( 'posPayments' , 'amount' )
+                                  ->orderBy( 'order_datetime' , 'asc' );
+                        }
+                    ] );
 
-                                    $saveCreditPurchase->paid    = $amount;
-                                    $newCreditBalance            = $previousBalance - $amount;
-                                    $saveCreditPurchase->balance = max( $newCreditBalance , 0 );
-                                    $saveCreditPurchase->save();
-                                    $amount = 0;
-                                    return FALSE;
-                                }
-                            }
-                        } );
+                    CustomerPayment::create( [
+                        'date'                  => $date ,
+                        'amount'                => $amount ,
+                        'payment_method_id'     => $payment_method ,
+                        'customer_payment_type' => CustomerPaymentType::DEBT ,
+                        'user_id'               => $customer->id ,
+                        'balance'               => $customer->credits - $amount ,
+                    ] );
+
+                    foreach ( $customer->legacyDebts as $debt ) {
+                        if ( $amount <= 0 ) break;
+                        $debt_amount = $debt->amount;
+                        if ( $amount >= $debt_amount ) {
+                            $debt->decrement( 'amount' , $debt_amount );
+                            $debt->update( [
+                                'amount'         => 0 ,
+                                'payment_status' => PaymentStatus::PAID
+                            ] );
+                            $amount -= $debt_amount;
+                        }
+                        else {
+                            $debt->decrement( 'amount' , $amount );
+                            $amount = 0;
+                        }
+                    }
+
+                    foreach ( $customer->credit_orders as $order ) {
+                        if ( $amount <= 0 ) break;
+
+                        $balance = $order->balance;
+
+                        if ( $amount >= $balance ) {
+                            $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
+                            addPayment( $order , $balance , $payment_method );
+                            $amount -= $balance;
+                        }
+                        else {
+                            $order->update( [
+                                'payment_status' => PaymentStatus::PARTIALLY_PAID ,
+                                'paid'           => ( $order->paid ?? 0 ) + $amount
+                            ] );
+                            addPayment( $order , $amount , $payment_method );
+                            $amount = 0;
+                        }
+                    }
                 } );
-                return $customer;
+                return $customer->refresh();
 
             } catch ( Exception $exception ) {
                 DB::rollBack();
