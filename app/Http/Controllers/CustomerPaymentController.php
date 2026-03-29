@@ -26,11 +26,7 @@
                                 toCarbonDate($requests['last_date'])->copy()->endOfDay()
                             ]);
                     }
-//                    foreach ( $requests as $key => $request ) {
-//                    if ( in_array($key , $this->userFilter) ) {
-//                        $query->where($key , 'like' , '%' . $request . '%');
-//                    }
-//                    }
+
                 })->orderBy($orderColumn , $orderType)->$method(
                     $methodValue
                 ));

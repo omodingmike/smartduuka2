@@ -105,6 +105,13 @@
             );
         }
 
+        protected function name() : Attribute
+        {
+            return Attribute::make(
+                get: fn(string $name) => ucwords( $name ) ,
+            );
+        }
+
         public function registers() : HasMany
         {
             return $this->hasMany( Register::class , 'user_id' , 'id' );

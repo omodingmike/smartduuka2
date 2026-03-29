@@ -12,6 +12,7 @@
     use App\Http\Requests\UserChangePasswordRequest;
     use App\Http\Resources\CustomerPaymentResource;
     use App\Http\Resources\CustomerResource;
+    use App\Http\Resources\CustomerWalletTransactionResource;
     use App\Http\Resources\OrderResource;
     use App\Models\CustomerPayment;
     use App\Models\User;
@@ -83,10 +84,10 @@
         public function payment(
             CustomerPaymentRequest $request ,
             User $customer
-        ) : Response | CustomerResource | Application | ResponseFactory
+        )
         {
             try {
-                return new CustomerResource( $this->customerService->payment( $request , $customer ) );
+                return new CustomerPaymentResource( $this->customerService->payment( $request , $customer ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             } catch ( \Throwable $e ) {
@@ -182,23 +183,13 @@
 
         public function topUp(User $customer , Request $request)
         {
-            addToCustomerWalletTransaction(
+            $data = addToCustomerWalletTransaction(
                 $customer ,
                 $request->amount ,
                 CustomerWalletTransactionType::DEPOSIT ,
                 $request->payment_method_id ,
                 $request->reference
             );
-//            $transaction = CustomerWalletTransaction::create( [
-//                'user_id'           => $customer->id ,
-//                'reference'         => $request->reference ?? 'WT' . time() ,
-//                'amount'            => $request->amount ,
-//                'type'              => CustomerWalletTransactionType::DEPOSIT ,
-//                'payment_method_id' => $request->payment_method_id ,
-//                'balance'           => 0
-//            ] );
-//            $transaction->update( [ 'reference' => $request->reference ?? walletTransactionReferenceNo( $transaction ) ] );
-//            $customer->refresh();
-//            $transaction->update( [ 'balance' => $customer->wallet ] );
+            return new CustomerWalletTransactionResource( $data );
         }
     }

@@ -41,7 +41,7 @@ log "📥 Fetching latest changes from Git..."
 sudo chown -R "$(whoami):$(whoami)" "$BACKEND_DIR"
 
 git fetch origin "$BRANCH"
-git reset --hard origin/"$BRANCH"
+#git reset --hard origin/"$BRANCH"
 
 # ----------------------------
 # FIX LARAVEL PERMISSIONS (HOST)
@@ -104,9 +104,9 @@ done
 log "🗄 Running database migrations and seeders..."
 $COMPOSE exec -T api php artisan migrate --force
 $COMPOSE exec -T api php artisan tenants:migrate --force
-$COMPOSE exec -T api php artisan db:seed --force
-$COMPOSE exec -T api php artisan tenants:seed --force
-$COMPOSE exec -T api php artisan tenants:populate-data
+#$COMPOSE exec -T api php artisan db:seed --force
+#$COMPOSE exec -T api php artisan tenants:seed --force
+#$COMPOSE exec -T api php artisan tenants:populate-data
 
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true

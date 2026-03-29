@@ -18,7 +18,10 @@
                 'amount'           => currency( $this->amount ) ,
                 'balance'          => $this->balance ,
                 'balance_currency' => currency( $this->balance ) ,
-                'payment_method'   => $this->paymentMethod->name ,
+                'payment_method'   => $this?->paymentMethod?->name ,
+                'reference'        => $this->reference ?? '' ,
+                'creator'          => $this?->creator?->name ,
+                'customer'         => $this?->customer?->name ,
             ];
         }
     }

@@ -222,6 +222,7 @@
         $transaction->update( [ 'reference' => $reference ?? walletTransactionReferenceNo( $transaction ) ] );
         $customer->refresh();
         $transaction->update( [ 'balance' => $customer->wallet ] );
+        return $transaction;
     }
 
     function orderSerialNo(Order $order) : string

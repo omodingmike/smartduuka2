@@ -44,8 +44,11 @@
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
                            } )
                            ->when( $debtors , function ($q) {
-                               $q->whereHas( 'orders' , function ($query) {
-                                   $query->active()->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' );
+                               $q->where( function ($query) {
+                                   $query->whereHas( 'creditOrdersQuery' )
+                                         ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
+                                             $legacyQuery->where( 'amount' , '>' , 0 );
+                                         } );
                                } );
                            } )
                            ->orderBy( 'created_at' , 'desc' );
@@ -151,7 +154,7 @@
         public function payment(CustomerPaymentRequest $request , User $customer)
         {
             try {
-                DB::transaction( function () use ($customer , $request) {
+                return DB::transaction( function () use ($customer , $request) {
                     $amount         = $request->validated()[ 'amount' ];
                     $payment_method = $request->validated()[ 'method' ];
                     $date           = now();
@@ -160,14 +163,9 @@
                             $query->whereNotIn( 'payment_status' , [ PaymentStatus::PAID ] )
                                   ->latest();
                         } ,
-//                        'orders'      => function ($query) {
-//                            $query->active()
-//                                  ->withSum( 'posPayments' , 'amount' )
-//                                  ->orderBy( 'order_datetime' , 'asc' );
-//                        }
                     ] );
 
-                    CustomerPayment::create( [
+                    $payment   = CustomerPayment::create( [
                         'date'                  => $date ,
                         'amount'                => $amount ,
                         'payment_method_id'     => $payment_method ,
@@ -175,17 +173,17 @@
                         'user_id'               => $customer->id ,
                         'balance'               => $customer->credits - $amount ,
                     ] );
+                    $reference = 'DP-' . time();
 
                     foreach ( $customer->legacyDebts as $debt ) {
                         if ( $amount <= 0 ) break;
                         $debt_amount = $debt->amount;
                         if ( $amount >= $debt_amount ) {
-//                            $debt->decrement( 'amount' , $debt_amount );
                             $debt->update( [
                                 'amount'         => 0 ,
                                 'payment_status' => PaymentStatus::PAID
                             ] );
-                            addToLedger( user: $customer , reference: 'Debt Payment' , bill_amount: $debt_amount , paid: $debt_amount );
+                            addToLedger( user: $customer , reference: $reference , bill_amount: $debt_amount , paid: $debt_amount );
 
                             $amount -= $debt_amount;
                         }
@@ -198,7 +196,7 @@
                             CustomerLedger::create( [
                                 'user_id'     => $customer->id ,
                                 'date'        => now() ,
-                                'reference'   => time() ,
+                                'reference'   => $reference ,
                                 'description' => 'Debt Payment' ,
                                 'bill_amount' => $debt_amount ,
                                 'paid'        => $amount ,
@@ -217,11 +215,10 @@
                         if ( $amount >= $balance ) {
                             $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
                             addPayment( $order , $balance , $payment_method );
-//                            addToLedger( user: $customer , reference: 'Debt Payment' , bill_amount: $balance , paid: $balance );
                             CustomerLedger::create( [
                                 'user_id'     => $customer->id ,
                                 'date'        => now() ,
-                                'reference'   => time() ,
+                                'reference'   => $reference ,
                                 'description' => 'Debt Payment' ,
                                 'bill_amount' => $balance ,
                                 'paid'        => $balance ,
@@ -239,7 +236,7 @@
                             CustomerLedger::create( [
                                 'user_id'     => $customer->id ,
                                 'date'        => now() ,
-                                'reference'   => time() ,
+                                'reference'   => $reference ,
                                 'description' => 'Debt Payment' ,
                                 'bill_amount' => $balance ,
                                 'paid'        => $amount ,
@@ -248,8 +245,12 @@
                             $amount = 0;
                         }
                     }
+
+                    $payment->load( 'customer' );
+                    $payment->reference = $reference;
+                    $payment->creator   = auth()->user();
+                    return $payment;
                 } );
-                return $customer->refresh();
 
             } catch ( Exception $exception ) {
                 DB::rollBack();
@@ -269,7 +270,7 @@
         {
             try {
                 if ( ! in_array( EnumRole::CUSTOMER , $this->blockRoles ) ) {
-                    $customer->load( 'walletTransactions');
+                    $customer->load( 'walletTransactions' );
                     return $customer;
                 }
                 else {
