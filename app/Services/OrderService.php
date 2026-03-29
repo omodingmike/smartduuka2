@@ -3,6 +3,8 @@
     namespace App\Services;
 
     use App\Enums\Ask;
+    use App\Enums\CustomerWalletTransactionType;
+    use App\Enums\DefaultPaymentMethods;
     use App\Enums\OrderStatus;
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
@@ -516,15 +518,22 @@
 
                     foreach ( $payments as $p ) {
                         $amount     = $p[ 'amount' ];
-                        $net_amount = $amount - $change;
+//                        $net_amount = $amount - $change;
+                        $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
                             $ledger?->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
                             addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] );
+                            if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
+                                addToCustomerWalletTransaction(
+                                    $user ,
+                                    -$net_amount ,
+                                    CustomerWalletTransactionType::PURCHASE ,
+                                    $payment->id ,
+                                    $order->order_serial_no
+                                );
+                            }
                         }
-//                        else {
-//                            $ledger?->update( [ 'paid' => 0 , 'balance' => $user->credits + $order->total ] );
-//                        }
                     }
 
                     $products = json_decode( $request->items , TRUE );

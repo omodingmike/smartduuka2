@@ -14,7 +14,6 @@
     use App\Http\Resources\CustomerResource;
     use App\Http\Resources\OrderResource;
     use App\Models\CustomerPayment;
-    use App\Models\CustomerWalletTransaction;
     use App\Models\User;
     use App\Services\CustomerService;
     use App\Services\OrderService;
@@ -183,16 +182,23 @@
 
         public function topUp(User $customer , Request $request)
         {
-            $transaction = CustomerWalletTransaction::create( [
-                'user_id'           => $customer->id ,
-                'reference'         => $request->reference ?? 'WT' . time() ,
-                'amount'            => $request->amount ,
-                'type'              => CustomerWalletTransactionType::DEPOSIT ,
-                'payment_method_id' => $request->payment_method_id ,
-                'balance'           => 0
-            ] );
-            $transaction->update( [ 'reference' => $request->reference ?? walletTransactionReferenceNo( $transaction ) ] );
-            $customer->refresh();
-            $transaction->update( [ 'balance' => $customer->wallet ] );
+            addToCustomerWalletTransaction(
+                $customer ,
+                $request->amount ,
+                CustomerWalletTransactionType::DEPOSIT ,
+                $request->payment_method_id ,
+                $request->reference
+            );
+//            $transaction = CustomerWalletTransaction::create( [
+//                'user_id'           => $customer->id ,
+//                'reference'         => $request->reference ?? 'WT' . time() ,
+//                'amount'            => $request->amount ,
+//                'type'              => CustomerWalletTransactionType::DEPOSIT ,
+//                'payment_method_id' => $request->payment_method_id ,
+//                'balance'           => 0
+//            ] );
+//            $transaction->update( [ 'reference' => $request->reference ?? walletTransactionReferenceNo( $transaction ) ] );
+//            $customer->refresh();
+//            $transaction->update( [ 'balance' => $customer->wallet ] );
         }
     }

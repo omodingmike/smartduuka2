@@ -209,6 +209,21 @@
         return $order->user->name . ' ' . $label . '#' . $order_serial_no;
     }
 
+    function addToCustomerWalletTransaction(User $customer , float $amount , CustomerWalletTransactionType $typ , int $payment_method_id , string $reference = NULL)
+    {
+        $transaction = CustomerWalletTransaction::create( [
+            'user_id'           => $customer->id ,
+            'reference'         => '' ,
+            'amount'            => $amount ,
+            'type'              => $typ ,
+            'payment_method_id' => $payment_method_id ,
+            'balance'           => 0
+        ] );
+        $transaction->update( [ 'reference' => $reference ?? walletTransactionReferenceNo( $transaction ) ] );
+        $customer->refresh();
+        $transaction->update( [ 'balance' => $customer->wallet ] );
+    }
+
     function orderSerialNo(Order $order) : string
     {
         $id           = $order->id;

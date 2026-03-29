@@ -97,7 +97,12 @@
          */
         public function updateDocumentPreference(Request $request)
         {
-            Settings::group( 'documentPreference' )->set( [ 'packing_slip' => $request->packing_slip , 'purchase_order' => $request->purchase_order ] );
+            Settings::group( 'documentPreference' )
+                    ->set( [
+                        'packing_slip'        => $request->packing_slip ,
+                        'purchase_order'      => $request->purchase_order ,
+                        'receipt_and_invoice' => $request->receipt_and_invoice
+                    ] );
 
             return $this->documentPreference();
         }
