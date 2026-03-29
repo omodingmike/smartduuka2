@@ -454,9 +454,13 @@
                 DB::transaction( function () use ($request) {
                     $status           = $request->integer( 'status' );
                     $is_preorder      = $request->integer( 'is_preorder' );
+                    $paymentType      = $request->integer( 'paymentType' );
+                    $customer_id      = $request->integer( 'customer_id' );
                     $change           = $request->change;
                     $delivery_address = $request->delivery_address;
                     $delivery_fee     = $request->delivery_fee;
+
+                    $user = User::find( $customer_id );
 
                     $paymentStatus = match ( $status ) {
                         SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
@@ -477,7 +481,7 @@
                             'due_date'        => now()->addDays( 30 ) ,
                             'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
                             'change'          => $request->change ,
-                            'payment_type'    => $request->paymentType ,
+                            'payment_type'    => $paymentType ,
                             'channel'         => $request->channel ,
                             'creator_id'      => auth()->id() ,
                             'creator_type'    => User::class ,
@@ -487,6 +491,8 @@
                             'register_id'     => register()->id
                         ]
                     );
+
+
                     if ( $is_preorder ) {
                         $order->update( [ 'pre_order_status' => PreOrderStatus::PENDING_STOCK ] );
                     }
@@ -499,18 +505,26 @@
                     if ( $delivery_fee ) {
                         $this->order->delivery_fee = $delivery_fee;
                     }
-                    $this->order->order_serial_no = date( 'dmy' ) . $this->order->id;
+                    $this->order->order_serial_no = orderSerialNo( $this->order );
                     $this->order->save();
                     activity()->log( 'Created order: ' . $order->order_serial_no );
                     $payments = json_decode( $request->payments , TRUE );
+                    $ledger   = NULL;
+                    if ( $paymentType == PaymentType::CREDIT->value || $paymentType == PaymentType::DEPOSIT->value ) {
+                        $ledger = addToLedger( user: $user , reference: 'Items Purchased' , bill_amount: $order->total , paid: 0 );
+                    }
 
                     foreach ( $payments as $p ) {
                         $amount     = $p[ 'amount' ];
                         $net_amount = $amount - $change;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            addPayment( $order , $net_amount , $payment->id,$p[ 'reference' ] );
+                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
+                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] );
                         }
+//                        else {
+//                            $ledger?->update( [ 'paid' => 0 , 'balance' => $user->credits + $order->total ] );
+//                        }
                     }
 
                     $products = json_decode( $request->items , TRUE );
@@ -576,6 +590,7 @@
                         }
                     }
                     $this->order->save();
+
                 } );
 
                 return $this->order;

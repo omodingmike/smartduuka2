@@ -2,14 +2,19 @@
 
     namespace App\Http\Controllers\Admin;
 
+    use App\Enums\CustomerPaymentType;
+    use App\Enums\CustomerWalletTransactionType;
     use App\Exports\CustomerExport;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\CustomerPaymentRequest;
     use App\Http\Requests\CustomerRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\UserChangePasswordRequest;
+    use App\Http\Resources\CustomerPaymentResource;
     use App\Http\Resources\CustomerResource;
     use App\Http\Resources\OrderResource;
+    use App\Models\CustomerPayment;
+    use App\Models\CustomerWalletTransaction;
     use App\Models\User;
     use App\Services\CustomerService;
     use App\Services\OrderService;
@@ -45,7 +50,9 @@
                 );
 
                 return CustomerResource::collection( $customers )->additional( [
-                    'total_credit' => currency($totalCredit)
+                    'meta' => [
+                        'total_credit' => currency( $totalCredit )
+                    ]
                 ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
@@ -163,5 +170,29 @@
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
+        }
+
+        public function debtPayments(Request $request)
+        {
+            $page     = $request->integer( 'page' , 1 );
+            $perPage  = $request->integer( 'perPage' , 15 );
+            $payments = CustomerPayment::where( 'customer_payment_type' , CustomerPaymentType::DEBT )
+                                       ->paginate( perPage: $perPage , page: $page );
+            return CustomerPaymentResource::collection( $payments );
+        }
+
+        public function topUp(User $customer , Request $request)
+        {
+            $transaction = CustomerWalletTransaction::create( [
+                'user_id'           => $customer->id ,
+                'reference'         => $request->reference ?? 'WT' . time() ,
+                'amount'            => $request->amount ,
+                'type'              => CustomerWalletTransactionType::DEPOSIT ,
+                'payment_method_id' => $request->payment_method_id ,
+                'balance'           => 0
+            ] );
+            $transaction->update( [ 'reference' => $request->reference ?? walletTransactionReferenceNo( $transaction ) ] );
+            $customer->refresh();
+            $transaction->update( [ 'balance' => $customer->wallet ] );
         }
     }

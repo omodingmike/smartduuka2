@@ -554,7 +554,9 @@
 
             Route::prefix( 'customer' )->name( 'customer.' )->group( function () {
                 Route::get( '/' , [ CustomerController::class , 'index' ] );
+                Route::get( '/debtPayments' , [ CustomerController::class , 'debtPayments' ] );
                 Route::post( '/' , [ CustomerController::class , 'store' ] );
+                Route::post( '/wallet-top-up/{customer}' , [ CustomerController::class , 'topUp' ] );
                 Route::post( '/debt' , [ LegacyDebtController::class , 'store' ] );
                 Route::get( '/show/{customer}' , [ CustomerController::class , 'show' ] );
                 Route::get( '/credits/{customer}' , [ CustomerController::class , 'credits' ] );

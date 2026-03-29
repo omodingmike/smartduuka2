@@ -1,6 +1,5 @@
 <?php
 
-    use App\Enums\PaymentStatus;
     use Illuminate\Database\Migrations\Migration;
     use Illuminate\Database\Schema\Blueprint;
     use Illuminate\Support\Facades\Schema;
@@ -8,19 +7,20 @@
     return new class extends Migration {
         public function up() : void
         {
-            Schema::create( 'legacy_debts' , function (Blueprint $table) {
+            Schema::create( 'customer_wallet_transactions' , function (Blueprint $table) {
                 $table->id();
                 $table->foreignId( 'user_id' )->constrained( 'users' )->cascadeOnDelete();
                 $table->decimal( 'amount' );
-                $table->dateTime( 'date' );
-                $table->string( 'notes' );
-                $table->unsignedTinyInteger( 'payment_status' )->default( PaymentStatus::UNPAID );
+                $table->foreignId( 'payment_method_id' )->constrained( 'payment_methods' );
+                $table->string( 'reference' );
+                $table->unsignedTinyInteger( 'type' );
+                $table->decimal( 'balance' );
                 $table->timestamps();
             } );
         }
 
         public function down() : void
         {
-            Schema::dropIfExists( 'legacy_debts' );
+            Schema::dropIfExists( 'customer_wallet_transactions' );
         }
     };

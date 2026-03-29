@@ -7,13 +7,13 @@
 
     class PaymentMethodSeeder extends Seeder
     {
-        /**
-         * Run the database seeds.
-         */
         public function run() : void
         {
             PaymentMethod::firstOrCreate( [ 'name' => 'Cash' ] , [
                 'name' => 'Cash' , 'merchant_code' => '0000' , 'balance' => 0
+            ] );
+            PaymentMethod::firstOrCreate( [ 'name' => 'Wallet' ] , [
+                'name' => 'Wallet' , 'merchant_code' => '0000' , 'balance' => 0
             ] );
         }
     }

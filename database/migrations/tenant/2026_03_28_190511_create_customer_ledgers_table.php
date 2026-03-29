@@ -9,6 +9,7 @@
         {
             Schema::create( 'customer_ledgers' , function (Blueprint $table) {
                 $table->id();
+                $table->foreignId( 'user_id' )->constrained()->cascadeOnDelete();
                 $table->dateTime( 'date' );
                 $table->string( 'reference' );
                 $table->string( 'description' );

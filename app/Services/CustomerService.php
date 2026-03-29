@@ -12,6 +12,7 @@
     use App\Http\Requests\CustomerRequest;
     use App\Http\Requests\UserChangePasswordRequest;
     use App\Libraries\QueryExceptionLibrary;
+    use App\Models\CustomerLedger;
     use App\Models\CustomerPayment;
     use App\Models\User;
     use Exception;
@@ -37,7 +38,7 @@
                 $query   = $request->input( 'query' ) ?? NULL;
                 $debtors = $request->boolean( 'debtors' );
 
-                return User::with( [ 'media' , 'addresses' , 'debtPayments' ] )
+                return User::with( [ 'media' , 'addresses' , 'debtPayments' , 'ledgers' ] )
                            ->role( EnumRole::CUSTOMER )
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
@@ -159,11 +160,11 @@
                             $query->whereNotIn( 'payment_status' , [ PaymentStatus::PAID ] )
                                   ->latest();
                         } ,
-                        'orders'      => function ($query) {
-                            $query->active()
-                                  ->withSum( 'posPayments' , 'amount' )
-                                  ->orderBy( 'order_datetime' , 'asc' );
-                        }
+//                        'orders'      => function ($query) {
+//                            $query->active()
+//                                  ->withSum( 'posPayments' , 'amount' )
+//                                  ->orderBy( 'order_datetime' , 'asc' );
+//                        }
                     ] );
 
                     CustomerPayment::create( [
@@ -179,15 +180,31 @@
                         if ( $amount <= 0 ) break;
                         $debt_amount = $debt->amount;
                         if ( $amount >= $debt_amount ) {
-                            $debt->decrement( 'amount' , $debt_amount );
+//                            $debt->decrement( 'amount' , $debt_amount );
                             $debt->update( [
                                 'amount'         => 0 ,
                                 'payment_status' => PaymentStatus::PAID
                             ] );
+                            addToLedger( user: $customer , reference: 'Debt Payment' , bill_amount: $debt_amount , paid: $debt_amount );
+
                             $amount -= $debt_amount;
                         }
                         else {
                             $debt->decrement( 'amount' , $amount );
+                            $debt->update( [
+                                'payment_status' => PaymentStatus::PARTIALLY_PAID
+                            ] );
+                            $customer->refresh();
+                            CustomerLedger::create( [
+                                'user_id'     => $customer->id ,
+                                'date'        => now() ,
+                                'reference'   => time() ,
+                                'description' => 'Debt Payment' ,
+                                'bill_amount' => $debt_amount ,
+                                'paid'        => $amount ,
+                                'balance'     => $customer->credits
+                            ] );
+
                             $amount = 0;
                         }
                     }
@@ -200,14 +217,34 @@
                         if ( $amount >= $balance ) {
                             $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
                             addPayment( $order , $balance , $payment_method );
+//                            addToLedger( user: $customer , reference: 'Debt Payment' , bill_amount: $balance , paid: $balance );
+                            CustomerLedger::create( [
+                                'user_id'     => $customer->id ,
+                                'date'        => now() ,
+                                'reference'   => time() ,
+                                'description' => 'Debt Payment' ,
+                                'bill_amount' => $balance ,
+                                'paid'        => $balance ,
+                                'balance'     => $customer->credits
+                            ] );
                             $amount -= $balance;
                         }
                         else {
                             $order->update( [
                                 'payment_status' => PaymentStatus::PARTIALLY_PAID ,
-                                'paid'           => ( $order->paid ?? 0 ) + $amount
+                                'paid'           => $amount
                             ] );
                             addPayment( $order , $amount , $payment_method );
+                            $customer->refresh();
+                            CustomerLedger::create( [
+                                'user_id'     => $customer->id ,
+                                'date'        => now() ,
+                                'reference'   => time() ,
+                                'description' => 'Debt Payment' ,
+                                'bill_amount' => $balance ,
+                                'paid'        => $amount ,
+                                'balance'     => $customer->credits
+                            ] );
                             $amount = 0;
                         }
                     }
@@ -232,6 +269,7 @@
         {
             try {
                 if ( ! in_array( EnumRole::CUSTOMER , $this->blockRoles ) ) {
+                    $customer->load( 'walletTransactions');
                     return $customer;
                 }
                 else {

@@ -4,7 +4,9 @@
 
     use App\Http\Requests\LegacyDebtRequest;
     use App\Http\Resources\LegacyDebtResource;
+    use App\Models\CustomerLedger;
     use App\Models\LegacyDebt;
+    use App\Models\User;
 
     class LegacyDebtController extends Controller
     {
@@ -17,11 +19,22 @@
         {
             $debts = json_decode( $request->debts , TRUE );
             foreach ( $debts as $debt ) {
+                $user = User::find( $debt [ 'user_id' ] );
                 LegacyDebt::create( [
-                    'user_id' => $debt[ 'user_id' ] ,
+                    'user_id' => $user->id ,
                     'amount'  => $debt[ 'amount' ] ,
                     'date'    => $debt[ 'date' ] ,
                     'notes'   => $debt[ 'notes' ] ,
+                ] );
+                $user->refresh();
+                CustomerLedger::create( [
+                    'user_id'     => $user->id ,
+                    'date'        => now() ,
+                    'reference'   => time() ,
+                    'description' => 'Legacy Debt' ,
+                    'bill_amount' => $debt[ 'amount' ] ,
+                    'paid'        => 0 ,
+                    'balance'     => $user->credits
                 ] );
             }
             return response()->json();

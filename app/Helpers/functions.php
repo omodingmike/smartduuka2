@@ -5,8 +5,11 @@
     use App\Enums\CacheEnum;
     use App\Enums\Constants;
     use App\Enums\CurrencyPosition;
+    use App\Enums\CustomerWalletTransactionType;
     use App\Enums\OrderStatus;
+    use App\Enums\Pad;
     use App\Enums\PaymentStatus;
+    use App\Enums\PaymentType;
     use App\Enums\Role;
     use App\Enums\SettingsEnum;
     use App\Enums\Status;
@@ -14,6 +17,8 @@
     use App\Libraries\AppLibrary;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
+    use App\Models\CustomerLedger;
+    use App\Models\CustomerWalletTransaction;
     use App\Models\Ledger;
     use App\Models\Order;
     use App\Models\PaymentAccount;
@@ -22,6 +27,7 @@
     use App\Models\PosPayment;
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
+    use App\Models\User;
     use Carbon\Carbon;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Support\Facades\Auth;
@@ -164,6 +170,19 @@
         ] );
     }
 
+    function addToLedger(User $user , string $reference , float $bill_amount , float $paid)
+    {
+        return CustomerLedger::create( [
+            'user_id'     => $user->id ,
+            'date'        => now() ,
+            'reference'   => time() ,
+            'description' => $reference ,
+            'bill_amount' => $bill_amount ,
+            'paid'        => $paid ,
+            'balance'     => $user->credits - $paid
+        ] );
+    }
+
     function register() : Register
     {
         return auth()->user()->openRegister();
@@ -188,6 +207,30 @@
         $order_serial_no = $order->order_serial_no;
         $label           = orderLabel( $order );
         return $order->user->name . ' ' . $label . '#' . $order_serial_no;
+    }
+
+    function orderSerialNo(Order $order) : string
+    {
+        $id           = $order->id;
+        $payment_type = $order->payment_type;
+        $prefix       = match ( $payment_type ) {
+            PaymentType::PREORDER => 'PRE-' ,
+            PaymentType::RETURN   => 'RTN-' ,
+            default               => 'ORD-'
+        };
+        return $prefix . Str::padLeft( $id , Pad::LENGTH , '0' );
+    }
+
+    function walletTransactionReferenceNo(CustomerWalletTransaction $wallet_transaction) : string
+    {
+        $id     = $wallet_transaction->id;
+        $type   = $wallet_transaction->type;
+        $prefix = match ( $type ) {
+            CustomerWalletTransactionType::DEPOSIT  => 'WD-' ,
+            CustomerWalletTransactionType::PURCHASE => 'WP-' ,
+            default                                 => 'WT-'
+        };
+        return $prefix . Str::padLeft( $id , Pad::LENGTH , '0' );
     }
 
     function validateAndCorrectChecksum($code , $type) : string

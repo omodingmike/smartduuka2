@@ -6,9 +6,7 @@
     use App\Enums\OrderStatus;
     use App\Enums\PaymentType;
     use App\Enums\Status;
-    use App\Services\CommissionCalculator;
     use Carbon\Carbon;
-    use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,8 +34,8 @@
          *
          * @var array<int, string>
          */
-        protected $table   = "users";
-        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value' , 'credit_orders' , 'oldest_credit_order' ];
+        protected $table = "users";
+//        protected $appends = [ 'credits' , 'sales' , 'register' , 'total_revenue' , 'average_order_value' , 'credit_orders' , 'oldest_credit_order' ];
 
         protected $fillable = [
             'name' ,
@@ -107,7 +105,7 @@
             );
         }
 
-        public function registers() : User | HasMany
+        public function registers() : HasMany
         {
             return $this->hasMany( Register::class , 'user_id' , 'id' );
         }
@@ -125,21 +123,20 @@
             return $this->registers()->whereNull( 'closed_at' )->latest()->first();
         }
 
-        public function commissions() : HasManyThrough | Builder | User
+        public function commissions() : HasManyThrough
         {
             return $this->hasManyThrough( Commission::class , CommissionTarget::class , 'user_id' , 'id' , 'id' , 'commission_id' );
         }
 
-        public function commissionTargets() : HasMany | Builder | User
+        public function commissionTargets() : HasMany
         {
             return $this->hasMany( CommissionTarget::class );
         }
 
-        public function payouts() : User | HasMany
+        public function payouts() : HasMany
         {
             return $this->hasMany( CommissionPayout::class , 'user_id' , 'id' );
         }
-
 
         public function getThumbAttribute() : string
         {
@@ -162,7 +159,6 @@
 
         public function stocks() : HasMany
         {
-//            return $this->hasMany( Stock::class , 'user_id' , 'id' )->where( 'quantity' , '>' , 0 );
             return $this->hasMany( Stock::class , 'user_id' , 'id' );
         }
 
@@ -170,13 +166,10 @@
         {
             return Attribute::make(
                 get: function () {
-                    $calculator = resolve( CommissionCalculator::class );
-                    return $this->stocks()
-                                ->where( 'sold' , '>' , 0 )
-                                ->get()
-                                ->sum( function (Stock $stock) use ($calculator) {
-                                    return $calculator->calculateTotalSales( $stock );
-                                } );
+                    return (float) $this->stocks()
+                                        ->where( 'sold' , '>' , 0 )
+                                        ->selectRaw( 'SUM(sold * selling_price) as total_sales' )
+                                        ->value( 'total_sales' );
                 }
             );
         }
@@ -184,7 +177,6 @@
         public function payments() : HasMany
         {
             return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' );
-
         }
 
         public function debtPayments() : HasMany
@@ -193,25 +185,14 @@
                         ->where( 'customer_payment_type' , CustomerPaymentType::DEBT );
         }
 
-        protected function credits() : Attribute
-        {
-            return Attribute::make(
-                get: function () {
-                    $orderDebt = (float) $this->orders()
-                                              ->active()
-                                              ->selectRaw('SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id))) as total_debt')
-                                              ->value('total_debt');
-
-                    $legacyDebt = (float) $this->legacyDebts()->sum('amount');
-
-                    return $orderDebt + $legacyDebt;
-                }
-            );
-        }
-
-        public function legacyDebts() : User | HasMany
+        public function legacyDebts() : HasMany
         {
             return $this->hasMany( LegacyDebt::class , 'user_id' , 'id' );
+        }
+
+        public function ledgers() : HasMany
+        {
+            return $this->hasMany( CustomerLedger::class , 'user_id' , 'id' );
         }
 
         public function addresses() : HasMany
@@ -244,28 +225,71 @@
             );
         }
 
-        public function creditAndDeposit()
+        public function creditAndDeposit() : HasMany
         {
             return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+        }
+
+        public function creditOrdersQuery() : HasMany
+        {
+            return $this->creditAndDeposit()
+                        ->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' )
+                        ->orderBy( 'order_datetime' );
         }
 
         protected function creditOrders() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->orders()
-                                  ->active()
-                                  ->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' )
-                                  ->orderBy( 'order_datetime' )
-                                  ->get()
+                get: fn() => $this->creditOrdersQuery()->get()
             );
+        }
+
+        protected function totalCreditOrders() : Attribute
+        {
+            return Attribute::make(
+                get: fn() => $this->creditOrdersQuery()->sum( 'total' )
+            );
+        }
+
+        protected function credits() : Attribute
+        {
+            return Attribute::make(
+                get: function () {
+                    $orderDebt = (float) $this->creditOrdersQuery()
+                                              ->reorder()
+                                              ->selectRaw( 'SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id))) as total_debt' )
+                                              ->value( 'total_debt' );
+
+                    $legacyDebt = (float) $this->legacyDebts()->sum( 'amount' );
+
+                    return $orderDebt + $legacyDebt;
+                }
+            );
+        }
+
+        protected function wallet() : Attribute
+        {
+            return Attribute::make(
+                get: function () {
+                    return $this->walletTransactions()->sum( 'amount' );
+                }
+            );
+        }
+
+        public function walletTransactions()
+        {
+            return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' )->latest();
         }
 
         protected function oldestCreditOrder() : Attribute
         {
             return Attribute::make(
                 get: function () {
-                    $oldestOrder = $this->creditOrders->sortBy( 'order_datetime' )->first();
-                    return $oldestOrder ? round( Carbon::parse( $oldestOrder->order_datetime )->diffInHours( now() ) / 24 ) : 0;
+                    $oldestDate = $this->creditOrdersQuery()->min( 'order_datetime' );
+
+                    return $oldestDate
+                        ? round( Carbon::parse( $oldestDate )->diffInHours( now() ) / 24 )
+                        : 0;
                 }
             );
         }

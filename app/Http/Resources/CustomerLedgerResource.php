@@ -13,14 +13,12 @@
         {
             return [
                 'id'          => $this->id ,
-                'date'        => $this->date ,
+                'date'        => siteDate($this->date) ,
                 'reference'   => $this->reference ,
                 'description' => $this->description ,
-                'bill_amount' => $this->bill_amount ,
-                'paid'        => $this->paid ,
-                'balance'     => $this->balance ,
-                'created_at'  => $this->created_at ,
-                'updated_at'  => $this->updated_at ,
+                'bill_amount' => currency( $this->bill_amount ) ,
+                'paid'        => currency( $this->paid ) ,
+                'balance'     => currency( $this->balance ) ,
             ];
         }
     }

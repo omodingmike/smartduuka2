@@ -96,4 +96,8 @@ duqihozol@gmail.com
 
     cat ~/.ssh/smartduuka-web-key.pub >> ~/.ssh/authorized_keys
 
+    Wallet transactions.
+    Types: Purchase and deposit,
+    Reference: orde
+
 

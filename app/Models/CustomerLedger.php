@@ -13,6 +13,7 @@
             'bill_amount' ,
             'paid' ,
             'balance' ,
+            'user_id' ,
         ];
 
         protected function casts() : array
