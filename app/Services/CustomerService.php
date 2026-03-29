@@ -47,8 +47,8 @@
                                $q->where( function ($query) {
                                    $query->whereHas( 'creditOrdersQuery' )
                                          ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
-                                             $legacyQuery->where( 'amount' , '>' , 0 );
-                                         } );
+                                           $legacyQuery->where( 'amount' , '>' , 0 );
+                                       } );
                                } );
                            } )
                            ->orderBy( 'created_at' , 'desc' );
