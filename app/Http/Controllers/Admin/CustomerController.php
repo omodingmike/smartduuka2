@@ -42,12 +42,18 @@
         ) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
+                $perPage       = $request->integer( 'perPage' );
                 $customerQuery = $this->customerService->list( $request );
                 $totalCredit   = ( clone $customerQuery )->get()->sum( 'credits' );
-                $customers     = $customerQuery->paginate(
-                    perPage: $request->input( 'perPage' , 10 ) ,
-                    page: $request->input( 'page' , 1 )
-                );
+                if ( $perPage > 0 ) {
+                    $customers = $customerQuery->paginate(
+                        perPage: $request->input( 'perPage' , 10 ) ,
+                        page: $request->input( 'page' , 1 )
+                    );
+                }
+                else {
+                    $customers = $customerQuery->get();
+                }
 
                 return CustomerResource::collection( $customers )->additional( [
                     'meta' => [

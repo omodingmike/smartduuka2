@@ -43,14 +43,14 @@
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
                            } )
-//                           ->when( $debtors , function ($q) {
-//                               $q->where( function ($query) {
-//                                   $query->whereHas( 'creditOrdersQuery' )
-//                                         ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
-//                                           $legacyQuery->where( 'amount' , '>' , 0 );
-//                                       } );
-//                               } );
-//                           } )
+                           ->when( $debtors , function ($q) {
+                               $q->where( function ($query) {
+                                   $query->whereHas( 'creditOrdersQuery' )
+                                         ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
+                                           $legacyQuery->where( 'amount' , '>' , 0 );
+                                       } );
+                               } );
+                           } )
                            ->orderBy( 'created_at' , 'desc' );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
