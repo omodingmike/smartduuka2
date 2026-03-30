@@ -17,7 +17,7 @@
                 'balance'    => AppLibrary::currencyAmountFormat( $this->commission - $payouts ) ,
                 'payouts'    => AppLibrary::currencyAmountFormat( $payouts ) ,
                 'commission' => AppLibrary::currencyAmountFormat( $this->commission ) ,
-                'sales'      => AppLibrary::currencyAmountFormat( $this->sales ) ,
+//                'sales'      => AppLibrary::currencyAmountFormat( $this->sales ) ,
             ];
         }
     }

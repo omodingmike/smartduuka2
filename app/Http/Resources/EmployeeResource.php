@@ -26,9 +26,9 @@
                 "department"          => $this->department ,
                 "force_reset"         => $this->force_reset ,
                 "last_login_date"     => $this->last_login_date ? AppLibrary::datetime2( $this->last_login_date ) : NULL ,
-                "total_revenue"       => AppLibrary::currencyAmountFormat( $this->total_revenue ) ,
+//                "total_revenue"       => AppLibrary::currencyAmountFormat( $this->total_revenue ) ,
                 "created_at"          => datetime( $this->created_at ) ,
-                "average_order_value" => AppLibrary::currencyAmountFormat( $this->average_order_value ) ,
+//                "average_order_value" => AppLibrary::currencyAmountFormat( $this->average_order_value ) ,
                 "permissions"         => $this->getPermissionNames() ,
             ];
         }
