@@ -41,6 +41,7 @@ log "📥 Fetching latest changes from Git..."
 sudo chown -R "$(whoami):$(whoami)" "$BACKEND_DIR"
 
 git fetch origin "$BRANCH"
+git stash
 git reset --hard origin/"$BRANCH"
 
 # ----------------------------
