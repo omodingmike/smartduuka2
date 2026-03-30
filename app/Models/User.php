@@ -169,17 +169,17 @@
             return $this->hasMany( Stock::class , 'user_id' , 'id' );
         }
 
-        protected function sales() : Attribute
-        {
-            return Attribute::make(
-                get: function () {
-                    return (float) $this->stocks()
-                                        ->where( 'sold' , '>' , 0 )
-                                        ->selectRaw( 'SUM(sold * selling_price) as total_sales' )
-                                        ->value( 'total_sales' );
-                }
-            );
-        }
+//        protected function sales() : Attribute
+//        {
+//            return Attribute::make(
+//                get: function () {
+//                    return (float) $this->stocks()
+//                                        ->where( 'sold' , '>' , 0 )
+//                                        ->selectRaw( 'SUM(sold * selling_price) as total_sales' )
+//                                        ->value( 'total_sales' );
+//                }
+//            );
+//        }
 
         public function payments() : HasMany
         {

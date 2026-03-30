@@ -16,7 +16,7 @@
             $variation = NULL;
             $item      = $stock->item;
             $price     = match ( TRUE ) {
-                $item instanceof Product          => $item->selling_price ,
+                $item instanceof Product          => $item->price ,
                 $item instanceof ProductVariation => $item->price ,
                 default                           => 0 ,
             };
@@ -73,7 +73,7 @@
         {
             $item  = $stock->item;
             $price = match ( TRUE ) {
-                $item instanceof Product          => $item->selling_price ,
+                $item instanceof Product          => $item->price ,
                 $item instanceof ProductVariation => $item->price ,
                 default                           => 0 ,
             };
