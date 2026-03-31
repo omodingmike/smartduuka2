@@ -618,6 +618,7 @@
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
             } );
+
             Route::prefix( 'inventory-report' )->name( 'inventory-report.' )->group( function () {
                 Route::get( '/' , [ StockController::class , 'index' ] );
                 Route::get( '/expiry' , [ StockController::class , 'indexGroupedByBatch' ] );
