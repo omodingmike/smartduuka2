@@ -142,7 +142,7 @@
 //    } )->dailyAt( '00:00' );
 
 //        Schedule::command( 'commissions:calculate' )->everyMinute();
-    }
+//    }
 
 
     //    Schedule::call( function () {
