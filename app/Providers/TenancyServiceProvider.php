@@ -54,7 +54,6 @@
                         return $event->tenant;
                     } )->shouldBeQueued() , // `false` by default, but you probably want to make this `true` for production.
                 ] ,
-
                 // Domain events
                 Events\CreatingDomain::class      => [] ,
                 Events\DomainCreated::class       => [] ,
