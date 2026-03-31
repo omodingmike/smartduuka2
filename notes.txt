@@ -1,4 +1,7 @@
 Demo business id: 2270116975
+
+demo businessid: 1842991321
+
 https://github.com/brick/money
 
 sshpass -p "81ZJwQGFZ5lz3GAt900y" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@161.97.184.49:./setup.sh

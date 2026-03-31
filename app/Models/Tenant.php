@@ -15,7 +15,7 @@
             'id' ,
             'business_id' ,
             'print_agent_token' ,
-            'data' , 'pin_pepper','frontend_url'
+            'data' ,'pin_pepper','frontend_url'
         ];
 
         public static function getCustomColumns() : array

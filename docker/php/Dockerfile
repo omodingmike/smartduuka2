@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.5-fpm
 
 ENV HOME=/var/www
 ENV CHROME_CRASHPAD_DATABASE_DIR=/tmp/crashpad
@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y libicu-dev libuv1-dev  \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 2. PHP Extensions
-RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip intl opcache pcntl \
+RUN docker-php-ext-install pdo_pgsql pgsql gd exif zip intl  pcntl \
     && pecl install redis imagick \
-    && docker-php-ext-enable redis imagick opcache
+    && docker-php-ext-enable redis imagick
 
 # 3. Node & Puppeteer
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \

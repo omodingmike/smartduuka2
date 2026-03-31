@@ -4,6 +4,7 @@
 
     namespace App\Providers;
 
+    use App\Jobs\PrepareTenantJob;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
@@ -32,13 +33,14 @@
                         Jobs\CreateDatabase::class ,
                         Jobs\MigrateDatabase::class ,
                         Jobs\SeedDatabase::class ,
+                        PrepareTenantJob::class ,
 
                         // Your own jobs to prepare the tenant.
                         // Provision API keys, create S3 buckets, anything you want!
 
                     ] )->send( function (Events\TenantCreated $event) {
                         return $event->tenant;
-                    } )->shouldBeQueued() , // `false` by default, but you probably want to make this `true` for production.
+                    } )->shouldBeQueued() , // `true` by default, but you probably want to make this `true` for production.
                 ] ,
                 Events\SavingTenant::class        => [] ,
                 Events\TenantSaved::class         => [] ,
