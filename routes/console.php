@@ -110,7 +110,6 @@
         } )->everyFiveMinutes();
 
         Schedule::call( function () {
-//            updateCoa();
             Stock::where( 'expiry_date' , '<>' , NULL )
                  ->where( 'expiry_date' , '<' , now()->copy()->endOfDay() )
                  ->where( 'quantity' , '>' , 0 )
@@ -160,24 +159,24 @@
             }
         } )->dailyAt( '00:00' );
 
-        Schedule::command( 'commissions:calculate' )->everyMinute();
+//        Schedule::command( 'commissions:calculate' )->everyMinute();
     }
 
-    Schedule::call( function () {
-        Order::with( 'orderProducts.item' )
-             ->where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
-             ->each( function (Order $order) {
-                 $allProductsHaveEnoughStock = TRUE;
-                 foreach ( $order->orderProducts as $orderProduct ) {
-                     $orderProduct->item->refresh();
-                     if ( $orderProduct->item->stock < $orderProduct->quantity ) {
-                         $allProductsHaveEnoughStock = FALSE;
-                         break;
-                     }
-                 }
 
-                 if ( $allProductsHaveEnoughStock ) {
-                     $order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
-                 }
-             } );
-    } )->everyMinute();
+    Schedule::call( function () {
+        Tenant::all()->runForEach( function ($tenant) {
+            Order::where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
+                 ->with( 'orderProducts.item' )
+                 ->chunk( 100 , function ($orders) {
+                     foreach ( $orders as $order ) {
+                         $allProductsHaveEnoughStock = $order->orderProducts->every( function ($orderProduct) {
+                             return $orderProduct->item->stock >= $orderProduct->quantity;
+                         } );
+
+                         if ( $allProductsHaveEnoughStock ) {
+                             $order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
+                         }
+                     }
+                 } );
+        } );
+    } )->everyMinute()->withoutOverlapping();
