@@ -57,7 +57,7 @@ RUN git config --global --add safe.directory /app && \
     composer dump-autoload --optimize --no-scripts && \
     php artisan package:discover --ansi && \
     php artisan storage:link || true && \
-    chown -R www-data:www-data /app/bootstrap/cache
+    chown -R www-data:www-data /app/bootstrap/cache --ignore-platform-reqs
 
 # 9. Configurations
 # We remove defaults BEFORE copying ours to prevent pool conflicts
