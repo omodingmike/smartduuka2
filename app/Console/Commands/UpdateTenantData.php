@@ -2,11 +2,12 @@
 
     namespace App\Console\Commands;
 
+    use App\Enums\DefaultPaymentMethods;
     use App\Models\PaymentMethod;
     use App\Models\Tenant;
     use Illuminate\Console\Command;
 
-    class UpdateWalletPaymentMethod extends Command
+    class UpdateTenantData extends Command
     {
         protected $signature = 'update-wallet-payment-method';
 
@@ -16,7 +17,8 @@
         public function handle() : void
         {
             Tenant::all()->runForEach( function ($tenant) {
-                PaymentMethod::firstWhere( 'name' , 'Wallet' )->update( [ 'name' => 'Wallet Deposits' ] );
+                $p = PaymentMethod::firstWhere( 'name' , 'Wallet' );
+                $p?->update( [ 'name' => DefaultPaymentMethods::WALLET->value ] );
             } );
         }
     }

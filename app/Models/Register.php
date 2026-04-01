@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\DefaultPaymentMethods;
     use App\Enums\OrderStatus;
     use App\Enums\PreOrderStatus;
     use App\Enums\RegisterStatus;
@@ -24,7 +25,7 @@
             'notes' ,
         ];
 
-        public function posPayments() : HasMany | Register
+        public function posPayments() : HasMany
         {
             return $this->hasMany( PosPayment::class , 'register_id' , 'id' )
                         ->whereHas( 'order' , function (Builder $q) {
@@ -40,7 +41,10 @@
 
         public function getExpectedFloatAttribute()
         {
-            return $this->opening_float + $this->posPayments()->sum( 'amount' );
+            return $this->opening_float + $this->posPayments()
+                                               ->whereHas( 'paymentMethod' , function ($query) {
+                                                   $query->where( 'name' , '<>' , DefaultPaymentMethods::WALLET->value );
+                                               } )->sum( 'amount' );
         }
 
         public function orders() : HasMany | Register

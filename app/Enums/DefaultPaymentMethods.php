@@ -7,13 +7,13 @@
     enum DefaultPaymentMethods : string implements JsonSerializable
     {
         case CASH   = 'Cash';
-        case WALLET = 'Wallet';
+        case WALLET = 'Wallet Deposits';
 
         public function label() : string
         {
             return match ( $this ) {
                 self::CASH   => 'Cash' ,
-                self::WALLET => 'Wallet' ,
+                self::WALLET => 'Wallet Deposits' ,
             };
         }
 

@@ -2,6 +2,7 @@
 
     namespace Database\Seeders;
 
+    use App\Enums\DefaultPaymentMethods;
     use App\Models\PaymentMethod;
     use Illuminate\Database\Seeder;
 
@@ -12,8 +13,8 @@
             PaymentMethod::firstOrCreate( [ 'name' => 'Cash' ] , [
                 'name' => 'Cash' , 'merchant_code' => '0000' , 'balance' => 0
             ] );
-            PaymentMethod::firstOrCreate( [ 'name' => 'Wallet Deposits' ] , [
-                'name' => 'Wallet Deposits' , 'merchant_code' => '0000' , 'balance' => 0
+            PaymentMethod::firstOrCreate( [ 'name' => DefaultPaymentMethods::WALLET->value ] , [
+                'name' => DefaultPaymentMethods::WALLET->value , 'merchant_code' => '0000' , 'balance' => 0
             ] );
         }
     }
