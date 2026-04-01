@@ -12,8 +12,8 @@
             PaymentMethod::firstOrCreate( [ 'name' => 'Cash' ] , [
                 'name' => 'Cash' , 'merchant_code' => '0000' , 'balance' => 0
             ] );
-            PaymentMethod::firstOrCreate( [ 'name' => 'Wallet' ] , [
-                'name' => 'Wallet' , 'merchant_code' => '0000' , 'balance' => 0
+            PaymentMethod::firstOrCreate( [ 'name' => 'Wallet Deposits' ] , [
+                'name' => 'Wallet Deposits' , 'merchant_code' => '0000' , 'balance' => 0
             ] );
         }
     }
