@@ -128,6 +128,13 @@
         PreventAccessFromCentralDomains::class ,
     ] )->prefix( 'api' )->group( function () {
 
+        Route::get('/ping', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tenant workspace is reachable',
+            ]);
+        });
+        
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 
