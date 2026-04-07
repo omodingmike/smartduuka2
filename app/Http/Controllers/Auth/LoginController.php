@@ -2,7 +2,6 @@
 
     namespace App\Http\Controllers\Auth;
 
-    use App\Enums\Role;
     use App\Enums\Status;
     use App\Http\Controllers\Controller;
     use App\Http\Resources\MenuResource;
@@ -17,6 +16,7 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Validator;
     use Laravel\Sanctum\PersonalAccessToken;
+    use Random\RandomException;
 
     class LoginController extends Controller
     {
@@ -36,80 +36,71 @@
             $this->defaultAccessService = $defaultAccessService;
         }
 
+        /**
+         * @throws RandomException
+         */
         public function login(Request $request , PinService $pin_service) : JsonResponse
         {
-            $isPinLogin = $request->filled( 'pin' );
-            $pin        = $request->string( 'pin' );
-            $rules      = $isPinLogin
-                ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
-                : [ 'email' => [ 'required' , 'string' ] , 'password' => [ 'required' , 'string' ] ];
 
-            $validator = Validator::make( $request->all() , $rules );
-            if ( $validator->fails() ) {
-                return new JsonResponse( [ 'errors' => $validator->errors() ] , 422 );
-            }
-
-            $user = NULL;
-
-            if ( $isPinLogin ) {
-                $pin_hash = $pin_service->hashPin( $pin );
-                $user     = User::where( 'pin' , $pin_hash )->first();
-                info($pin_hash);
-                info($user);
-                if ( $user && $pin_service->verifyPin( $user->pin , $pin ) ) {
-//                    if ( $user->hasRole( Role::ADMIN ) ) {
-//                        return new JsonResponse( [ 'errors' => [ 'validation' => 'Administrators must log in with email and password.' ] ] , 401 );
-//                    }
-                    Auth::login( $user , TRUE );
+            try {
+                $isPinLogin = $request->filled( 'pin' );
+                $pin        = $request->string( 'pin' );
+                $rules      = $isPinLogin
+                    ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
+                    : [ 'email' => [ 'required' , 'string' ] , 'password' => [ 'required' , 'string' ] ];
+                $validator  = Validator::make( $request->all() , $rules );
+                if ( $validator->fails() ) {
+                    return new JsonResponse( [ 'errors' => $validator->errors() ] , 422 );
+                }
+                $user = NULL;
+                if ( $isPinLogin ) {
+                    $pin_hash = $pin_service->hashPin( $pin );
+                    $user     = User::where( 'pin' , $pin_hash )->first();
+                    if ( $user && $pin_service->verifyPin( $user->pin , $pin ) ) {
+                        Auth::login( $user , TRUE );
+                    }
+                    else {
+                        $user = NULL;
+                    }
                 }
                 else {
-                    $user = NULL;
+                    $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+
+                    // Auth::attempt automatically handles the session if successful
+                    if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
+                        $user = Auth::user();
+                    }
+                }// 3. Validation of Credentials
+                if ( ! $user ) {
+                    return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.credentials_invalid' ) ] ] , 401 );
                 }
-            }
-            else {
-                $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-
-                // Auth::attempt automatically handles the session if successful
-                if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
-                    $user = Auth::user();
+                if ( $request->hasSession() ) {
+                    $request->session()->regenerate();
+                }// 6. Token Generation
+                $token = $user->web_token;
+                if ( $token ) {
+                    $accessToken = PersonalAccessToken::findToken( $token );
+                    if ( ! $accessToken ) {
+                        $token = NULL;
+                    }
                 }
+                if ( ! $token ) {
+                    $token = $user->createToken( 'auth_token' )->plainTextToken;
+                    $user->update( [ 'web_token' => $token ] );
+                }// Update last login date
+                $user->update( [ 'last_login_date' => now() ] );
+                $user->update( [ 'raw_pin' => $pin_service->generateUniquePin() ] );
+                activity()
+                    ->on( $user )
+                    ->log( 'Logged in' );
+                return new JsonResponse( [
+                    'message' => trans( 'all.message.login_success' ) ,
+                    'token'   => $token ,
+                    'user'    => new UserResource( $user ) ,
+                ] , 200 );
+            } catch ( RandomException $e ) {
+                throw new \Exception( $e->getMessage() , 422 );
             }
-
-            // 3. Validation of Credentials
-            if ( ! $user ) {
-                return new JsonResponse( [ 'errors' => [ 'validation' => trans( 'all.message.credentials_invalid' ) ] ] , 401 );
-            }
-
-            if ( $request->hasSession() ) {
-                $request->session()->regenerate();
-            }
-
-            // 6. Token Generation
-            $token = $user->web_token;
-            if ( $token ) {
-                $accessToken = PersonalAccessToken::findToken( $token );
-                if ( ! $accessToken ) {
-                    $token = NULL;
-                }
-            }
-
-            if ( ! $token ) {
-                $token = $user->createToken( 'auth_token' )->plainTextToken;
-                $user->update( [ 'web_token' => $token ] );
-            }
-
-            // Update last login date
-            $user->update( [ 'last_login_date' => now() ] );
-
-            activity()
-                ->on( $user )
-                ->log( 'Logged in' );
-
-            return new JsonResponse( [
-                'message' => trans( 'all.message.login_success' ) ,
-                'token'   => $token ,
-                'user'    => new UserResource( $user ) ,
-            ] , 200 );
         }
 
         public function token(Request $request)
