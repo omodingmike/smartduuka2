@@ -30,7 +30,8 @@
     "spatie/laravel-medialibrary": "^11.15",
     "spatie/laravel-permission": "^6.21",
     "stancl/tenancy": "^3.9",
-    "staudenmeir/laravel-adjacency-list": "^1.25"
+    "staudenmeir/laravel-adjacency-list": "^1.25",
+    "ext-pdo": "*"
   },
   "require-dev": {
     "fakerphp/faker": "^1.23",

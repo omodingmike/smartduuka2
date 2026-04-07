@@ -122,45 +122,45 @@
                 $table->primary( [ $pivotPermission , $pivotRole ] , 'role_has_permissions_permission_id_role_id_primary' );
             } );
 
-            // Use DB::table() instead of Eloquent Model to avoid caching issues during migration
-            DB::table($tableNames['roles'])->insert( [
-                [
-                    'name'       => 'Admin' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-                [
-                    'name'       => 'Customer' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-                [
-                    'name'       => 'Manager' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-                [
-                    'name'       => 'POS Operator' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-                [
-                    'name'       => 'Stuff' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-                [
-                    'name'       => 'Distributor' ,
-                    'guard_name' => 'sanctum' ,
-                    'created_at' => now() ,
-                    'updated_at' => now() ,
-                ] ,
-            ] );
+
+//            DB::table($tableNames['roles'])->insert( [
+//                [
+//                    'name'       => 'Admin' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//                [
+//                    'name'       => 'Customer' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//                [
+//                    'name'       => 'Manager' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//                [
+//                    'name'       => 'POS Operator' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//                [
+//                    'name'       => 'Stuff' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//                [
+//                    'name'       => 'Distributor' ,
+//                    'guard_name' => 'sanctum' ,
+//                    'created_at' => now() ,
+//                    'updated_at' => now() ,
+//                ] ,
+//            ] );
 
             app( 'cache' )
                 ->store( config( 'permission.cache.store' ) != 'default' ? config( 'permission.cache.store' ) : NULL )

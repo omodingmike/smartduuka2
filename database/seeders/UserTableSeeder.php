@@ -28,7 +28,7 @@
                 [
                     'email'             => 'support@smartduuka.com' ,
                     'phone'             => '0701034242' ,
-                    'name'              => 'John Doe' ,
+                    'name'              => 'Support Admin' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
                     'status'            => Status::ACTIVE ,

@@ -25,7 +25,7 @@
 
         'allowed_origins_patterns' => [
             // Matches http/https for any subdomain of smartduuka2.test
-            '/^https?:\/\/.*\.smartduuka2\.test$/' ,
+            '/^https?:\/\/.*\.laravel-cashflow\.test$/' ,
 
             // Matches http/https for any subdomain of smartduuka.com AND the root domain itself
             '/^https?:\/\/(.*\.)?smartduuka\.com$/' ,
