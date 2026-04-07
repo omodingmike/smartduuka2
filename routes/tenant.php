@@ -110,7 +110,7 @@
                     'email'        => 'omodingmike@gmail.com' ,
                     'password'     => 'omodingmike@gmail.com' ,
                     'pin'          => 'omodingmike@gmail.com' ,
-                    'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                    'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                     'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                 ]
             ) )->render();

@@ -81,7 +81,7 @@
                             'email'        => $this->user->email ,
                             'password'     => $request->password ,
                             'pin'          => $pin ,
-                            'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                            'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                             'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                         ] );
                     }
@@ -121,7 +121,7 @@
                                 'email'        => $this->user->email ,
                                 'password'     => $request->password ,
                                 'pin'          => $pin ,
-                                'login_url'    => 'https//' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
+                                'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
                                 'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
                             ] );
                         }

@@ -77,8 +77,8 @@ php artisan tenants:run tinker --tenants=ajmalcollections
 php artisan tenants:seed  --tenants=ajmalcollections
 php artisan tenants:migrate-fresh  --tenants=ajmalcollections
 
-pa delete-tenant ajmalcollections
-pa create-tenant ajmalcollections
+php artisan delete-tenant ajmalcollections
+php artisan create-tenant ajmalcollections
 
 pa create-tenant ajmalcollections
 tenant_ajmalcollections
