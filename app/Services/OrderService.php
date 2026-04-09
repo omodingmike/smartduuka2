@@ -523,7 +523,7 @@
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
                             $ledger?->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
-                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] );
+                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time());
                             if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
                                 addToCustomerWalletTransaction(
                                     $user ,
