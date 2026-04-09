@@ -7,7 +7,6 @@
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
-    use App\Enums\StockType;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductOfferRequest;
@@ -64,8 +63,12 @@
         public function list(Request $request)
         {
             try {
-                $search = $request->input( 'query' );
-                $page   = $request->input( 'page' , 1 );
+                $search      = $request->input( 'query' );
+                $page        = $request->input( 'page' , 1 );
+                $per_page    = $request->input( 'per_page' );
+                $category_id = $request->input( 'category' );
+                $brand       = $request->input( 'brand' );
+                $status      = $request->input( 'status' );
 
                 $products_query = Product::with( [
                     'media' , 'category' , 'variations.wholesalePrices' ,
@@ -73,22 +76,30 @@
                     'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
                 ] );
 
-                // Apply search filter if query is provided
                 if ( $search ) {
-                    $products_query->where( 'name' , 'ilike' , "%{$search}%" )
-                                   ->orWhere( 'sku' , 'ilike' , "%{$search}%" );
+                    $products_query->where( function ($q) use ($search) {
+                        $q->where( 'name' , 'ilike' , "%{$search}%" )
+                          ->orWhere( 'sku' , 'ilike' , "%{$search}%" );
+                    } );
+                }
+                if ( $category_id && (int) $category_id !== 0 ) {
+                    $products_query->where( 'product_category_id' , $category_id );
+                }
+                if ( $brand && (int) $brand !== 0 ) {
+                    $products_query->where( 'product_brand_id' , $brand );
+                }
+
+                if ( $status && (int) $status !== 0 ) {
+                    $products_query->where( 'status' , $status );
                 }
 
                 $products_query->orderBy( 'created_at' , 'desc' );
 
-                // To "paginate" all data in one page, set perPage to the total count
-                // We use a high fallback or count() to ensure everything is captured
-                $totalItems = $products_query->count();
+                $products = $per_page
+                    ? $products_query->paginate( $per_page , [ '*' ] , 'page' , $page )
+                    : $products_query->get();
 
-                // If total is 0, we still want to return a valid paginated structure
-                $perPage = $totalItems > 0 ? $totalItems : 15;
-
-                return $products_query->paginate( $perPage , [ '*' ] , 'page' , $page );
+                return $products;
 
             } catch ( Exception $exception ) {
                 Log::error( 'Product List Error: ' . $exception->getMessage() );
