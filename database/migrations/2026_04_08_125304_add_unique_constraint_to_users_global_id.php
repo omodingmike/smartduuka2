@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users_global_id', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             $table->unique('global_id');
         });
     }
 
     public function down(): void
     {
-        Schema::table('users_global_id', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             $table->dropUnique(['global_id']);
         });
     }
