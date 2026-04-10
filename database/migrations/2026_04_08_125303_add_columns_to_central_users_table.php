@@ -8,7 +8,7 @@
         public function up() : void
         {
             Schema::table( 'users' , function (Blueprint $table) {
-                $table->decimal( 'commission' , 20 , 2 )->default( 0 );
+//                $table->decimal( 'commission' , 20 , 2 )->default( 0 );
                 $table->decimal( 'commission_paid' , 20 , 2 )->default( 0 );
                 $table->string( 'phone2' )->nullable()->unique();
                 $table->string( 'type' )->nullable();
