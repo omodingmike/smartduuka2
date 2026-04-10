@@ -28,7 +28,7 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
 //                'products'                 => $this->products ,
-                'products'                 => ProductAdminResource::collection( $this->products ) ,
+                'products'                 => ProductAdminResource::collection( $this->products ?? [] ) ,
                 'location'                 => $warehouse ? new WarehouseResource( $warehouse ) : NULL ,
                 'from'                     => $source_warehouse ? new WarehouseResource( $source_warehouse ) : NULL ,
                 'to'                       => $destination_warehouse ? new WarehouseResource( $destination_warehouse ) : NULL ,
