@@ -3,6 +3,7 @@
     namespace Database\Seeders;
 
 
+    use Database\Seeders\Cashflow\MotherAccountSeeder;
     use Illuminate\Database\Seeder;
 
     class DatabaseSeeder extends Seeder
@@ -11,7 +12,7 @@
         {
             $this->call( PrinterTemplateSeeder::class );
             $this->call( WarehouseSeeder::class );
-            $this->call( LocationSeed::class );
+            $this->call( MotherAccountSeeder::class );
 
             $this->call( RoleTableSeeder::class );
             $this->call( PermissionTableSeeder::class );

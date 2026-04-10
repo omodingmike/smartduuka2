@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Requests\PromotionProductRequest;
+use App\Http\Resources\PromotionProductResource;
 use App\Models\Promotion;
 use App\Models\PromotionProduct;
-use App\Http\Requests\PaginateRequest;
-use App\Http\Resources\PromotionProductResource;
 use App\Services\PromotionProductService;
-use App\Http\Requests\PromotionProductRequest;
+use Exception;
 
 class PromotionProductController extends AdminController
 {

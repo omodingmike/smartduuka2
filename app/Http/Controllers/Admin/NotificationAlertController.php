@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Resources\NotificationResource;
+use App\Services\NotificationAlertService;
 use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
-use App\Services\NotificationAlertService;
-use App\Http\Resources\NotificationAlertResource;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class NotificationAlertController extends AdminController
 {

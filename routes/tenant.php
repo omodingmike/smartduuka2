@@ -134,7 +134,7 @@
                 'message' => 'Tenant workspace is reachable',
             ]);
         });
-        
+
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 

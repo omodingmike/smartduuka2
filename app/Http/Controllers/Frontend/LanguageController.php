@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\LanguageResource;
 use App\Models\Language;
 use App\Services\LanguageService;
 use Exception;
-use App\Http\Controllers\Controller;
 
 class LanguageController extends Controller
 {

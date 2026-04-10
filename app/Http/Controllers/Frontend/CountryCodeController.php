@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Frontend;
 
-use Exception;
 use App\Http\Controllers\Controller;
-use App\Services\CountryCodeService;
 use App\Http\Resources\CountryCodeResource;
+use App\Services\CountryCodeService;
+use Exception;
 
 class CountryCodeController extends Controller
 {

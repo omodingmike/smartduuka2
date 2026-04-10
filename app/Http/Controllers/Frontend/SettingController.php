@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Frontend;
 
 
+use App\Http\Controllers\Controller;
 use App\Http\Resources\SettingResource;
 use App\Services\SettingService;
 use Exception;
-use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Response;

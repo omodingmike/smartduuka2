@@ -17,7 +17,7 @@
             $tableNames = config( 'permission.table_names' );
 
             if ( ! Schema::hasTable( $tableNames[ 'roles' ] ) ) {
-                Artisan::call( 'tenants:migrate --force');
+                Artisan::call( 'tenants:migrate');
                 Log::warning( "Skipping RoleTableSeeder: Table {$tableNames['roles']} does not exist." );
 //                return;
             }

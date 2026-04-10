@@ -2,10 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Cashflow\ProductWithVariationResource;
+use App\Libraries\AppLibrary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Http\Resources\ProductWithVariationResource;
-use App\Libraries\AppLibrary;
 
 class PurchaseDetailsResource extends JsonResource
 {

@@ -86,7 +86,7 @@
         |
         */
 
-        'prefix' => 'api' ,
+        'prefix' => '' ,
 
         'domain' => NULL ,
 

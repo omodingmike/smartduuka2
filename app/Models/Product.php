@@ -5,8 +5,8 @@
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
-    use App\Http\Resources\RetailPriceResource;
-    use App\Http\Resources\WholeSalePriceResource;
+    use App\Http\Resources\Cashflow\RetailPriceResource;
+    use App\Http\Resources\Cashflow\WholeSalePriceResource;
     use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Casts\Attribute;

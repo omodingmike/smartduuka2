@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 
-use Exception;
-use App\Services\PageService;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PageResource;
 use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\PageResource;
 use App\Models\Page;
+use App\Services\PageService;
+use Exception;
 
 class PageController extends Controller
 {

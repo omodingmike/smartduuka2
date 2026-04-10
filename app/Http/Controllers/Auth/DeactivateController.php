@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Http\Request;
 
 
 class DeactivateController extends Controller

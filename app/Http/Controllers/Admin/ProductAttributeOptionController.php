@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Requests\ProductAttributeOptionRequest;
 use App\Http\Requests\PaginateRequest;
+use App\Http\Requests\ProductAttributeOptionRequest;
 use App\Http\Resources\ProductAttributeOptionResource;
 use App\Models\ProductAttribute;
 use App\Models\ProductAttributeOption;

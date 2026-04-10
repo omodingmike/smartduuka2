@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\ItemAttribute;
-use App\Services\ItemAttributeService;
 use App\Http\Requests\ItemAttributeRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\ItemAttributeResource;
+use App\Models\ItemAttribute;
+use App\Services\ItemAttributeService;
+use Exception;
 
 class ItemAttributeController extends AdminController
 {

@@ -3,7 +3,6 @@
     namespace App\Http\Controllers\Admin;
 
 
-    use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductBrandRequest;
     use App\Http\Resources\ProductBrandResource;
     use App\Models\ProductBrand;

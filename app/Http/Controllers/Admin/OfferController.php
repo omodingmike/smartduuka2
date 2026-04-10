@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Resources\SimpleOfferListResource;
-use Exception;
-use App\Models\Offer;
 use App\Exports\OfferExport;
-use App\Services\OfferService;
-use App\Http\Requests\OfferRequest;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\OfferResource;
-use App\Http\Requests\PaginateRequest;
 use App\Http\Requests\ChangeImageRequest;
+use App\Http\Requests\OfferRequest;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\OfferResource;
+use App\Http\Resources\SimpleOfferListResource;
+use App\Models\Offer;
+use App\Services\OfferService;
+use Exception;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class OfferController extends AdminController

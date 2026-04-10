@@ -4,12 +4,11 @@ namespace App\Http\Controllers\Table;
 
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontendDiningTable;
-use Exception;
-use App\Services\DiningTableService;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\DiningTableResource;
-use App\Models\DiningTable;
+use App\Models\FrontendDiningTable;
+use App\Services\DiningTableService;
+use Exception;
 
 class DiningTableController extends Controller
 {

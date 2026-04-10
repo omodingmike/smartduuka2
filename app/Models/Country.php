@@ -6,15 +6,15 @@
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\HasMany;
+    use Stancl\Tenancy\Database\Concerns\CentralConnection;
 
     class Country extends Model
     {
-        use HasFactory;
+        use HasFactory,CentralConnection;
 
         protected $table = "countries";
 
         protected $fillable = [ "name" , "code" , "status" ];
-
         protected $casts = [
             'id'     => 'integer' ,
             'name'   => 'string' ,

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Services\UserAddressService;
-use Exception;
-use App\Models\User;
-use App\Models\Address;
 use App\Http\Requests\EmployeeAddressRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\AddressResource;
+use App\Models\Address;
+use App\Models\User;
+use App\Services\UserAddressService;
+use Exception;
 
 class EmployeeAddressController extends AdminController
 {

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\ItemCategory;
 use App\Http\Requests\PaginateRequest;
+use App\Models\ItemCategory;
+use Exception;
 
 class PosCategoryController extends AdminController
 {

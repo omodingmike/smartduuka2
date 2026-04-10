@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Table;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TableOrderRequest;
-use App\Models\FrontendOrder;
-use App\Models\Order;
-use Exception;
-use App\Services\OrderService;
 use App\Http\Resources\OrderDetailsResource;
+use App\Models\FrontendOrder;
+use App\Services\OrderService;
+use Exception;
 
 
 class OrderController extends Controller

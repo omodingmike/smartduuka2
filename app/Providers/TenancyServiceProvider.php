@@ -5,6 +5,7 @@
     namespace App\Providers;
 
     use App\Jobs\PrepareTenantJob;
+    use App\Listeners\UpdateSyncedResource;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
@@ -32,8 +33,8 @@
                     JobPipeline::make( [
                         Jobs\CreateDatabase::class ,
                         Jobs\MigrateDatabase::class ,
-                        Jobs\SeedDatabase::class ,
                         PrepareTenantJob::class ,
+                        Jobs\SeedDatabase::class ,
 
                         // Your own jobs to prepare the tenant.
                         // Provision API keys, create S3 buckets, anything you want!
@@ -119,9 +120,12 @@
             $this->bootEvents();
             $this->mapRoutes();
 
+            UpdateSyncedResource::$shouldQueue = TRUE;
+
             $this->makeTenancyMiddlewareHighestPriority();
             InitializeTenancyByDomain::$onFail = function () {
-                return redirect( config( 'app.url' ) );
+                abort( 404 );
+//                return redirect( config( 'app.url' ) );
             };
 
             TenantConfig::$storageToConfigMap = [
@@ -172,10 +176,23 @@
 
         protected function mapRoutes() : void
         {
+//            $this->app->booted( function () {
+//                if ( file_exists( base_path( 'routes/tenant.php' ) ) ) {
+//                    Route::namespace( static::$controllerNamespace )
+//                         ->group( base_path( 'routes/tenant.php' ) );
+//                }
+//            } );
+
             $this->app->booted( function () {
-                if ( file_exists( base_path( 'routes/tenant.php' ) ) ) {
-                    Route::namespace( static::$controllerNamespace )
-                         ->group( base_path( 'routes/tenant.php' ) );
+                $tenantRoutes = [
+                    'routes/tenant.php' ,
+                    'routes/cashflow-api.php' ,
+                ];
+                foreach ( $tenantRoutes as $routeFile ) {
+                    if ( file_exists( base_path( $routeFile ) ) ) {
+                        Route::namespace( static::$controllerNamespace )
+                             ->group( base_path( $routeFile ) );
+                    }
                 }
             } );
         }

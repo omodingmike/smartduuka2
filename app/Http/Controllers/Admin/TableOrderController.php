@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Resources\OrderResourceFrontend;
-use Exception;
-use App\Models\Order;
 use App\Exports\OrderExport;
+use App\Http\Requests\OrderStatusRequest;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Requests\PaymentStatusRequest;
+use App\Http\Requests\TableOrderTokenRequest;
+use App\Http\Resources\OrderDetailsResource;
+use App\Http\Resources\OrderResourceFrontend;
+use App\Models\Order;
+use App\Services\OrderService;
+use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
-use Illuminate\Http\Request;
-use App\Services\OrderService;
 use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\OrderResource;
-use App\Http\Requests\PaginateRequest;
-use App\Http\Requests\OrderStatusRequest;
-use App\Http\Requests\PaymentStatusRequest;
-use App\Http\Resources\OrderDetailsResource;
-use App\Http\Requests\TableOrderTokenRequest;
 
 class TableOrderController extends AdminController
 {

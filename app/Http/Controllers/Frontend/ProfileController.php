@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Frontend;
 
 
-use Illuminate\Http\Request;
-use App\Services\ProfileService;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
-use App\Http\Requests\ProfileRequest;
 use App\Http\Requests\ChangeImageRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ProfileRequest;
+use App\Http\Resources\UserResource;
+use App\Services\ProfileService;
+use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {

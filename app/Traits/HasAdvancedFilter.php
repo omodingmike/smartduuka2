@@ -122,7 +122,7 @@
             $numericTypes = [
                 'integer' , 'bigint' , 'smallint' ,
                 'decimal' , 'float' , 'double' , 'real' ,
-                'numeric' ,'int', 'int2', 'int4', 'int8',
+                'numeric' , 'int' , 'int2' , 'int4' , 'int8' ,
                 'date' , 'datetime' , 'timestamp' , 'time'
             ];
             return in_array( $type , $numericTypes , TRUE );
@@ -198,6 +198,11 @@
                     break;
                 case 'isNotEmpty':
                     $q->whereNotNull( $field );
+                    break;
+                case 'isBetween':
+                    if ( is_array( $value ) && count( $value ) === 2 ) {
+                        $q->whereBetween( $field , [ $value[ 0 ] , $value[ 1 ] ] );
+                    }
                     break;
             }
         }

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 
-use Exception;
-use App\Services\PageService;
 use App\Http\Requests\PageRequest;
-use App\Http\Resources\PageResource;
 use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\PageResource;
 use App\Models\Page;
+use App\Services\PageService;
+use Exception;
 
 class PageController extends AdminController
 {

@@ -4,6 +4,7 @@
     use App\Http\Middleware\AfterMiddleware;
     use App\Http\Middleware\CheckActiveRegister;
     use App\Http\Middleware\ForceAdminLogin;
+    use App\Http\Middleware\InitializeTenancyByToken;
     use App\Http\Middleware\PermissionMiddleware;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
@@ -34,6 +35,7 @@
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->alias( [
+                              'tenancy.token'   => InitializeTenancyByToken::class ,
                               'permission'      => PermissionMiddleware::class ,
                               'local.auth'      => ForceAdminLogin::class ,
                               'register'        => CheckActiveRegister::class ,

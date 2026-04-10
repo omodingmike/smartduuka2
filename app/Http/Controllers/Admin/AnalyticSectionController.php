@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\AnalyticSection;
-use Exception;
-use App\Models\Analytic;
-use App\Http\Requests\PaginateRequest;
-use App\Services\AnalyticSectionService;
 use App\Http\Requests\AnalyticSectionRequest;
+use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\AnalyticSectionResource;
+use App\Models\Analytic;
+use App\Models\AnalyticSection;
+use App\Services\AnalyticSectionService;
+use Exception;
 
 class AnalyticSectionController extends AdminController
 {

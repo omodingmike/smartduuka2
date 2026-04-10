@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\EmployeeExport;
+use App\Http\Requests\ChangeImageRequest;
+use App\Http\Requests\EmployeeRequest;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Requests\UserChangePasswordRequest;
+use App\Http\Resources\EmployeeResource;
+use App\Http\Resources\OrderResource;
+use App\Models\User;
+use App\Services\EmployeeService;
+use App\Services\OrderService;
 use App\Services\PinService;
 use Exception;
-use App\Models\User;
-use App\Services\OrderService;
-use App\Exports\EmployeeExport;
-use App\Services\EmployeeService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\OrderResource;
-use App\Http\Requests\EmployeeRequest;
-use App\Http\Requests\PaginateRequest;
-use App\Http\Resources\EmployeeResource;
-use App\Http\Requests\ChangeImageRequest;
-use App\Http\Requests\UserChangePasswordRequest;
-use App\Jobs\SendUserCredentialsJob;
 
 class EmployeeController extends AdminController
 {

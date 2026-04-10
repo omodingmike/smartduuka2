@@ -7,7 +7,6 @@
     use App\Http\Requests\UpdateWarehouseRequest;
     use App\Http\Resources\WarehouseResource;
     use App\Models\Warehouse;
-    use App\Services\StockService;
     use Exception;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;

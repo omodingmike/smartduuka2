@@ -13,15 +13,15 @@
     {
         public function run() : void
         {
-            $targetUsernames = ['admin', 'default-customer'];
+            $targetUsernames = [ 'admin' , 'default-customer' ];
 
-            $existingCount = User::whereIn('username', $targetUsernames)->count();
+            $existingCount = User::whereIn( 'username' , $targetUsernames )->count();
 
-            if ($existingCount === count($targetUsernames)) {
+            if ( $existingCount === count( $targetUsernames ) ) {
                 return;
             }
 
-            $admin = User::updateOrCreate(
+            $admin = User::firstOrCreate(
                 [
                     'username' => 'admin'
                 ] ,
@@ -37,16 +37,17 @@
                 ]
             );
 
-            $adminRole = Role::findByName( EnumRole::ADMIN, 'sanctum' );
-            $admin->syncRoles( [$adminRole] );
+            $adminRole = Role::findByName( EnumRole::ADMIN , 'sanctum' );
+            $admin->syncRoles( [ $adminRole ] );
 
-            $customer = User::updateOrCreate(
+            $customer = User::firstOrCreate(
                 [
                     'username' => 'default-customer'
                 ] ,
                 [
                     'email'             => 'walkingcustomer@example.com' ,
                     'phone'             => '0701234567' ,
+                    'type'              => 'Retail' ,
                     'name'              => 'Walking Customer' ,
                     'email_verified_at' => now() ,
                     'password'          => bcrypt( 'Admin@support12' ) ,
@@ -55,7 +56,7 @@
                 ]
             );
 
-            $customerRole = Role::findByName( EnumRole::CUSTOMER, 'sanctum' );
-            $customer->syncRoles( [$customerRole] );
+            $customerRole = Role::findByName( EnumRole::CUSTOMER , 'sanctum' );
+            $customer->syncRoles( [ $customerRole ] );
         }
     }

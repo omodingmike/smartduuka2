@@ -20,14 +20,16 @@
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
     use Spatie\Permission\Models\Role;
     use Spatie\Permission\Traits\HasRoles;
+    use Stancl\Tenancy\Contracts\Syncable;
+    use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
 
-    class User extends Authenticatable implements HasMedia
+    class User extends Authenticatable implements HasMedia , Syncable
     {
         use InteractsWithMedia;
         use HasApiTokens;
         use HasFactory;
         use HasRoles;
-        use Notifiable;
+        use Notifiable , ResourceSyncing;
 
         /**
          * The attributes that are mass assignable.
@@ -55,7 +57,7 @@
             'last_login_date' ,
             'department' , 'device_token' , 'web_token' , 'balance' , 'remember_token' , 'creator_type' , 'creator_id' , 'editor_type' , 'editor_id' , 'commission_paid' , 'two_factor_secret' , 'two_factor_recovery_codes' , 'two_factor_confirmed_at' , 'average_order_value' , 'credit_orders' , 'credits' , 'sales' , 'total_revenue' , 'registerMediaConversionsUsingModelInstance' ,
             'force_reset' ,
-            'raw_pin' ,
+            'raw_pin' , 'oldest_credit_order' , 'total_credit_orders' , 'wallet' , 'tenant_id' ,
             'is_reset'
         ];
 
@@ -66,7 +68,7 @@
          */
         protected $hidden = [
             'password' ,
-            'remember_token' ,
+            'remember_token' , 'pin'
         ];
 
         /**
@@ -91,6 +93,31 @@
             'force_reset'       => 'boolean' ,
             'is_reset'          => 'boolean' ,
         ];
+
+
+        public function getGlobalIdentifierKey()
+        {
+            return $this->getAttribute( $this->getGlobalIdentifierKeyName() );
+        }
+
+        public function getGlobalIdentifierKeyName() : string
+        {
+            return 'global_id';
+        }
+
+        public function getCentralModelName() : string
+        {
+            return CentralUser::class;
+        }
+
+        public function getSyncedAttributeNames() : array
+        {
+            return [
+                'name' ,
+                'password' ,
+                'email' ,
+            ];
+        }
 
         public function guardName() : string
         {
@@ -286,5 +313,16 @@
                         : 0;
                 }
             );
+        }
+        protected static function booted() : void
+        {
+            static::deleted( function ($tenantUser) {
+                // Find the central user using the global_id
+                $centralUser = CentralUser::where( 'global_id' , $tenantUser->global_id )->first();
+
+                if ( $centralUser ) {
+                    $centralUser->delete();
+                }
+            } );
         }
     }

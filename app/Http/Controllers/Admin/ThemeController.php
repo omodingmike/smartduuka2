@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Services\ThemeService;
 use App\Http\Requests\ThemeRequest;
 use App\Http\Resources\ThemeResource;
+use App\Services\ThemeService;
+use Exception;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Response;

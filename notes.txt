@@ -4,7 +4,8 @@ demo businessid: 1842991321
 
 https://github.com/brick/money
 
-sshpass -p "81ZJwQGFZ5lz3GAt900y" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@161.97.184.49:./setup.sh
+sshpass -p "EHhTh8530" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@84.247.160.237:./setup.sh
+ chmod +x ~/setup.sh && ./setup.sh
  chmod +x ~/deploy.sh && ./deploy.sh
  chmod +x ~/backup_and_push.sh && ./backup_and_push.sh
  161.97.184.49
@@ -115,5 +116,7 @@ duqihozol@gmail.com
     aJmal
     Button link on email of new user.
     should generate new pin after first login.
+
+SQLSTATE[22P02]: Invalid text representation: 7 ERROR: invalid input syntax for type bigint: "Cash" CONTEXT: unnamed portal parameter $1 = '...' (Connection: tenant, Host: db, Port: 5432, Database: tenant_demoshop, SQL: select * from "payment_methods" where "payment_methods"."id" = Cash limit 1)
 
 

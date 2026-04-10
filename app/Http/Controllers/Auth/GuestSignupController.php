@@ -4,29 +4,29 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\Activity;
 use App\Enums\Ask;
+use App\Enums\Role as EnumRole;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\GuestSignupPhoneRequest;
+use App\Http\Requests\VerifyPhoneRequest;
 use App\Http\Resources\MenuResource;
 use App\Http\Resources\PermissionResource;
 use App\Http\Resources\UserResource;
 use App\Libraries\AppLibrary;
+use App\Models\User;
 use App\Services\DefaultAccessService;
 use App\Services\MenuService;
+use App\Services\OtpManagerService;
 use App\Services\PermissionService;
 use Carbon\Carbon;
 use Exception;
-use App\Models\User;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use App\Enums\Role as EnumRole;
-use App\Services\OtpManagerService;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\VerifyPhoneRequest;
+use Illuminate\Support\Str;
 use Smartisan\Settings\Facades\Settings;
 
 class GuestSignupController extends Controller

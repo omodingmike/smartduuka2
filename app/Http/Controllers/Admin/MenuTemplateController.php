@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 
-use Exception;
+use App\Http\Requests\MenuTemplateRequest;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\MenuTemplateResource;
 use App\Models\MenuTemplate;
 use App\Services\MenuTemplateService;
-use App\Http\Requests\PaginateRequest;
-use App\Http\Requests\MenuTemplateRequest;
-use App\Http\Resources\MenuTemplateResource;
+use Exception;
 
 
 class MenuTemplateController extends AdminController

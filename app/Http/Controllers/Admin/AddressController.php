@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\AddressRequest;
 use App\Http\Requests\PaginateRequest;
-use Exception;
+use App\Http\Resources\AddressResource;
 use App\Models\Address;
 use App\Services\AddressService;
-use App\Http\Requests\AddressRequest;
-use App\Http\Resources\AddressResource;
+use Exception;
 
 class AddressController extends AdminController
 {

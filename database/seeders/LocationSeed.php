@@ -1,159 +1,175 @@
 <?php
 
-namespace Database\Seeders;
+    namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
+    use Illuminate\Database\Seeder;
+    use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\File;
+    use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Facades\Schema;
+    use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-class LocationSeed extends Seeder
-{
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    class LocationSeed extends Seeder
     {
-        // Prevent timeout for large files
-        set_time_limit( 0 );
-        ini_set( 'memory_limit' , '-1' );
+        /**
+         * Location data lives in the CENTRAL database only.
+         * Tenants access it via: DB::connection('central')->table('countries')
+         * or the tenancy() helper: central()->table('countries')
+         */
+        public function run(): void
+        {
+            $this->ensureCentralContext();
 
-        // Check if tables exist and are empty before seeding
-        if (Schema::hasTable('countries') && DB::table('countries')->exists()) {
-            $this->logInfo('Location tables already seeded. Skipping...');
-            return;
-        }
+            set_time_limit(0);
+            ini_set('memory_limit', '-1');
 
-        $this->cleanDatabase();
-
-        // STRICT ORDER: Parents first, children last
-        $files = [
-            'regions.sql' ,
-            'subregions.sql' ,
-            'countries.sql' ,
-            'states.sql' ,
-            'cities.sql' ,
-        ];
-
-        foreach ( $files as $filename ) {
-            $path = database_path( "sql/{$filename}" );
-            $this->importSqlStream( $path , $filename );
-        }
-    }
-    private function cleanDatabase() : void
-    {
-        $tables = [ 'cities' , 'states' , 'countries' , 'subregions' , 'regions' ];
-
-        // We use DROP ... CASCADE to force remove the tables and their links
-        // The SQL files contain CREATE TABLE statements, so they will be rebuilt.
-        $tableList = implode( ', ' , $tables );
-
-        try {
-            DB::statement( "DROP TABLE IF EXISTS {$tableList} CASCADE" );
-            $this->logInfo( "Dropped tables: {$tableList}" );
-        } catch ( \Exception $e ) {
-            $this->logWarn( 'Cleanup warning: ' . $e->getMessage() );
-        }
-    }
-
-    private function importSqlStream(string $filePath , string $fileName) : void
-    {
-        if ( ! File::exists( $filePath ) ) {
-            $this->logError( "File missing: {$fileName}" );
-            return;
-        }
-
-        $this->logInfo( "Processing: {$fileName}..." );
-
-        $handle = fopen( $filePath , 'r' );
-
-        if ( ! $handle ) {
-            $this->logError( "Could not open file: {$fileName}" );
-            return;
-        }
-
-        // Use transaction for speed
-        DB::beginTransaction();
-
-        try {
-            $buffer = '';
-
-            while ( ( $line = fgets( $handle ) ) !== FALSE ) {
-                $trimmed = trim( $line );
-
-                // --- FILTERS ---
-
-                // 1. Skip empty lines and standard comments
-                if ( $trimmed === '' || str_starts_with( $trimmed , '--' ) || str_starts_with( $trimmed , '\\' ) ) {
-                    continue;
-                }
-
-                // 2. Skip "OWNER TO" (Fixes: role "postgres" does not exist)
-                if ( stripos( $line , 'OWNER TO' ) !== FALSE ) {
-                    continue;
-                }
-
-                // 3. Skip "SET" commands (Optimization configs that might fail on your DB)
-                if ( str_starts_with( $trimmed , 'SET ' ) ) {
-                    continue;
-                }
-
-                // 4. Skip "DROP" commands (We already dropped them in cleanDatabase)
-                // This prevents "cannot drop constraint" errors
-                if ( stripos( $line , 'DROP TABLE' ) !== FALSE || stripos( $line , 'DROP CONSTRAINT' ) !== FALSE ) {
-                    continue;
-                }
-
-                // --- EXECUTION ---
-
-                $buffer .= $line;
-
-                // Execute when we hit a semicolon
-                if ( str_ends_with( $trimmed , ';' ) ) {
-                    DB::unprepared( $buffer );
-                    $buffer = '';
-                }
+            if ($this->isAlreadySeeded()) {
+                $this->logInfo('Location tables already seeded. Skipping...');
+                return;
             }
 
-            DB::commit();
-            $this->logInfo( "Imported: {$fileName}" );
+            $this->cleanDatabase();
 
-        } catch ( \Exception $e ) {
-            DB::rollBack();
-            $this->logError( "Error importing {$fileName}: " . $e->getMessage() );
-            // Close handle if error occurs
-            fclose( $handle );
-            return;
+            foreach ($this->sqlFiles() as $filename) {
+                $path = database_path("sql/{$filename}");
+                $this->importSqlStream($path, $filename);
+            }
         }
 
-        fclose( $handle );
-    }
+        /**
+         * Abort if this seeder is somehow invoked inside a tenant context.
+         * stancl/tenancy switches the default DB connection when a tenant is
+         * initialised, so we guard against accidentally writing location data
+         * into a tenant DB.
+         */
+        private function ensureCentralContext(): void
+        {
+            // tenancy()->initialized is true when a tenant context is active
+            if (app()->bound('tenancy') && tenancy()->initialized) {
+                throw new \RuntimeException(
+                    'LocationSeed must run in the central database context. ' .
+                    'Call `php artisan db:seed --class=LocationSeed` without ' .
+                    'initialising a tenant first.'
+                );
+            }
+        }
 
-    private function logInfo($message)
-    {
-        if (isset($this->command)) {
-            $this->command->info($message);
-        } else {
-            Log::info($message);
+        private function isAlreadySeeded(): bool
+        {
+            return Schema::hasTable('countries') && DB::table('countries')->exists();
+        }
+
+        private function sqlFiles(): array
+        {
+            // Strict parent-first order — foreign keys depend on this
+            return [
+                'regions.sql',
+                'subregions.sql',
+                'countries.sql',
+                'states.sql',
+                'cities.sql',
+            ];
+        }
+
+        private function cleanDatabase(): void
+        {
+            // Child tables first to respect FK constraints
+            $tables = ['cities', 'states', 'countries', 'subregions', 'regions'];
+            $tableList = implode(', ', $tables);
+
+            try {
+                DB::statement("DROP TABLE IF EXISTS {$tableList} CASCADE");
+                $this->logInfo("Dropped tables: {$tableList}");
+            } catch (\Exception $e) {
+                $this->logWarn('Cleanup warning: ' . $e->getMessage());
+            }
+        }
+
+        private function importSqlStream(string $filePath, string $fileName): void
+        {
+            if (!File::exists($filePath)) {
+                $this->logError("File missing: {$fileName}");
+                return;
+            }
+
+            $handle = fopen($filePath, 'r');
+
+            if (!$handle) {
+                $this->logError("Could not open file: {$fileName}");
+                return;
+            }
+
+            $this->logInfo("Processing: {$fileName}...");
+
+            DB::beginTransaction();
+
+            try {
+                $buffer = '';
+
+                while (($line = fgets($handle)) !== false) {
+                    $trimmed = trim($line);
+
+                    if ($this->shouldSkipLine($trimmed, $line)) {
+                        continue;
+                    }
+
+                    $buffer .= $line;
+
+                    if (str_ends_with($trimmed, ';')) {
+                        DB::unprepared($buffer);
+                        $buffer = '';
+                    }
+                }
+
+                DB::commit();
+                $this->logInfo("Imported: {$fileName}");
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $this->logError("Error importing {$fileName}: " . $e->getMessage());
+            } finally {
+                fclose($handle);
+            }
+        }
+
+        private function shouldSkipLine(string $trimmed, string $raw): bool
+        {
+            // Empty lines and SQL comments
+            if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '\\')) {
+                return true;
+            }
+
+            // PostgreSQL role/ownership directives (not portable)
+            if (stripos($raw, 'OWNER TO') !== false) {
+                return true;
+            }
+
+            // Session-level SET commands (client_encoding, lock_timeout, etc.)
+            if (str_starts_with($trimmed, 'SET ')) {
+                return true;
+            }
+
+            // DROP statements — cleanDatabase() already handled teardown
+            if (stripos($raw, 'DROP TABLE') !== false || stripos($raw, 'DROP CONSTRAINT') !== false) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // ─── Logging ──────────────────────────────────────────────────────────────
+
+        private function logInfo(string $message): void
+        {
+            isset($this->command) ? $this->command->info($message) : Log::info($message);
+        }
+
+        private function logWarn(string $message): void
+        {
+            isset($this->command) ? $this->command->warn($message) : Log::warning($message);
+        }
+
+        private function logError(string $message): void
+        {
+            isset($this->command) ? $this->command->error($message) : Log::error($message);
         }
     }
-
-    private function logWarn($message)
-    {
-        if (isset($this->command)) {
-            $this->command->warn($message);
-        } else {
-            Log::warning($message);
-        }
-    }
-
-    private function logError($message)
-    {
-        if (isset($this->command)) {
-            $this->command->error($message);
-        } else {
-            Log::error($message);
-        }
-    }
-}

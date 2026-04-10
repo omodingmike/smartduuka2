@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Services\UserService;
-use App\Http\Resources\UserResource;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Requests\PaginateRequest;
 use App\Exports\CreditBalanceReportExport;
+use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\UserResource;
+use App\Services\UserService;
+use Exception;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CreditBalanceReportController extends AdminController
 {

@@ -4,7 +4,7 @@
 
     use App\Http\Requests\StoreActivityLogRequest;
     use App\Http\Requests\UpdateActivityLogRequest;
-    use App\Http\Resources\ActivityLogResource;
+    use App\Http\Resources\Cashflow\ActivityLogResource;
     use App\Models\ActivityLog;
     use Exception;
     use Illuminate\Http\Request;
@@ -48,25 +48,6 @@
                         $query->where('user_id' , 'like' , '%' .$requests['user_id'] . '%');
                     }
 
-
-//                    foreach ( $requests as $key => $request ) {
-//                        if ( in_array($key , $this->activity_log_filter) ) {
-//                            if ( $key === 'status' ) {
-//                                $query->where($key , (int) $request);
-//                            } else {
-//                                $query->where($key , 'like' , '%' . $request . '%');
-//                            }
-//                        }
-//
-//                        if ( in_array($key , $this->exceptFilter) ) {
-//                            $explodes = explode('|' , $request);
-//                            if ( is_array($explodes) ) {
-//                                foreach ( $explodes as $explode ) {
-//                                    $query->where('order_type' , '!=' , $explode);
-//                                }
-//                            }
-//                        }
-//                    }
                 })->orderBy($orderColumn , $orderType)->$method(
                     $methodValue
                 ));

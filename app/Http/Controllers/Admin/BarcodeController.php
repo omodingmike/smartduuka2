@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Services\BarcodeService;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\BarcodeResource;
+use App\Services\BarcodeService;
+use Exception;
 
 class BarcodeController extends AdminController
 {

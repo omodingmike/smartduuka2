@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Enums\Activity;
 use App\Enums\PaymentStatus;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentRequest;
 use App\Libraries\AppLibrary;
 use App\Models\Currency;
@@ -13,7 +14,6 @@ use App\Models\PaymentGateway;
 use App\Models\ThemeSetting;
 use App\Services\PaymentManagerService;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Smartisan\Settings\Facades\Settings;
 
 class PaymentController extends Controller

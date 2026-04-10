@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\Offer;
-use App\Services\OfferItemService;
-use App\Http\Requests\PaginateRequest;
 use App\Http\Requests\OfferItemRequest;
+use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\OfferItemResource;
+use App\Models\Offer;
 use App\Models\OfferItem;
+use App\Services\OfferItemService;
+use Exception;
 
 class OfferItemController extends AdminController
 {

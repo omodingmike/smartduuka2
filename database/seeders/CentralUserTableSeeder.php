@@ -1,0 +1,62 @@
+<?php
+
+    namespace Database\Seeders;
+
+    use App\Enums\Ask;
+    use App\Enums\Role as EnumRole;
+    use App\Enums\Status;
+    use App\Models\User;
+    use Illuminate\Database\Seeder;
+    use Spatie\Permission\Models\Role;
+
+    class CentralUserTableSeeder extends Seeder
+    {
+        public function run() : void
+        {
+            $targetUsernames = [ 'admin' , 'default-customer' ];
+
+            $existingCount = User::whereIn( 'username' , $targetUsernames )->count();
+
+            if ( $existingCount === count( $targetUsernames ) ) {
+                return;
+            }
+
+            $admin = User::firstOrCreate(
+                [
+                    'username' => 'admin'
+                ] ,
+                [
+                    'email'             => 'support@smartduuka.com' ,
+                    'phone'             => '0701034242' ,
+                    'name'              => 'Support Admin' ,
+                    'email_verified_at' => now() ,
+                    'password'          => bcrypt( 'Admin@support12' ) ,
+                    'status'            => Status::ACTIVE ,
+                    'country_code'      => '+880' ,
+                    'is_guest'          => Ask::NO
+                ]
+            );
+
+            $adminRole = Role::findByName( EnumRole::ADMIN , 'sanctum' );
+            $admin->syncRoles( [ $adminRole ] );
+
+            $customer = User::firstOrCreate(
+                [
+                    'username' => 'default-customer'
+                ] ,
+                [
+                    'email'             => 'walkingcustomer@example.com' ,
+                    'phone'             => '0701234567' ,
+                    'type'              => 'Retail' ,
+                    'name'              => 'Walking Customer' ,
+                    'email_verified_at' => now() ,
+                    'password'          => bcrypt( 'Admin@support12' ) ,
+                    'status'            => Status::ACTIVE ,
+                    'is_guest'          => Ask::NO
+                ]
+            );
+
+            $customerRole = Role::findByName( EnumRole::CUSTOMER , 'sanctum' );
+            $customer->syncRoles( [ $customerRole ] );
+        }
+    }

@@ -12,8 +12,8 @@
         public function handle(Request $request , Closure $next) : Response
         {
             $response = $next( $request );
-
-            if ( $response instanceof JsonResponse ) {
+            $tenant = tenant( 'id' );
+            if ( $response instanceof JsonResponse && $tenant ) {
                 $data = $response->getData( TRUE );
                 if ( is_array( $data ) ) {
                     $user               = auth()->user();

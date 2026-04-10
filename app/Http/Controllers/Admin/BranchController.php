@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\Branch;
-use App\Services\BranchService;
 use App\Http\Requests\BranchRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\BranchResource;
+use App\Models\Branch;
+use App\Services\BranchService;
+use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;

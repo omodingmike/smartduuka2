@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Services\SimpleUserService;
-use App\Http\Resources\SimpleUserResource;
 use App\Http\Requests\PaginateRequest;
+use App\Http\Resources\SimpleUserResource;
+use App\Services\SimpleUserService;
+use Exception;
 
 class SimpleUserController extends AdminController
 {

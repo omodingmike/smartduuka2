@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Http\Requests\PaginateRequest;
 use App\Libraries\AppLibrary;
 use App\Services\ProductService;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
@@ -20,7 +21,7 @@ class ExpenseCategoryExport implements FromCollection, WithHeadings
         $this->request            = $request;
     }
 
-    public function collection(): \Illuminate\Support\Collection
+    public function collection(): Collection
     {
         $productArray = [];
         $products     = $this->productService->list($this->request);

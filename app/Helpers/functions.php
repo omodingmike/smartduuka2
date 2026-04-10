@@ -77,10 +77,16 @@
         return "$code$phone";
     }
 
+//    function recordId(string $prefix , Model $model) : string
+//    {
+//        $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
+//        return $prefix . date( 'dmy' ) . '-' . Str::padLeft( $model->id , $dynamicPadding , '0' );
+//    }
+
     function recordId(string $prefix , Model $model) : string
     {
         $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
-        return $prefix . date( 'dmy' ) . '-' . Str::padLeft( $model->id , $dynamicPadding , '0' );
+        return $prefix . '-' . Str::padLeft( $model->id , $dynamicPadding , '0' );
     }
 
     function permissionWithAccess(&$permissions , $rolePermissions) : object
@@ -183,9 +189,11 @@
         ] );
     }
 
-    function register() : Register
+    function register() : Register | null
     {
-        return auth()->user()->openRegister();
+        $tenant = tenant( 'id' );
+        if ( $tenant ) return auth()->user()->openRegister();
+        else return NULL;
     }
 
     function orderLabel(Order $order) : string
@@ -508,10 +516,17 @@
         } , $phpFormat );
     }
 
-    function activityLog(string $description) : void
+    function activityLog(string $description , Model | null $model = NULL) : void
     {
-        activity()->log( $description );
+        $activity = activity();
+        if ( $model ) $activity->performedOn( $model );
+        $activity->log( $description );
     }
+
+//    function activityLog(string $description) : void
+//    {
+//        activity()->log( $description );
+//    }
 
     function statusLabel($status) : string | null
     {

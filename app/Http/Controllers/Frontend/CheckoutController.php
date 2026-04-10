@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Frontend;
 
 
-use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\BranchResource;
 use App\Services\BranchService;
+use Exception;
 
 class CheckoutController extends Controller
 {

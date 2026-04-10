@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\ThemeSetting;
-use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Services\CompanyService;
-use App\Services\ProductService;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsReportExport;
 use App\Http\Requests\PaginateRequest;
-use Smartisan\Settings\Facades\Settings;
 use App\Http\Resources\ProductAdminResource;
 use App\Http\Resources\ProductsReportOverviewResource;
+use App\Models\ThemeSetting;
+use App\Services\CompanyService;
+use App\Services\ProductService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Maatwebsite\Excel\Facades\Excel;
+use Smartisan\Settings\Facades\Settings;
 
 class ProductsReportController extends AdminController
 {

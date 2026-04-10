@@ -6,7 +6,7 @@
     use App\Enums\Role as EnumRole;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\DistributionRoute\UpdateDistributionRouteRequest;
-    use App\Http\Resources\DistributionRoute\DistributionRouteResource;
+    use App\Http\Resources\Cashflow\DistributionRoute\DistributionRouteResource;
     use App\Models\DistributionRoute;
     use App\Models\Stock;
     use App\Models\User;

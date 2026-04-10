@@ -55,7 +55,7 @@
                 $user = NULL;
                 if ( $isPinLogin ) {
                     $pin_hash = $pin_service->hashPin( $pin );
-                    $user     = User::where( 'pin' , $pin_hash )->first();
+                    $user     = User::where( [ 'pin' => $pin_hash , 'status' => Status::ACTIVE ] )->first();
                     if ( $user && $pin_service->verifyPin( $user->pin , $pin ) ) {
                         Auth::login( $user , TRUE );
                     }

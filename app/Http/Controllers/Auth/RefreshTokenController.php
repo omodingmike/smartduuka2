@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 
-use Exception;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TokenStoreRequest;
-use Laravel\Sanctum\PersonalAccessToken;
+use Exception;
 use Illuminate\Http\JsonResponse;
+use Laravel\Sanctum\PersonalAccessToken;
 
 
 class RefreshTokenController extends Controller

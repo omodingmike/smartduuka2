@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\User;
-use App\Models\Order;
-use App\Services\OrderService;
 use App\Http\Resources\OrderDetailsResource;
+use App\Models\Order;
+use App\Models\User;
+use App\Services\OrderService;
+use Exception;
 
 class MyOrderDetailsController extends AdminController
 {

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Exception;
-use App\Models\Analytic;
-use Illuminate\Http\Request;
-use App\Services\AnalyticService;
 use App\Http\Requests\AnalyticRequest;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\AnalyticResource;
+use App\Models\Analytic;
+use App\Services\AnalyticService;
+use Exception;
 
 class AnalyticController extends AdminController
 {

@@ -1,6 +1,6 @@
 <?php
 
-    namespace App\Http\Resources\DistributionRoute;
+    namespace App\Http\Resources\Cashflow\DistributionRoute;
 
     use App\Libraries\AppLibrary;
     use App\Models\Stock;

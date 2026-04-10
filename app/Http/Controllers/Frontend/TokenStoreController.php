@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Frontend;
 
 
-use Exception;
-use App\Services\TokenStoreService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TokenStoreRequest;
+use App\Services\TokenStoreService;
+use Exception;
 
 
 class TokenStoreController extends Controller

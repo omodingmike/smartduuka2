@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 
-use Exception;
 use App\Http\Requests\PaginateRequest;
 use App\Http\Resources\MenuSectionResource;
 use App\Services\MenuSectionService;
+use Exception;
 
 class MenuSectionController extends AdminController
 {
