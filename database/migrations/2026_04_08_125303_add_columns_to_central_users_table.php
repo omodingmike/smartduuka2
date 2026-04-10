@@ -9,16 +9,16 @@
         {
             Schema::table( 'users' , function (Blueprint $table) {
 //                $table->decimal( 'commission' , 20 , 2 )->default( 0 );
-                $table->decimal( 'commission_paid' , 20 , 2 )->default( 0 );
-                $table->string( 'phone2' )->nullable()->unique();
-                $table->string( 'type' )->nullable();
-                $table->string( 'notes' )->nullable();
-                $table->timestamp( 'last_login_date' )->nullable();
-                $table->string( 'department' )->nullable();
-                $table->boolean( 'force_reset' )->default( FALSE );
+//                $table->decimal( 'commission_paid' , 20 , 2 )->default( 0 );
+//                $table->string( 'phone2' )->nullable()->unique();
+//                $table->string( 'type' )->nullable();
+//                $table->string( 'notes' )->nullable();
+//                $table->timestamp( 'last_login_date' )->nullable();
+//                $table->string( 'department' )->nullable();
+//                $table->boolean( 'force_reset' )->default( FALSE );
                 $table->string( 'tenant_id' )->nullable();
-                $table->boolean( 'is_reset' )->default( FALSE );
-                $table->string( 'raw_pin' )->nullable();
+//                $table->boolean( 'is_reset' )->default( FALSE );
+//                $table->string( 'raw_pin' )->nullable();
                 $table->string( 'global_id' )->nullable();
             } );
         }
