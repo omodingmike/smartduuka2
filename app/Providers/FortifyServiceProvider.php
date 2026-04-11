@@ -92,11 +92,13 @@
                     if ( $validator->fails() ) {
                         return NULL;
                     }
+                    info('Using this. ');
 
                     $loginField = filter_var( $request->input( Fortify::username() ) , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
                     $user       = CentralUser::where( $loginField , $request->input( Fortify::username() ) )
                                              ->where( 'status' , Status::ACTIVE )
                                              ->first();
+                    info($user);
 
                     if ( $user && Hash::check( $request->password , $user->password ) ) {
                         $centralUser = $user;
