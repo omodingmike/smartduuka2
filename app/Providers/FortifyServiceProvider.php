@@ -13,6 +13,7 @@
     use Illuminate\Cache\RateLimiting\Limit;
     use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\RateLimiter;
     use Illuminate\Support\Facades\Validator;
     use Illuminate\Support\ServiceProvider;
@@ -70,23 +71,32 @@
                     if ( $validator->fails() ) {
                         throw  new \Exception( $validator->errors()->first() , 422 );
                     }
+                    $centralUser = NULL;
                     // 1. Authenticate against central DB
                     if ( $isPinLogin ) {
                         $pin_hash    = $pin_service->hashPin( $pin );
                         $centralUser = CentralUser::where( 'pin' , $pin_hash )->first();
                         if ( ! $centralUser || ! $pin_service->verifyPin( $centralUser->pin , $pin ) ) {
                             $centralUser = NULL;
+                            throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
                         }
                     }
                     else {
-                        $loginField  = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-                        $centralUser = CentralUser::where( $loginField , $request->email )
-                                                  ->where( 'status' , Status::ACTIVE->value )
-                                                  ->first();
+                        $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+//                        $centralUser = CentralUser::where( $loginField , $request->email )
+//                                                  ->where( 'status' , Status::ACTIVE )
+//                                                  ->first();
 
-                        if ( ! $centralUser || ! \Hash::check( $request->password , $centralUser->password ) ) {
-                            $centralUser = NULL;
+                        if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
+                            $centralUser = Auth::user();
                         }
+                        else {
+                            throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
+                        }
+
+//                        if ( ! $centralUser || ! Hash::check( $request->password , $centralUser->password ) ) {
+//                            $centralUser = NULL;
+//                        }
                     }
 
                     if ( ! $centralUser ) {
