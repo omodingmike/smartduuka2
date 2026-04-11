@@ -40,9 +40,6 @@
             } );
         }
 
-        /**
-         * Bootstrap any application services.
-         */
         public function boot(PinService $pin_service) : void
         {
             Fortify::createUsersUsing( CreateNewUser::class );
