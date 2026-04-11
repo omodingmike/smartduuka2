@@ -71,8 +71,6 @@
                     if ( $validator->fails() ) {
                         throw  new \Exception( $validator->errors()->first() , 422 );
                     }
-                    $centralUser = NULL;
-                    // 1. Authenticate against central DB
                     if ( $isPinLogin ) {
                         $pin_hash    = $pin_service->hashPin( $pin );
                         $centralUser = CentralUser::where( 'pin' , $pin_hash )->first();
@@ -86,6 +84,7 @@
                         $centralUser = CentralUser::where( $loginField , $request->email )
                                                   ->where( 'status' , Status::ACTIVE )
                                                   ?->first();
+                        info($centralUser);
                         if ( ! $centralUser ) throw  new \Exception( 'User not found' , 404 );
 
                         if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
