@@ -75,6 +75,7 @@
             } );
 
             Fortify::authenticateUsing( function (Request $request) use ($pinService) {
+
                 $centralUser = NULL;
 
                 info('Logging in ');
