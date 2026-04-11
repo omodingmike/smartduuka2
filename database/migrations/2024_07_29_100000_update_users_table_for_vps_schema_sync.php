@@ -2,7 +2,6 @@
 
     use Illuminate\Database\Migrations\Migration;
     use Illuminate\Database\Schema\Blueprint;
-    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Schema;
 
     return new class extends Migration {
@@ -14,7 +13,6 @@
                 $table->decimal( 'commission' , 20 , 2 )->default( 0 )->change();
                 $table->decimal( 'commission_paid' , 20 , 2 )->default( 0 )->change();
             } );
-            DB::statement( 'CREATE UNIQUE INDEX users_email_unique ON users (email) WHERE email IS NOT NULL' );
         }
 
         public function down() : void
