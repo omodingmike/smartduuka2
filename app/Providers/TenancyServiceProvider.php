@@ -180,13 +180,6 @@
 
         protected function mapRoutes() : void
         {
-//            $this->app->booted( function () {
-//                if ( file_exists( base_path( 'routes/tenant.php' ) ) ) {
-//                    Route::namespace( static::$controllerNamespace )
-//                         ->group( base_path( 'routes/tenant.php' ) );
-//                }
-//            } );
-
             $this->app->booted( function () {
                 $tenantRoutes = [
                     'routes/tenant.php' ,

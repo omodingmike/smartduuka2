@@ -82,10 +82,11 @@
                         }
                     }
                     else {
-                        $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-//                        $centralUser = CentralUser::where( $loginField , $request->email )
-//                                                  ->where( 'status' , Status::ACTIVE )
-//                                                  ->first();
+                        $loginField  = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+                        $centralUser = CentralUser::where( $loginField , $request->email )
+                                                  ->where( 'status' , Status::ACTIVE )
+                                                  ?->first();
+                        if ( ! $centralUser ) throw  new \Exception( 'User not found' , 404 );
 
                         if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
                             $centralUser = Auth::user();
@@ -93,10 +94,6 @@
                         else {
                             throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
                         }
-
-//                        if ( ! $centralUser || ! Hash::check( $request->password , $centralUser->password ) ) {
-//                            $centralUser = NULL;
-//                        }
                     }
 
                     if ( ! $centralUser ) {
@@ -126,7 +123,6 @@
                         throw  new \Exception( 'User not found in tenant' , 422 );
                     }
 
-                    // 4. Token logic — mirrors your LoginController exactly
                     $token = $tenantUser->web_token;
                     if ( $token ) {
                         $accessToken = PersonalAccessToken::findToken( $token );
@@ -155,7 +151,6 @@
                 } catch ( \Exception $e ) {
                     tenancy()->end();
                     return NULL;
-//                    throw  new \Exception( $e->getMessage() , 422 );
                 }
             } );
         }
