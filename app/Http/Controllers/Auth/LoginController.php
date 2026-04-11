@@ -89,7 +89,7 @@
                     $user->update( [ 'web_token' => $token ] );
                 }// Update last login date
                 $user->update( [ 'last_login_date' => now() ] );
-                $user->update( [ 'raw_pin' => $pin_service->generateUniquePin() ] );
+//                $user->update( [ 'raw_pin' => $pin_service->generateUniquePin() ] );
                 activity()
                     ->on( $user )
                     ->log( 'Logged in' );

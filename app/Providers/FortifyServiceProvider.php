@@ -13,7 +13,7 @@
     use Illuminate\Cache\RateLimiting\Limit;
     use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\RateLimiter;
     use Illuminate\Support\Facades\Validator;
     use Illuminate\Support\ServiceProvider;
@@ -30,18 +30,33 @@
             $this->app->instance( LoginResponse::class , new class implements LoginResponse {
                 public function toResponse($request) : JsonResponse
                 {
-                    $user = $request->user();
+                    $user      = $request->user();
+                    $tenant_id = $user->tenant_id;
+
+                    $token = $user->web_token;
+                    if ( $token ) {
+                        $accessToken = PersonalAccessToken::findToken( $token );
+                        if ( ! $accessToken ) {
+                            $token = NULL;
+                        }
+                    }
+
+                    if ( ! $token ) {
+                        $token = $user->createToken( 'auth_token' )->plainTextToken;
+                        $user->update( [ 'web_token' => $token ] );
+                    }
+
                     return response()->json( [
                         'two_factor' => FALSE ,
-                        'token'      => $user->generated_token ,
-                        'user'       => $user->resolved_data ,
-                        'tenant_id'  => $user->tenant_id
+                        'token'      => $token ,
+                        'user'       => $user->toArray() ,
+                        'tenant_id'  => $tenant_id ,
                     ] );
                 }
             } );
         }
 
-        public function boot(PinService $pin_service) : void
+        public function boot(PinService $pinService) : void
         {
             Fortify::createUsersUsing( CreateNewUser::class );
             Fortify::updateUserProfileInformationUsing( UpdateUserProfileInformation::class );
@@ -59,98 +74,58 @@
                 return Limit::perMinute( 5 )->by( $request->session()->get( 'login.id' ) );
             } );
 
-            Fortify::authenticateUsing( function (Request $request) use ($pin_service) {
-                try {
-                    $isPinLogin = $request->filled( 'pin' );
-                    $pin        = $request->string( 'pin' );
-                    $rules      = $isPinLogin
-                        ? [ 'pin' => [ 'required' , 'string' , 'size:5' ] ]
-                        : [ 'email' => [ 'required' , 'string' ] , 'password' => [ 'required' , 'string' ] ];
+            Fortify::authenticateUsing( function (Request $request) use ($pinService) {
+                $centralUser = NULL;
 
-                    $validator = Validator::make( $request->all() , $rules );
+                if ( $request->filled( 'pin' ) ) {
+                    $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
                     if ( $validator->fails() ) {
-                        throw  new \Exception( $validator->errors()->first() , 422 );
+                        return NULL;
                     }
-                    if ( $isPinLogin ) {
-                        $pin_hash    = $pin_service->hashPin( $pin );
-                        $centralUser = CentralUser::where( 'pin' , $pin_hash )->first();
-                        if ( ! $centralUser || ! $pin_service->verifyPin( $centralUser->pin , $pin ) ) {
-                            $centralUser = NULL;
-                            throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
-                        }
-                    }
-                    else {
-                        $loginField  = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-                        $centralUser = CentralUser::where( $loginField , $request->email )
-                                                  ->where( 'status' , Status::ACTIVE )
-                                                  ?->first();
-                        info( 'Central user => ' , $centralUser );
-                        if ( ! $centralUser ) throw  new \Exception( 'User not found' , 404 );
-
-                        if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
-                            $centralUser = Auth::user();
-                        }
-                        else {
-                            throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
-                        }
-                    }
-
-                    if ( ! $centralUser ) {
-                        throw  new \Exception( trans( 'all.message.credentials_invalid' ) , 422 );
-                    }
-
-                    // 2. Resolve tenant from central user
-                    $tenant = $centralUser->tenants()->first();
-
-                    if ( ! $tenant ) {
-                        throw  new \Exception( 'No tenant associated with this account' , 422 );
-                    }
-
-                    if ( ! $tenant->database() ) {
-                        throw  new \Exception( 'Tenant database not configured' , 422 );
-                    }
-
-                    tenancy()->initialize( $tenant->id );
-
-                    $tenantUser = User::where(
-                        $centralUser->getGlobalIdentifierKeyName() ,
-                        $centralUser->getGlobalIdentifierKey()
-                    )->first();
-
-                    if ( ! $tenantUser ) {
-                        tenancy()->end();
-                        throw  new \Exception( 'User not found in tenant' , 422 );
-                    }
-
-                    $token = $tenantUser->web_token;
-                    if ( $token ) {
-                        $accessToken = PersonalAccessToken::findToken( $token );
-                        if ( ! $accessToken ) {
-                            $token = NULL;
-                        }
-                    }
-                    if ( ! $token ) {
-                        $token = $tenantUser->createToken( 'auth_token' )->plainTextToken;
-                        $tenantUser->update( [ 'web_token' => $token ] );
-                    }
-
-                    $tenantUser->update( [
-                        'last_login_date' => now() ,
-                        'raw_pin'         => $pin_service->generateUniquePin() ,
+                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )->first();
+                }
+                else {
+                    $validator = Validator::make( $request->all() , [
+                        Fortify::username() => 'required|string' ,
+                        'password'          => 'required|string' ,
                     ] );
-                    $userArray = $tenantUser->toArray();
+                    if ( $validator->fails() ) {
+                        return NULL;
+                    }
 
-                    activity()->on( $tenantUser )->log( 'Logged in via central app' );
-                    $tenantUser->generated_token = $token;
-                    $tenantUser->resolved_data   = $userArray;
-                    $tenantUser->tenant_id       = $tenant->getTenantKey();
-                    tenancy()->end();
-                    return $tenantUser;
+                    $loginField = filter_var( $request->input( Fortify::username() ) , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+                    $user       = CentralUser::where( $loginField , $request->input( Fortify::username() ) )
+                                             ->where( 'status' , Status::ACTIVE )
+                                             ->first();
 
-                } catch ( \Exception $e ) {
-                    tenancy()->end();
+                    if ( $user && Hash::check( $request->password , $user->password ) ) {
+                        $centralUser = $user;
+                    }
+                }
+
+                if ( ! $centralUser ) {
                     return NULL;
                 }
+
+                $tenant = $centralUser->tenants()->first();
+
+                if ( ! $tenant || ! $tenant->database() ) {
+                    return NULL;
+                }
+
+                tenancy()->initialize( $tenant );
+
+                $tenantUser = User::where(
+                    $centralUser->getGlobalIdentifierKeyName() ,
+                    $centralUser->getGlobalIdentifierKey()
+                )->first();
+
+                if ( $tenantUser ) {
+                    $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id ] );
+                    activity()->on( $tenantUser )->log( 'Logged in via central app' );
+                    return $tenantUser;
+                }
+                return NULL;
             } );
         }
     }
