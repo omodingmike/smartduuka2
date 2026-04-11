@@ -77,8 +77,6 @@
             Fortify::authenticateUsing( function (Request $request) use ($pinService) {
                 $centralUser = NULL;
 
-                info('Logging in ');
-
                 if ( $request->filled( 'pin' ) ) {
                     $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
 
@@ -96,13 +94,10 @@
                     if ( $validator->fails() ) {
                         return NULL;
                     }
-                    info('Using this. ');
 
                     $loginField = filter_var( $request->input( Fortify::username() ) , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
                     $user       = CentralUser::where( $loginField , $request->input( Fortify::username() ) )
-                                             ->where( 'status' , Status::ACTIVE )
-                                             ->first();
-                    info($user);
+                                             ->where( 'status' , Status::ACTIVE )?->first();
 
                     if ( $user && Hash::check( $request->password , $user->password ) ) {
                         $centralUser = $user;
@@ -113,7 +108,7 @@
                     return NULL;
                 }
 
-                $tenant = $centralUser->tenants()->first();
+                $tenant = $centralUser->tenants()?->first();
 
                 if ( ! $tenant || ! $tenant->database() ) {
                     return NULL;
@@ -125,6 +120,7 @@
                     $centralUser->getGlobalIdentifierKeyName() ,
                     $centralUser->getGlobalIdentifierKey()
                 )->first();
+
 
                 if ( $tenantUser ) {
                     $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id ] );
