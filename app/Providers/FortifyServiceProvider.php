@@ -75,16 +75,17 @@
             } );
 
             Fortify::authenticateUsing( function (Request $request) use ($pinService) {
-
                 $centralUser = NULL;
 
                 info('Logging in ');
 
                 if ( $request->filled( 'pin' ) ) {
                     $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
+
                     if ( $validator->fails() ) {
                         return NULL;
                     }
+
                     $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )->first();
                 }
                 else {
