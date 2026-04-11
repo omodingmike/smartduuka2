@@ -11,9 +11,9 @@
 
             try {
                 $user        = $request->user();
-                $permissions = $user->getAllPermissions();
-                $user->unsetRelation( 'permissions' );
-                $user->setAttribute( 'permissions' , $permissions );
+//                $permissions = $user->getAllPermissions();
+//                $user->unsetRelation( 'permissions' );
+//                $user->setAttribute( 'permissions' , $permissions );
                 return $user;
             } catch ( \Exception $e ) {
                 throw new \Exception( $e->getMessage(),422 );
