@@ -58,7 +58,7 @@
             'department' , 'device_token' , 'web_token' , 'balance' , 'remember_token' , 'creator_type' , 'creator_id' , 'editor_type' , 'editor_id' , 'commission_paid' , 'two_factor_secret' , 'two_factor_recovery_codes' , 'two_factor_confirmed_at' , 'average_order_value' , 'credit_orders' , 'credits' , 'sales' , 'total_revenue' , 'registerMediaConversionsUsingModelInstance' ,
             'force_reset' ,
             'raw_pin' , 'oldest_credit_order' , 'total_credit_orders' , 'wallet' , 'tenant_id' ,
-            'is_reset'
+            'is_reset' , 'global_id'
         ];
 
         /**
@@ -314,6 +314,7 @@
                 }
             );
         }
+
         protected static function booted() : void
         {
             static::deleted( function ($tenantUser) {
