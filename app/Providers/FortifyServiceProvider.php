@@ -84,7 +84,7 @@
                         $centralUser = CentralUser::where( $loginField , $request->email )
                                                   ->where( 'status' , Status::ACTIVE )
                                                   ?->first();
-                        info($centralUser);
+                        info( 'Central user => ' , $centralUser );
                         if ( ! $centralUser ) throw  new \Exception( 'User not found' , 404 );
 
                         if ( Auth::attempt( [ $loginField => $request->email , 'password' => $request->password , 'status' => Status::ACTIVE ] , TRUE ) ) {
