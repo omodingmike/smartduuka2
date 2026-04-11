@@ -125,11 +125,9 @@
             $this->makeTenancyMiddlewareHighestPriority();
             InitializeTenancyByDomain::$onFail                 = function () {
                 abort( 404 );
-//                return redirect( config( 'app.url' ) );
             };
             Middleware\InitializeTenancyByRequestData::$onFail = function () {
                 abort( 404 );
-//                return redirect( config( 'app.url' ) );
             };
 
             TenantConfig::$storageToConfigMap = [

@@ -16,6 +16,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Str;
     use Smartisan\Settings\Facades\Settings;
 
     class AdministratorService
@@ -59,6 +60,7 @@
                     $this->user       = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
+                        'global_id'         => Str::uuid() ,
                         'phone'             => $request->phone ,
                         'username'          => AppLibrary::username( $request->name ) ,
                         'password'          => Hash::make( $request->password ) ,

@@ -15,6 +15,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Str;
     use Smartisan\Settings\Facades\Settings;
     use Spatie\Permission\Models\Role;
 
@@ -58,6 +59,7 @@
                     $pin        = $pin_service->generateUniquePin();
                     $this->user = User::create( [
                         'name'              => $request->name ,
+                        'global_id'         => Str::uuid() ,
                         'email'             => $request->email ,
                         'phone'             => $request->phone ,
                         'username'          => $this->username( $request->email ) ,
@@ -105,7 +107,7 @@
             try {
                 $role = Role::findById( (int) $request->role_id );
 
-                DB::transaction( function () use ($employee , $request , $role,$pin_service) {
+                DB::transaction( function () use ($employee , $request , $role , $pin_service) {
                     $this->user               = $employee;
                     $this->user->name         = $request->name;
                     $this->user->email        = $request->email;
@@ -117,7 +119,7 @@
 
                     if ( $request->password ) {
                         $this->user->password = Hash::make( $request->password );
-                        $emailCredentials = $request->boolean( 'emailCredentials' );
+                        $emailCredentials     = $request->boolean( 'emailCredentials' );
                         $pin                  = $pin_service->generateUniquePin();
                         $this->user->pin      = $pin_service->hashPin( $pin );
                         if ( $emailCredentials ) {
