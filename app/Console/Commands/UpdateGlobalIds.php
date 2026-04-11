@@ -22,8 +22,8 @@
                 foreach ( $tenants as $tenant ) {
                     tenancy()->initialize( $tenant );
                     foreach ( User::all() as $user ) {
-                        if ( ! $user->hasRole( Role::CUSTOMER ) )
-                            $user->update( [ 'global_id' => Str::uuid() ] );
+                        if ( ! $user->hasRole( Role::CUSTOMER ) ) $user->update( [ 'global_id' => Str::uuid() ] );
+                        if ( $user->email == 'support@smartduuka.com' ) $user->update( [ 'global_id' => Str::uuid() ] );
                     }
                     tenancy()->end();
                 }

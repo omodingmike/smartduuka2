@@ -28,7 +28,7 @@ sshpass -p "EHhTh8530" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@8
 
   docker exec -it db psql -U smartduuka -d tenant_techpulsespares
 
-  docker exec -it db psql -U smartduuka -d tenant_zakayo
+  docker exec -it db psql -U smartduuka -d tenant_zakayoproduce
 
   docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
   docker compose exec -T api php artisan optimize
