@@ -140,14 +140,15 @@
 
                     activity()->on( $tenantUser )->log( 'Logged in via central app' );
                     $tenantUser->generated_token = $token;
-                    $tenantUser->resolved_data = $userArray;
-                    $tenantUser->tenant_id = $tenant->getTenantKey();
+                    $tenantUser->resolved_data   = $userArray;
+                    $tenantUser->tenant_id       = $tenant->getTenantKey();
                     tenancy()->end();
                     return $tenantUser;
 
                 } catch ( \Exception $e ) {
                     tenancy()->end();
-                    throw  new \Exception( $e->getMessage() , 422 );
+                    return NULL;
+//                    throw  new \Exception( $e->getMessage() , 422 );
                 }
             } );
         }
