@@ -17,7 +17,7 @@
 
     Route::middleware( [ 'api' , InitializeTenancyByRequestData::class , 'auth:sanctum' ] )->prefix( 'cashflow' )->group( function () {
         Route::get( 'me' , [ App\Http\Controllers\Auth\CentralLoginController::class , 'me' ] );
-        Route::middleware( [ 'auth:sanctum' ] )->get( 'user' , [ UserController::class , 'user' ] );
+        Route::middleware( [ 'auth:sanctum' ] )->get( 'user' , [ UserController::class , 'centralUser' ] );
         Route::apiResource( 'motherAccounts' , MotherAccountController::class )->except( 'destroy' );
         Route::apiResource( 'subAccounts' , SubAccountController::class )->except( 'destroy' );
         Route::delete( 'subAccounts' , [ SubAccountController::class , 'destroy' ] );
