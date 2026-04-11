@@ -182,27 +182,6 @@
             Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
         } );
 
-        Route::prefix( 'print-agent' )->group( function () {
-            // React Dashboard Routes
-            Route::post( '/trigger-scan' , [ PrintAgentController::class , 'triggerScan' ] );
-            Route::get( '/latest-scan' , [ PrintAgentController::class , 'latestScan' ] );
-            Route::post( '/print' , [ PrintAgentController::class , 'print' ] );
-            Route::post( '/open-drawer' , [ PrintAgentController::class , 'openDrawer' ] );
-            Route::get( '/status' , [ PrintAgentController::class , 'status' ] );
-
-            // Electron Agent Routes
-            Route::post( '/report-printers' , [ PrintAgentController::class , 'reportPrinters' ] );
-            Route::post( '/status' , [ PrintAgentController::class , 'updateJobStatus' ] ); // Job success/fail reports
-
-            // Agent Authentication Profile Fetch (From your previous logs)
-            Route::get( '/me' , function (Request $request) {
-                return response()->json( [
-                    'business_id' => $request->user()->business_id ,
-                    'currency'    => 'UGX'
-                ] );
-            } );
-        } );
-
         Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
 //    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
@@ -211,6 +190,27 @@
 
             Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy' );
             Route::delete( 'expense-categories/delete' , [ ExpenseCategoryController::class , 'destroy' ] );
+
+            Route::prefix( 'print-agent' )->group( function () {
+                // React Dashboard Routes
+                Route::post( '/trigger-scan' , [ PrintAgentController::class , 'triggerScan' ] );
+                Route::get( '/latest-scan' , [ PrintAgentController::class , 'latestScan' ] );
+                Route::post( '/print' , [ PrintAgentController::class , 'print' ] );
+                Route::post( '/open-drawer' , [ PrintAgentController::class , 'openDrawer' ] );
+                Route::get( '/status' , [ PrintAgentController::class , 'status' ] );
+
+                // Electron Agent Routes
+                Route::post( '/report-printers' , [ PrintAgentController::class , 'reportPrinters' ] );
+                Route::post( '/status' , [ PrintAgentController::class , 'updateJobStatus' ] ); // Job success/fail reports
+
+                // Agent Authentication Profile Fetch (From your previous logs)
+                Route::get( '/me' , function (Request $request) {
+                    return response()->json( [
+                        'business_id' => $request->user()->business_id ,
+                        'currency'    => 'UGX'
+                    ] );
+                } );
+            } );
 
             Route::prefix( 'branches' )->name( 'branches.' )->group( function () {
                 Route::get( '/' , [ BranchController::class , 'branches' ] );

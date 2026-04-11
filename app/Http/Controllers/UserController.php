@@ -21,7 +21,6 @@
         }
         public function centralUser(Request $request)
         {
-
             try {
                 $user        = $request->user();
 //                $permissions = $user->getAllPermissions();
