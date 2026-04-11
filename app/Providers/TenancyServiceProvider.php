@@ -5,7 +5,6 @@
     namespace App\Providers;
 
     use App\Jobs\PrepareTenantJob;
-    use App\Listeners\UpdateSyncedResource;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
@@ -16,6 +15,7 @@
     use Stancl\Tenancy\Features\TenantConfig;
     use Stancl\Tenancy\Jobs;
     use Stancl\Tenancy\Listeners;
+    use Stancl\Tenancy\Listeners\UpdateSyncedResource;
     use Stancl\Tenancy\Middleware;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 
@@ -105,7 +105,7 @@
 
                 // Resource syncing
                 Events\SyncedResourceSaved::class                    => [
-                    Listeners\UpdateSyncedResource::class ,
+                    UpdateSyncedResource::class ,
                 ] ,
 
                 // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)

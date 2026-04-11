@@ -45,8 +45,6 @@ sshpass -p "EHhTh8530" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@8
 
 https://medium.com/@zulfikarditya/using-php-enums-in-laravel-12-a-comprehensive-guide-af75689f88e8
 
-
-
 TRUNCATE TABLE stocks RESTART IDENTITY CASCADE;
 TRUNCATE TABLE damages RESTART IDENTITY CASCADE;
 TRUNCATE TABLE users RESTART IDENTITY CASCADE;
