@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b456963cc6fcc2a1b71db8dcee9bf16d",
+    "content-hash": "de31662ee1b2fa26fca8be9a2a3d4c4f",
     "packages": [
         {
             "name": "africastalking/africastalking",
@@ -1206,6 +1206,91 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "essa/api_tool_kit",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/omodingmike/laravel-api-tool-kit.git",
+                "reference": "dcf4dad3c3a6e077d772c1b888361e7744cfa300"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/omodingmike/laravel-api-tool-kit/zipball/dcf4dad3c3a6e077d772c1b888361e7744cfa300",
+                "reference": "dcf4dad3c3a6e077d772c1b888361e7744cfa300",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/auth": "^13.0",
+                "illuminate/container": "^13.0",
+                "illuminate/database": "^13.0",
+                "illuminate/http": "^13.0",
+                "illuminate/support": "^13.0",
+                "php": "^8.2|^8.3|^8.4"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^9.0|^10.0",
+                "phpunit/phpunit": "^10.5|^11.0",
+                "tightenco/duster": "^3.1"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Essa\\APIToolKit\\APIToolKitServiceProvider",
+                        "Essa\\APIToolKit\\MacroServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Essa\\APIToolKit\\": "src/"
+                },
+                "files": [
+                    "src/helpers.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Essa\\APIToolKit\\Tests\\": "tests"
+                }
+            },
+            "scripts": {
+                "fix-style": [
+                    "./vendor/bin/duster fix"
+                ],
+                "check-code": [
+                    "./vendor/bin/duster lint"
+                ],
+                "test": [
+                    "./vendor/bin/phpunit"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ahmed Esa",
+                    "email": "ahmedesa6120@gmail.com"
+                }
+            ],
+            "description": "set of tools to build an api with laravel",
+            "homepage": "https://github.com/ahmedesa/laravel-api-tool-kit",
+            "keywords": [
+                "api",
+                "api-generator",
+                "dynamic-pagination",
+                "filters",
+                "laravel",
+                "tools"
+            ],
+            "support": {
+                "source": "https://github.com/omodingmike/laravel-api-tool-kit/tree/master"
+            },
+            "time": "2026-04-12T20:14:23+00:00"
         },
         {
             "name": "evenement/evenement",
@@ -5832,6 +5917,84 @@
                 }
             ],
             "time": "2024-06-11T12:45:25+00:00"
+        },
+        {
+            "name": "smartisan/settings",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/omodingmike/laravel-settings.git",
+                "reference": "126ded58c6b886fe93349dd7a772c0e229bf72d0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/omodingmike/laravel-settings/zipball/126ded58c6b886fe93349dd7a772c0e229bf72d0",
+                "reference": "126ded58c6b886fe93349dd7a772c0e229bf72d0",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "illuminate/database": "^13.0",
+                "illuminate/support": "^13.0",
+                "php": "^8.4"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.15",
+                "mockery/mockery": "^1.6",
+                "orchestra/testbench": "^10.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Smartisan\\Settings\\SettingsServiceProvider"
+                    ],
+                    "aliases": {
+                        "Settings": "Smartisan\\Settings\\Facades\\Settings"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Smartisan\\Settings\\": "src"
+                },
+                "files": [
+                    "src/Support/settings.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Smartisan\\Settings\\Tests\\": "tests"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "vendor/bin/phpunit"
+                ],
+                "test-coverage": [
+                    "vendor/bin/phpunit --coverage-html coverage"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mohamed Isa",
+                    "role": "Developer"
+                }
+            ],
+            "description": "App & Models Settings for Laravel",
+            "homepage": "https://github.com/itsmohd/settings",
+            "keywords": [
+                "laravel-settings"
+            ],
+            "support": {
+                "source": "https://github.com/omodingmike/laravel-settings/tree/main"
+            },
+            "time": "2026-04-03T06:42:50+00:00"
         },
         {
             "name": "spatie/browsershot",
@@ -12762,7 +12925,10 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "essa/api_tool_kit": 20,
+        "smartisan/settings": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
