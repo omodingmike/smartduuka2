@@ -43,6 +43,13 @@ class SubAccountController extends Controller
         }
     }
 
+    public function show(SubAccount $subAccount)
+    {
+        return new SubAccountResource($subAccount->load(['transactions' => function ($query) {
+            $query->orderBy('date', 'asc');
+        }]));
+    }
+
     public function update(SubAccountRequest $request, SubAccount $subAccount)
     {
         try {

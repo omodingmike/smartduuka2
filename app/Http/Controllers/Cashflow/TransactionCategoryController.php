@@ -5,13 +5,16 @@
     use App\Http\Requests\Cashflow\TransactionCategoryRequest;
     use App\Http\Resources\Cashflow\TransactionCategoryResource;
     use App\Models\Cashflow\TransactionCategory;
+    use App\Traits\HasAdvancedFilter;
     use Illuminate\Http\Request;
 
     class TransactionCategoryController extends Controller
     {
-        public function index()
+        use HasAdvancedFilter;
+
+        public function index(Request $request)
         {
-            return TransactionCategoryResource::collection( TransactionCategory::all() );
+            return TransactionCategoryResource::collection( $this->filter( new TransactionCategory() , $request ) );
         }
 
         public function store(TransactionCategoryRequest $request)

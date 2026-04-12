@@ -315,15 +315,19 @@
             );
         }
 
-        protected static function booted() : void
+        public function shouldSync() : bool
         {
-            static::deleted( function ($tenantUser) {
-                // Find the central user using the global_id
-                $centralUser = CentralUser::where( 'global_id' , $tenantUser->global_id )->first();
-
-                if ( $centralUser ) {
-                    $centralUser->delete();
-                }
-            } );
+            return ! $this->hasRole( \App\Enums\Role::CUSTOMER );
         }
+//        protected static function booted() : void
+//        {
+//            static::deleted( function ($tenantUser) {
+//                // Find the central user using the global_id
+//                $centralUser = CentralUser::where( 'global_id' , $tenantUser->global_id )->first();
+//
+//                if ( $centralUser ) {
+//                    $centralUser->delete();
+//                }
+//            } );
+//        }
     }

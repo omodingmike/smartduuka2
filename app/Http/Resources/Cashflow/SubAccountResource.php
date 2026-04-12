@@ -12,6 +12,7 @@
         public function toArray(Request $request) : array
         {
             $net = $this->cash_in - $this->cash_out;
+
             return [
                 'id'           => $this->id ,
                 'name'         => $this->name ,

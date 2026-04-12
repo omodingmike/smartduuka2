@@ -24,18 +24,4 @@
         {
             return $this->morphMany( Transaction::class , 'accountable' );
         }
-
-//        protected function cashIn() : Attribute
-//        {
-//            return Attribute::make(
-//                get: fn() => $this->transactions()->whereCashType( CashType::CASH_IN )->sum( 'amount' ) ,
-//            );
-//        }
-//
-//        protected function cashOut() : Attribute
-//        {
-//            return Attribute::make(
-//                get: fn() => $this->transactions()->whereCashType( CashType::CASH_OUT )->sum( 'amount' ) ,
-//            );
-//        }
     }

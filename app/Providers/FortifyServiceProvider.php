@@ -4,6 +4,7 @@
 
     use App\Actions\Fortify\CreateNewUser;
     use App\Actions\Fortify\ResetUserPassword;
+    use App\Actions\Fortify\SyncTenantUsersToCentral;
     use App\Actions\Fortify\UpdateUserPassword;
     use App\Actions\Fortify\UpdateUserProfileInformation;
     use App\Enums\Status;
@@ -124,14 +125,15 @@
                 if ( $tenantUser ) {
                     if ( tenancy()->initialized ) {
 //                        $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id , 'raw_pin' => NULL ] );
-                        $tenantUser->withoutEvents(function () use ($tenantUser, $tenant) {
-                            $tenantUser->update([
-                                'last_login_date' => now(),
-                                'tenant_id' => $tenant->id,
-                                'raw_pin' => NULL
-                            ]);
-                        });
+                        $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
+                            $tenantUser->update( [
+                                'last_login_date' => now() ,
+                                'tenant_id'       => $tenant->id ,
+                                'raw_pin'         => NULL
+                            ] );
+                        } );
                         activity()->on( $tenantUser )->log( 'Logged in via central app' );
+                        app( SyncTenantUsersToCentral::class )->sync();
                     }
                     return $tenantUser;
                 }
