@@ -7,6 +7,8 @@
     use App\Actions\Fortify\SyncTenantUsersToCentral;
     use App\Actions\Fortify\UpdateUserPassword;
     use App\Actions\Fortify\UpdateUserProfileInformation;
+    use App\Enums\AppID;
+    use App\Enums\Role;
     use App\Enums\Status;
     use App\Models\CentralUser;
     use App\Models\User;
@@ -85,20 +87,22 @@
                         return NULL;
                     }
 
-                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )->first();
+                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )?->first();
                 }
                 else {
+                    $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+
                     $validator = Validator::make( $request->all() , [
-                        Fortify::username() => 'required|string' ,
-                        'password'          => 'required|string' ,
+                        $loginField => 'required|string' ,
+                        'password'  => 'required|string' ,
                     ] );
+
                     if ( $validator->fails() ) {
                         return NULL;
                     }
 
-                    $loginField = filter_var( $request->input( Fortify::username() ) , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
-                    $user       = CentralUser::where( $loginField , $request->input( Fortify::username() ) )
-                                             ->where( 'status' , Status::ACTIVE )?->first();
+                    $user = CentralUser::where( $loginField , $request->email )
+                                       ->where( 'status' , Status::ACTIVE )?->first();
 
                     if ( $user && Hash::check( $request->password , $user->password ) ) {
                         $centralUser = $user;
@@ -116,11 +120,13 @@
                 }
 
                 tenancy()->initialize( $tenant );
-
+                $app_id     = $request->header( 'X-App-Id' );
                 $tenantUser = User::where(
                     $centralUser->getGlobalIdentifierKeyName() ,
                     $centralUser->getGlobalIdentifierKey()
-                )->first();
+                )->when( $app_id == AppID::CASHFLOW , function ($query) {
+                    $query->role(Role::ADMIN);
+                } )->first();
 
                 if ( $tenantUser ) {
                     if ( tenancy()->initialized ) {
