@@ -122,8 +122,17 @@
                 )->first();
 
                 if ( $tenantUser ) {
-                    $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id , 'raw_pin' => NULL ] );
-                    activity()->on( $tenantUser )->log( 'Logged in via central app' );
+                    if ( tenancy()->initialized ) {
+//                        $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id , 'raw_pin' => NULL ] );
+                        $tenantUser->withoutEvents(function () use ($tenantUser, $tenant) {
+                            $tenantUser->update([
+                                'last_login_date' => now(),
+                                'tenant_id' => $tenant->id,
+                                'raw_pin' => NULL
+                            ]);
+                        });
+                        activity()->on( $tenantUser )->log( 'Logged in via central app' );
+                    }
                     return $tenantUser;
                 }
                 return NULL;
