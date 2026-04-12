@@ -20,14 +20,14 @@
         public function store(EntityRequest $request)
         {
             $entity = Entity::create( $request->validated() );
-            activityLog( "Created Entity {$entity->name}" , $entity );
+            activityLog( "Created Entity {$entity->name}" , $request->header( 'X-App-Id' ) , $entity );
             return response()->json();
         }
 
         public function update(EntityRequest $request , Entity $entity)
         {
             $entity->update( $request->validated() );
-            activityLog( "Updated Entity {$entity->name}" , $entity );
+            activityLog( "Updated Entity {$entity->name}" , $request->header( 'X-App-Id' ) , $entity );
 
             return response()->json();
         }
@@ -37,7 +37,7 @@
             $ids = $request->input( 'ids' , [] );
             foreach ( $ids as $id ) {
                 $entity = Entity::find( $id );
-                activityLog( "Deleted Entity {$entity->name}" , $entity );
+                activityLog( "Deleted Entity {$entity->name}" , $request->header( 'X-App-Id' ) , $entity );
                 $entity->delete();
             }
 

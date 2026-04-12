@@ -13,6 +13,8 @@
 
         public function index(Request $request)
         {
-            return ActivityLogResource::collection( $this->filter( Activity::whereNotNull( 'causer_id' ) , $request ) );
+            $app_id = $request->header( 'X-App-Id' );
+            $query  = Activity::where( 'properties->app_id' , $app_id )->whereNotNull( 'causer_id' );
+            return ActivityLogResource::collection( $this->filter( $query , $request ) );
         }
     }

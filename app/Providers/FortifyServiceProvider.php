@@ -121,9 +121,8 @@
                     $centralUser->getGlobalIdentifierKey()
                 )->first();
 
-
                 if ( $tenantUser ) {
-                    $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id ] );
+                    $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id , 'raw_pin' => NULL ] );
                     activity()->on( $tenantUser )->log( 'Logged in via central app' );
                     return $tenantUser;
                 }

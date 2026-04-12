@@ -4,7 +4,6 @@
     use App\Http\Middleware\AfterMiddleware;
     use App\Http\Middleware\CheckActiveRegister;
     use App\Http\Middleware\ForceAdminLogin;
-    use App\Http\Middleware\InitializeTenancyByToken;
     use App\Http\Middleware\PermissionMiddleware;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,7 +17,6 @@
                           web: __DIR__ . '/../routes/web.php' ,
                           api: __DIR__ . '/../routes/api.php' ,
                           commands: __DIR__ . '/../routes/console.php' ,
-//                          channels: __DIR__ . '/../routes/channels.php' ,
                           health: '/up' ,
                       )
                       ->withBroadcasting(
@@ -35,7 +33,6 @@
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->alias( [
-                              'tenancy.token'   => InitializeTenancyByToken::class ,
                               'permission'      => PermissionMiddleware::class ,
                               'local.auth'      => ForceAdminLogin::class ,
                               'register'        => CheckActiveRegister::class ,
