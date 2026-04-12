@@ -125,12 +125,11 @@
                     $centralUser->getGlobalIdentifierKeyName() ,
                     $centralUser->getGlobalIdentifierKey()
                 )->when( $app_id == AppID::CASHFLOW , function ($query) {
-                    $query->role(Role::ADMIN);
+                    $query->role( Role::ADMIN );
                 } )->first();
 
                 if ( $tenantUser ) {
                     if ( tenancy()->initialized ) {
-//                        $tenantUser->update( [ 'last_login_date' => now() , 'tenant_id' => $tenant->id , 'raw_pin' => NULL ] );
                         $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
                             $tenantUser->update( [
                                 'last_login_date' => now() ,
@@ -138,7 +137,7 @@
                                 'raw_pin'         => NULL
                             ] );
                         } );
-                        activity()->on( $tenantUser )->log( 'Logged in via central app' );
+                        activityLog( 'Logged in via central app' , $app_id , $tenantUser );
                         app( SyncTenantUsersToCentral::class )->sync();
                     }
                     return $tenantUser;
