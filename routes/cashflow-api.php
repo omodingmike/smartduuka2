@@ -24,6 +24,7 @@
         Route::apiResource( 'currencies' , CurrencyController::class )->except( 'destroy' );
         Route::delete( 'currencies' , [ CurrencyController::class , 'destroy' ] );
         Route::apiResource( 'entities' , EntityController::class )->except( 'destroy' );
+        Route::delete( 'entities' , [ EntityController::class , 'destroy' ] );
         Route::apiResource( 'transactions' , TransactionController::class )->except( 'destroy' );
         Route::delete( 'transactions' , [ TransactionController::class , 'destroy' ] );
         Route::apiResource( 'transactionCategories' , TransactionCategoryController::class )->except( 'destroy' );

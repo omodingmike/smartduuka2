@@ -15,9 +15,12 @@
         {
             $model = $event->model;
             if ( $model instanceof User ) {
-                if ( $model->hasRole( Role::CUSTOMER ) ) {
-                    return;
+                if ( tenancy()->initialized ) {
+                    if ( $model->hasRole( Role::CUSTOMER ) ) {
+                        return;
+                    }
                 }
+                return;
             }
 
             app( \Stancl\Tenancy\Listeners\UpdateSyncedResource::class )->handle( $event );

@@ -17,6 +17,7 @@
                 'date'                     => datetime( $this->date ) ,
                 'cash_type'                => $this->cash_type ,
                 'amount'                   => $this->amount ,
+                'amount_currency'          => currency( $this->amount ) ,
                 'fee'                      => $this->fee ,
                 'fee_currency'             => currency( $this->fee ) ,
                 'description'              => $this->description ,

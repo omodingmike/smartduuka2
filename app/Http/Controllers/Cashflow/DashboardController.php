@@ -22,7 +22,7 @@
             $total_pending      = Transaction::where( 'status' , '<>' , TransactionStatus::CLEARED )->sum( 'amount' );
             $net                = $total_cash_in - $total_cash_out;
 
-            $recentTransactions = Transaction::with( ['entity','accountable','transactionCategory'])->latest()->take( 5 )->get();
+            $recentTransactions = Transaction::with( [ 'entity' , 'accountable' , 'transactionCategory' , 'currency' ] )->latest()->take( 5 )->get();
 
             $entities = Entity::all();
 

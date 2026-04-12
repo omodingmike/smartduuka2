@@ -113,6 +113,7 @@
         public function getSyncedAttributeNames() : array
         {
             return [
+                'id',
                 'name' ,
                 'password' ,
                 'email' ,
@@ -315,10 +316,10 @@
             );
         }
 
-        public function shouldSync() : bool
-        {
-            return ! $this->hasRole( \App\Enums\Role::CUSTOMER );
-        }
+//        public function shouldSync() : bool
+//        {
+//            return ! $this->hasRole( \App\Enums\Role::CUSTOMER );
+//        }
 //        protected static function booted() : void
 //        {
 //            static::deleted( function ($tenantUser) {

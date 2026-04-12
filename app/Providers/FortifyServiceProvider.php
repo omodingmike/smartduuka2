@@ -137,7 +137,7 @@
                                 'raw_pin'         => NULL
                             ] );
                         } );
-                        activityLog( 'Logged in via central app' , $app_id , $tenantUser );
+                        activityLog( 'Logged' , $app_id , $tenantUser );
                         app( SyncTenantUsersToCentral::class )->sync();
                     }
                     return $tenantUser;
