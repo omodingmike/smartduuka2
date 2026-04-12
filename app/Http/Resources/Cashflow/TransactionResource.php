@@ -22,6 +22,7 @@
                 'description'              => $this->description ,
                 'status'                   => $this->status ,
                 'image'                    => $this->image ,
+                'reference'                => $this->reference ,
                 'exchange_rate'            => $this->exchange_rate ,
                 'running_balance'          => $runningBalance ,
                 'running_balance_currency' => currency( $runningBalance ) ,

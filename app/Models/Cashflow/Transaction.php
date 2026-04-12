@@ -4,7 +4,7 @@
 
     use App\Enums\CashType;
     use App\Enums\TransactionStatus;
-    use App\Traits\HasImageMedia;
+    use App\Traits\HasCashflowImageMedia;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -13,7 +13,7 @@
 
     class Transaction extends Model implements HasMedia
     {
-        use SoftDeletes , HasImageMedia;
+        use SoftDeletes , HasCashflowImageMedia;
 
         protected $fillable = [
             'date' ,
@@ -26,7 +26,7 @@
             'accountable_id' ,
             'accountable_type' ,
             'description' , 'cash_in' , 'cash_out' ,
-            'status' , 'transaction_category_id' , 'exchange_rate' ,'running_balance', 'registerMediaConversionsUsingModelInstance'
+            'status' , 'transaction_category_id' , 'exchange_rate' , 'running_balance' , 'registerMediaConversionsUsingModelInstance'
         ];
 
         public function accountable() : MorphTo

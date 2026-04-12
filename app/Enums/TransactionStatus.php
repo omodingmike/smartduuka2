@@ -13,9 +13,9 @@
         public function label() : string
         {
             return match ( $this ) {
-                self::CLEARED  => 'Cleared (Funds Settled)' ,
-                self::APPROVED => 'Approved (Awaiting Clearing)' ,
-                self::DRAFT    => 'Draft (Needs Approval)' ,
+                self::CLEARED  => 'Cleared' ,
+                self::APPROVED => 'Approved' ,
+                self::DRAFT    => 'Draft' ,
             };
         }
 
