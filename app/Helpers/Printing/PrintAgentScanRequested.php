@@ -1,6 +1,6 @@
 <?php
 
-    namespace App\Helpers\printing;
+    namespace App\Helpers\Printing;
 
     use Illuminate\Broadcasting\PrivateChannel;
     use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;

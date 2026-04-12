@@ -9,22 +9,20 @@
   ],
   "license": "MIT",
   "require": {
-    "php": "^8.2",
+    "php": "^8.3",
     "ext-intl": "*",
     "africastalking/africastalking": "^3.0",
     "archtechx/enums": "^1.1",
     "brick/money": "^0.11.1",
     "dipokhalder/laravel-env-editor": "^1.0",
-    "essa/api-tool-kit": "^2.2",
     "laravel/fortify": "^1.31",
-    "laravel/framework": "^12.0",
+    "laravel/framework": "^13.0",
     "laravel/reverb": "^1.8",
     "laravel/sanctum": "^4.0",
-    "laravel/tinker": "^2.10.1",
+    "laravel/tinker": "^3.0",
     "maatwebsite/excel": "^3.1",
     "picqer/php-barcode-generator": "^3.2",
     "pragmarx/countries": "^1.0",
-    "smartisan/laravel-settings": "^3.0",
     "spatie/browsershot": "^5.0",
     "spatie/laravel-activitylog": "^4.11",
     "spatie/laravel-medialibrary": "^11.15",
@@ -33,6 +31,16 @@
     "staudenmeir/laravel-adjacency-list": "^1.25",
     "ext-pdo": "*"
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/omodingmike/laravel-settings.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/omodingmike/laravel-api-tool-kit.git"
+    }
+  ],
   "require-dev": {
     "fakerphp/faker": "^1.23",
     "laravel/breeze": "^2.3",

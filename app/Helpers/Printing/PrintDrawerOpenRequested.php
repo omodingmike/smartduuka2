@@ -1,37 +1,37 @@
 <?php
 
-    namespace App\Helpers\printing;
+    namespace App\Helpers\Printing;
 
     use Illuminate\Broadcasting\PrivateChannel;
     use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
     use Illuminate\Foundation\Events\Dispatchable;
     use Illuminate\Queue\SerializesModels;
 
-    class PrintJobDispatched implements ShouldBroadcastNow
+    class PrintDrawerOpenRequested implements ShouldBroadcastNow
     {
         use Dispatchable , SerializesModels;
 
         public $businessId;
-        public $payload;
+        public $printerName;
 
-        public function __construct($businessId , $payload)
+        public function __construct($businessId , $printerName)
         {
-            $this->businessId = $businessId;
-            $this->payload    = $payload;
+            $this->businessId  = $businessId;
+            $this->printerName = $printerName;
         }
 
-        public function broadcastOn() : PrivateChannel
+        public function broadcastOn()
         {
             return new PrivateChannel( 'business.' . $this->businessId );
         }
 
         public function broadcastAs()
         {
-            return 'print-job';
+            return 'cloud-open-drawer';
         }
 
         public function broadcastWith()
         {
-            return $this->payload;
+            return [ 'printerName' => $this->printerName ];
         }
     }

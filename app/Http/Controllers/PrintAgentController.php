@@ -2,9 +2,9 @@
 
     namespace App\Http\Controllers;
 
-    use App\Helpers\printing\DrawerKickDispatched;
-    use App\Helpers\printing\PrintJobDispatched;
-    use App\Helpers\printing\PrintJobPayload;
+    use App\Helpers\Printing\DrawerKickDispatched;
+    use App\Helpers\Printing\PrintJobDispatched;
+    use App\Helpers\Printing\PrintJobPayload;
     use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Log;

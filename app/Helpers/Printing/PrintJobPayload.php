@@ -1,6 +1,6 @@
 <?php
 
-    namespace App\Helpers\printing;
+    namespace App\Helpers\Printing;
 
     use App\Enums\PrintJobType;
     use Illuminate\Support\Str;
