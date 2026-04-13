@@ -16,6 +16,7 @@
     use Illuminate\Cache\RateLimiting\Limit;
     use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\RateLimiter;
     use Illuminate\Support\Facades\Validator;
@@ -23,6 +24,7 @@
     use Illuminate\Support\Str;
     use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
     use Laravel\Fortify\Contracts\LoginResponse;
+    use Laravel\Fortify\Contracts\LogoutResponse;
     use Laravel\Fortify\Fortify;
     use Laravel\Sanctum\PersonalAccessToken;
 
@@ -129,17 +131,18 @@
                 } )->first();
 
                 if ( $tenantUser ) {
-                    if ( tenancy()->initialized ) {
-                        $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
-                            $tenantUser->update( [
-                                'last_login_date' => now() ,
-                                'tenant_id'       => $tenant->id ,
-                                'raw_pin'         => NULL
-                            ] );
-                        } );
-                        activityLog( 'Logged' , $app_id , $tenantUser );
-                        app( SyncTenantUsersToCentral::class )->sync();
-                    }
+                    $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
+                        $tenantUser->update( [
+                            'last_login_date' => now() ,
+                            'tenant_id'       => $tenant->id ,
+                            'raw_pin'         => NULL
+                        ] );
+                    } );
+                    activityLog( 'Logged in' , $app_id , $tenantUser );
+                    app( SyncTenantUsersToCentral::class )->sync();
+
+                    Auth::guard( 'web' )->login( $tenantUser , $request->boolean( 'remember' ) );
+
                     return $tenantUser;
                 }
                 return NULL;

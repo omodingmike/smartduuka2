@@ -512,6 +512,7 @@
 
     function activityLog(string $description , string $app_id = NULL , Model | null $model = NULL) : void
     {
+        info('Log');
         $activity = activity();
         if ( $model ) $activity->performedOn( $model );
         if ( $app_id ) $activity->withProperties( [ 'app_id' => $app_id ] );

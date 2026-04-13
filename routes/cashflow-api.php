@@ -2,6 +2,7 @@
 
     declare( strict_types = 1 );
 
+    use App\Http\Controllers\Auth\Apps\AuthenticatedSessionController;
     use App\Http\Controllers\Auth\CentralLoginController;
     use App\Http\Controllers\Cashflow\ActivityLogController;
     use App\Http\Controllers\Cashflow\CurrencyController;
@@ -18,6 +19,7 @@
     Route::middleware( [ 'api' , InitializeTenancyByRequestData::class , 'auth:sanctum' ] )->prefix( 'cashflow' )->group( function () {
         Route::get( 'me' , [ CentralLoginController::class , 'me' ] );
         Route::get( 'user' , [ CentralLoginController::class , 'me' ] );
+        Route::post( 'logout' , [ AuthenticatedSessionController::class , 'destroy' ] );
         Route::apiResource( 'motherAccounts' , MotherAccountController::class )->except( 'destroy' );
         Route::apiResource( 'subAccounts' , SubAccountController::class )->except( 'destroy' );
         Route::delete( 'subAccounts' , [ SubAccountController::class , 'destroy' ] );

@@ -11,11 +11,13 @@
   "require": {
     "php": "^8.3",
     "ext-intl": "*",
+    "ext-pdo": "*",
     "africastalking/africastalking": "^3.0",
     "archtechx/enums": "^1.1",
     "brick/money": "^0.11.1",
     "dipokhalder/laravel-env-editor": "^1.0",
-    "laravel/fortify": "^1.31",
+    "essa/api_tool_kit": "dev-master",
+    "laravel/fortify": "^1.36",
     "laravel/framework": "^13.0",
     "laravel/reverb": "^1.8",
     "laravel/sanctum": "^4.0",
@@ -23,15 +25,13 @@
     "maatwebsite/excel": "^3.1",
     "picqer/php-barcode-generator": "^3.2",
     "pragmarx/countries": "^1.0",
+    "smartisan/settings": "dev-main@dev",
     "spatie/browsershot": "^5.0",
     "spatie/laravel-activitylog": "^4.11",
     "spatie/laravel-medialibrary": "^11.15",
     "spatie/laravel-permission": "^6.21",
     "stancl/tenancy": "^3.9",
-    "staudenmeir/laravel-adjacency-list": "^1.25",
-    "ext-pdo": "*",
-    "smartisan/settings": "dev-main@dev",
-    "essa/api_tool_kit": "dev-master"
+    "staudenmeir/laravel-adjacency-list": "^1.25"
   },
   "repositories": [
     {
