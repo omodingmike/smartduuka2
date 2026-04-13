@@ -77,12 +77,6 @@
         return "$code$phone";
     }
 
-//    function recordId(string $prefix , Model $model) : string
-//    {
-//        $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
-//        return $prefix . date( 'dmy' ) . '-' . Str::padLeft( $model->id , $dynamicPadding , '0' );
-//    }
-
     function recordId(string $prefix , Model $model) : string
     {
         $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
