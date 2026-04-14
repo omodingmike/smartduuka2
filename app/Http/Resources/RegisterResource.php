@@ -23,7 +23,7 @@
                 return $order->orderProducts;
             } );
 
-            $groupedItems   = $allProducts->groupBy( function ($item) {
+            $groupedItems = $allProducts->groupBy( function ($item) {
                 return $item->item_id . '-' . $item->item_type;
             } )->map( function ($group) {
                 $firstItem       = $group->first()->item;
@@ -57,6 +57,7 @@
                     'total_cost_currency'  => AppLibrary::currencyAmountFormat( $totalCost ) ,
                 ];
             } )->values();
+
             $paymentSummary = $this->posPayments->groupBy( 'payment_method_id' )->map( function ($group) {
                 $methodName  = $group->first()->paymentMethod?->name ?? 'Unknown';
                 $totalAmount = $group->sum( 'amount' );
@@ -69,20 +70,37 @@
                 ];
             } )->values();
 
-            $grandTotalCost = $groupedItems->sum( 'total_cost' );
+            // --- 1. ACCRUAL ACCOUNTING (TRADING PERFORMANCE) ---
+            $grandTotalCost    = $groupedItems->sum( 'total_cost' );
+            $total_sales_value = $groupedItems->sum( 'total_sales' ); // NEW: Value of all items sold today (Cash + Credit)
+
+            // FIXED: Gross Profit is now strictly Items Sold Value - Items Cost
+            $profit = $total_sales_value - $grandTotalCost;
+
+            // --- 2. CASH FLOW (DRAWER REALITY) ---
+            // Money actually handed to cashier today (Cash sales + Old debts paid)
+            $total_revenue = $this->posPayments()->sum( 'amount' );
+
             $reserved_value = $groupedItems->sum( 'reserved_value' );
             $damages_value  = $groupedItems->sum( 'damages_value' );
-            $total_revenue  = $this->posPayments()->sum( 'amount' );
-            $profit         = $total_revenue - $grandTotalCost;
 
+            // --- 3. EXPENSES & NET PROFIT ---
+            // FIXED: Bulletproof Enum checking using ->value to prevent silent type-mismatch failures
             $expenses_items = $this->expensesPayments->map( function (ExpensePayment $expense_payment) {
                 return $expense_payment->expense;
             } )->filter( function ($expense) {
-                return $expense && ($expense->expense_nature === ExpenseNature::OPERATIONAL);
+                return $expense && (
+                        $expense->expense_nature === ExpenseNature::OPERATIONAL ||
+                        ( isset( $expense->expense_nature->value ) && $expense->expense_nature->value === ExpenseNature::OPERATIONAL->value )
+                    );
             } )->unique( 'id' )->values();
 
             $expenses = $this->expensesPayments->sum( function (ExpensePayment $expense_payment) {
-                if ( $expense_payment->expense && ($expense_payment->expense->expense_nature === ExpenseNature::OPERATIONAL->value) ) {
+                $expense = $expense_payment->expense;
+                if ( $expense && (
+                        $expense->expense_nature === ExpenseNature::OPERATIONAL ||
+                        ( isset( $expense->expense_nature->value ) && $expense->expense_nature->value === ExpenseNature::OPERATIONAL->value )
+                    ) ) {
                     return $expense_payment->amount;
                 }
                 return 0;
@@ -90,10 +108,12 @@
 
             $net_profit = $profit - $expenses;
 
+            // --- 4. CREDIT AND DEPOSITS ---
             $totalCreditRemaining = $this->orders
                 ->where( 'payment_type' , PaymentType::CREDIT )
                 ->sum( 'balance' );
-            $deposits             = $this->orders()->where( 'payment_type' , '<>' , PaymentType::CASH )->get()->sum( function (Order $order) {
+
+            $deposits = $this->orders()->where( 'payment_type' , '<>' , PaymentType::CASH )->get()->sum( function (Order $order) {
                 return $order->posPayments()->sum( 'amount' );
             } );
 
@@ -102,12 +122,11 @@
             } );
 
             return [
-//                'id'                           => $this->id ,
                 'id'                           => 'REG-' . Str::padLeft( $this->id , 5 , '0' ) ,
                 'opening_float'                => $this->opening_float ,
+                'opening_float_currency'       => AppLibrary::currencyAmountFormat( $this->opening_float ) ,
                 'reserved_value'               => currency( $reserved_value ) ,
                 'damages_value'                => currency( $damages_value ) ,
-                'opening_float_currency'       => AppLibrary::currencyAmountFormat( $this->opening_float ) ,
                 'notes'                        => $this->notes ,
                 'status'                       => [ 'label' => $this->status->label() , 'value' => $this->status?->value ] ,
                 'expected_float'               => $this->expected_float ,
@@ -119,30 +138,41 @@
                 'closed_at'                    => $this->closed_at ,
                 'created_at'                   => AppLibrary::datetime2( $this->created_at ) ,
                 'user_id'                      => $this->user_id ,
-                'sales'                        => $this->posPayments()->sum( 'amount' ) ,
-                'sales_currency'               => AppLibrary::currencyAmountFormat( $this->posPayments()->sum( 'amount' ) ) ,
+                'user'                         => new UserResource( $this->whenLoaded( 'user' ) ) ,
+
+                // NEW: Exposing true trading sales to the frontend
+                'total_sales_value'            => $total_sales_value ,
+                'total_sales_value_currency'   => AppLibrary::currencyAmountFormat( $total_sales_value ) ,
+
+                // Existing flow metrics
+                'sales'                        => $total_revenue ,
+                'sales_currency'               => AppLibrary::currencyAmountFormat( $total_revenue ) ,
                 'expense'                      => $expenses ,
                 'expenses'                     => ExpenseResource::collection( $expenses_items ) ,
                 'expense_currency'             => currency( $expenses ) ,
-                'user'                         => new UserResource( $this->whenLoaded( 'user' ) ) ,
                 'posPayments'                  => PosPaymentResource::collection( $this->posPayments ) ,
                 'item_summary'                 => $groupedItems ,
                 'payment_summary'              => $paymentSummary ,
                 'total_cost_of_goods'          => $grandTotalCost ,
+                'total_cost_of_goods_currency' => AppLibrary::currencyAmountFormat( $grandTotalCost ) ,
+
+                // Credit / Debt metrics
                 'total_credit'                 => $totalCreditRemaining ,
+                'total_credit_currency'        => AppLibrary::currencyAmountFormat( $totalCreditRemaining ) ,
                 'total_debt_paid'              => currency( $this->posPayments()->where( 'pos_payment_type' , PosPaymentType::DEBT )->sum( 'amount' ) ) ,
                 'deposits'                     => $deposits ,
                 'deposits_currency'            => currency( $deposits ) ,
-                'total_credit_currency'        => AppLibrary::currencyAmountFormat( $totalCreditRemaining ) ,
-                'total_cost_of_goods_currency' => AppLibrary::currencyAmountFormat( $grandTotalCost ) ,
+
+                // Corrected Profit Metrics
                 'profit'                       => $profit ,
                 'profit_currency'              => AppLibrary::currencyAmountFormat( $profit ) ,
-                'orders'                       => OrderResource::collection( $this->orders ) ,
-                'total_order_cost'             => $total_order_cost ,
-                'total_revenue'                => $total_revenue ,
                 'net_profit'                   => $net_profit ,
                 'net_profit_currency'          => currency( $net_profit ) ,
-                'total_revenue_currency'       => currency( $total_revenue ) ,
+
+                'orders'                 => OrderResource::collection( $this->orders ) ,
+                'total_order_cost'       => $total_order_cost ,
+                'total_revenue'          => $total_revenue ,
+                'total_revenue_currency' => currency( $total_revenue ) ,
             ];
         }
     }

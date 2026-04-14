@@ -208,9 +208,15 @@
             $register       = register();
             $closing_amount = $request->integer( 'closing_amount' );
 
-            $sales = $register->posPayments()->sum( 'amount' );
+            // 1. Total money that came INTO the drawer (Sales + Debt Recoveries)
+            $money_in = $register->posPayments()->sum( 'amount' );
 
-            $expectedFloat = $register->opening_float + $sales;
+            // 2. Total money that left the drawer (Cash Expenses/Payouts)
+            // We sum all expense payments tied to this register
+            $money_out = $register->expensesPayments()->sum( 'amount' );
+
+            // 3. True Expected Drawer Cash
+            $expectedFloat = $register->opening_float + $money_in - $money_out;
 
             $difference = $closing_amount - $expectedFloat;
 
@@ -232,7 +238,7 @@
                 'message' => 'Register closed successfully' ,
                 'audit'   => [
                     'expected'    => $expectedFloat ,
-                    'actual'      => $request->closing_float ,
+                    'actual'      => $closing_amount ,
                     'discrepancy' => $difference
                 ]
             ] );
@@ -309,7 +315,7 @@
                             $stock = Stock::where( [ 'item_type' => Product::class , 'item_id' => $order_product->item_id ] )->first();
                             $stock->increment( 'quantity' , $order_product->quantity );
                         }
-                        activity()->on( auth()->user() )->log( "Deleted Order: " . $order->order_serial_no );
+                        activity()->on( auth()->user() )->log( 'Deleted Order: ' . $order->order_serial_no );
                         $order->delete();
                     }
                     return response()->json( [ 'status' => TRUE , 'message' => 'Orders deleted successfully' ] );
