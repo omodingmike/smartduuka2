@@ -10,6 +10,7 @@
     use App\Enums\Pad;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
+    use App\Enums\PosPaymentType;
     use App\Enums\Role;
     use App\Enums\SettingsEnum;
     use App\Enums\Status;
@@ -150,23 +151,26 @@
         return Settings::group( $group )->get( $key );
     }
 
-    function addPayment(Order $order , int $amount , int $payment_method , string $reference = NULL) : void
+    function addPayment(Order $order = NULL , int $amount = 0 , int $payment_method = 0 , string $reference = NULL , PosPaymentType $pos_payment_type =
+    PosPaymentType::DEBT) : void
     {
-        PosPayment::create( [
-            'order_id'          => $order->id ,
+        $p = PosPayment::create( [
             'date'              => now() ,
-            'reference_no'      => $reference ?? time() ,
+            'reference_no'      => $reference ?? 'PP-' . time() ,
             'amount'            => $amount ,
             'payment_method_id' => $payment_method ,
+            'pos_payment_type'  => $pos_payment_type ,
             'register_id'       => register()?->id
         ] );
-        PaymentMethodTransaction::create( [
+        if ( $order ) $p->update( [ 'order_id' => $order->id ] );
+        $pmt = PaymentMethodTransaction::create( [
             'amount'            => $amount ,
-            'item_type'         => Order::class ,
-            'item_id'           => $order->id ,
             'charge'            => 0 ,
-            'description'       => 'Order Payment #' . $order->order_serial_no ,
+            'description'       => 'Customer Payment ' ,
             'payment_method_id' => $payment_method ,
+        ] );
+        if ( $order ) $pmt->update( [
+            'item_type' => Order::class , 'item_id' => $order->id , 'description' => 'Order Payment #' . $order->order_serial_no ,
         ] );
     }
 
@@ -219,11 +223,13 @@
             'amount'            => $amount ,
             'type'              => $typ ,
             'payment_method_id' => $payment_method_id ,
+            'register_id'       => register()?->id ,
             'balance'           => 0
         ] );
         $transaction->update( [ 'reference' => $reference ?? walletTransactionReferenceNo( $transaction ) ] );
         $customer->refresh();
         $transaction->update( [ 'balance' => $customer->wallet ] );
+        addPayment( NULL , $amount , $payment_method_id , NULL , PosPaymentType::DEPOSIT );
         return $transaction;
     }
 
@@ -512,7 +518,7 @@
 
     function activityLog(string $description , string $app_id = NULL , Model | null $model = NULL) : void
     {
-        info('Log');
+        info( 'Log' );
         $activity = activity();
         if ( $model ) $activity->performedOn( $model );
         if ( $app_id ) $activity->withProperties( [ 'app_id' => $app_id ] );

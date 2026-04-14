@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\CustomerWalletTransactionType;
     use App\Enums\DefaultPaymentMethods;
     use App\Enums\OrderStatus;
     use App\Enums\PreOrderStatus;
@@ -47,7 +48,7 @@
                                                } )->sum( 'amount' );
         }
 
-        public function orders() : HasMany | Register
+        public function orders() : HasMany
         {
             return $this->hasMany( Order::class , 'register_id' , 'id' )->active();
 
@@ -63,12 +64,18 @@
 //                } );
         }
 
-        public function expensesPayments() : HasMany | ExpensePayment
+        public function expensesPayments() : HasMany
         {
             return $this->hasMany( ExpensePayment::class , 'register_id' , 'id' );
         }
 
-        public function expenses() : HasMany | ExpensePayment
+        public function walletTransactions() : HasMany
+        {
+            return $this->hasMany( CustomerWalletTransaction::class , 'register_id' , 'id' )
+                        ->where( 'type' , CustomerWalletTransactionType::DEPOSIT );
+        }
+
+        public function expenses() : HasMany
         {
             return $this->hasMany( Expense::class , 'register_id' , 'id' );
         }

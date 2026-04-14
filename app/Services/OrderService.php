@@ -158,6 +158,7 @@
                 $page    = $request->get( 'page' ) ?? 1;
                 $perPage = $request->get( 'perPage' ) ?? 10;
 
+                // 1. The Main Query (Stays exactly the same to preserve pagination)
                 $products = OrderProduct::query()
                                         ->select( 'item_id' , 'item_type' )
                                         ->selectRaw( 'SUM(quantity) as total_sold' )
@@ -180,13 +181,46 @@
                                         ->orderByDesc( 'total_revenue' )
                                         ->paginate( $perPage , [ '*' ] , 'page' , $page );
 
-                return $products->through( function ($row) {
+                // 2. Format the Output and Fetch Breakdowns
+                return $products->through( function ($row) use ($start, $end) {
                     $item = $row->item;
+
+                    // Fetch the price breakdown specifically for this item using the same date filters
+                    $breakdowns = OrderProduct::query()
+                                              ->select('unit_price')
+                                              ->selectRaw('SUM(quantity) as quantity_sold')
+                                              ->selectRaw('SUM(total) as total_revenue')
+                                              ->where('item_id', $row->item_id)
+                                              ->where('item_type', $row->item_type)
+                                              ->whereHas('order', function ($q) use ($start, $end) {
+                                                  $q->whereIn('payment_status', [PaymentStatus::PAID, PaymentStatus::PARTIALLY_PAID])
+                                                    ->when(($start && !$end), function (Builder $q) use ($start) {
+                                                        $q->whereBetween('created_at', [$start->copy()->startOfDay(), $start->copy()->endOfDay()]);
+                                                    })
+                                                    ->when(($start && $end), function (Builder $q) use ($start, $end) {
+                                                        $q->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()]);
+                                                    });
+                                              })
+                                              ->groupBy('unit_price')
+                                              ->orderByDesc('total_revenue')
+                                              ->get();
+
+                    // Format the breakdown array for the React UI
+                    $formattedBreakdowns = $breakdowns->map(function($b) {
+                        return [
+                            'price_currency'         => AppLibrary::currencyAmountFormat($b->unit_price),
+                            'quantity_sold'          => (int) $b->quantity_sold,
+                            'total_revenue_currency' => AppLibrary::currencyAmountFormat($b->total_revenue),
+                        ];
+                    });
+
                     return [
-                        'name'          => $item->name ?? 'Unknown Product' ,
-                        'category'      => $item->category?->name ?? 'General' ,
-                        'quantity_sold' => (int) $row->total_sold ,
-                        'total_revenue' => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
+                        'id'               => $row->item_id, // Important: Used by React to toggle the dropdown
+                        'name'             => $item->name ?? 'Unknown Product' ,
+                        'category'         => $item->category?->name ?? 'General' ,
+                        'quantity_sold'    => (int) $row->total_sold ,
+                        'total_revenue'    => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
+                        'price_breakdowns' => $formattedBreakdowns // The new array!
                     ];
                 } );
 

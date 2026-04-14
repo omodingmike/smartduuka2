@@ -113,7 +113,7 @@
         public function getSyncedAttributeNames() : array
         {
             return [
-                'id',
+                'id' ,
                 'name' ,
                 'password' ,
                 'email' ,
@@ -298,7 +298,7 @@
             );
         }
 
-        public function walletTransactions()
+        public function walletTransactions() : HasMany
         {
             return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' )->latest();
         }

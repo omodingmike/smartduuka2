@@ -298,7 +298,7 @@
             if ( ! $register ) {
                 return response()->json( [ 'message' => 'No open register found' ] , 404 );
             }
-            return new RegisterResource( $register->load( [ 'user' , 'posPayments' , 'orders.orderProducts.item' , 'expenses' ] ) );
+            return new RegisterResource( $register->load( [ 'user' , 'posPayments' , 'orders.orderProducts.item' , 'expenses' , 'walletTransactions' ] ) );
         }
 
         public function destroy(Request $request)

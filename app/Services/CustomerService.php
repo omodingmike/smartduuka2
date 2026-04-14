@@ -5,6 +5,7 @@
     use App\Enums\Ask;
     use App\Enums\CustomerPaymentType;
     use App\Enums\PaymentStatus;
+    use App\Enums\PosPaymentType;
     use App\Enums\Role as EnumRole;
     use App\Enums\Status;
     use App\Http\Requests\ChangeImageRequest;
@@ -14,6 +15,8 @@
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\CustomerLedger;
     use App\Models\CustomerPayment;
+    use App\Models\PaymentMethodTransaction;
+    use App\Models\PosPayment;
     use App\Models\User;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
@@ -47,8 +50,8 @@
                                $q->where( function ($query) {
                                    $query->whereHas( 'creditOrdersQuery' )
                                          ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
-                                           $legacyQuery->where( 'amount' , '>' , 0 );
-                                       } );
+                                             $legacyQuery->where( 'amount' , '>' , 0 );
+                                         } );
                                } );
                            } )
                            ->orderBy( 'created_at' , 'desc' );
@@ -174,6 +177,23 @@
                         'balance'               => $customer->credits - $amount ,
                     ] );
                     $reference = 'DP-' . time();
+
+//                    $pos_payment = PosPayment::create( [
+//                        'date'              => now() ,
+//                        'reference_no'      => $reference ,
+//                        'amount'            => $amount ,
+//                        'pos_payment_type'  => PosPaymentType::DEBT ,
+//                        'payment_method_id' => $payment_method ,
+//                    ] );
+//                    $register    = register();
+//                    if ( $register ) $pos_payment->update( [ 'register_id' => $register->id ] );
+//
+//                    PaymentMethodTransaction::create( [
+//                        'amount'            => $amount ,
+//                        'charge'            => 0 ,
+//                        'description'       => 'Debt Payment' ,
+//                        'payment_method_id' => $payment_method ,
+//                    ] );
 
                     foreach ( $customer->legacyDebts as $debt ) {
                         if ( $amount <= 0 ) break;

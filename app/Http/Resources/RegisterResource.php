@@ -12,6 +12,7 @@
     use App\Models\Register;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Str;
 
     /** @mixin Register */
@@ -117,9 +118,10 @@
                 return $order->posPayments()->sum( 'amount' );
             } );
 
-            $total_order_cost = $this->orders->sum( function (Order $order) {
+            $total_order_cost    = $this->orders->sum( function (Order $order) {
                 return $order->totalCost();
             } );
+            $wallet_transactions = $this->walletTransactions()->sum( 'amount' );
 
             return [
                 'id'                           => 'REG-' . Str::padLeft( $this->id , 5 , '0' ) ,
@@ -158,6 +160,8 @@
 
                 // Credit / Debt metrics
                 'total_credit'                 => $totalCreditRemaining ,
+                'wallet_transactions'          => $wallet_transactions ,
+                'wallet_transactions_currency' => currency( $wallet_transactions ) ,
                 'total_credit_currency'        => AppLibrary::currencyAmountFormat( $totalCreditRemaining ) ,
                 'total_debt_paid'              => currency( $this->posPayments()->where( 'pos_payment_type' , PosPaymentType::DEBT )->sum( 'amount' ) ) ,
                 'deposits'                     => $deposits ,
