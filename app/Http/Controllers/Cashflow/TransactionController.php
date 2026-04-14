@@ -83,10 +83,10 @@
                 $this->saveMedia( $request , $transaction );
 
                 $transaction->update( [ 'reference' => recordId( 'TX' , $transaction ) ] );
-                Transaction::recalculateBalance(
-                    $accountableType ,
-                    (int) $id
-                );
+//                Transaction::recalculateBalance(
+//                    $accountableType ,
+//                    (int) $id
+//                );
                 activityLog( "Created Transaction {$transaction->reference}" , $request->header( 'X-App-Id' ) , $transaction );
 
                 return response()->json();
@@ -198,10 +198,10 @@
 
                 $this->saveMedia( $request , $transaction );
 
-                Transaction::recalculateBalance(
-                    $transaction->accountable_type ,
-                    $transaction->accountable_id
-                );
+//                Transaction::recalculateBalance(
+//                    $transaction->accountable_type ,
+//                    $transaction->accountable_id
+//                );
 
                 if ( $transaction->accountable_id != $id || $transaction->accountable_type !== $accountableType ) {
                     Transaction::recalculateBalance( $oldAccount::class , $oldAccount->id );

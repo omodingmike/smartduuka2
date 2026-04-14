@@ -3,6 +3,7 @@
     namespace App\Traits;
 
     use App\Enums\MediaEnum;
+    use Illuminate\Database\Eloquent\Casts\Attribute;
     use Spatie\MediaLibrary\InteractsWithMedia;
 
     trait HasCashflowImageMedia
@@ -16,15 +17,20 @@
 
         public function registerMediaCollections() : void
         {
-            // Updated call
             $this->addMediaCollection( $this->getMediaCollectionName() )->singleFile();
         }
 
-        public function getImageAttribute() : string | null
+//        public function getImageAttribute() : string | null
+//        {
+//            $url = $this->getLastMediaUrl( $this->getMediaCollectionName() );
+//            info($url);
+//            return $url ?? NULL;
+//        }
+
+        protected function image() : Attribute
         {
-            if ( ! empty( $this->getLastMediaUrl( $this->getMediaCollectionName() ) ) ) {
-                return asset( $this->getLastMediaUrl( $this->getMediaCollectionName() ) );
-            }
-            return NULL;
+            return Attribute::make(
+                get: fn() =>  $this->getLastMediaUrl( $this->getMediaCollectionName() )  ?: NULL ,
+            );
         }
     }

@@ -116,6 +116,4 @@ duqihozol@gmail.com
     Button link on email of new user.
     should generate new pin after first login.
 
-SQLSTATE[22P02]: Invalid text representation: 7 ERROR: invalid input syntax for type bigint: "Cash" CONTEXT: unnamed portal parameter $1 = '...' (Connection: tenant, Host: db, Port: 5432, Database: tenant_demoshop, SQL: select * from "payment_methods" where "payment_methods"."id" = Cash limit 1)
-
 php artisan tenants:seed --class=Database\Seeders\Cashflow\MotherAccountSeeder

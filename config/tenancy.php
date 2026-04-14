@@ -95,7 +95,7 @@
             /**
              * Each disk listed in the 'disks' array will be suffixed by the suffix_base, followed by the tenant_id.
              */
-            'suffix_base'          => 'tenant' ,
+            'suffix_base'          => 'tenant_' ,
             'disks'                => [
                 'local' ,
                 'public' ,
@@ -131,7 +131,7 @@
              * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
              * where you want to use tenant-specific assets (product images, avatars, etc).
              */
-            'asset_helper_tenancy' => FALSE ,
+            'asset_helper_tenancy' => false ,
         ] ,
 
         /**
@@ -144,7 +144,7 @@
          * either using the Redis facade or by injecting it as a dependency.
          */
         'redis'                => [
-            'prefix_base'          => 'tenant' , // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
+            'prefix_base'          => 'tenant_' , // Each key in Redis will be prepended by this prefix_base, followed by the tenant id.
             'prefixed_connections' => [ // Redis connections whose keys are prefixed, to separate one tenant's keys from another.
                 // 'default',
             ] ,
@@ -181,7 +181,7 @@
          */
         'migration_parameters' => [
             '--force'    => TRUE , // This needs to be true to run migrations in production.
-            '--path'     => [ database_path( 'migrations/tenant' ),database_path( 'migrations/tenant/cashflow' )  ] ,
+            '--path'     => [ database_path( 'migrations/tenant' ) , database_path( 'migrations/tenant/cashflow' ) ] ,
             '--realpath' => TRUE ,
         ] ,
 

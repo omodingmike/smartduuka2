@@ -13,10 +13,10 @@
         public function saveMedia(Request $request , Model $model , string $collection = MediaEnum::IMAGES_COLLECTION) : void
         {
             if ( $request->hasFile( MediaEnum::MEDIA_FILE ) ) {
-                $media = $model->addMediaFromRequest( MediaEnum::MEDIA_FILE )
-                               ->usingFileName( Str::random( 20 ) . '.' . $request->file( MediaEnum::MEDIA_FILE )->getClientOriginalExtension() )
+                $model->addMediaFromRequest( MediaEnum::MEDIA_FILE )
+                      ->usingFileName( Str::random( 20 ) . '.' . $request->file( MediaEnum::MEDIA_FILE )->getClientOriginalExtension() )
 //                               ->withResponsiveImages()
-                               ->toMediaCollection( $collection );
+                      ->toMediaCollection( $collection );
 //                Artisan::call( 'media-library:regenerate' , [
 //                    '--ids'   => [ $media->id ] ,
 //                    '--force' => TRUE ,

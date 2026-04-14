@@ -4,9 +4,9 @@
 
     interface MediaEnum
     {
-        const PRODUCTS_MEDIA_COLLECTION = 'products';
-        const DAMAGES                   = 'damage';
-        const ORDERS_COLLECTION         = 'orders';
-        const IMAGES_COLLECTION         = 'images';
-        const MEDIA_FILE                = 'image';
+        const string PRODUCTS_MEDIA_COLLECTION = 'products';
+        const string DAMAGES                   = 'damage';
+        const string ORDERS_COLLECTION         = 'orders';
+        const string IMAGES_COLLECTION         = 'images';
+        const string MEDIA_FILE                = 'image';
     }
