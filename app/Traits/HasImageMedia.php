@@ -21,11 +21,17 @@
             $this->addMediaCollection( $this->getMediaCollectionName() )->singleFile();
         }
 
+//        public function getImageAttribute() : string
+//        {
+//            if ( ! empty( $this->getLastMediaUrl( $this->getMediaCollectionName() ) ) ) {
+//                return asset( $this->getLastMediaUrl( $this->getMediaCollectionName() ) );
+//            }
+//            return asset( 'images/default/product/thumb.png' );
+//        }
         public function getImageAttribute() : string
         {
-            // Updated calls
-            if ( ! empty( $this->getLastMediaUrl( $this->getMediaCollectionName() ) ) ) {
-                return asset( $this->getLastMediaUrl( $this->getMediaCollectionName() ) );
+            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
+                return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
             }
             return asset( 'images/default/product/thumb.png' );
         }

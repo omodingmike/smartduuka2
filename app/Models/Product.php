@@ -95,14 +95,6 @@
             return $query->orderBy( $orderColumn , $orderType );
         }
 
-        public function getImageAttribute() : string
-        {
-            if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
-                return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
-            }
-            return asset( 'images/default/product/thumb.png' );
-        }
-
         public function getImagesAttribute() : array
         {
             $response = [];
