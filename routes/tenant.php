@@ -82,6 +82,7 @@
     use App\Http\Controllers\ProductionProcessController;
     use App\Http\Controllers\ProductionSetupController;
     use App\Http\Controllers\PurchaseReturnController;
+    use App\Http\Controllers\Reports\RegisterReportController;
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\UserController;
@@ -128,12 +129,12 @@
         PreventAccessFromCentralDomains::class ,
     ] )->prefix( 'api' )->group( function () {
 
-        Route::get('/ping', function () {
-            return response()->json([
-                'success' => true,
-                'message' => 'Tenant workspace is reachable',
-            ]);
-        });
+        Route::get( '/ping' , function () {
+            return response()->json( [
+                'success' => TRUE ,
+                'message' => 'Tenant workspace is reachable' ,
+            ] );
+        } );
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
@@ -624,6 +625,9 @@
                 Route::get( '/overview' , [ SalesReportController::class , 'salesReportOverview' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
+            } );
+            Route::prefix( 'registers-report' )->name( 'sales-report.' )->group( function () {
+                Route::get( '/' , [ RegisterReportController::class , 'index' ] );
             } );
 
             Route::prefix( 'inventory-report' )->name( 'inventory-report.' )->group( function () {

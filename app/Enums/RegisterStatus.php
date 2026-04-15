@@ -1,25 +1,27 @@
 <?php
 
-namespace App\Enums;
+    namespace App\Enums;
 
-enum RegisterStatus : int
-{
-    case OPEN   = 1;
-    case CLOSED = 2;
+    use JsonSerializable;
 
-    public function label() : string
+    enum RegisterStatus : int implements JsonSerializable
     {
-        return match ( $this ) {
-            self::OPEN   => 'Open' ,
-            self::CLOSED => 'Closed' ,
-        };
-    }
+        case OPEN   = 1;
+        case CLOSED = 2;
 
-    public static function options() : array
-    {
-        return array_map( fn($status) => [
-            'value' => $status->value ,
-            'label' => $status->label() ,
-        ] , self::cases() );
+        public function label() : string
+        {
+            return match ( $this ) {
+                self::OPEN   => 'Open' ,
+                self::CLOSED => 'Closed' ,
+            };
+        }
+
+        public function jsonSerialize() : mixed
+        {
+            return [
+                'value' => $this->value ,
+                'label' => $this->label() ,
+            ];
+        }
     }
-}

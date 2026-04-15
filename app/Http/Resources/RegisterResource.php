@@ -130,7 +130,6 @@
                 'reserved_value'               => currency( $reserved_value ) ,
                 'damages_value'                => currency( $damages_value ) ,
                 'notes'                        => $this->notes ,
-                'status'                       => [ 'label' => $this->status->label() , 'value' => $this->status?->value ] ,
                 'expected_float'               => $this->expected_float ,
                 'expected_float_currency'      => AppLibrary::currencyAmountFormat( $this->expected_float ) ,
                 'closing_float'                => $this->closing_float ,
@@ -169,6 +168,7 @@
 
                 // Corrected Profit Metrics
                 'profit'                       => $profit ,
+                'status'                       => $this->status ,
                 'profit_currency'              => AppLibrary::currencyAmountFormat( $profit ) ,
                 'net_profit'                   => $net_profit ,
                 'net_profit_currency'          => currency( $net_profit ) ,
