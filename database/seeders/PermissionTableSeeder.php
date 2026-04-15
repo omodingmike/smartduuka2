@@ -282,7 +282,7 @@
                     'group' => 'Reports' ,
                     'items' => array_map( fn($item) => [ 'title' => $item[ 'title' ] , 'name' => strtolower( str_replace( ' ' , '_' , $item[ 'title' ] ) ) , 'url' => $item[ 'url' ] , 'items' => [] ] , [
                         [ 'title' => 'Sales Reports' , 'url' => 'salesreports' ] ,
-                        [ 'title' => 'Register Reports' , 'url' => 'registerreports' ] ,
+                        [ 'title' => 'Register Reports' , 'url' => 'report-register' ] ,
                         [ 'title' => 'Inventory Reports' , 'url' => 'inventoryreports' ] ,
                         [ 'title' => 'Production Reports' , 'url' => 'productionreports' ] ,
                         [ 'title' => 'Procurement Reports' , 'url' => 'procurementreports' ] ,
