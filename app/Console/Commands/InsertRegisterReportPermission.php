@@ -22,17 +22,23 @@
                     return 1;
                 }
 
-                $permission = Permission::firstOrCreate(
-                    [
+                $permission = Permission::where('name', 'register_reports')
+                                        ->where('guard_name', 'sanctum')
+                                        ->first();
+
+                if (!$permission) {
+                    $permission = Permission::create([
                         'name'       => 'register_reports',
-                        'guard_name' => 'sanctum'
-                    ],
-                    [
-                        'title'  => 'Register Reports',
-                        'url'    => 'report-register',
-                        'parent' => $parentPermission->parent,
-                    ]
-                );
+                        'guard_name' => 'sanctum',
+                        'title'      => 'Register Reports',
+                        'url'        => 'report-register',
+                        'parent'     => $parentPermission->parent,
+                    ]);
+
+                    $this->info("Permission 'Register Reports' created successfully.");
+                } else {
+                    $this->info("Permission 'Register Reports' already exists.");
+                }
 
                 if ( $permission->wasRecentlyCreated ) {
                     $this->info( 'Permission "Register Reports" created successfully.' );
