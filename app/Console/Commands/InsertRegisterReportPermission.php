@@ -4,49 +4,65 @@
 
     use App\Models\Tenant;
     use Illuminate\Console\Command;
+    use Illuminate\Support\Facades\DB;
     use Spatie\Permission\Models\Permission;
 
     class InsertRegisterReportPermission extends Command
     {
-        protected $signature = 'insert-register-report';
-
-        protected $description = 'Inserts the Register Reports permission into the database';
+        protected $signature   = 'tenants:insert-register-report {--tenant=}';
+        protected $description = 'Fix permissions sequence and insert Register Reports permission';
 
         public function handle() : int
         {
-            Tenant::all()->runForEach( function (Tenant $tenant) {
-                $parentPermission = Permission::where( 'title' , 'like' , '%Reports%' )->first();
+            $tenants = $this->option( 'tenant' )
+                ? Tenant::where( 'id' , $this->option( 'tenant' ) )->get()
+                : Tenant::all();
 
-                if ( ! $parentPermission ) {
-                    $this->error( "Parent permission 'Reports' not found. Please seed the permissions first." );
-                    return 1;
-                }
+            $tenants->runForEach( function (Tenant $tenant) {
 
-                $permission = Permission::where('name', 'register_reports')
-                                        ->where('guard_name', 'sanctum')
-                                        ->first();
+                $this->info( "Processing tenant: {$tenant->id}" );
 
-                if (!$permission) {
-                    $permission = Permission::create([
-                        'name'       => 'register_reports',
-                        'guard_name' => 'sanctum',
-                        'title'      => 'Register Reports',
-                        'url'        => 'report-register',
-                        'parent'     => $parentPermission->parent,
-                    ]);
+                try {
+                    DB::statement( "
+                    SELECT setval(
+                        pg_get_serial_sequence('permissions', 'id'),
+                        COALESCE((SELECT MAX(id) FROM permissions), 1),
+                        true
+                    )
+                " );
 
-                    $this->info("Permission 'Register Reports' created successfully.");
-                } else {
-                    $this->info("Permission 'Register Reports' already exists.");
-                }
+                    $parentPermission = Permission::where( 'title' , 'like' , '%Reports%' )->first();
 
-                if ( $permission->wasRecentlyCreated ) {
-                    $this->info( 'Permission "Register Reports" created successfully.' );
-                }
-                else {
-                    $this->info( 'Permission "Register Reports" already exists.' );
+                    if ( ! $parentPermission ) {
+                        $this->error( "Parent permission 'Reports' not found." );
+                        return;
+                    }
+
+                    $permission = Permission::firstOrCreate(
+                        [
+                            'name'       => 'register_reports' ,
+                            'guard_name' => 'sanctum' ,
+                        ] ,
+                        [
+                            'title'  => 'Register Reports' ,
+                            'url'    => 'report-register' ,
+                            'parent' => $parentPermission->id ,
+                        ]
+                    );
+
+                    $this->info(
+                        $permission->wasRecentlyCreated
+                            ? 'Created: Register Reports'
+                            : 'Already exists: Register Reports'
+                    );
+
+                    $this->line( '' );
+
+                } catch ( \Throwable $e ) {
+                    $this->error( "Tenant {$tenant->id} failed: " . $e->getMessage() );
                 }
             } );
+
             return 0;
         }
     }
