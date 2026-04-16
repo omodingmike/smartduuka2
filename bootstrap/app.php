@@ -42,7 +42,7 @@
                               AddCurrencySymbol::class ,
                               AfterMiddleware::class
                           ] );
-                          $middleware->statefulApi();
+//                          $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {

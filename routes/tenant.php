@@ -92,12 +92,13 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
     use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
+    use Laravel\Sanctum\PersonalAccessToken;
     use Smartisan\Settings\Facades\Settings;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
     use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
     Route::middleware( [
-        'web' ,
+        'api' ,
         InitializeTenancyByDomain::class ,
         PreventAccessFromCentralDomains::class ,
     ] )->group( function () {
@@ -128,6 +129,18 @@
         InitializeTenancyByDomain::class ,
         PreventAccessFromCentralDomains::class ,
     ] )->prefix( 'api' )->group( function () {
+
+        Route::get('/debug-token', function (Request $request) {
+            $token = $request->bearerToken();
+            $found = PersonalAccessToken::findToken($token);
+
+            return response()->json([
+                'tenant'          => tenant('id'),
+                'token_raw'       => $token,
+                'found'           => $found ? 'YES' : 'NO',
+                'pat_table_exist' => \Illuminate\Support\Facades\Schema::hasTable('personal_access_tokens'),
+            ]);
+        });
 
         Route::get( '/ping' , function () {
             return response()->json( [

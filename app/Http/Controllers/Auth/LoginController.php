@@ -124,15 +124,11 @@
         {
             $user = $request->user();
             if ( $user ) {
-                $user->tokens()->delete();
+                $user->currentAccessToken()->delete();
+                activity()
+                    ->on( $user )
+                    ->log( 'Logged out' );
             }
-
-            Auth::guard( 'web' )->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            activity()
-                ->on( $user )
-                ->log( 'Logged out' );
 
             return new JsonResponse( [
                 'message' => trans( 'all.message.logout_success' )

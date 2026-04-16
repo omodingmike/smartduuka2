@@ -32,33 +32,53 @@
     {
         public function register() : void
         {
-            $this->app->instance( LoginResponse::class , new class implements LoginResponse {
-                public function toResponse($request) : JsonResponse
+            $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+                public function toResponse($request): JsonResponse
                 {
-                    $user      = $request->user();
-                    $tenant_id = $user->tenant_id;
+                    $user   = $request->user();
+                    $tenant = tenant();
 
-                    $token = $user->web_token;
-                    if ( $token ) {
-                        $accessToken = PersonalAccessToken::findToken( $token );
-                        if ( ! $accessToken ) {
-                            $token = NULL;
-                        }
-                    }
+                    // ✅ Revoke old tokens for this device/tenant cleanly
+                    $user->tokens()->where('name', 'auth_token')->delete();
 
-                    if ( ! $token ) {
-                        $token = $user->createToken( 'auth_token' )->plainTextToken;
-                        $user->update( [ 'web_token' => $token ] );
-                    }
+                    // ✅ Create a fresh token — let Sanctum manage it
+                    $token = $user->createToken('auth_token')->plainTextToken;
 
-                    return response()->json( [
-                        'two_factor' => FALSE ,
-                        'token'      => $token ,
-                        'user'       => $user->toArray() ,
-                        'tenant_id'  => $tenant_id ,
-                    ] );
+                    return response()->json([
+                        'two_factor' => false,
+                        'token'      => $token,
+                        'user'       => $user->toArray(),
+                        'tenant_id'  => $user->tenant_id,
+                    ]);
                 }
-            } );
+            });
+//            $this->app->instance( LoginResponse::class , new class implements LoginResponse {
+//                public function toResponse($request) : JsonResponse
+//                {
+//                    $user      = $request->user();
+//                    $tenant_id = $user->tenant_id;
+//
+//                    $token = $user->web_token;
+//                    if ( $token ) {
+//                        $accessToken = PersonalAccessToken::findToken( $token );
+//                        if ( ! $accessToken ) {
+//                            $token = NULL;
+//                        }
+//                    }
+//
+//                    if ( ! $token ) {
+//                        $token = $user->createToken( 'auth_token' )->plainTextToken;
+//                        $user->update( [ 'web_token' => $token ] );
+//                    }
+//
+//                    return response()->json( [
+//                        'two_factor' => FALSE ,
+//                        'token'      => $token ,
+//                        'user'       => $user->toArray() ,
+//                        'tenant_id'  => $tenant_id ,
+//                    ] );
+//                }
+//            } );
         }
 
         public function boot(PinService $pinService) : void
@@ -79,73 +99,130 @@
                 return Limit::perMinute( 5 )->by( $request->session()->get( 'login.id' ) );
             } );
 
-            Fortify::authenticateUsing( function (Request $request) use ($pinService) {
-                $centralUser = NULL;
+            Fortify::authenticateUsing(function (Request $request) use ($pinService) {
+                $centralUser = null;
 
-                if ( $request->filled( 'pin' ) ) {
-                    $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
+                if ($request->filled('pin')) {
+                    $validator = Validator::make($request->only('pin'), ['pin' => 'required|string|size:5']);
+                    if ($validator->fails()) return null;
 
-                    if ( $validator->fails() ) {
-                        return NULL;
-                    }
+                    $centralUser = CentralUser::where('pin', $pinService->hashPin($request->string('pin')))->first();
+                } else {
+                    $loginField = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )?->first();
-                }
-                else {
-                    $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+                    $validator = Validator::make($request->all(), [
+                        $loginField => 'required|string',
+                        'password'  => 'required|string',
+                    ]);
+                    if ($validator->fails()) return null;
 
-                    $validator = Validator::make( $request->all() , [
-                        $loginField => 'required|string' ,
-                        'password'  => 'required|string' ,
-                    ] );
+                    $user = CentralUser::where($loginField, $request->email)
+                                       ->where('status', Status::ACTIVE)
+                                       ->first();
 
-                    if ( $validator->fails() ) {
-                        return NULL;
-                    }
-
-                    $user = CentralUser::where( $loginField , $request->email )
-                                       ->where( 'status' , Status::ACTIVE )?->first();
-
-                    if ( $user && Hash::check( $request->password , $user->password ) ) {
+                    if ($user && Hash::check($request->password, $user->password)) {
                         $centralUser = $user;
                     }
                 }
 
-                if ( ! $centralUser ) {
-                    return NULL;
-                }
+                if (!$centralUser) return null;
 
-                $tenant = $centralUser->tenants()?->first();
+                $tenant = $centralUser->tenants()->first();
+                if (!$tenant || !$tenant->database()) return null;
 
-                if ( ! $tenant || ! $tenant->database() ) {
-                    return NULL;
-                }
+                tenancy()->initialize($tenant);
 
-                tenancy()->initialize( $tenant );
-                $app_id     = $request->header( 'X-App-Id' );
+                $app_id     = $request->header('X-App-Id');
                 $tenantUser = User::where(
-                    $centralUser->getGlobalIdentifierKeyName() ,
+                    $centralUser->getGlobalIdentifierKeyName(),
                     $centralUser->getGlobalIdentifierKey()
-                )->when( $app_id == AppID::CASHFLOW , function ($query) {
-                    $query->role( Role::ADMIN );
-                } )->first();
+                )->when($app_id == AppID::CASHFLOW, fn($q) => $q->role(Role::ADMIN))
+                                  ->first();
 
-                if ( $tenantUser ) {
-                    $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
-                        $tenantUser->update( [
-                            'last_login_date' => now() ,
-                            'tenant_id'       => $tenant->id ,
-                            'raw_pin'         => NULL
-                        ] );
-                    } );
-                    activityLog( 'Logged in' , $app_id , $tenantUser );
-                    app( SyncTenantUsersToCentral::class )->sync();
+                if (!$tenantUser) return null;
 
-                    Auth::guard( 'web' )->login( $tenantUser , $request->boolean( 'remember' ) );
+                $tenantUser->withoutEvents(function () use ($tenantUser, $tenant) {
+                    $tenantUser->update([
+                        'last_login_date' => now(),
+                        'tenant_id'       => $tenant->id,
+                        'raw_pin'         => null,
+                    ]);
+                });
 
-                    return $tenantUser;
-                }
-                return NULL;
-            } );
+                activityLog('Logged in', $app_id, $tenantUser);
+                app(SyncTenantUsersToCentral::class)->sync();
+
+                // ✅ No more Auth::guard('web')->login() — token handles auth
+                return $tenantUser;
+            });
+
+//            Fortify::authenticateUsing( function (Request $request) use ($pinService) {
+//                $centralUser = NULL;
+//
+//                if ( $request->filled( 'pin' ) ) {
+//                    $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
+//
+//                    if ( $validator->fails() ) {
+//                        return NULL;
+//                    }
+//
+//                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )?->first();
+//                }
+//                else {
+//                    $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
+//
+//                    $validator = Validator::make( $request->all() , [
+//                        $loginField => 'required|string' ,
+//                        'password'  => 'required|string' ,
+//                    ] );
+//
+//                    if ( $validator->fails() ) {
+//                        return NULL;
+//                    }
+//
+//                    $user = CentralUser::where( $loginField , $request->email )
+//                                       ->where( 'status' , Status::ACTIVE )?->first();
+//
+//                    if ( $user && Hash::check( $request->password , $user->password ) ) {
+//                        $centralUser = $user;
+//                    }
+//                }
+//
+//                if ( ! $centralUser ) {
+//                    return NULL;
+//                }
+//
+//                $tenant = $centralUser->tenants()?->first();
+//
+//                if ( ! $tenant || ! $tenant->database() ) {
+//                    return NULL;
+//                }
+//
+//                tenancy()->initialize( $tenant );
+//                $app_id     = $request->header( 'X-App-Id' );
+//                $tenantUser = User::where(
+//                    $centralUser->getGlobalIdentifierKeyName() ,
+//                    $centralUser->getGlobalIdentifierKey()
+//                )->when( $app_id == AppID::CASHFLOW , function ($query) {
+//                    $query->role( Role::ADMIN );
+//                } )->first();
+//
+//                if ( $tenantUser ) {
+//                    $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
+//                        $tenantUser->update( [
+//                            'last_login_date' => now() ,
+//                            'tenant_id'       => $tenant->id ,
+//                            'raw_pin'         => NULL
+//                        ] );
+//                    } );
+//                    activityLog( 'Logged in' , $app_id , $tenantUser );
+//                    app( SyncTenantUsersToCentral::class )->sync();
+//
+//                    Auth::guard( 'web' )->login( $tenantUser , $request->boolean( 'remember' ) );
+//
+//                    return $tenantUser;
+//                }
+//                return NULL;
+//            } );
         }
     }
