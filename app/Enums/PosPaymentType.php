@@ -8,12 +8,14 @@
     {
         case DEBT    = 1;
         case DEPOSIT = 2;
+        case SALE    = 3;
 
         public function label() : string
         {
             return match ( $this ) {
                 self::DEBT    => 'DEBT' ,
                 self::DEPOSIT => 'DEPOSIT' ,
+                self::SALE    => 'SALE' ,
             };
         }
 

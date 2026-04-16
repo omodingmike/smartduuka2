@@ -15,8 +15,6 @@
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\CustomerLedger;
     use App\Models\CustomerPayment;
-    use App\Models\PaymentMethodTransaction;
-    use App\Models\PosPayment;
     use App\Models\User;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
@@ -234,7 +232,7 @@
 
                         if ( $amount >= $balance ) {
                             $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
-                            addPayment( $order , $balance , $payment_method );
+                            addPayment( $order , $balance , $payment_method , $reference , PosPaymentType::DEBT );
                             CustomerLedger::create( [
                                 'user_id'     => $customer->id ,
                                 'date'        => now() ,
@@ -251,7 +249,7 @@
                                 'payment_status' => PaymentStatus::PARTIALLY_PAID ,
                                 'paid'           => $amount
                             ] );
-                            addPayment( $order , $amount , $payment_method );
+                            addPayment( $order , $amount , $payment_method , $reference , PosPaymentType::DEBT );
                             $customer->refresh();
                             CustomerLedger::create( [
                                 'user_id'     => $customer->id ,

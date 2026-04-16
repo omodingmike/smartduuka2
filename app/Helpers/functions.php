@@ -152,7 +152,7 @@
     }
 
     function addPayment(Order $order = NULL , int $amount = 0 , int $payment_method = 0 , string $reference = NULL , PosPaymentType $pos_payment_type =
-    PosPaymentType::DEBT) : void
+    PosPaymentType::SALE) : void
     {
         $p = PosPayment::create( [
             'date'              => now() ,
