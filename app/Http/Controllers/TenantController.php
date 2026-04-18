@@ -2,6 +2,7 @@
 
     namespace App\Http\Controllers;
 
+    use App\Http\Resources\TenantResource;
     use App\Models\Tenant;
     use Illuminate\Http\Request;
 
@@ -9,7 +10,12 @@
     {
         public function index()
         {
-            return Tenant::all();
+            return TenantResource::collection( Tenant::all() );
+        }
+
+        public function show(Tenant $tenant)
+        {
+            return new TenantResource( $tenant );
         }
 
         public function store(Request $request)

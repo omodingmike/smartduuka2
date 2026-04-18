@@ -53,6 +53,7 @@
     use App\Http\Controllers\Admin\TimezoneController;
     use App\Http\Controllers\Admin\UnitController;
     use App\Http\Controllers\API\DistributionRouteController;
+    use App\Http\Controllers\Auth\Apps\AuthenticatedSessionController;
     use App\Http\Controllers\Auth\ForgotPasswordController;
     use App\Http\Controllers\Auth\LoginController;
     use App\Http\Controllers\Auth\RefreshTokenController;
@@ -105,6 +106,10 @@
         Route::get( '/' , function () {
             return 'This is your multi-tenant application. The id of the current tenant is ' . tenant( 'id' );
         } );
+        Route::middleware( [ 'auth:sanctum' ] )->group( function () {
+            Route::post( 'logout' , [ AuthenticatedSessionController::class , 'destroy' ] );
+            Route::get( '/user' , [ UserController::class , 'user' ] );
+        } );
         Route::get( '/mail' , function () {
             return ( new SendEmail( 'emails.newusertemplate' , 'New user' ,
                 [
@@ -130,17 +135,17 @@
         PreventAccessFromCentralDomains::class ,
     ] )->prefix( 'api' )->group( function () {
 
-        Route::get('/debug-token', function (Request $request) {
+        Route::get( '/debug-token' , function (Request $request) {
             $token = $request->bearerToken();
-            $found = PersonalAccessToken::findToken($token);
+            $found = PersonalAccessToken::findToken( $token );
 
-            return response()->json([
-                'tenant'          => tenant('id'),
-                'token_raw'       => $token,
-                'found'           => $found ? 'YES' : 'NO',
-                'pat_table_exist' => \Illuminate\Support\Facades\Schema::hasTable('personal_access_tokens'),
-            ]);
-        });
+            return response()->json( [
+                'tenant'          => tenant( 'id' ) ,
+                'token_raw'       => $token ,
+                'found'           => $found ? 'YES' : 'NO' ,
+                'pat_table_exist' => \Illuminate\Support\Facades\Schema::hasTable( 'personal_access_tokens' ) ,
+            ] );
+        } );
 
         Route::get( '/ping' , function () {
             return response()->json( [
@@ -151,8 +156,6 @@
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
-
-        Route::middleware( [ 'auth:sanctum' ] )->get( '/user' , [ UserController::class , 'user' ] );
 
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
         Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
@@ -178,7 +181,6 @@
             Route::middleware( 'auth:sanctum' )->group( function () {
                 Route::post( '/logout' , [ LoginController::class , 'logout' ] );
             } );
-//                Route::post( '/logout' , [ LoginController::class , 'logout' ] );
 
             Route::post( '/authcheck' , function () {
                 if ( Auth::check() ) {

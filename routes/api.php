@@ -7,10 +7,10 @@
     use App\Http\Controllers\TenantController;
     use App\Http\Controllers\WhatsAppController;
     use Illuminate\Support\Facades\Route;
+    use Stancl\Tenancy\Middleware\InitializeTenancyByRequestData;
 
     foreach ( config( 'tenancy.central_domains' , [] ) as $domain ) {
         Route::domain( $domain )->group( function () {
-
             Route::post( 'success' , [ IotecController::class , 'success' ] );
             Route::post( 'pay' , [ IotecController::class , 'pay' ] );
 
@@ -31,6 +31,5 @@
                     Route::get( '/show/{language}' , [ FrontendLanguageController::class , 'show' ] );
                 } );
             } );
-
         } );
     }

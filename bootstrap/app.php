@@ -8,7 +8,7 @@
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
-    use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
+    use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
     use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -42,65 +42,63 @@
                               AddCurrencySymbol::class ,
                               AfterMiddleware::class
                           ] );
-//                          $middleware->statefulApi();
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
+
                           $exceptions->render( function (Illuminate\Auth\Access\AuthorizationException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 403 ,
                                   'message' => [ 'message' => 'User does not have the right permissions.' , 'details' => $e->getMessage() ]
                               ] , 403 );
                           } );
-                          $exceptions->render( function (TenantCouldNotBeIdentifiedOnDomainException $e , $request) {
+
+                          $exceptions->render( function (TenantCouldNotBeIdentifiedException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 400 ,
                                   'message' => [ 'message' => 'Tenant error' , 'details' => $e->getMessage() ]
-                              ] , 403 );
+                              ] , 400 );
                           } );
 
-                          // Handle model not found
                           $exceptions->render( function (Illuminate\Database\Eloquent\ModelNotFoundException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 404 ,
                                   'message' => [ 'message' => 'No query results for model.' , 'details' => $e->getMessage() ]
                               ] , 404 );
                           } );
 
-                          // Handle method not allowed
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 405 ,
                                   'message' => [ 'message' => 'Method not supported for the route.' , 'details' => $e->getMessage() ]
                               ] , 405 );
                           } );
 
-                          // Handle not found (invalid route)
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 404 ,
                                   'message' => [ 'message' => 'The specified URL cannot be found.' , 'details' => $e->getMessage() ]
                               ] , 404 );
                           } );
 
-                          // Handle general HTTP exceptions
                           $exceptions->render( function (Symfony\Component\HttpKernel\Exception\HttpException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => $e->getStatusCode() ,
                                   'message' => [ 'message' => 'Http exception' , 'details' => $e->getMessage() ]
-                              ] , 422 );
+                              ] , $e->getStatusCode() );
                           } );
 
-                          // Handle query exceptions
                           $exceptions->render( function (Illuminate\Database\QueryException $e , $request) {
                               return response()->json( [
                                   'success' => FALSE ,
+                                  'status'  => 500 ,
                                   'message' => [ 'message' => 'Query exception' , 'details' => $e->getMessage() ]
-                              ] , 422 );
+                              ] , 500 );
                           } );
 
-                          // Optional: log for debugging (like your `reportable` callback)
-//                          $exceptions->report( function (Throwable $e) {
-//                              info( "{$e->getFile()} line {$e->getLine()}" );
-//                              info( $e->getTraceAsString() );
-//                          } );
                       } )->create();

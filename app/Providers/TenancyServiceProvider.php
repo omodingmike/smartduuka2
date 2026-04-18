@@ -12,6 +12,7 @@
     use Illuminate\Support\ServiceProvider;
     use Spatie\Permission\PermissionRegistrar;
     use Stancl\JobPipeline\JobPipeline;
+    use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
     use Stancl\Tenancy\Events;
     use Stancl\Tenancy\Features\TenantConfig;
     use Stancl\Tenancy\Jobs;
@@ -125,12 +126,12 @@
             UpdateSyncedResource::$shouldQueue = TRUE;
 
             $this->makeTenancyMiddlewareHighestPriority();
-            InitializeTenancyByDomain::$onFail                 = function () {
-                abort( 404 );
-            };
-            Middleware\InitializeTenancyByRequestData::$onFail = function () {
-                abort( 404 );
-            };
+//            InitializeTenancyByDomain::$onFail                 = function () {
+//                throw new TenantCouldNotBeIdentifiedException();
+//            };
+//            Middleware\InitializeTenancyByRequestData::$onFail = function () {
+//                abort( 404 );
+//            };
 
             TenantConfig::$storageToConfigMap = [
                 // From app.php

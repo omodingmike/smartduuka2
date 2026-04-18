@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     use Stancl\Tenancy\Contracts\TenantWithDatabase;
     use Stancl\Tenancy\Database\Concerns\HasDatabase;
     use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -27,7 +28,7 @@
                 'print_agent_token' ,
             ];
         }
-        public function users()
+        public function users() : BelongsToMany
         {
             return $this->belongsToMany(CentralUser::class, 'tenant_users', 'tenant_id', 'global_user_id', 'id', 'global_id')
                         ->using(TenantPivot::class);
