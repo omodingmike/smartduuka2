@@ -131,7 +131,7 @@
              * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
              * where you want to use tenant-specific assets (product images, avatars, etc).
              */
-            'asset_helper_tenancy' => FALSE ,
+            'asset_helper_tenancy' => TRUE ,
         ] ,
 
         /**
@@ -180,7 +180,7 @@
          * Parameters used by the tenants:migrate command.
          */
         'migration_parameters' => [
-            '--force'    => TRUE , // This needs to be true to run migrations in production.
+            '--force'    => TRUE ,
             '--path'     => [ database_path( 'migrations/tenant' ) , database_path( 'migrations/tenant/cashflow' ) ] ,
             '--realpath' => TRUE ,
         ] ,

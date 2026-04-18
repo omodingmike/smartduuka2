@@ -3,8 +3,10 @@
     namespace App\Models\Cashflow;
 
     use App\Enums\CashType;
+    use App\Enums\MediaEnum;
     use App\Enums\TransactionStatus;
     use App\Traits\HasCashflowImageMedia;
+    use App\Traits\HasImageMedia;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -13,7 +15,7 @@
 
     class Transaction extends Model implements HasMedia
     {
-        use SoftDeletes , HasCashflowImageMedia;
+        use SoftDeletes , HasImageMedia;
 
         protected $fillable = [
             'date' ,
@@ -32,6 +34,11 @@
         public function accountable() : MorphTo
         {
             return $this->morphTo();
+        }
+
+        public function getMediaCollectionName() : string
+        {
+            return MediaEnum::CASHFLOW_COLLECTION;
         }
 
         public function entity() : BelongsTo

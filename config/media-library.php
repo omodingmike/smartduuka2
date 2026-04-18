@@ -1,6 +1,7 @@
 <?php
 
     use App\Helpers\TenantAwareUrlGenerator;
+    use Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator;
 
     return [
 
@@ -81,11 +82,12 @@
          * This is the class that is responsible for naming generated files.
          */
         'file_namer'                                => Spatie\MediaLibrary\Support\FileNamer\DefaultFileNamer::class ,
+//        'file_namer'                                => MediaFileNamer::class ,
 
         /*
          * The class that contains the strategy for determining a media file's path.
          */
-        'path_generator'                            => Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator::class ,
+        'path_generator'                            => DefaultPathGenerator::class ,
 
         /*
          * The class that contains the strategy for determining how to remove files.

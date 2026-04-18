@@ -9,7 +9,6 @@
     {
         use InteractsWithMedia;
 
-        // Renamed to getMediaCollectionName
         public function getMediaCollectionName() : string
         {
             return MediaEnum::IMAGES_COLLECTION;
@@ -21,13 +20,6 @@
             $this->addMediaCollection( $this->getMediaCollectionName() )->singleFile();
         }
 
-//        public function getImageAttribute() : string
-//        {
-//            if ( ! empty( $this->getLastMediaUrl( $this->getMediaCollectionName() ) ) ) {
-//                return asset( $this->getLastMediaUrl( $this->getMediaCollectionName() ) );
-//            }
-//            return asset( 'images/default/product/thumb.png' );
-//        }
         public function getImageAttribute() : string
         {
             if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
