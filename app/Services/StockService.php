@@ -52,7 +52,7 @@
 
                 $processedItems = $stocks->groupBy( $groupCriteria )
                                          ->map( fn($group) => $this->transformStockGrouped( $group ) )
-                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
+                                         ->filter( fn($item) => ($item !== NULL && $item[ 'stock' ] > 0) || $item[ 'quantity_deposited' ] > 0 )
                                          ->values();
 
                 $totalStockValue    = $processedItems->sum( 'total_price' );

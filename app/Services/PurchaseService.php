@@ -321,7 +321,7 @@
                                 'variation_names' => 'variation_names' ,
                                 'price'           => $product[ 'price' ] ,
                                 'quantity'        => ( $status == PurchaseStatus::RECEIVED->value ) ? $product[ 'quantity' ] : 0 ,
-                                'quantity_ordered' => $product[ 'quantity' ] ,
+//                                'quantity_ordered' => $product[ 'quantity' ] ,
                                 'discount'        => 0 ,
                                 'tax'             => 0 ,
                                 'subtotal'        => $product[ 'price' ] * $product[ 'quantity' ] ,
