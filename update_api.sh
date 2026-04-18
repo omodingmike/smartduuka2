@@ -20,7 +20,7 @@ fail() {
   exit 1
 }
 require_cmd() { command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"; }
-composer self-update
+
 # --------------------------------------------------
 # PRE-FLIGHT CHECKS
 # --------------------------------------------------
@@ -72,6 +72,9 @@ done
 # --------------------------------------------------
 # 1. BOOTSTRAP VENDOR FOLDER
 # --------------------------------------------------
+log "⬆️  Updating Composer to latest stable version..."
+$COMPOSE run --rm api bash -c "composer self-update --stable --no-interaction"
+
 log "📦 Performing clean vendor installation..."
 $COMPOSE run --rm api bash -c "composer install --no-dev --no-interaction"
 
