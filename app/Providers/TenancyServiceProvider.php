@@ -185,6 +185,7 @@
                 $tenantRoutes = [
                     'routes/tenant.php' ,
                     'routes/cashflow-api.php' ,
+                    'routes/app-api.php' ,
                 ];
                 foreach ( $tenantRoutes as $routeFile ) {
                     if ( file_exists( base_path( $routeFile ) ) ) {

@@ -117,3 +117,4 @@ duqihozol@gmail.com
     should generate new pin after first login.
 
 php artisan tenants:seed --class=Database\Seeders\Cashflow\MotherAccountSeeder
+php artisan migrate --path=database/migrations/2026_04_19_125831_create_tenant_subscriptions_table.php

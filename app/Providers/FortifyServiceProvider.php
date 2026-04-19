@@ -45,34 +45,6 @@
                     ] );
                 }
             } );
-
-//            $this->app->instance( LoginResponse::class , new class implements LoginResponse {
-//                public function toResponse($request) : JsonResponse
-//                {
-//                    $user      = $request->user();
-//                    $tenant_id = $user->tenant_id;
-//
-//                    $token = $user->web_token;
-//                    if ( $token ) {
-//                        $accessToken = PersonalAccessToken::findToken( $token );
-//                        if ( ! $accessToken ) {
-//                            $token = NULL;
-//                        }
-//                    }
-//
-//                    if ( ! $token ) {
-//                        $token = $user->createToken( 'auth_token' )->plainTextToken;
-//                        $user->update( [ 'web_token' => $token ] );
-//                    }
-//
-//                    return response()->json( [
-//                        'two_factor' => FALSE ,
-//                        'token'      => $token ,
-//                        'user'       => $user->toArray() ,
-//                        'tenant_id'  => $tenant_id ,
-//                    ] );
-//                }
-//            } );
         }
 
         public function boot(PinService $pinService) : void
