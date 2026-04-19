@@ -40,7 +40,7 @@
                         'token'        => $token ,
                         'user'         => $user->toArray() ,
                         'tenant_id'    => $user->tenant_id ,
-                        'redirect_url' =>  $user->tenant->frontend_url.'/auto-login?token='.$token ,
+                        'redirect_url' => $user->tenant->frontend_url . '/auto-login?token=' . $token ,
                         'tenant_url'   => $user->tenant->frontend_url ,
                     ] );
                 }
@@ -127,14 +127,28 @@
 
                 tenancy()->initialize( $tenant );
 
-                $app_id     = $request->header( 'X-App-Id' );
+                $app_id = $request->header( 'X-App-Id' );
+
                 $tenantUser = User::where(
                     $centralUser->getGlobalIdentifierKeyName() ,
                     $centralUser->getGlobalIdentifierKey()
                 )->when( $app_id == AppID::CASHFLOW , fn($q) => $q->role( Role::ADMIN ) )
                                   ->first();
 
-                if ( ! $tenantUser ) return NULL;
+                if (!$tenantUser) {
+                    $tenantUser = User::where('email', $centralUser->email)->first();
+
+                    if ($tenantUser) {
+                        $tenantUser->withoutEvents(function () use ($tenantUser, $centralUser) {
+                            $tenantUser->update([
+                                'global_id' => $centralUser->getGlobalIdentifierKey(),
+                            ]);
+                        });
+                        $tenantUser->refresh();
+                    }
+                }
+
+                if (!$tenantUser) return null;
 
                 $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
                     $tenantUser->update( [

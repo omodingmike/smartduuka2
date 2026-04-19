@@ -20,7 +20,7 @@ sshpass -p "EHhTh8530" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@8
   ssh-keygen -t ed25519 -C "bar"
   docker exec -it db createdb -U smartduuka smartduuka_main
   docker exec -it db psql -U smartduuka -l
-  docker exec -it db psql -U tenant_demoshop -l
+  docker exec -it db psql -U tenant_zakayo -l
 
   docker exec -it api /bin/bash
   truncate -s 0 laravel.log
@@ -29,7 +29,7 @@ sshpass -p "EHhTh8530" scp /Users/mike/Desktop/valet/smartduuka2/setup.sh root@8
 
   docker exec -it db psql -U smartduuka -d tenant_techpulsespares
 
-  docker exec -it db psql -U smartduuka -d tenant_demoshop
+  docker exec -it db psql -U smartduuka -d tenant_zakayo
 
   docker exec -it api php artisan db:refresh-except --tables=users,settings --tenant=zakayo
   docker compose exec -T api php artisan optimize
