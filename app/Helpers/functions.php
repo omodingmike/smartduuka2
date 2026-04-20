@@ -238,9 +238,10 @@
         $id           = $order->id;
         $payment_type = $order->payment_type;
         $prefix       = match ( $payment_type ) {
-            PaymentType::PREORDER => 'PRE-' ,
-            PaymentType::RETURN   => 'RTN-' ,
-            default               => 'ORD-'
+            PaymentType::PREORDER  => 'PRE-' ,
+            PaymentType::RETURN    => 'RTN-' ,
+            PaymentType::QUOTATION => 'QT-' ,
+            default                => 'ORD-'
         };
         return $prefix . Str::padLeft( $id , Pad::LENGTH , '0' );
     }

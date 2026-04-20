@@ -36,7 +36,7 @@
 
         public function subscriptions() : HasMany
         {
-            return $this->hasMany( TenantSubscription::class , 'tenant_id' , 'id' );
+            return $this->hasMany( TenantSubscription::class , 'tenant_id' , 'id' )->latest();
         }
 
         public function users() : BelongsToMany

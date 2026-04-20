@@ -12,7 +12,7 @@
             'duration' ,
             'plan' ,
             'setup' ,
-            'amount' , 'status' , 'tenant_id' , 'expires_at'
+            'amount' , 'status' , 'tenant_id' , 'expires_at',
         ];
         protected $casts    = [ 'status' => Status::class , 'plan' => Plan::class ];
     }

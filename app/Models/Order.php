@@ -9,6 +9,7 @@
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
+    use App\Enums\QuotationStatus;
     use App\Enums\RefundStatus;
     use App\Enums\ReturnStatus;
     use App\Enums\ReturnType;
@@ -55,7 +56,8 @@
             'register_id' ,
             'warehouse_id' ,
             'pre_order_status' , 'active' , 'user_type' , 'editor_type' , 'editor_id' , 'delivery_address' , 'delivery_fee' , 'refund_status' , 'return_status' , 'return_type' , 'original_order_id' ,
-            'is_returned'
+            'is_returned' ,
+            'quotation_status'
         ];
 
         protected $casts = [
@@ -70,9 +72,11 @@
             'shipping_charge'    => 'decimal:6' ,
             'order_type'         => OrderType::class ,
             'order_datetime'     => 'datetime' ,
+            'due_date'           => 'datetime' ,
             'payment_method'     => 'integer' ,
             'payment_status'     => PaymentStatus::class ,
             'status'             => OrderStatus::class ,
+            'quotation_status'   => QuotationStatus::class ,
             'payment_type'       => PaymentType::class ,
             'channel'            => OrderChannel::class ,
             'pre_order_status'   => PreOrderStatus::class ,
@@ -97,9 +101,10 @@
                     $id           = $this->id;
                     $payment_type = $this->payment_type;
                     $prefix       = match ( $payment_type ) {
-                        PaymentType::PREORDER => 'PRE-' ,
-                        PaymentType::RETURN   => 'RTN-' ,
-                        default               => 'ORD-'
+                        PaymentType::PREORDER  => 'PRE-' ,
+                        PaymentType::RETURN    => 'RTN-' ,
+                        PaymentType::QUOTATION => 'QT-' ,
+                        default                => 'ORD-'
                     };
                     return $prefix . Str::padLeft( $id , Pad::LENGTH , '0' );
                 } ,

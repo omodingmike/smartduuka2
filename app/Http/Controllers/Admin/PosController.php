@@ -11,6 +11,7 @@
     use App\Http\Requests\CustomerRequest;
     use App\Http\Requests\OrderReturnRequest;
     use App\Http\Requests\PosOrderRequest;
+    use App\Http\Requests\QuotationRequest;
     use App\Http\Resources\CustomerResource;
     use App\Http\Resources\OrderDetailsResource;
     use App\Http\Resources\OrderResource;
@@ -54,6 +55,24 @@
         {
             try {
                 return new OrderResource( $this->orderService->posOrderStore( $request ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function quotationStore(QuotationRequest $request)
+        {
+            try {
+                return $this->orderService->quotationStore( $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function quotationUpdate(Order $order , QuotationRequest $request)
+        {
+            try {
+                return $this->orderService->quotationUpdate( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

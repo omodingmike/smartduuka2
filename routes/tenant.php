@@ -768,6 +768,8 @@
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
                 // 1. SPECIFIC ENDPOINTS FIRST
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
+                Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
+                Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
                 Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );

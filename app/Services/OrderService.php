@@ -6,11 +6,13 @@
     use App\Enums\CustomerWalletTransactionType;
     use App\Enums\DefaultPaymentMethods;
     use App\Enums\OrderStatus;
+    use App\Enums\OrderType;
     use App\Enums\PaymentMethodEnum;
     use App\Enums\PaymentStatus;
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
+    use App\Enums\QuotationStatus;
     use App\Enums\RefundStatus;
     use App\Enums\ReturnStatus;
     use App\Enums\SaleOrderType;
@@ -21,6 +23,7 @@
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\PaymentStatusRequest;
     use App\Http\Requests\PosOrderRequest;
+    use App\Http\Requests\QuotationRequest;
     use App\Http\Resources\OrderResource;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
@@ -36,9 +39,11 @@
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\User;
+    use App\Models\Warehouse;
     use App\Models\WholeSalePrice;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
+    use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
@@ -86,43 +91,43 @@
                 $query          = $query ? trim( $query ) : NULL;
                 $type           = $request->integer( 'type' ) ?? PaymentType::CASH->value;
 
-                $orders                   = Order::with( [
+                $orders = Order::with( [
                     'orderProducts.item' => function ($query) {
                         $query->withTrashed();
                     } ,
                     'user' , 'creator' , 'paymentMethods.paymentMethod' , 'originalOrder'
-                ] )
-                                                 ->when( $query , function (Builder $q) use ($query) {
-                                                     $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
-                                                       ->orWhere( 'id' , 'ilike' , "%$query%" )
-                                                       ->orWhereHas( 'user' , function ($q) use ($query) {
-                                                           $q->where( 'name' , 'ilike' , "%$query%" );
-                                                       } );
-                                                 } )
-                                                 ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
-                                                     $q->where( 'payment_status' , $payment_status );
-                                                 } )
-                                                 ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
-                                                     $q->where( 'status' , $status );
-                                                 } )
-                                                 ->when( ( $report == 'sales' ) , function (Builder $q) {
-                                                     $q->where( 'status' , '<>' , OrderStatus::CANCELED );
-                                                 } )
-                                                 ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
-                                                     $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-                                                 } )
-                                                 ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-                                                     $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-                                                 } )
-                                                 ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
-                                                     $q->where( 'order_type' , $order_type );
-                                                 } )
-                                                 ->when( $type , function (Builder $q) use ($type) {
-                                                     $q->where( 'payment_type' , $type );
-                                                 } )
-                                                 ->when( $exclude , function (Builder $q) use ($type) {
-                                                     $q->whereIn( 'payment_type' , [ $type ] );
-                                                 } );
+                ] )->when( $query , function (Builder $q) use ($query) {
+                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                      ->orWhere( 'id' , 'ilike' , "%$query%" )
+                      ->orWhereHas( 'user' , function ($q) use ($query) {
+                          $q->where( 'name' , 'ilike' , "%$query%" );
+                      } );
+                } )
+                               ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
+                                   $q->where( 'payment_status' , $payment_status );
+                               } )
+                               ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
+                                   $q->where( 'status' , $status );
+                               } )
+                               ->when( ( $report == 'sales' ) , function (Builder $q) {
+                                   $q->where( 'status' , '<>' , OrderStatus::CANCELED );
+                               } )
+                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                               } )
+                               ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                               } )
+                               ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
+                                   $q->where( 'order_type' , $order_type );
+                               } )
+                               ->when( $type , function (Builder $q) use ($type) {
+                                   $q->where( 'payment_type' , $type );
+                               } )
+                               ->when( ($exclude && $order_type !== OrderType::QUOTATION->value) , function (Builder $q) use ($type) {
+                                   $q->whereIn( 'payment_type' , [ $type ] );
+                               } );
+
                 $baseQuery                = clone $orders;
                 $totalSales               = $baseQuery->sum( 'total' );
                 $totalPendingReturnOrders = ( clone $baseQuery )
@@ -182,40 +187,40 @@
                                         ->paginate( $perPage , [ '*' ] , 'page' , $page );
 
                 // 2. Format the Output and Fetch Breakdowns
-                return $products->through( function ($row) use ($start, $end) {
+                return $products->through( function ($row) use ($start , $end) {
                     $item = $row->item;
 
                     // Fetch the price breakdown specifically for this item using the same date filters
                     $breakdowns = OrderProduct::query()
-                                              ->select('unit_price')
-                                              ->selectRaw('SUM(quantity) as quantity_sold')
-                                              ->selectRaw('SUM(total) as total_revenue')
-                                              ->where('item_id', $row->item_id)
-                                              ->where('item_type', $row->item_type)
-                                              ->whereHas('order', function ($q) use ($start, $end) {
-                                                  $q->whereIn('payment_status', [PaymentStatus::PAID, PaymentStatus::PARTIALLY_PAID])
-                                                    ->when(($start && !$end), function (Builder $q) use ($start) {
-                                                        $q->whereBetween('created_at', [$start->copy()->startOfDay(), $start->copy()->endOfDay()]);
-                                                    })
-                                                    ->when(($start && $end), function (Builder $q) use ($start, $end) {
-                                                        $q->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()]);
-                                                    });
-                                              })
-                                              ->groupBy('unit_price')
-                                              ->orderByDesc('total_revenue')
+                                              ->select( 'unit_price' )
+                                              ->selectRaw( 'SUM(quantity) as quantity_sold' )
+                                              ->selectRaw( 'SUM(total) as total_revenue' )
+                                              ->where( 'item_id' , $row->item_id )
+                                              ->where( 'item_type' , $row->item_type )
+                                              ->whereHas( 'order' , function ($q) use ($start , $end) {
+                                                  $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                                    ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                                        $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                                                    } )
+                                                    ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                                        $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                                                    } );
+                                              } )
+                                              ->groupBy( 'unit_price' )
+                                              ->orderByDesc( 'total_revenue' )
                                               ->get();
 
                     // Format the breakdown array for the React UI
-                    $formattedBreakdowns = $breakdowns->map(function($b) {
+                    $formattedBreakdowns = $breakdowns->map( function ($b) {
                         return [
-                            'price_currency'         => AppLibrary::currencyAmountFormat($b->unit_price),
-                            'quantity_sold'          => (int) $b->quantity_sold,
-                            'total_revenue_currency' => AppLibrary::currencyAmountFormat($b->total_revenue),
+                            'price_currency'         => AppLibrary::currencyAmountFormat( $b->unit_price ) ,
+                            'quantity_sold'          => (int) $b->quantity_sold ,
+                            'total_revenue_currency' => AppLibrary::currencyAmountFormat( $b->total_revenue ) ,
                         ];
-                    });
+                    } );
 
                     return [
-                        'id'               => $row->item_id, // Important: Used by React to toggle the dropdown
+                        'id'               => $row->item_id , // Important: Used by React to toggle the dropdown
                         'name'             => $item->name ?? 'Unknown Product' ,
                         'category'         => $item->category?->name ?? 'General' ,
                         'quantity_sold'    => (int) $row->total_sold ,
@@ -363,10 +368,10 @@
         {
             try {
                 $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_by' ) ?? 'desc';
+                $method      = $request->integer( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
+                $methodValue = $request->integer( 'paginate' , 0 ) == 1 ? $request->integer( 'per_page' , 10 ) : '*';
+                $orderColumn = $request->string( 'order_column' ) ?? 'id';
+                $orderType   = $request->string( 'order_by' ) ?? 'desc';
 
                 return Order::with( [ 'orderProducts' ] )
                             ->where( function ($query) {
@@ -551,13 +556,13 @@
                     }
 
                     foreach ( $payments as $p ) {
-                        $amount     = $p[ 'amount' ];
+                        $amount = $p[ 'amount' ];
 //                        $net_amount = $amount - $change;
                         $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
                             $ledger?->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
-                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time());
+                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
                             if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
                                 addToCustomerWalletTransaction(
                                     $user ,
@@ -637,6 +642,159 @@
                 } );
 
                 return $this->order;
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+        public function quotationUpdate(Order $order, QuotationRequest $request) : JsonResponse
+        {
+            try {
+                DB::transaction( function () use ($order, $request) {
+                    $order->update(
+                        array_merge( $request->validated() , [
+                            'user_id'          => $request->customer_id ,
+                            'due_date'         => $request->expiry_date ,
+                            'order_datetime'   => $request->date ,
+                            'reason'           => $request->notes ?? $order->reason ,
+                            'warehouse_id'     => $request->warehouse_id ?? $order->warehouse_id,
+                        ] )
+                    );
+
+                    $this->order = $order;
+                    activity()->log( 'Updated Quotation: ' . $order->order_serial_no );
+
+                    // Remove existing items before attaching the updated ones
+                    $order->orderProducts()->delete();
+
+                    $products = json_decode( $request->items , TRUE );
+
+                    if ( ! blank( $products ) ) {
+                        foreach ( $products as $product ) {
+
+                            $is_variation = isset( $product[ 'variation_id' ] );
+                            $variation    = NULL;
+                            $targetClass  = Product::class;
+                            $itemId       = $product[ 'item_id' ];
+
+                            if ( $is_variation ) {
+                                $variation_id = $product[ 'variation_id' ];
+
+                                $variation = ProductVariation::find( $variation_id );
+
+                                if ( $variation ) {
+                                    $targetClass = ProductVariation::class;
+                                    $itemId      = $variation->id;
+                                }
+                            }
+
+                            $order_product = OrderProduct::create( [
+                                'order_id'                    => $this->order->id ,
+                                'item_id'                     => $itemId ,
+                                'item_type'                   => $targetClass ,
+                                'quantity_picked'             => 0 ,
+                                'quantity'                    => $product[ 'quantity' ] ,
+                                'price_id'                    => $product[ 'price_id' ] ,
+                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
+                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price'                  => $product[ 'unitPrice' ] ,
+                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
+                            ] );
+
+                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+                        }
+                    }
+
+                    // Update total from DB sum (optional based on how you track total)
+                    $this->order->total = $this->order->orderProducts()->sum('total');
+                    $this->order->save();
+
+                } );
+                return response()->json(['message' => 'Quotation updated successfully']);
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function quotationStore(QuotationRequest $request)
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    $order = Order::create(
+                        array_merge( $request->validated() , [
+                            'paid'             => 0 ,
+                            'balance'          => 0 ,
+                            'shipping_charge'  => 0 ,
+                            'user_id'          => $request->customer_id ,
+                            'due_date'         => $request->expiry_date ,
+                            'quotation_status' => QuotationStatus::PENDING ,
+                            'change'           => 0 ,
+                            'status'           => OrderStatus::PENDING ,
+                            'payment_type'     => PaymentType::QUOTATION ,
+                            'creator_id'       => auth()->id() ,
+                            'creator_type'     => User::class ,
+                            'payment_status'   => PaymentStatus::UNPAID ,
+                            'warehouse_id'     => $request->warehouse_id ?? Warehouse::first()->id ,
+                            'order_datetime'   => $request->date ,
+                            'reason'           => $request->notes ,
+                            'register_id'      => register()?->id
+                        ] )
+                    );
+
+                    $this->order = $order;
+
+                    $this->order->order_serial_no = orderSerialNo(  $this->order);
+                    $this->order->save();
+                    activity()->log( 'Created Quotation: ' . $order->order_serial_no );
+
+                    $products = json_decode( $request->items , TRUE );
+
+                    if ( ! blank( $products ) ) {
+                        foreach ( $products as $product ) {
+
+                            $is_variation = isset( $product[ 'variation_id' ] );
+                            $variation    = NULL;
+                            $targetClass  = Product::class;
+                            $itemId       = $product[ 'item_id' ];
+
+                            if ( $is_variation ) {
+                                $variation_id = $product[ 'variation_id' ];
+
+                                $variation = ProductVariation::find( $variation_id );
+
+                                if ( $variation ) {
+                                    $targetClass = ProductVariation::class;
+                                    $itemId      = $variation->id;
+                                }
+                            }
+
+                            $order_product = OrderProduct::create( [
+                                'order_id'                    => $this->order->id ,
+                                'item_id'                     => $itemId ,
+                                'item_type'                   => $targetClass ,
+                                'quantity_picked'             => 0 ,
+                                'quantity'                    => $product[ 'quantity' ] ,
+                                'price_id'                    => $product[ 'price_id' ] ,
+                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
+                                    RetailPrice::class ,
+                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                                'unit_price'                  => $product[ 'unitPrice' ] ,
+                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
+                            ] );
+
+                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+                        }
+                    }
+                    $this->order->save();
+
+                } );
+
+                return response()->json();
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
