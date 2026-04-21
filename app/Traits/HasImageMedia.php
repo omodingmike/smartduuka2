@@ -25,6 +25,6 @@
             if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
                 return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
             }
-            return asset( 'images/default/product/thumb.png' );
+            return asset( 'images/default/product/preview.png' );
         }
     }

@@ -497,7 +497,6 @@
                     $is_preorder      = $request->integer( 'is_preorder' );
                     $paymentType      = $request->integer( 'paymentType' );
                     $customer_id      = $request->integer( 'customer_id' );
-                    $change           = $request->change;
                     $delivery_address = $request->delivery_address;
                     $delivery_fee     = $request->delivery_fee;
 

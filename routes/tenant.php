@@ -57,6 +57,7 @@
     use App\Http\Controllers\Auth\ForgotPasswordController;
     use App\Http\Controllers\Auth\LoginController;
     use App\Http\Controllers\Auth\RefreshTokenController;
+    use App\Http\Controllers\BookingController;
     use App\Http\Controllers\ChartOfAccountGroupController;
     use App\Http\Controllers\CleaningOrderController;
     use App\Http\Controllers\CleaningServiceCategoryController;
@@ -84,6 +85,8 @@
     use App\Http\Controllers\ProductionSetupController;
     use App\Http\Controllers\PurchaseReturnController;
     use App\Http\Controllers\Reports\RegisterReportController;
+    use App\Http\Controllers\ServiceCategoryController;
+    use App\Http\Controllers\ServiceController;
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\UserController;
@@ -764,6 +767,15 @@
                 Route::post( '/payment/{order}' , [ CreditDepositPurchaseController::class , 'updateBalance' ] )->middleware( 'register' );
                 Route::post( '/debt/payment/{order}' , [ CreditDepositPurchaseController::class , 'payDebt' ] )->middleware( 'register' );
             } );
+
+            Route::apiResource( 'services' , ServiceController::class )->except( 'destroy' );
+            Route::delete( 'services' , [ ServiceController::class , 'destroy' ] );
+
+            Route::apiResource( 'bookings' , BookingController::class )->except( 'destroy' );
+            Route::delete( 'bookings' , [ BookingController::class , 'destroy' ] );
+
+            Route::apiResource( 'serviceCategories' , ServicecategoryController::class )->except( 'destroy' );
+            Route::delete( 'serviceCategories' , [ ServicecategoryController::class , 'destroy' ] );
 
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
                 // 1. SPECIFIC ENDPOINTS FIRST

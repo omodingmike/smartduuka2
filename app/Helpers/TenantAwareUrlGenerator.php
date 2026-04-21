@@ -9,7 +9,7 @@
     {
         public function getUrl() : string
         {
-            $url = asset( $this->getPathRelativeToRoot() );
+            $url = tenant_asset( $this->getPathRelativeToRoot() );
             return $this->versionUrl( $url );
         }
     }
