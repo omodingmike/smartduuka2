@@ -580,6 +580,7 @@
 
             Route::prefix( 'customer' )->name( 'customer.' )->group( function () {
                 Route::get( '/' , [ CustomerController::class , 'index' ] );
+                Route::get( '/pos' , [ CustomerController::class , 'posCustomers' ] );
                 Route::get( '/debtPayments' , [ CustomerController::class , 'debtPayments' ] );
                 Route::post( '/' , [ CustomerController::class , 'store' ] );
                 Route::post( '/wallet-top-up/{customer}' , [ CustomerController::class , 'topUp' ] );

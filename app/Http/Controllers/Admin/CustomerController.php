@@ -4,6 +4,7 @@
 
     use App\Enums\CustomerPaymentType;
     use App\Enums\CustomerWalletTransactionType;
+    use App\Enums\Role as EnumRole;
     use App\Exports\CustomerExport;
     use App\Http\Requests\ChangeImageRequest;
     use App\Http\Requests\CustomerPaymentRequest;
@@ -60,6 +61,22 @@
                         'total_credit' => currency( $totalCredit )
                     ]
                 ] );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function posCustomers(Request $request
+        )
+        {
+            try {
+                $query = $request->input( 'query' ) ?? NULL;
+                $c     = User::role( EnumRole::CUSTOMER )
+                             ->when( $query , function ($q) use ($query) {
+                                 $q->where( 'name' , 'ilike' , '%' . $query . '%' );
+                             } )
+                             ->orderBy( 'created_at' , 'desc' );
+                return response()->json( [ 'data' => $c->get() ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
