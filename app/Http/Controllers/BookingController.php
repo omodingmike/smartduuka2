@@ -19,22 +19,20 @@
     {
         public function index(Request $request)
         {
-            $q = Booking::with( [ 'addsOn' , 'service' , 'activityLogs' ] )->latest();
+            $q = Booking::with( [ 'addsOn' , 'service' , 'activityLogs' , 'customer' ] )->latest();
             return BookingResource::collection( $q->paginate() );
         }
 
         public function store(BookingRequest $request)
         {
             return DB::transaction( function () use ($request) {
-
                 $booking = Booking::create( [
-                    'customer_name'  => $request->input( 'customer_name' ) ,
-                    'customer_phone' => $request->input( 'customer_phone' ) ,
-                    'service_id'     => $request->input( 'service_id' ) ,
-                    'date'           => $request->input( 'date' ) ,
-                    'status'         => $request->input( 'status' ) ,
-                    'total'          => $request->input( 'total' ) ,
-                    'notes'          => $request->input( 'notes' ) ?? '' ,
+                    'service_id'  => $request->input( 'service_id' ) ,
+                    'customer_id' => $request->input( 'customer_id' ) ,
+                    'date'        => $request->input( 'date' ) ,
+                    'status'      => $request->input( 'status' ) ,
+                    'total'       => $request->input( 'total' ) ,
+                    'notes'       => $request->input( 'notes' ) ?? '' ,
                 ] );
 
                 $adds_ons      = json_decode( $request->adds_on , TRUE );
@@ -72,13 +70,12 @@
 
                 $status = $request->integer( 'status' );
                 $booking->update( [
-                    'customer_name'  => $request->input( 'customer_name' ) ,
-                    'customer_phone' => $request->input( 'customer_phone' ) ,
-                    'service_id'     => $request->input( 'service_id' ) ,
-                    'date'           => $request->input( 'date' ) ,
-                    'status'         => $status ,
-                    'total'          => $request->input( 'total' ) ,
-                    'notes'          => $request->input( 'notes' ) ?? '' ,
+                    'customer_id' => $request->input( 'customer_id' ) ,
+                    'service_id'  => $request->input( 'service_id' ) ,
+                    'date'        => $request->input( 'date' ) ,
+                    'status'      => $status ,
+                    'total'       => $request->input( 'total' ) ,
+                    'notes'       => $request->input( 'notes' ) ?? '' ,
                 ] );
 
                 if ( $status == BookingStatus::COMPLETED->value ) {

@@ -9,15 +9,14 @@
         public function rules() : array
         {
             return [
-                'customer_name'  => [ 'required' ] ,
-                'customer_phone' => [ 'required' ] ,
-                'service_id'     => [ 'required' , 'exists:services,id' ] ,
-                'date'           => [ 'required' , 'date' ] ,
-                'status'         => [ 'required' , 'integer' ] ,
-                'total'          => [ 'required' , 'numeric:' ] ,
-                'notes'          => [ 'required' ] ,
-                'adds_on'        => [ 'sometimes' , 'string' ] ,
-                'activity_logs'  => [ 'sometimes' , 'string' ] ,
+                'customer_id'   => [ 'required' ] ,
+                'service_id'    => [ 'required' , 'exists:services,id' ] ,
+                'date'          => [ 'required' , 'date' ] ,
+                'status'        => [ 'required' , 'integer' ] ,
+                'total'         => [ 'required' , 'numeric:' ] ,
+                'notes'         => [ 'required' ] ,
+                'adds_on'       => [ 'sometimes' , 'string' ] ,
+                'activity_logs' => [ 'sometimes' , 'string' ] ,
             ];
         }
 

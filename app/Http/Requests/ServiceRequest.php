@@ -13,7 +13,7 @@
                 'service_category_id' => [ 'required' , 'exists:service_categories,id' ] ,
                 'base_price'          => [ 'required' , 'numeric:' ] ,
                 'duration'            => [ 'sometimes' , 'string' ] ,
-                'description'         => [ 'required' ] ,
+                'description'         => [ 'sometimes' , 'string' ] ,
                 'type'                => [ 'required' , 'numeric:' ] ,
                 'status'              => [ 'required' , 'numeric:' ] ,
                 'stockConsumption'    => [ 'required' , 'string:' ] ,

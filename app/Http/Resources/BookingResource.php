@@ -11,10 +11,14 @@
     {
         public function toArray(Request $request) : array
         {
+            $user = $this->customer;
             return [
                 'id'             => $this->id ,
-                'customer_name'  => $this->customer_name ,
-                'customer_phone' => $this->customer_phone ,
+                'customer_id'    => $this->customer_id ,
+                'customer'       => [
+                    'id'   => $user?->id ,
+                    'name' => $user?->name ,
+                ] ,
                 'date'           => datetime( $this->date ) ,
                 'status'         => $this->status ,
                 'total'          => $this->total ,

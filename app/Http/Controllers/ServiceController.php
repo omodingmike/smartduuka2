@@ -17,7 +17,9 @@
         public function index(Request $request)
         {
             $paginate = $request->boolean( 'paginate' );
-            $s        = Service::with( [ 'serviceCategory' , 'items.item' , 'addOns' , 'tiers' ] )->latest();
+            $s        = Service::with( [ 'serviceCategory' , 'items.item' , 'addOns' , 'tiers' ] )
+                               ->withSum( 'addOns' , 'price' )
+                               ->latest();
             return ServiceResource::collection( $paginate ? $s->paginate() : $s->get() );
         }
 
@@ -28,8 +30,8 @@
                     'name'                => $request->input( 'name' ) ,
                     'service_category_id' => $request->input( 'service_category_id' ) ,
                     'base_price'          => $request->input( 'base_price' ) ,
-                    'duration'            => $request->input( 'duration' ) ,
-                    'description'         => $request->input( 'description' ) ,
+                    'duration'            => $request->input( 'duration' , '' ) ,
+                    'description'         => $request->input( 'description' , '' ) ,
                     'type'                => $request->input( 'type' ) ,
                     'status'              => $request->input( 'status' ) ,
                 ] );

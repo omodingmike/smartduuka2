@@ -118,3 +118,8 @@ duqihozol@gmail.com
 
 php artisan tenants:seed --class=Database\Seeders\Cashflow\MotherAccountSeeder
 php artisan migrate --path=database/migrations/2026_04_19_125831_create_tenant_subscriptions_table.php
+
+******Issues**********
+Editing booking throws an error.
+All customers.
+Adding service optional fields: Estimated duration, description
