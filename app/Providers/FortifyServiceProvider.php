@@ -32,9 +32,13 @@
             $this->app->instance( LoginResponse::class , new class implements LoginResponse {
                 public function toResponse($request) : JsonResponse
                 {
-                    $user = $request->user();
-                    $user->tokens()->where( 'name' , 'auth_token' )->delete();
-                    $token = $user->createToken( 'auth_token' )->plainTextToken;
+                    $user      = $request->user();
+                    $deviceId  = $request->header( 'X-Device-Id' , $request->ip() );
+                    $tokenName = 'auth_token_' . $deviceId;
+
+                    $user->tokens()->where( 'name' , $tokenName )->delete();
+                    $token = $user->createToken( $tokenName )->plainTextToken;
+
                     return response()->json( [
                         'two_factor'   => FALSE ,
                         'token'        => $token ,
@@ -43,6 +47,18 @@
                         'redirect_url' => $user->tenant->frontend_url . '/auto-login?token=' . $token ,
                         'tenant_url'   => $user->tenant->frontend_url ,
                     ] );
+
+//                    $user = $request->user();
+//                    $user->tokens()->where( 'name' , 'auth_token' )->delete();
+//                    $token = $user->createToken( 'auth_token' )->plainTextToken;
+//                    return response()->json( [
+//                        'two_factor'   => FALSE ,
+//                        'token'        => $token ,
+//                        'user'         => $user->toArray() ,
+//                        'tenant_id'    => $user->tenant_id ,
+//                        'redirect_url' => $user->tenant->frontend_url . '/auto-login?token=' . $token ,
+//                        'tenant_url'   => $user->tenant->frontend_url ,
+//                    ] );
                 }
             } );
         }
@@ -107,20 +123,20 @@
                 )->when( $app_id == AppID::CASHFLOW , fn($q) => $q->role( Role::ADMIN ) )
                                   ->first();
 
-                if (!$tenantUser) {
-                    $tenantUser = User::where('email', $centralUser->email)->first();
+                if ( ! $tenantUser ) {
+                    $tenantUser = User::where( 'email' , $centralUser->email )->first();
 
-                    if ($tenantUser) {
-                        $tenantUser->withoutEvents(function () use ($tenantUser, $centralUser) {
-                            $tenantUser->update([
-                                'global_id' => $centralUser->getGlobalIdentifierKey(),
-                            ]);
-                        });
+                    if ( $tenantUser ) {
+                        $tenantUser->withoutEvents( function () use ($tenantUser , $centralUser) {
+                            $tenantUser->update( [
+                                'global_id' => $centralUser->getGlobalIdentifierKey() ,
+                            ] );
+                        } );
                         $tenantUser->refresh();
                     }
                 }
 
-                if (!$tenantUser) return null;
+                if ( ! $tenantUser ) return NULL;
 
                 $tenantUser->withoutEvents( function () use ($tenantUser , $tenant) {
                     $tenantUser->update( [
