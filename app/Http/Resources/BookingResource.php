@@ -19,7 +19,7 @@
                     'id'   => $user?->id ,
                     'name' => $user?->name ,
                 ] ,
-                'date'           => datetime( $this->date ) ,
+                'date'           => $this->date->format( 'Y-m-d H:i:s') ,
                 'status'         => $this->status ,
                 'total'          => $this->total ,
                 'bookingId'      => $this->bookingId ,
