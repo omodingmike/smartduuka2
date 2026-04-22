@@ -11,6 +11,7 @@
     use App\Enums\Role;
     use App\Enums\Status;
     use App\Models\CentralUser;
+    use App\Models\Tenant;
     use App\Models\User;
     use App\Services\PinService;
     use Illuminate\Cache\RateLimiting\Limit;
@@ -110,7 +111,13 @@
 
                 if ( ! $centralUser ) return NULL;
 
-                $tenant = $centralUser->tenants()->first();
+                $host       = $request->getHost();
+                $subdomain  = explode( '.' , $host )[ 0 ];
+                $tenantSlug = Str::before( $subdomain , '-api' );
+
+                $tenant = Tenant::where( 'id' , $tenantSlug )->first();
+
+//                $tenant = $centralUser->tenants()->first();
                 if ( ! $tenant || ! $tenant->database() ) return NULL;
 
                 tenancy()->initialize( $tenant );
