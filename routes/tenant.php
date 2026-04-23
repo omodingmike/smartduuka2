@@ -92,6 +92,9 @@
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\WarehouseController;
     use App\Mail\SendEmail;
+    use App\Mail\TestMail;
+    use App\Models\Order;
+    use App\Services\OrderService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
@@ -158,8 +161,11 @@
         } );
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
+
         Route::get( 'pin' , [ LoginController::class , 'pin' ] );
         Route::get( 'order/{order}' , [ PosOrderController::class , 'show' ] );
+        Route::get( 'mail-preview' , [ PosOrderController::class , 'show' ] );
+
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
@@ -208,6 +214,8 @@
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
+
+            Route::put( 'whatsapp-quotation/{order}' , [ OrderService::class , 'sendWhatsappQuotation' ] );
 
             Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy' );
             Route::delete( 'expense-categories/delete' , [ ExpenseCategoryController::class , 'destroy' ] );
@@ -755,7 +763,7 @@
                 Route::get( '/credits' , [ PosOrderController::class , 'indexCredit' ] );
                 Route::get( '/quotations' , [ PosOrderController::class , 'indexQuotations' ] );
                 Route::get( '/export-quotation' , [ PosOrderController::class , 'exportOrder' ] );
-                Route::post( '/mail-quotation' , [ PosOrderController::class , 'mailQuotation' ] );
+                Route::put( '/mail-quotation/{order}' , [ PosOrderController::class , 'mailQuotation' ] );
                 Route::put( '/make-quotation-sale/{order}' , [ PosController::class , 'makeQuotationSale' ] );
                 Route::post( '/fulfill' , [ PosOrderController::class , 'fullFill' ] );
                 Route::post( '/fulfill-preorder/{order}' , [ PreOrderFulfillmentController::class , 'fulfill' ] );

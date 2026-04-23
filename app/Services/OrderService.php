@@ -24,6 +24,7 @@
     use App\Http\Requests\PosOrderRequest;
     use App\Http\Requests\QuotationRequest;
     use App\Http\Resources\OrderResource;
+    use App\Jobs\SendWhatsappQuotation;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
     use App\Models\Order;
@@ -1361,8 +1362,8 @@
         public function show(Order $order) : OrderResource
         {
             try {
-                return new OrderResource($order->load(
-                    [  'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] ));
+                return new OrderResource( $order->load(
+                    [ 'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] ) );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -1582,6 +1583,17 @@
                 } );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function sendWhatsappQuotation(Order $order) : JsonResponse
+        {
+            try {
+                SendWhatsappQuotation::dispatch( $order );
+                return response()->json();
+            } catch ( Exception $exception ) {
+                info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }

@@ -92,10 +92,10 @@
             }
         }
 
-        public function pdf(Request $request , Order $order)
+        public function pdf(Order $order)
         {
             $pdfExportService = new PdfExportService();
-            return $pdfExportService->exportOrder( $request->merge( [ 'id' => $order->id ] ) , TRUE );
+            return $pdfExportService->exportOrder( $order , TRUE );
         }
 
         public function destroy(Request $request) : Response | Application | ResponseFactory
@@ -117,10 +117,10 @@
             }
         }
 
-        public function exportOrder(Request $request)
+        public function exportOrder(Order $order)
         {
             $pdfExportService = new PdfExportService();
-            return $pdfExportService->exportOrder( $request );
+            return $pdfExportService->exportOrder( $order );
         }
 
         /**
@@ -143,15 +143,14 @@
             $browserShot->savePdf( storage_path( "/app/reports/$name.pdf" ) );
         }
 
-        public function mailQuotation(Request $request)
+        public function mailQuotation(Order $order)
         {
             try {
                 $pdfExportService = new PdfExportService();
-                $html             = $pdfExportService->renderHtml( $request );
-                $order            = Order::find( $request->id );
+                $html             = $pdfExportService->renderHtml( $order );
                 $this->storePDF( $html , orderName( $order ) );
-                SendInvoiceMailJob::dispatchAfterResponse( $order );
-                return response( [ 'data' => [ 'message' => 'Failed to send email' ] ] , 202 );
+                SendInvoiceMailJob::dispatch( $order );
+                return response()->json();
             } catch ( Exception $e ) {
                 return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
             }
