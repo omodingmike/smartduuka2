@@ -623,7 +623,7 @@
                                 'item_type'                   => $targetClass ,
                                 'quantity_picked'             => 0 ,
                                 'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price' ] ,
+                                'price_id'                    => $product[ 'price_id' ] ,
                                 'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
                                     RetailPrice::class ,
                                 'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
