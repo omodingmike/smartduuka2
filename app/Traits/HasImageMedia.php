@@ -23,7 +23,8 @@
         public function getImageAttribute() : string
         {
             if ( ! empty( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) ) ) {
-                return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
+                return $this->getFirstMediaUrl( $this->getMediaCollectionName() );
+//                return asset( $this->getFirstMediaUrl( $this->getMediaCollectionName() ) );
             }
             return asset( 'images/default/product/preview.png' );
         }

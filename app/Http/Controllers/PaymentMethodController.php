@@ -25,7 +25,7 @@
         public function store(StorePaymentMethodRequest $request)
         {
             $method = PaymentMethod::create( $request->validated() );
-            $this->saveMedia( $request , $method , MediaEnum::IMAGES_COLLECTION );
+            $this->saveMedia( $request , $method );
             activityLog( "Created Payment Method: $method->name" );
             return PaymentMethodResource::collection( PaymentMethod::all() );
         }
@@ -33,7 +33,7 @@
         public function update(UpdatePaymentMethodRequest $request , PaymentMethod $method)
         {
             $method->update( $request->validated() );
-            $this->saveMedia( $request , $method , MediaEnum::IMAGES_COLLECTION );
+            $this->saveMedia( $request , $method );
             activityLog( "Updated Payment Method: $method->name" );
             return PaymentMethodResource::collection( PaymentMethod::all() );
         }

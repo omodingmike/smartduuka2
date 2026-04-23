@@ -131,12 +131,13 @@
                 $prevStartDate = $startDate->copy()->subDays( $duration );
                 $prevEndDate   = $endDate->copy()->subDays( $duration );
 
-                // Sales
-                $currentSales = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
+                // Sales — total value of ALL orders placed (Cash + Credit + Deposit),
+                // matching RegisterResource $total_sales_value accrual logic.
+                $currentSales = Order::active()
                                      ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
                                      ->sum( 'total' );
 
-                $prevSales = Order::active()->where( 'payment_status' , PaymentStatus::PAID )
+                $prevSales = Order::active()
                                   ->whereBetween( 'order_datetime' , [ $prevStartDate , $prevEndDate ] )
                                   ->sum( 'total' );
 
@@ -159,7 +160,8 @@
                         if ( $monthStart->lt( $startDate ) ) $monthStart = $startDate->copy();
                         if ( $monthEnd->gt( $endDate ) ) $monthEnd = $endDate->copy();
 
-                        $salesChart[] = (float) Order::active()->where( 'payment_status' , PaymentStatus::PAID )
+                        // Sales chart: all order totals (Cash + Credit + Deposit) — matches accrual basis
+                        $salesChart[] = (float) Order::active()
                                                      ->whereBetween( 'order_datetime' , [ $monthStart , $monthEnd ] )
                                                      ->sum( 'total' );
 
@@ -175,7 +177,8 @@
                 else {
                     $period = CarbonPeriod::create( $startDate , $endDate );
                     foreach ( $period as $date ) {
-                        $salesChart[] = (float) Order::active()->where( 'payment_status' , PaymentStatus::PAID )
+                        // Sales chart: all order totals (Cash + Credit + Deposit) — matches accrual basis
+                        $salesChart[] = (float) Order::active()
                                                      ->whereDate( 'order_datetime' , $date )
                                                      ->sum( 'total' );
 
@@ -203,9 +206,15 @@
                 $prevProducts    = Product::whereBetween( 'created_at' , [ $prevStartDate , $prevEndDate ] )->count();
                 $productsChange  = $prevProducts > 0 ? ( ( $currentProducts - $prevProducts ) / $prevProducts ) * 100 : ( $currentProducts > 0 ? 100 : 0 );
 
-                // Profit & Loss
-                $income    = $currentSales;
-                $expenses  = Expense::whereBetween( 'created_at' , [ $startDate , $endDate ] )->sum( 'amount' );
+                // Profit & Loss — mirrors RegisterResource accrual logic:
+                // $income  = total sales value (all payment types)
+                // $expenses = OPERATIONAL expenses only, by expense date (not created_at)
+                // $profit  = $income - cost_of_goods  (cost not available at dashboard level, so gross = income here)
+                // $net_profit = $profit - $expenses
+                $income   = $currentSales;
+                $expenses = Expense::whereBetween( 'date' , [ $startDate , $endDate ] )
+                                   ->where( 'expense_nature' , \App\Enums\ExpenseNature::OPERATIONAL )
+                                   ->sum( 'amount' );
                 $netProfit = $income - $expenses;
                 $margin    = $income > 0 ? ( $netProfit / $income ) * 100 : 0;
 
