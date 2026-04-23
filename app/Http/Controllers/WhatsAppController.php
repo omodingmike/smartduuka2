@@ -197,29 +197,57 @@
             return $this->sendTextMessage( $session->phone_number , $text );
         }
 
-        function sendTemplateMessage(Request $request)
+        private function sendTemplate(string $to , string $templateName , array $components)
         {
-            $to         = $request->input( 'to' );
-            $template   = $request->input( 'template' );
-            $parameters = $request->input( 'parameters' );
-            $data       = [
+            $token           = config( 'whatsapp.whatsapp_access_token' );
+            $phone_number_id = config( 'whatsapp.whatsapp_phone_number_id' );
+
+            $data = [
                 'messaging_product' => 'whatsapp' ,
                 'to'                => $to ,
                 'type'              => 'template' ,
                 'template'          => [
-                    'name'       => $template ,
-                    'language'   => [
-                        'code' => 'en_UG'
-                    ] ,
-                    'components' => [
-                        [
-                            'type'       => 'body' ,
-                            'parameters' => $parameters
-                        ]
-                    ]
-                ]
+                    'name'       => $templateName ,
+                    'language'   => [ 'code' => 'en_UG' ] ,
+                    'components' => $components ,
+                ] ,
             ];
-            return $this->send( $data );
+
+            return Http::withToken( $token )
+                       ->withHeaders( [ 'Content-Type' => 'application/json' ] )
+                       ->post( "https://graph.facebook.com/v25.0/$phone_number_id/messages" , $data );
+        }
+
+        function sendTemplateMessage(Request $request)
+        {
+            try {
+                $to       = $request->input( 'to' );
+                $template = $request->input( 'template' );
+
+                // Use the provided components array, or fallback to the old 'body' wrap for backward compatibility
+                $components = $request->input( 'components' , [
+                    [
+                        'type'       => 'body' ,
+                        'parameters' => $request->input( 'parameters' , [] )
+                    ]
+                ] );
+
+                $data = [
+                    'messaging_product' => 'whatsapp' ,
+                    'to'                => $to ,
+                    'type'              => 'template' ,
+                    'template'          => [
+                        'name'       => $template ,
+                        'language'   => [
+                            'code' => 'en_UG'
+                        ] ,
+                        'components' => $components
+                    ]
+                ];
+                return $this->send( $data );
+            } catch ( ConnectionException $e ) {
+                info( $e->getMessage() );
+            }
         }
 
         protected function handleMainMenuSelection(string $text , WhatsappUserSession $session)
@@ -274,7 +302,7 @@
                        ->withHeaders( [
                            'Authorization' => "Bearer $token" ,
                            'Content-Type'  => 'application/json'
-                       ] )->post( "https://graph.facebook.com/v22.0/$phone_number_id/messages" , $data );
+                       ] )->post( "https://graph.facebook.com/v25.0/$phone_number_id/messages" , $data );
         }
 
         /**
@@ -295,7 +323,7 @@
                 $filename        = $order->user->name . ' ' . $label . '#' . $order_serial_no . '.pdf';
                 $mediaId         = $this->uploadMedia( $pdfBytes , $filename );
                 $send            = $this->sendDocument( $phone , $mediaId , $filename );
-                info($send);
+                info( $send );
             } catch ( Exception $e ) {
                 info( $e->getMessage() );
             }
@@ -309,7 +337,7 @@
 
                 $response = Http::withToken( $token )
                                 ->attach( 'file' , $pdfBytes , $filename , [ 'Content-Type' => 'application/pdf' ] )
-                                ->post( "https://graph.facebook.com/v22.0/$phone_number_id/media" , [
+                                ->post( "https://graph.facebook.com/v25.0/$phone_number_id/media" , [
                                     'messaging_product' => 'whatsapp' ,
                                     'type'              => 'application/pdf' ,
                                 ] );
@@ -344,5 +372,120 @@
             ];
 
             return $this->send( $data );
+        }
+
+
+        public function createQuotationTemplate()
+        {
+            $wabaId = config( 'whatsapp.whatsapp_business_id' );
+            $token  = config( 'whatsapp.whatsapp_access_token' );
+
+            $payload = [
+                'name'       => 'quotation_invoice' ,
+                'language'   => 'en_UG' ,
+                'category'   => 'UTILITY' ,
+                'components' => [
+                    [
+                        'type'    => 'BODY' ,
+                        'text'    => 'Hello {{1}}, here is your quotation #{{2}} for {{3}}. Please click the button below to view and approve it.' ,
+                        'example' => [
+                            'body_text' => [
+                                [
+                                    'John Doe' ,   // {{1}} Name
+                                    'QT-1045' ,    // {{2}} Serial
+                                    'UGX 150,000'  // {{3}} Price
+                                ]
+                            ]
+                        ]
+                    ] ,
+                    [
+                        'type'    => 'BUTTONS' ,
+                        'buttons' => [
+                            [
+                                'type'    => 'URL' ,
+                                'text'    => 'View Quotation' ,
+                                // Base URL ends with a slash; {{1}} is the dynamic suffix
+                                'url'     => 'https://api.smartduuka.com/q/{{1}}' ,
+                                'example' => [
+                                    'demoshop/132'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+
+            $response = Http::withToken( $token )
+                            ->withHeaders( [ 'Content-Type' => 'application/json' ] )
+                            ->post( "https://graph.facebook.com/v25.0/$wabaId/message_templates" , $payload );
+
+            info( 'Template Creation Response: ' . $response->body() );
+
+            return $response->json();
+        }
+
+        public function sendQuotationNotification(Order $quotation , string $tenant)
+        {
+            $dynamicSuffix = "{$tenant}/{$quotation->id}";
+
+            $components = [
+                [
+                    'type'       => 'body' ,
+                    'parameters' => [
+                        [ 'type' => 'text' , 'text' => (string) $quotation->user->name ] ,
+                        [ 'type' => 'text' , 'text' => (string) $quotation->order_serial_no ] ,
+                        [ 'type' => 'text' , 'text' => currency( $quotation->total ) ] ,
+                    ]
+                ] ,
+                [
+                    'type'       => 'button' ,
+                    'sub_type'   => 'url' ,
+                    'index'      => 0 ,
+                    'parameters' => [
+                        [ 'type' => 'text' , 'text' => $dynamicSuffix ]
+                    ]
+                ]
+            ];
+            info( $components );
+
+            $res = $this->sendTemplate( $quotation->user->phone , 'quotation_invoice' , $components );
+            info( $res );
+        }
+
+        public function createDocumentTemplate()
+        {
+            // Note: You must add your WABA ID to your config/whatsapp.php file.
+            // This is different from the phone_number_id.
+            $wabaId = config( 'whatsapp.whatsapp_business_id' );
+            $token  = config( 'whatsapp.whatsapp_access_token' );
+
+            $payload = [
+                'name'       => 'order_document_delivery' ,
+                'language'   => 'en_UG' ,                   // Matching your system's language code
+                'category'   => 'UTILITY' ,                 // UTILITY, MARKETING, or AUTHENTICATION
+                'components' => [
+                    // 1. The Header component specifying we will send a document
+                    [
+                        'type'   => 'HEADER' ,
+                        'format' => 'DOCUMENT'
+                    ] ,
+                    // 2. The Body component with a dynamic variable for the user's name
+                    [
+                        'type' => 'BODY' ,
+                        'text' => 'Hello {{1}}, please find your requested order document attached below.'
+                    ]
+                ]
+            ];
+
+            $response = Http::withToken( $token )
+                            ->withHeaders( [
+                                'Content-Type' => 'application/json'
+                            ] )
+                            ->post( "https://graph.facebook.com/v25.0/$wabaId/message_templates" , $payload );
+
+            // Log the response to check for success or validation errors from Meta
+            info( 'Template Creation Response: ' . $response->body() );
+
+            return $response->json();
         }
     }

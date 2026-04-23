@@ -1,6 +1,6 @@
 <?php
     return [
-        'main_menu' => [
+        'main_menu'                => [
             'message' => 'Welcome' ,
             'options' => [
                 '1' => 'Renew Subscription' ,
@@ -8,7 +8,8 @@
                 '3' => 'Upgrade Subscription' ,
             ] ,
         ] ,
-        'whatsapp_access_token'    => env('WHATSAPP_API_ACCESS_TOKEN' , '') ,
-        'whatsapp_phone_number_id' => env('WHATSAPP_API_PHONE_NUMBER_ID' , '') ,
+        'whatsapp_access_token'    => env( 'WHATSAPP_API_ACCESS_TOKEN' , '' ) ,
+        'whatsapp_phone_number_id' => env( 'WHATSAPP_API_PHONE_NUMBER_ID' , '' ) ,
+        'whatsapp_business_id'     => env( 'WHATSAPP_BUSINESS_ID' , '' ) ,
     ];
 

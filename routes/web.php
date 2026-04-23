@@ -13,6 +13,10 @@
             Route::get( '/' , function () {
                 return [ 'Laravel' => app()->version() ];
             } );
+
+            Route::get('/q/{tenant}/{quotation}', function (string $tenant, string $quotation) {
+                return redirect("https://{$tenant}.smartduuka.com/share/quotation/{$quotation}");
+            });
             Route::get( '/opcache' , function () {
                 return response()->json( opcache_get_status( FALSE ) );
             } );

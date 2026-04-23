@@ -1590,7 +1590,8 @@
         public function sendWhatsappQuotation(Order $order) : JsonResponse
         {
             try {
-                SendWhatsappQuotation::dispatch( $order );
+                $tenant = tenant( 'id' );
+                SendWhatsappQuotation::dispatch( $order , $tenant );
                 return response()->json();
             } catch ( Exception $exception ) {
                 info( $exception->getMessage() );
