@@ -170,8 +170,8 @@
             padding: 8px 10px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             /* Ensure background prints in all browsers */
-            -webkit-print-color-adjust: exact;
-            color-adjust: exact;
+            -webkit-print-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .print-table td {

@@ -158,6 +158,8 @@
         } );
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
+        Route::get( 'pin' , [ LoginController::class , 'pin' ] );
+        Route::get( 'order/{order}' , [ PosOrderController::class , 'show' ] );
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
@@ -754,6 +756,7 @@
                 Route::get( '/quotations' , [ PosOrderController::class , 'indexQuotations' ] );
                 Route::get( '/export-quotation' , [ PosOrderController::class , 'exportOrder' ] );
                 Route::post( '/mail-quotation' , [ PosOrderController::class , 'mailQuotation' ] );
+                Route::put( '/make-quotation-sale/{order}' , [ PosController::class , 'makeQuotationSale' ] );
                 Route::post( '/fulfill' , [ PosOrderController::class , 'fullFill' ] );
                 Route::post( '/fulfill-preorder/{order}' , [ PreOrderFulfillmentController::class , 'fulfill' ] );
                 Route::post( '/quotation-css-variables' , [ PosOrderController::class , 'updateCssVariables' ] );
@@ -783,6 +786,7 @@
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
                 Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
                 Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
+                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
                 Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );

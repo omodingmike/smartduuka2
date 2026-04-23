@@ -10,9 +10,10 @@
             env( 'FRONTEND_URL' ) ? ',' . parse_url( env( 'FRONTEND_URL' ) , PHP_URL_HOST ) : ''
         ) ) ) ,
 
-        'guard' => [ 'web' ] ,
+        'guard'      => [ 'web' ] ,
 
-        'expiration' => NULL ,
+//        'expiration' => NULL ,
+        'expiration' => 60 * 24 ,
         'routes'     => FALSE ,
 
         'token_prefix' => env( 'SANCTUM_TOKEN_PREFIX' , 'SD-' ) ,

@@ -78,6 +78,15 @@
             }
         }
 
+        public function quotationStatusUpdate(Order $order , Request $request)
+        {
+            try {
+                return $this->orderService->updateQuotationStatus( $order , $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function returnOrderStore(OrderReturnRequest $request)
         {
             try {
@@ -267,6 +276,15 @@
         {
             try {
                 return new OrderDetailsResource( $this->orderService->posOrderMakeSale( $request , $commissionCalculator ) );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function makeQuotationSale(Order $order , Request $request)
+        {
+            try {
+                return $this->orderService->makeQuotationSale( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

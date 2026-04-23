@@ -11,11 +11,6 @@
 
     class LocationSeed extends Seeder
     {
-        /**
-         * Location data lives in the CENTRAL database only.
-         * Tenants access it via: DB::connection('central')->table('countries')
-         * or the tenancy() helper: central()->table('countries')
-         */
         public function run(): void
         {
             $this->ensureCentralContext();

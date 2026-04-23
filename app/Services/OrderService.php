@@ -2,7 +2,6 @@
 
     namespace App\Services;
 
-    use App\Enums\Ask;
     use App\Enums\CustomerWalletTransactionType;
     use App\Enums\DefaultPaymentMethods;
     use App\Enums\OrderStatus;
@@ -27,7 +26,6 @@
     use App\Http\Resources\OrderResource;
     use App\Libraries\AppLibrary;
     use App\Models\CreditDepositPurchase;
-    use App\Models\Ingredient;
     use App\Models\Order;
     use App\Models\OrderProduct;
     use App\Models\PaymentMethod;
@@ -124,7 +122,7 @@
                                ->when( $type , function (Builder $q) use ($type) {
                                    $q->where( 'payment_type' , $type );
                                } )
-                               ->when( ($exclude && $order_type !== OrderType::QUOTATION->value) , function (Builder $q) use ($type) {
+                               ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
                                    $q->whereIn( 'payment_type' , [ $type ] );
                                } );
 
@@ -137,6 +135,17 @@
                     ->where( 'refund_status' , RefundStatus::REFUNDED->value )
                     ->sum( 'total' );
 
+                $quotations = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION->value )->get();
+                $pending    = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
+                $approved   = $quotations->where( 'quotation_status' , QuotationStatus::APPROVED )->count();
+                $rejected   = $quotations->whereIn( 'quotation_status' , [
+                    QuotationStatus::CANCELLED ,
+                    QuotationStatus::EXPIRED
+                ] )->count();
+                $total      = $quotations->count();
+
+                $conversionRate = $total > 0 ? round( ( $approved / $total ) * 100 ) : 0;
+
                 return OrderResource::collection( $orders->orderBy( $orderColumn , $orderBy )
                                                          ->paginate( $perPage , [ '*' ] , 'page' , $page ) )
                                     ->additional(
@@ -145,6 +154,10 @@
                                                 'totalSales'                  => currency( $totalSales ) ,
                                                 'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
                                                 'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
+                                                'pending'                     => $pending ,
+                                                'approved'                    => $approved ,
+                                                'rejected'                    => $rejected ,
+                                                'conversionRate'              => $conversionRate
                                             ]
                                         ] );
 
@@ -610,7 +623,7 @@
                                 'item_type'                   => $targetClass ,
                                 'quantity_picked'             => 0 ,
                                 'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price_id' ] ,
+                                'price_id'                    => $product[ 'price' ] ,
                                 'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
                                     RetailPrice::class ,
                                 'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
@@ -647,17 +660,18 @@
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }
-        public function quotationUpdate(Order $order, QuotationRequest $request) : JsonResponse
+
+        public function quotationUpdate(Order $order , QuotationRequest $request) : JsonResponse
         {
             try {
-                DB::transaction( function () use ($order, $request) {
+                DB::transaction( function () use ($order , $request) {
                     $order->update(
                         array_merge( $request->validated() , [
-                            'user_id'          => $request->customer_id ,
-                            'due_date'         => $request->expiry_date ,
-                            'order_datetime'   => $request->date ,
-                            'reason'           => $request->notes ?? $order->reason ,
-                            'warehouse_id'     => $request->warehouse_id ?? $order->warehouse_id,
+                            'user_id'        => $request->customer_id ,
+                            'due_date'       => $request->expiry_date ,
+                            'order_datetime' => $request->date ,
+                            'reason'         => $request->notes ?? $order->reason ,
+                            'warehouse_id'   => $request->warehouse_id ?? $order->warehouse_id ,
                         ] )
                     );
 
@@ -706,12 +720,11 @@
                         }
                     }
 
-                    // Update total from DB sum (optional based on how you track total)
-                    $this->order->total = $this->order->orderProducts()->sum('total');
+                    $this->order->total = $this->order->orderProducts()->sum( 'total' );
                     $this->order->save();
 
                 } );
-                return response()->json(['message' => 'Quotation updated successfully']);
+                return response()->json( [ 'message' => 'Quotation updated successfully' ] );
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
@@ -746,7 +759,7 @@
 
                     $this->order = $order;
 
-                    $this->order->order_serial_no = orderSerialNo(  $this->order);
+                    $this->order->order_serial_no = orderSerialNo( $this->order );
                     $this->order->save();
                     activity()->log( 'Created Quotation: ' . $order->order_serial_no );
 
@@ -790,7 +803,6 @@
                         }
                     }
                     $this->order->save();
-
                 } );
 
                 return response()->json();
@@ -1174,63 +1186,6 @@
             }
         }
 
-        public function availableStock(array $data) : int
-        {
-            $stocks = Stock::with( [ 'product.sellingUnits:id,code' , 'product.unit:id,code' ] )
-                           ->when( isset( $data[ 'warehouse_id' ] ) , function ($query) use ($data) {
-                               $query->where( 'warehouse_id' , $data[ 'warehouse_id' ] );
-                           } )
-                           ->when( isset( $data[ 'variation_names' ] ) , function ($query) use ($data) {
-                               $query->where( 'variation_names' , $data[ 'variation_names' ] );
-                           } )
-                           ->when( isset( $data[ 'product_id' ] ) , function ($query) use ($data) {
-                               $query->where( 'product_id' , $data[ 'product_id' ] );
-                           } )
-                           ->when( isset( $data[ 'is_variation' ] ) , function ($query) use ($data) {
-                               $query->where( 'item_type' , $data[ 'is_variation' ] ? ProductVariation::class : Product::class );
-                           } )
-                           ->where( 'status' , StockStatus::RECEIVED )
-                           ->where( function ($query) use ($data) {
-                               $query->where( 'model_type' , '<>' , Ingredient::class );
-                           } )->get();
-            if ( ! blank( $stocks ) ) {
-                if ( enabledWarehouse() ) {
-                    $stocks->groupBy( function ($item) {
-                        return $item->product_id . '-' . $item->warehouse_id;
-                    } )->map( function ($group) {
-                        $first = $group->first();
-                        if ( $first[ 'product' ] ) {
-                            $item        = [
-                                'stock'       => $first[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $group->sum( 'quantity' ) ,
-                                'other_stock' => $first[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $group->sum( 'other_quantity' ) ,
-                            ];
-                            $this->stock = $first[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 0 : $group->sum( 'quantity' );
-                            if ( $item[ 'stock' ] > 0 ) {
-                                $this->items[] = $item;
-                            }
-                        }
-                    } );
-                }
-                else {
-                    $stocks->groupBy( 'product_id' )?->map( function ($product) {
-                        $product->groupBy( 'product_id' )?->map( function ($item) {
-                            if ( $item->first()[ 'product' ] ) {
-                                $this->items[] = [
-                                    'stock'       => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $item->sum( 'quantity' ) ,
-                                    'other_stock' => $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $item->sum( 'other_quantity' ) ,
-                                ];
-                                $this->stock   = $item->first()[ 'product' ][ 'can_purchasable' ] === Ask::NO ? 'N/C' : $item->sum( 'quantity' );
-                            }
-                        } );
-                    } );
-                }
-            }
-            else {
-                $this->stock = 0;
-            }
-            return $this->stock;
-        }
-
         /**
          * @throws \Throwable
          */
@@ -1279,6 +1234,53 @@
                     }
 
                     return $order->load( [ 'orderProducts.unit' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] );
+                } );
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function makeQuotationSale(Order $order , Request $request)
+        {
+            try {
+                return DB::transaction( function () use ($request , $order) {
+
+                    $order->load( 'orderProducts' );
+
+                    foreach ( $order->orderProducts as $orderProduct ) {
+                        $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
+
+                        $is_variation = $itemType === ProductVariation::class;
+                        $item         = $itemType::find( $orderProduct->item_id );
+
+                        if ( $item->stock < $orderProduct->quantity ) {
+                            if ( $is_variation ) {
+                                $product = Product::find( $item->product_id );
+                                $name    = $product->name . ' (' . $item->productAttributeOption?->name . ')';
+                            }
+                            else {
+                                $name = $item->name;
+                            }
+                            throw new Exception( "{$name} stock not enough" );
+                        }
+
+                        $stock = Stock::where( [
+                            'item_id'      => $orderProduct->item_id ,
+                            'item_type'    => $itemType ,
+                            'status'       => StockStatus::RECEIVED ,
+                            'warehouse_id' => $order->warehouse_id
+                        ] )->first();
+                        $stock?->decrement( 'quantity' , $orderProduct->quantity );
+                    }
+
+                    $order->update( [
+                        'quotation_status' => QuotationStatus::CONVERTED ,
+                    ] );
+                    activityLog( 'Converted Quotation to sale :' . $order->order_serial_no );
+
+                    return response()->json();
                 } );
             } catch ( Exception $exception ) {
                 DB::rollBack();
@@ -1356,20 +1358,11 @@
         /**
          * @throws Exception
          */
-        public function show(Order $order , $auth = FALSE) : Order | array
+        public function show(Order $order) : OrderResource
         {
             try {
-                if ( $auth ) {
-                    if ( $order->user_id == Auth::user()->id ) {
-                        return $order->load( [ 'orderProducts.unit' , 'paymentMethod' , 'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] );
-                    }
-                    else {
-                        return [];
-                    }
-                }
-                else {
-                    return $order->load( [ 'orderProducts.unit' , 'paymentMethod' , 'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] );
-                }
+                return new OrderResource($order->load(
+                    [  'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] ));
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -1564,8 +1557,6 @@
                     $status = $request->integer( 'status' );
 
                     if ( $status == OrderStatus::CANCELED->value ) {
-//                        $order->posPayments()->delete();
-//                        $order->orderProducts()->delete();
                         foreach ( $order->orderProducts as $orderProduct ) {
                             $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
                                 ? ProductVariation::class
@@ -1587,6 +1578,39 @@
                         $order->update( [ 'status' => $status ] );
                     }
                     activityLog( "Cancelled Order: {$order->order_serial_no}" );
+                    return response()->json();
+                } );
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function updateQuotationStatus(Order $order , Request $request) : object
+        {
+            try {
+                return DB::transaction( function () use ($order , $request) {
+//                    $order->load( 'orderProducts' );
+                    $status = $request->integer( 'status' );
+
+//                    if ( $status == QuotationStatus::CONVERTED->value ) {
+//                        foreach ( $order->orderProducts as $orderProduct ) {
+//                            $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
+//
+//                            $stock = Stock::where( [
+//                                'item_id'      => $orderProduct->item_id ,
+//                                'item_type'    => $itemType ,
+//                                'status'       => StockStatus::RECEIVED ,
+//                                'warehouse_id' => $order->warehouse_id
+//                            ] )->first();
+//                            $stock?->increment( 'quantity' , $orderProduct->quantity );
+//                        }
+//                    }
+
+                    $order->update( [ 'quotation_status' => $status ] );
+
+                    activityLog( "Updated Quotation Status: {$order->order_serial_no}" );
+
                     return response()->json();
                 } );
             } catch ( Exception $exception ) {

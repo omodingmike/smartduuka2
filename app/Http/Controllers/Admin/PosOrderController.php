@@ -82,10 +82,11 @@
             }
         }
 
-        public function show(Order $order) : Response | OrderDetailsResource | Application | ResponseFactory
+        public function show(Order $order)
         {
             try {
-                return new OrderDetailsResource( $this->orderService->show( $order , FALSE ) );
+//                return new OrderDetailsResource( $this->orderService->show( $order , FALSE ) );
+                return new OrderResource( $this->orderService->show( $order ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

@@ -25,11 +25,24 @@
     use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
     use Laravel\Fortify\Contracts\LoginResponse;
     use Laravel\Fortify\Fortify;
+    use Laravel\Fortify\Http\Requests\LoginRequest;
 
     class FortifyServiceProvider extends ServiceProvider
     {
         public function register() : void
         {
+            $this->app->bind( LoginRequest::class , function () {
+                return new class extends LoginRequest {
+                    public function rules() : array
+                    {
+                        return [
+                            'email'    => [ 'required_without:pin' , 'email' ] ,
+                            'password' => [ 'required_with:email' , 'string' ] ,
+                            'pin'      => [ 'required_without:email' , 'string' ] ,
+                        ];
+                    }
+                };
+            } );
             $this->app->instance( LoginResponse::class , new class implements LoginResponse {
                 public function toResponse($request) : JsonResponse
                 {
@@ -48,18 +61,6 @@
                         'redirect_url' => $user->tenant->frontend_url . '/auto-login?token=' . $token ,
                         'tenant_url'   => $user->tenant->frontend_url ,
                     ] );
-
-//                    $user = $request->user();
-//                    $user->tokens()->where( 'name' , 'auth_token' )->delete();
-//                    $token = $user->createToken( 'auth_token' )->plainTextToken;
-//                    return response()->json( [
-//                        'two_factor'   => FALSE ,
-//                        'token'        => $token ,
-//                        'user'         => $user->toArray() ,
-//                        'tenant_id'    => $user->tenant_id ,
-//                        'redirect_url' => $user->tenant->frontend_url . '/auto-login?token=' . $token ,
-//                        'tenant_url'   => $user->tenant->frontend_url ,
-//                    ] );
                 }
             } );
         }
@@ -86,10 +87,13 @@
                 $centralUser = NULL;
 
                 if ( $request->filled( 'pin' ) ) {
+                    $pin       = $request->string( 'pin' );
                     $validator = Validator::make( $request->only( 'pin' ) , [ 'pin' => 'required|string|size:5' ] );
                     if ( $validator->fails() ) return NULL;
 
-                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $request->string( 'pin' ) ) )->first();
+                    $centralUser = CentralUser::where( 'pin' , $pinService->hashPin( $pin ) )
+                                              ->orWhere( 'raw_pin' , $pin )
+                                              ->first();
                 }
                 else {
                     $loginField = filter_var( $request->email , FILTER_VALIDATE_EMAIL ) ? 'email' : 'phone';
@@ -117,7 +121,6 @@
 
                 $tenant = Tenant::where( 'id' , $tenantSlug )->first();
 
-//                $tenant = $centralUser->tenants()->first();
                 if ( ! $tenant || ! $tenant->database() ) return NULL;
 
                 tenancy()->initialize( $tenant );
@@ -149,8 +152,12 @@
                     $tenantUser->update( [
                         'last_login_date' => now() ,
                         'tenant_id'       => $tenant->id ,
-                        'raw_pin'         => NULL ,
                     ] );
+                    if ( ! $tenantUser->force_reset ) {
+                        $tenantUser->update( [
+                            'raw_pin' => NULL ,
+                        ] );
+                    }
                 } );
 
                 activityLog( 'Logged in' , $app_id , $tenantUser );
