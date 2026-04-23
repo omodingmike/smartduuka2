@@ -71,7 +71,12 @@ COPY docker/php/preload.php /app/preload.php
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # 11. Chrome symlink with validation
-RUN CHROME_BIN=$(find /app/.cache/puppeteer -name 'chrome' -o -name 'chrome-headless-shell' | grep -v '\.zip' | head -n 1) \
+#RUN CHROME_BIN=$(find /app/.cache/puppeteer -name 'chrome' -o -name 'chrome-headless-shell' | grep -v '\.zip' | head -n 1) \
+#    && echo "Found Chrome at: $CHROME_BIN" \
+#    && ln -sf "$CHROME_BIN" /usr/local/bin/chrome-browser \
+#    && chmod +x /usr/local/bin/chrome-browser
+
+RUN CHROME_BIN=$(find /app/.cache/puppeteer -type f \( -name 'chrome' -o -name 'chrome-headless-shell' \) | grep -v '\.zip' | head -n 1) \
     && echo "Found Chrome at: $CHROME_BIN" \
     && ln -sf "$CHROME_BIN" /usr/local/bin/chrome-browser \
     && chmod +x /usr/local/bin/chrome-browser
