@@ -74,6 +74,7 @@
          */
         public function list(Request $request)
         {
+            info( $request->all() );
             try {
                 $orderColumn    = $request->input( 'order_column' ) ?? 'id';
                 $orderBy        = $request->input( 'order_by' ) ?? 'desc';
@@ -88,7 +89,7 @@
                 $report         = $request->string( 'report' );
                 $exclude        = $request->integer( 'exclude' );
                 $query          = $query ? trim( $query ) : NULL;
-                $type           = $request->integer( 'type' ) ?? PaymentType::CASH->value;
+                $type           = $request->integer( 'type' );
 
                 $orders = Order::with( [
                     'orderProducts.item' => function ($query) {
@@ -122,10 +123,16 @@
                                } )
                                ->when( $type , function (Builder $q) use ($type) {
                                    $q->where( 'payment_type' , $type );
+//                                     ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED );
                                } )
                                ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
                                    $q->whereIn( 'payment_type' , [ $type ] );
                                } );
+
+//                if ( $type == PaymentType::CASH ) {
+//                    $orders->where( 'payment_type' , $type )
+//                           ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED );
+//                }
 
                 $baseQuery                = clone $orders;
                 $totalSales               = $baseQuery->sum( 'total' );
@@ -1278,6 +1285,7 @@
 
                     $order->update( [
                         'quotation_status' => QuotationStatus::CONVERTED ,
+//                        'status'           => OrderStatus::COMPLETED ,
                     ] );
                     activityLog( 'Converted Quotation to sale :' . $order->order_serial_no );
 
@@ -1605,6 +1613,17 @@
                 return DB::transaction( function () use ($order , $request) {
 //                    $order->load( 'orderProducts' );
                     $status = $request->integer( 'status' );
+                    if ( $status == QuotationStatus::COUNTER_OFFER->value ) {
+                        $order->update( [
+                            'offer_amount'  => $request->amount ,
+                            'offer_message' => $request->message ,
+                        ] );
+                    }
+                    if ( $status == QuotationStatus::CANCELLED->value ) {
+                        $order->update( [
+                            'decline_message' => $request->reason ,
+                        ] );
+                    }
 
 //                    if ( $status == QuotationStatus::CONVERTED->value ) {
 //                        foreach ( $order->orderProducts as $orderProduct ) {

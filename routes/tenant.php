@@ -165,6 +165,7 @@
         Route::get( 'pin' , [ LoginController::class , 'pin' ] );
         Route::get( 'order/{order}' , [ PosOrderController::class , 'show' ] );
         Route::get( 'mail-preview' , [ PosOrderController::class , 'show' ] );
+        Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] );
 
         Route::get( 'site' , [ SiteController::class , 'index' ] );
 
@@ -794,7 +795,7 @@
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
                 Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
                 Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
-                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
+//                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
                 Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );

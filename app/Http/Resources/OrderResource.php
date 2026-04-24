@@ -39,6 +39,9 @@
                 'payment_status'                 => [ 'label' => $this->payment_status?->label() , 'value' => $this->payment_status?->value ] ,
                 'discount'                       => AppLibrary::currencyAmountFormat( $this->discount ) ,
                 'paid'                           => $this->paid ,
+                'offer_message'                  => $this->offer_message ,
+                'offer_amount'                   => $this->offer_amount ,
+                'decline_message'                => $this->decline_message ,
                 'quotation_status'               => $this->quotation_status ,
                 'net_paid'                       => $this->net_paid ,
                 'last_paid'                      => $last_paid ? [

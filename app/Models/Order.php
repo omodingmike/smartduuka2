@@ -57,7 +57,10 @@
             'warehouse_id' ,
             'pre_order_status' , 'active' , 'user_type' , 'editor_type' , 'editor_id' , 'delivery_address' , 'delivery_fee' , 'refund_status' , 'return_status' , 'return_type' , 'original_order_id' ,
             'is_returned' ,
-            'quotation_status'
+            'quotation_status' ,
+            'offer_amount' ,
+            'offer_message' ,
+            'decline_message'
         ];
 
         protected $casts = [
