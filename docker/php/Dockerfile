@@ -81,13 +81,13 @@ COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 #    && ln -sf "$CHROME_BIN" /usr/local/bin/chrome-browser \
 #    && chmod +x /usr/local/bin/chrome-browser
 
-#RUN CHROME_BIN=$(find /app/.cache/puppeteer -type f \( -name 'chrome' -o -name 'chrome-headless-shell' \) | grep -v '\.zip' | head -n 1) \
-#    && echo "Found Chrome at: $CHROME_BIN" \
-#    && printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage "$@"\n' "$CHROME_BIN" \
-#        > /usr/local/bin/chrome-browser \
-#    && chmod +x /usr/local/bin/chrome-browser
-
 RUN CHROME_BIN=$(find /app/.cache/puppeteer -type f -name 'chrome' | grep -v '\.zip' | head -n 1) \
+    && echo "Found Chrome at: $CHROME_BIN" \
+    && printf '#!/bin/sh\nexec "%s" --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage "$@"\n' "$CHROME_BIN" \
+        > /usr/local/bin/chrome-browser \
+    && chmod +x /usr/local/bin/chrome-browser
+
+RUN #CHROME_BIN=$(find /app/.cache/puppeteer -type f -name 'chrome' | grep -v '\.zip' | head -n 1) \
 
 USER www-data
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
