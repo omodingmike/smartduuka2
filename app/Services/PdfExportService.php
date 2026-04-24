@@ -50,7 +50,12 @@
                                ->format( 'A4' )
                                ->scale( 0.95 )
                                ->margins( 0 , 0 , 0 , 0 )
-                               ->noSandbox();;
+                               ->noSandbox()
+                               ->addChromiumArguments( [
+                                   'no-sandbox' ,
+                                   'disable-setuid-sandbox' ,
+                                   'disable-dev-shm-usage' ,
+                               ] );
             if ( config( 'app.chrome_path' ) ) {
                 $data->setChromePath( config( 'app.chrome_path' ) );
             }
