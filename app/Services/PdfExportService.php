@@ -49,7 +49,8 @@
                                ->showBackground()
                                ->format( 'A4' )
                                ->scale( 0.95 )
-                               ->margins( 0 , 0 , 0 , 0 );
+                               ->margins( 0 , 0 , 0 , 0 )
+                               ->noSandbox();;
             if ( config( 'app.chrome_path' ) ) {
                 $data->setChromePath( config( 'app.chrome_path' ) );
             }
