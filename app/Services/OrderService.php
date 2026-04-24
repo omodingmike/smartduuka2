@@ -553,13 +553,13 @@
                         ]
                     );
 
-
                     if ( $is_preorder ) {
                         $order->update( [ 'pre_order_status' => PreOrderStatus::PENDING_STOCK ] );
                     }
                     if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
 
                     $this->order = $order;
+
                     if ( $delivery_address ) {
                         $this->order->delivery_address = $delivery_address;
                     }
@@ -1254,8 +1254,10 @@
         {
             try {
                 return DB::transaction( function () use ($request , $order) {
-
                     $order->load( 'orderProducts' );
+                    $status = $request->integer( 'status' );
+
+                    $paymentType = $request->integer( 'paymentType' );
 
                     foreach ( $order->orderProducts as $orderProduct ) {
                         $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
@@ -1283,12 +1285,50 @@
                         $stock?->decrement( 'quantity' , $orderProduct->quantity );
                     }
 
+                    activityLog( 'Converted Quotation to sale :' . $order->order_serial_no );
+                    $user   = $order->user;
+                    $ledger = NULL;
+                    if ( $paymentType == PaymentType::CREDIT->value || $paymentType == PaymentType::DEPOSIT->value ) {
+                        $ledger = addToLedger( user: $user , reference: 'Quotation converted' , bill_amount: $order->total , paid: 0 );
+                    }
+                    $payments = json_decode( $request->payments , TRUE );
+
+                    $paymentStatus = match ( $status ) {
+                        SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
+                        default                         => PaymentStatus::UNPAID
+                    };
+
+                    if ( $status == SaleOrderType::DEPOSIT->value ) {
+                        $paymentStatus = PaymentStatus::PARTIALLY_PAID;
+                    }
+
                     $order->update( [
                         'quotation_status' => QuotationStatus::CONVERTED ,
-//                        'status'           => OrderStatus::COMPLETED ,
+                        'status'           => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
+                        'payment_status'   => $paymentStatus
                     ] );
-                    activityLog( 'Converted Quotation to sale :' . $order->order_serial_no );
+                    if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
 
+                    foreach ( $payments as $p ) {
+                        $amount     = $p[ 'amount' ];
+                        $net_amount = $amount;
+                        if ( $amount > 0 ) {
+                            $payment = PaymentMethod::find( $p[ 'id' ] );
+                            if ( $ledger ) {
+                                $ledger->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
+                            }
+                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
+                            if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
+                                addToCustomerWalletTransaction(
+                                    $user ,
+                                    -$net_amount ,
+                                    CustomerWalletTransactionType::PURCHASE ,
+                                    $payment->id ,
+                                    $order->order_serial_no
+                                );
+                            }
+                        }
+                    }
                     return response()->json();
                 } );
             } catch ( Exception $exception ) {

@@ -220,7 +220,7 @@
 
                 return [
                     'sales'       => [
-                        'value'  => AppLibrary::currencyAmountFormat( $currentSales ) ,
+                        'value'  => currency( $currentSales ) ,
                         'change' => round( $salesChange , 1 ) ,
                         'chart'  => $salesChart
                     ] ,

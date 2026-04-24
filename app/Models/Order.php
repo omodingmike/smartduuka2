@@ -129,11 +129,13 @@
                         ->orWhereNull( 'pre_order_status' );
                   } )
                   ->where( function (Builder $q) {
-                      $q->where( 'status' , '!=' , OrderStatus::CANCELED )
-                        ->orWhereNull( 'status' );
+                      $q->where( 'status' , '=' , OrderStatus::COMPLETED )
+//                        ->orWhereNull( 'status' )
+                      ;
                   } );
         }
 
+//    ->where( 'quotation_status' , QuotationStatus::CONVERTED )
 
         public function stocks() : MorphMany
         {
