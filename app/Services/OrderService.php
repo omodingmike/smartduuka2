@@ -77,7 +77,7 @@
         /**
          * @throws Exception
          */
-        public function list(Request $request)
+        public function list1(Request $request)
         {
             try {
                 $orderColumn    = $request->input( 'order_column' ) ?? 'id';
@@ -103,6 +103,7 @@
                     'creator' ,
                     'paymentMethods.paymentMethod' ,
                     'originalOrder' ,
+                    'posPayments'        => fn($q) => $q->latest() ,
                     'posPayments.paymentMethod'
                 ] )->when( $query , function (Builder $q) use ($query) {
                     $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
@@ -159,6 +160,111 @@
                         return $product->unit_price * $product->quantity;
                     } );
 
+                    return $order;
+                } );
+
+                return OrderResource::collection( $paginatedOrders )
+                                    ->additional( [
+                                        'meta' => [
+                                            'totalSales'                  => currency( $totalSales ) ,
+                                            'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
+                                            'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
+                                            'pending'                     => $pending ,
+                                            'approved'                    => $approved ,
+                                            'rejected'                    => $rejected ,
+                                            'conversionRate'              => $conversionRate
+                                        ]
+                                    ] );
+
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+        public function list(Request $request)
+        {
+            try {
+                $orderColumn    = $request->input( 'order_column' ) ?? 'id';
+                $orderBy        = $request->input( 'order_by' ) ?? 'desc';
+                $page           = $request->input( 'page' ) ?? 1;
+                $per_page       = $request->input( 'per_page' ) ?? 10;
+                $status         = $request->integer( 'status' );
+                $payment_status = $request->integer( 'payment_status' );
+                $order_type     = $request->integer( 'order_type' );
+                $query          = $request->input( 'query' );
+                $start          = $request->date( 'start' );
+                $end            = $request->date( 'end' );
+                $report         = $request->string( 'report' );
+                $exclude        = $request->integer( 'exclude' );
+                $query          = $query ? trim( $query ) : NULL;
+                $type           = $request->integer( 'type' );
+
+                $orders = Order::select('orders.*')
+                               ->with([
+                    'orderProducts.item' => function ($q) {
+                        $q->withTrashed();
+                    },
+                    'user',
+                    'creator',
+                    'paymentMethods.paymentMethod',
+                    'originalOrder',
+                    // 2. FIX: Combine sorting and nested relationships in ONE place
+                    'posPayments' => fn($q) => $q->latest(),
+                    'posPayments.paymentMethod'
+                ])
+                               ->withSum('posPayments as calculated_net_paid', 'amount')
+                               ->withSum('orderProducts as calculated_new_total', DB::raw('unit_price * quantity'))
+                               ->when( $query , function (Builder $q) use ($query) {
+                                   $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
+                                     ->orWhere( 'id' , 'ilike' , "%$query%" )
+                                     ->orWhereHas( 'user' , function ($q) use ($query) {
+                                         $q->where( 'name' , 'ilike' , "%$query%" );
+                                     } );
+                               } )
+                               ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
+                                   $q->where( 'payment_status' , $payment_status );
+                               } )
+                               ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
+                                   $q->where( 'status' , $status );
+                               } )
+                               ->when( ( $report == 'sales' ) , function (Builder $q) {
+                                   $q->where( 'status' , '<>' , OrderStatus::CANCELED );
+                               } )
+                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
+                               } )
+                               ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
+                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
+                               } )
+                               ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
+                                   $q->where( 'order_type' , $order_type );
+                               } )
+                               ->when( $type , function (Builder $q) use ($type) {
+                                   $q->where( 'payment_type' , $type );
+                               } )
+                               ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
+                                   $q->whereIn( 'payment_type' , [ $type ] );
+                               } );
+
+                $baseQuery                = clone $orders;
+                $totalSales               = $baseQuery->sum( 'total' );
+                $totalPendingReturnOrders = ( clone $baseQuery )->where( 'return_status' , ReturnStatus::PENDING->value )->sum( 'total' );
+                $totalPendingRefundOrders = ( clone $baseQuery )->where( 'refund_status' , RefundStatus::REFUNDED->value )->sum( 'total' );
+
+                $quotations     = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION )->get();
+                $pending        = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
+                $approved       = $quotations->where( 'quotation_status' , QuotationStatus::CONVERTED )->count();
+                $rejected       = $quotations->whereIn( 'quotation_status' , [ QuotationStatus::CANCELLED , QuotationStatus::EXPIRED ] )->count();
+                $total          = $quotations->count();
+                $conversionRate = $total > 0 ? round( ( $approved / $total ) * 100 ) : 0;
+
+                $paginatedOrders = $orders->orderBy( $orderColumn , $orderBy )
+                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
+
+                $paginatedOrders->getCollection()->transform( function ($order) {
+                    $order->calculated_last_paid = $order->posPayments->first();
+                    $order->net_paid = $order->calculated_net_paid ?? 0;
+                    $order->calculated_new_total = $order->calculated_new_total ?? 0;
                     return $order;
                 } );
 

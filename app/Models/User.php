@@ -32,13 +32,6 @@
 
         protected $table = 'users';
 
-        // -------------------------------------------------------------------------
-        // FIX 1: Removed virtual/computed fields from $fillable.
-        // Fields like `average_order_value`, `credits`, `wallet`, `total_revenue`,
-        // `credit_orders`, `sales` are derived — storing them as columns leads to
-        // stale data. Remove from fillable; compute on demand or via a nightly job.
-        // Also removed `registerMediaConversionsUsingModelInstance` (a method name).
-        // -------------------------------------------------------------------------
         protected $fillable = [
             'name' ,
             'email' ,
@@ -97,10 +90,6 @@
             'force_reset'       => 'boolean' ,
             'is_reset'          => 'boolean' ,
         ];
-
-        // =========================================================================
-        // TENANCY / SYNC
-        // =========================================================================
 
         public function getGlobalIdentifierKey()
         {
@@ -163,15 +152,6 @@
             return $this->hasMany( CommissionPayout::class , 'user_id' , 'id' );
         }
 
-        // -------------------------------------------------------------------------
-        // FIX 2: orders() base relation should NOT filter by status.
-        // Filtering in the base relation breaks aggregates (sum/avg) silently —
-        // you get partial totals without realising it. Use a named scope instead,
-        // and apply it explicitly where needed.
-        //
-        // Required index (add via migration):
-        //   $table->index(['user_id', 'status', 'order_datetime']);
-        // -------------------------------------------------------------------------
         public function orders() : HasMany
         {
             return $this->hasMany( Order::class , 'user_id' , 'id' );
@@ -381,12 +361,18 @@
             );
         }
 
-        protected function wallet() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
-            );
-        }
+//        protected function wallet() : Attribute
+//        {
+//            return Attribute::make(
+//                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
+//            );
+//        }
+//        protected function wallet() : Attribute
+//        {
+//            return Attribute::make(
+//                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
+//            );
+//        }
 
         protected function oldestCreditOrder() : Attribute
         {
@@ -401,17 +387,6 @@
                 }
             );
         }
-
-        // =========================================================================
-        // PER-REQUEST MEMOISATION HELPER
-        // -------------------------------------------------------------------------
-        // FIX 9: All expensive computed attributes are memoised for the duration
-        // of the request using a simple instance-level array. This means if you
-        // access $user->credits twice in one request, the DB is only hit once.
-        //
-        // Bust the memo cache on save so stale values are never returned after
-        // an update in the same request lifecycle.
-        // =========================================================================
 
         private array $_memo = [];
 

@@ -20,7 +20,6 @@
                     return $this->creditAndDeposit
                         ->sortByDesc( 'id' )
                         ->map( function ($order) {
-                            // Read directly from the DB-computed attributes (default to 0 if null)
                             $paid       = $order->total_paid ?? 0;
                             $itemsCount = $order->items_count ?? 0;
 

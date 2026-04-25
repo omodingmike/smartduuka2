@@ -52,6 +52,11 @@
                                               ->whereColumn( 'orders.user_id' , 'users.id' )
                                               ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' )
                        ] )
+                       ->withSum( 'walletTransactions as wallet' , 'amount' )
+                       ->withCount( [ 'orders as order_count' => function ($query) {
+                           $query->active();
+                       }
+                       ] )
                        ->with( [
                            'media' ,
                            'legacyDebts' ,
@@ -88,17 +93,35 @@
             $query    = $request->input( 'query' );
             $paginate = $request->boolean( 'paginate' , TRUE );
             $per_page = $request->integer( 'per_page' , 10 );
+            $page     = $request->integer( 'page' , 1 );
+            $debtors  = $request->boolean( 'debtors' );
 
-            $customers = User::role( EnumRole::CUSTOMER )
+            $customers = User::select( 'users.*' )
+                             ->role( EnumRole::CUSTOMER )
+                             ->addSelect( [
+                                 'total_spent' => DB::table( 'pos_payments' )
+                                                    ->join( 'orders' , 'orders.id' , '=' , 'pos_payments.order_id' )
+                                                    ->whereColumn( 'orders.user_id' , 'users.id' )
+                                                    ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' )
+                             ] )
+                             ->withCount( [ 'orders as order_count' => function ($query) {
+                                 $query->active();
+                             }
+                             ] )
+                             ->with( [ 'debtPayments.paymentMethod' , 'ledgers' ] )
+                             ->when( $debtors , function ($q) {
+                                 $q->where( function ($query) {
+                                     $query->whereHas( 'creditOrdersQuery' )
+                                           ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
+                                               $legacyQuery->where( 'amount' , '>' , 0 );
+                                           } );
+                                 } );
+                             } )
                              ->withSum( 'walletTransactions as wallet_sum' , 'amount' )
-                             ->withSum( [
-                                 'payments as total_paid' => fn($q) => $q->where( 'customer_payment_type' , CustomerPaymentType::DEBT ) ,
-                             ] , 'amount' )
                              ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
-                             ->select( [ 'id' , 'name' , 'email' , 'phone' , 'type' , 'status' , 'created_at' ] )
                              ->orderByDesc( 'created_at' );
 
-            $result = $paginate ? $customers->paginate( $per_page ) : $customers->get();
+            $result = $paginate ? $customers->paginate( perPage: $per_page , page: $page ) : $customers->get();
 
             return SimpleCustomerResource::collection( $result );
         }

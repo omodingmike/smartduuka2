@@ -15,8 +15,8 @@
         public function toArray($request) : array
         {
 
-            $last_paid = $this->calculated_last_paid ?? NULL;
             $new_total = $this->calculated_new_total ?? 0;
+            $last_paid = $this->posPayments()?->latest()?->first();
 
             return [
                 'id'                => $this->id ,
@@ -29,6 +29,11 @@
                 'original_order_id' => $this->original_order_id && $this->relationLoaded( 'originalOrder' )
                     ? $this->originalOrder->order_serial_no
                     : NULL ,
+                'last_paid'                      => $last_paid ? [
+                    'amount'           => currency( $last_paid?->amount ?? 0 ) ,
+                    'previous_balance' => currency( $this->balance + ( $last_paid?->amount ?? 0 ) ) ,
+                    'method'           => $last_paid->paymentMethod
+                ] : NULL ,
 
                 'return_status'        => $this->return_status ,
                 'return_type'          => $this->return_type ,
@@ -47,15 +52,6 @@
                 'decline_message'      => $this->decline_message ,
                 'quotation_status'     => $this->quotation_status ,
                 'net_paid'             => $this->net_paid ,
-
-                'last_paid' => $last_paid ? [
-                    'amount'           => currency( $last_paid->amount ?? 0 ) ,
-                    'previous_balance' => currency( $this->balance + ( $last_paid->amount ?? 0 ) ) ,
-                    // Ensure paymentMethod relation is also loaded to prevent N+1 here
-                    'method'           => $this->relationLoaded( 'posPayments' ) && $last_paid->relationLoaded( 'paymentMethod' )
-                        ? $last_paid->paymentMethod
-                        : NULL
-                ] : NULL ,
 
                 'net_paid_currency' => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
                 'paid_currency'     => AppLibrary::currencyAmountFormat( $this->paid ) ,

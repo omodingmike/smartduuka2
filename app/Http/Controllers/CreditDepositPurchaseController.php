@@ -89,7 +89,17 @@
         public function payDebt(Request $request , Order $order)
         {
             return DB::transaction( function () use ($order , $request) {
-                $amount     = $request->integer( 'amount' );
+                $amount = $request->integer( 'amount' );
+                $order->load( [
+                    'orderProducts.item' => function ($query) {
+                        $query->withTrashed();
+                    } ,
+                    'user' ,
+                    'creator' ,
+                    'paymentMethods.paymentMethod' ,
+                    'originalOrder' ,
+                    'posPayments.paymentMethod'
+                ] );
                 $net_amount = $amount;
                 if ( $amount > 0 ) {
                     $payment = PaymentMethod::find( $request->integer( 'payment_method' ) );
