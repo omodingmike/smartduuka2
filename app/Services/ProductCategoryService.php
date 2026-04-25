@@ -78,7 +78,7 @@
         {
             try {
                 $requests    = $request->all();
-                $perPage     = $request->get( 'perPage' , 10 );
+                $per_page      = $request->get( 'per_page' , 10 );
                 $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
@@ -99,7 +99,7 @@
                                                   }
                                               }
                                           }
-                                      } )->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
+                                      } )->orderBy( $orderColumn , $orderType )->paginate( perPage: $per_page , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

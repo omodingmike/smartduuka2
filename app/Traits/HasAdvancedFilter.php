@@ -26,7 +26,7 @@
                 $filters      = $request->input( 'filters' ) ? json_decode( $request->input( 'filters' ) , TRUE ) : [];
                 $sorts        = $request->input( 'sort' ) ? json_decode( $request->input( 'sort' ) , TRUE ) : [];
                 $page         = $request->input( 'page' , 1 );
-                $perPage      = $request->input( 'perPage' , 10 );
+                $per_page       = $request->input( 'per_page' , 10 );
                 $joinOperator = $request->input( 'joinOperator' , 'and' );
 
                 $query = $queryOrModel instanceof Model
@@ -103,7 +103,7 @@
                         }
                     }
                 }
-                return $query->paginate( $perPage , [ '*' ] , 'page' , $page );
+                return $query->paginate( $per_page , [ '*' ] , 'page' , $page );
 
             } catch ( \Exception $exception ) {
                 throw new HttpResponseException(

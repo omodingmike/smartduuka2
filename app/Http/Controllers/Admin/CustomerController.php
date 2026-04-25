@@ -43,12 +43,12 @@
         ) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                $perPage       = $request->integer( 'perPage' );
+                $per_page        = $request->integer( 'per_page' );
                 $customerQuery = $this->customerService->list( $request );
                 $totalCredit   = ( clone $customerQuery )->get()->sum( 'credits' );
-                if ( $perPage > 0 ) {
+                if ( $per_page > 0 ) {
                     $customers = $customerQuery->paginate(
-                        perPage: $request->input( 'perPage' , 10 ) ,
+                        perPage: $request->input( 'per_page' , 10 ) ,
                         page: $request->input( 'page' , 1 )
                     );
                 }
@@ -198,9 +198,9 @@
         public function debtPayments(Request $request)
         {
             $page     = $request->integer( 'page' , 1 );
-            $perPage  = $request->integer( 'perPage' , 15 );
+            $per_page   = $request->integer( 'per_page' , 15 );
             $payments = CustomerPayment::where( 'customer_payment_type' , CustomerPaymentType::DEBT )
-                                       ->paginate( perPage: $perPage , page: $page );
+                                       ->paginate( perPage: $per_page , page: $page );
             return CustomerPaymentResource::collection( $payments );
         }
 

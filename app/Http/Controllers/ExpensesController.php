@@ -35,7 +35,7 @@
                 $category    = $request->category;
                 $query       = $request->input( 'query' );
                 $page        = $request->get( 'page' ) ?? 1;
-                $perPage     = $request->get( 'perPage' ) ?? 10;
+                $per_page      = $request->get( 'per_page' ) ?? 10;
 
                 $data = Expense::with( [ 'expenseCategory' , 'payments' ] )
                                ->when( $from_date && ! $to_date , function ($query) use ($from_date) {
@@ -50,7 +50,7 @@
                                } )
                                ->when( is_numeric( $category ) , function ($query) use ($category) {
                                    $query->where( 'expense_category_id' , $category );
-                               } )->orderBy( $orderColumn , $orderType )->paginate( $perPage , [ '*' ] , 'page' , $page );
+                               } )->orderBy( $orderColumn , $orderType )->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 return ExpenseResource::collection( $data );
             } catch ( Exception $exception ) {
@@ -67,7 +67,7 @@
                 $category  = $request->category;
                 $query     = $request->input( 'query' );
                 $page      = $request->get( 'page' ) ?? 1;
-                $perPage   = $request->get( 'perPage' ) ?? 10;
+                $per_page    = $request->get( 'per_page' ) ?? 10;
 
                 $expenses = Expense::query()
                                    ->select( 'expense_category_id' )
@@ -90,7 +90,7 @@
                                    ->groupBy( 'expense_category_id' )
                                    ->with( 'expenseCategory' )
                                    ->orderByDesc( 'amount' )
-                                   ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                                   ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 return $expenses->through( function ($row) {
                     return [
@@ -115,7 +115,7 @@
                 $category  = $request->category;
                 $query     = $request->input( 'query' );
                 $page      = $request->get( 'page' ) ?? 1;
-                $perPage   = $request->get( 'perPage' ) ?? 10;
+                $per_page    = $request->get( 'per_page' ) ?? 10;
 
                 $expenses = ExpensePayment::query()
                                           ->select( 'payment_method_id' )
@@ -137,7 +137,7 @@
                                           ->groupBy( 'payment_method_id' )
                                           ->with( 'method' )
                                           ->orderByDesc( 'total' )
-                                          ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 return $expenses->through( function ($row) {
                     return [

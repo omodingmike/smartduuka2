@@ -767,7 +767,7 @@
                     }
                 } )->get();
 
-                $perPage     = $request->post( 'per_page' , 30 );
+                $per_page      = $request->post( 'per_page' , 30 );
                 $orderColumn = 'products.name';
                 $orderType   = 'asc';
                 if ( $request->post( 'sort_by' ) == 'newest' ) {
@@ -855,7 +855,7 @@
                         if ( $request->min_price >= 0 && $request->max_price > 0 ) {
                             $query->whereBetween( 'variation_price' , [ $request->min_price , $request->max_price ] );
                         }
-                    } )->paginate( $perPage );
+                    } )->paginate( $per_page );
 
                 $variations = $productCategory->map( function ($query) {
                     return $query->variations;

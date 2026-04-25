@@ -30,15 +30,15 @@
         {
             try {
                 $page        = $request->integer( 'page' , 1 );
-                $perPage     = $request->integer( 'perPage' );
+                $per_page      = $request->integer( 'per_page' );
                 $orderColumn = $request->input( 'order_column' ) ?? 'id';
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
                 $query = User::with( [ 'media' ] )
                              ->role( EnumRole::ADMIN )
                              ->orderBy( $orderColumn , $orderType );
-                if ( $perPage ) {
-                    return $query->paginate( perPage: $perPage , page: $page );
+                if ( $per_page ) {
+                    return $query->paginate( perPage: $per_page , page: $page );
                 }
                 return $query->get();
             } catch ( Exception $exception ) {

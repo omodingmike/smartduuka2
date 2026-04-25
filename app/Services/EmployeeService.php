@@ -35,7 +35,7 @@
         public function list(PaginateRequest $request)
         {
             try {
-                $perPage     = $request->integer( 'perPage' , 10000 );
+                $per_page      = $request->integer( 'per_page' , 10000 );
                 $page        = $request->integer( 'page' , 1 );
                 $orderColumn = $request->input( 'order_column' ) ?? 'id';
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
@@ -43,7 +43,7 @@
                 $query = User::with( [ 'media' , 'addresses' ] )
                              ->withoutRole( $this->blockRoles );
 
-                return $query->orderBy( $orderColumn , $orderType )->paginate( perPage: $perPage , page: $page );
+                return $query->orderBy( $orderColumn , $orderType )->paginate( perPage: $per_page , page: $page );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

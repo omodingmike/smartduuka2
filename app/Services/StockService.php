@@ -32,7 +32,7 @@
         {
             try {
 
-                $perPage      = $request->integer( 'perPage' , 10 );
+                $per_page       = $request->integer( 'per_page' , 10 );
                 $warehouse_id = $request->warehouse_id;
                 $query        = $request->input( 'query' );
                 $page         = $request->input( 'page' );
@@ -60,7 +60,7 @@
                     return $item[ 'stock' ] <= $item[ 'low_stock_quantity_warning' ];
                 } )->count();
 
-                return $this->paginate( $processedItems , $perPage , $page );
+                return $this->paginate( $processedItems , $per_page , $page );
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -70,7 +70,7 @@
         public function listGroupedByBatch(Request $request)
         {
             try {
-                $perPage      = $request->integer( 'perPage' , 10 );
+                $per_page       = $request->integer( 'per_page' , 10 );
                 $warehouse_id = $request->warehouse_id;
                 $query        = $request->input( 'query' );
                 $page         = $request->input( 'page' );
@@ -92,7 +92,7 @@
                                          ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
                                          ->values();
 
-                return $this->paginate( $processedItems , $perPage , $page , url( '/api/admin/stock/batch' ) );
+                return $this->paginate( $processedItems , $per_page , $page , url( '/api/admin/stock/batch' ) );
             } catch ( Exception $exception ) {
                 Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -116,11 +116,11 @@
         public function takings(Request $request)
         {
             try {
-                $perPage     = $request->integer( 'per_page' , 10 );
+                $per_page      = $request->integer( 'per_page' , 10 );
                 $isPaginated = $request->boolean( 'paginate' );
                 $stocks      = $this->stockQuery( $request )->get();
                 if ( $stocks->isEmpty() ) {
-                    return $isPaginated ? $this->paginate( [] , $perPage ) : [];
+                    return $isPaginated ? $this->paginate( [] , $per_page ) : [];
                 }
 //                $groupCriteria  = enabledWarehouse()
 //                    ? fn($item) => $item->product_id . '-' . $item->warehouse_id
@@ -130,7 +130,7 @@
 //                                         ->filter( fn($item) => $item !== NULL && $item[ 'stock' ] > 0 )
 //                                         ->values();
                 if ( $isPaginated ) {
-                    return $this->paginate( $stocks , $perPage , NULL , url( '/api/admin/stock' ) );
+                    return $this->paginate( $stocks , $per_page , NULL , url( '/api/admin/stock' ) );
                 }
                 return $stocks;
             } catch ( Exception $exception ) {
@@ -212,7 +212,7 @@
         {
             try {
                 $requests    = $request->all();
-                $perPage     = $request->get( 'perPage' , 10 );
+                $per_page      = $request->get( 'per_page' , 10 );
                 $page        = $request->get( 'page' , 1 );
                 $orderColumn = $request->get( 'order_column' ) ?? 'id';
                 $orderType   = $request->get( 'order_type' ) ?? 'desc';
@@ -242,7 +242,7 @@
                                     } )->orderBy( $orderColumn , $orderType )->get();
 
 
-                return $this->paginate( $stocks , $perPage , $page );
+                return $this->paginate( $stocks , $per_page , $page );
 
             } catch ( Exception $exception ) {
                 info( $exception->getMessage() );
@@ -254,7 +254,7 @@
         public function transfers(Request $request)
         {
             try {
-                $perPage = $request->integer( 'perPage' , 10 );
+                $per_page = $request->integer( 'per_page' , 10 );
                 $page    = $request->integer( 'page' , 1 );
                 $type    = $request->type;
                 $stocks  = $this->stockQuery( $request )
@@ -265,7 +265,7 @@
                                          ->map( fn($group , $batch) => $this->groupedStock( $group , $batch ) )
                                          ->values();
 
-                return $this->paginate( $processedItems , $perPage , $page );
+                return $this->paginate( $processedItems , $per_page , $page );
 
             } catch ( Exception $exception ) {
                 Log::error( 'Transfer List Error: ' . $exception->getMessage() );
@@ -416,7 +416,7 @@
 
         public function paginate(
             $items ,
-            $perPage = 15 ,
+            $per_page = 15 ,
             $page = NULL ,
             $baseUrl = NULL ,
             $options = []
@@ -428,9 +428,9 @@
                 $items : Collection::make( $items );
 
             $lap = new LengthAwarePaginator(
-                $items->forPage( $page , $perPage ) ,
+                $items->forPage( $page , $per_page ) ,
                 $items->count() ,
-                $perPage ,
+                $per_page ,
                 $page ,
                 $options
             );
@@ -444,7 +444,7 @@
         public function wastage(Request $request , &$totalLoss = 0)
         {
             try {
-                $perPage      = $request->integer( 'perPage' , 10 );
+                $per_page       = $request->integer( 'per_page' , 10 );
                 $page         = $request->integer( 'page' , 1 );
                 $isPaginated  = TRUE;
                 $warehouse_id = $request->warehouse_id;
@@ -519,7 +519,7 @@
                 } );
 
                 if ( $isPaginated ) {
-                    return $this->paginate( $wastage , $perPage , $page , url( '/api/admin/stock/wastage' ) );
+                    return $this->paginate( $wastage , $per_page , $page , url( '/api/admin/stock/wastage' ) );
                 }
 
                 return $wastage;
@@ -533,7 +533,7 @@
         public function stockCapture(Request $request)
         {
             try {
-                $perPage      = $request->integer( 'perPage' , 10 );
+                $per_page       = $request->integer( 'per_page' , 10 );
                 $page         = $request->integer( 'page' , 1 );
                 $warehouse_id = $request->warehouse_id;
 
@@ -578,7 +578,7 @@
                     ];
                 } )->sortByDesc( 'date' )->values();
 
-                return $this->paginate( $formattedTakes , $perPage , $page , url( '/api/admin/inventory-report/stock-capture' ) );
+                return $this->paginate( $formattedTakes , $per_page , $page , url( '/api/admin/inventory-report/stock-capture' ) );
 
             } catch ( Exception $exception ) {
                 Log::error( 'Stock Capture Error: ' . $exception->getMessage() );

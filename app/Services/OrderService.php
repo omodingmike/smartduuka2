@@ -74,12 +74,12 @@
          */
         public function list(Request $request)
         {
-            info( $request->all() );
             try {
                 $orderColumn    = $request->input( 'order_column' ) ?? 'id';
                 $orderBy        = $request->input( 'order_by' ) ?? 'desc';
                 $page           = $request->input( 'page' ) ?? 1;
-                $perPage        = $request->input( 'perPage' ) ?? 10;
+                $per_page       = $request->input( 'per_page' ) ?? 10;
+                $per_page       = $request->input( 'per_page' ) ?? 10;
                 $status         = $request->integer( 'status' );
                 $payment_status = $request->integer( 'payment_status' );
                 $order_type     = $request->integer( 'order_type' );
@@ -123,16 +123,11 @@
                                } )
                                ->when( $type , function (Builder $q) use ($type) {
                                    $q->where( 'payment_type' , $type );
-//                                     ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED );
                                } )
                                ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
                                    $q->whereIn( 'payment_type' , [ $type ] );
                                } );
 
-//                if ( $type == PaymentType::CASH ) {
-//                    $orders->where( 'payment_type' , $type )
-//                           ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED );
-//                }
 
                 $baseQuery                = clone $orders;
                 $totalSales               = $baseQuery->sum( 'total' );
@@ -143,9 +138,9 @@
                     ->where( 'refund_status' , RefundStatus::REFUNDED->value )
                     ->sum( 'total' );
 
-                $quotations = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION->value )->get();
+                $quotations = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION )->get();
                 $pending    = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
-                $approved   = $quotations->where( 'quotation_status' , QuotationStatus::APPROVED )->count();
+                $approved   = $quotations->where( 'quotation_status' , QuotationStatus::CONVERTED )->count();
                 $rejected   = $quotations->whereIn( 'quotation_status' , [
                     QuotationStatus::CANCELLED ,
                     QuotationStatus::EXPIRED
@@ -155,7 +150,7 @@
                 $conversionRate = $total > 0 ? round( ( $approved / $total ) * 100 ) : 0;
 
                 return OrderResource::collection( $orders->orderBy( $orderColumn , $orderBy )
-                                                         ->paginate( $perPage , [ '*' ] , 'page' , $page ) )
+                                                         ->paginate( $per_page , [ '*' ] , 'page' , $page ) )
                                     ->additional(
                                         [
                                             'meta' => [
@@ -178,11 +173,11 @@
         public function listPerProduct(Request $request)
         {
             try {
-                $start   = $request->date( 'start' );
-                $end     = $request->date( 'end' );
-                $query   = $request->get( 'query' );
-                $page    = $request->get( 'page' ) ?? 1;
-                $perPage = $request->get( 'perPage' ) ?? 10;
+                $start    = $request->date( 'start' );
+                $end      = $request->date( 'end' );
+                $query    = $request->get( 'query' );
+                $page     = $request->get( 'page' ) ?? 1;
+                $per_page = $request->get( 'per_page' ) ?? 10;
 
                 // 1. The Main Query (Stays exactly the same to preserve pagination)
                 $products = OrderProduct::query()
@@ -205,7 +200,7 @@
                                         } )
                                         ->groupBy( 'item_id' , 'item_type' )
                                         ->orderByDesc( 'total_revenue' )
-                                        ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                                        ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 // 2. Format the Output and Fetch Breakdowns
                 return $products->through( function ($row) use ($start , $end) {
@@ -259,11 +254,11 @@
         public function listPerCustomer(Request $request)
         {
             try {
-                $start   = $request->date( 'start' );
-                $end     = $request->date( 'end' );
-                $query   = $request->get( 'query' );
-                $page    = $request->get( 'page' ) ?? 1;
-                $perPage = $request->get( 'perPage' ) ?? 10;
+                $start    = $request->date( 'start' );
+                $end      = $request->date( 'end' );
+                $query    = $request->get( 'query' );
+                $page     = $request->get( 'page' ) ?? 1;
+                $per_page = $request->get( 'per_page' ) ?? 10;
 
                 $customers = Order::query()
                                   ->select( 'user_id' )
@@ -283,7 +278,7 @@
                                   } )
                                   ->groupBy( 'user_id' )
                                   ->orderByDesc( 'total_revenue' )
-                                  ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                                  ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 return $customers->through( function ($row) {
                     return [
@@ -302,11 +297,11 @@
         public function listPerCategory(Request $request)
         {
             try {
-                $start   = $request->date( 'start' );
-                $end     = $request->date( 'end' );
-                $query   = $request->get( 'query' );
-                $page    = $request->get( 'page' ) ?? 1;
-                $perPage = $request->get( 'perPage' ) ?? 10;
+                $start    = $request->date( 'start' );
+                $end      = $request->date( 'end' );
+                $query    = $request->get( 'query' );
+                $page     = $request->get( 'page' ) ?? 1;
+                $per_page = $request->get( 'per_page' ) ?? 10;
 
 //                $categories = OrderProduct::query()
 //                                          ->selectRaw( 'products.product_category_id as category_id' )
@@ -334,7 +329,7 @@
 //                                          ->groupBy( 'products.product_category_id' )
 //                                          ->with( 'product.category' )
 //                                          ->orderByDesc( 'total_revenue' )
-//                                          ->paginate( $perPage , [ '*' ] , 'page' , $page );
+//                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
 
                 $categories = DB::table( 'order_products' )
@@ -369,7 +364,7 @@
                                 } )
                                 ->groupBy( 'product_categories.id' , 'product_categories.name' )
                                 ->orderByDesc( 'total_revenue' )
-                                ->paginate( $perPage , [ '*' ] , 'page' , $page );
+                                ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
                 return $categories->through( function ($row) {
                     return [

@@ -29,9 +29,9 @@
         {
             try {
                 $page         = $request->input( 'page' , 1 );
-                $perPage      = $request->input( 'perPage' , 10 );
+                $per_page       = $request->input( 'per_page' , 10 );
                 $query = ProductBrand::query()->with( 'products');
-                $data = $query->paginate( $perPage , [ '*' ] , 'page' , $page );
+                $data = $query->paginate( $per_page , [ '*' ] , 'page' , $page );
                 return ProductBrandResource::collection( $data );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
