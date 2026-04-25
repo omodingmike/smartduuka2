@@ -10,6 +10,7 @@
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\QuotationStatus;
+    use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
     use App\Enums\ReturnStatus;
     use App\Enums\ReturnType;
@@ -59,7 +60,7 @@
             'is_returned' ,
             'quotation_status' ,
             'offer_amount' ,
-            'offer_message' ,
+            'offer_message' ,'quotation_type',
             'decline_message'
         ];
 
@@ -74,6 +75,7 @@
             'total'              => 'decimal:6' ,
             'shipping_charge'    => 'decimal:6' ,
             'order_type'         => OrderType::class ,
+            'quotation_type'     => QuotationType::class ,
             'order_datetime'     => 'datetime' ,
             'due_date'           => 'datetime' ,
             'payment_method'     => 'integer' ,
@@ -129,8 +131,7 @@
                         ->orWhereNull( 'pre_order_status' );
                   } )
                   ->where( function (Builder $q) {
-                      $q->where( 'status' , '=' , OrderStatus::COMPLETED )
-//                        ->orWhereNull( 'status' )
+                      $q->where( 'status' , '=' , OrderStatus::COMPLETED )//                        ->orWhereNull( 'status' )
                       ;
                   } );
         }

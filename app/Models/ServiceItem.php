@@ -17,6 +17,8 @@
             'service_id' ,
             'price' ,
         ];
+        protected $casts    = [ 'price' => 'float' , 'quantity' => 'float' , 'total' => 'float' ];
+
 
         public function item() : MorphTo
         {

@@ -93,7 +93,6 @@
     use App\Http\Controllers\WarehouseController;
     use App\Mail\SendEmail;
     use App\Mail\TestMail;
-    use App\Models\Order;
     use App\Services\OrderService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -591,6 +590,7 @@
 
             Route::prefix( 'customer' )->name( 'customer.' )->group( function () {
                 Route::get( '/' , [ CustomerController::class , 'index' ] );
+//                Route::get( '/' , [ CustomerController::class , 'simpleCustomers' ] );
                 Route::get( '/pos' , [ CustomerController::class , 'posCustomers' ] );
                 Route::get( '/debtPayments' , [ CustomerController::class , 'debtPayments' ] );
                 Route::post( '/' , [ CustomerController::class , 'store' ] );
@@ -794,6 +794,8 @@
                 // 1. SPECIFIC ENDPOINTS FIRST
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
                 Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
+                Route::post( '/service-quotation' , [ PosController::class , 'serviceQuotationStore' ] )->middleware( 'register' );
+                Route::post( '/service-quotation' , [ PosController::class , 'serviceQuotationStore' ] )->middleware( 'register' );
                 Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
 //                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );

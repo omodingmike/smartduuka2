@@ -19,7 +19,7 @@
             'status'
         ];
 
-        protected $casts = [ 'type' => ServiceType::class , 'status' => Status::class ];
+        protected $casts = [ 'type' => ServiceType::class , 'status' => Status::class,'base_price' => 'float' ];
 
         public function serviceCategory() : BelongsTo
         {
@@ -40,4 +40,5 @@
         {
             return $this->hasMany( ServiceTier::class , 'service_id' , 'id' );
         }
+
     }

@@ -5,7 +5,10 @@
     use App\Enums\PriceType;
     use App\Libraries\AppLibrary;
     use App\Models\OrderProduct;
+    use App\Models\Product;
+    use App\Models\ProductVariation;
     use App\Models\RetailPrice;
+    use App\Models\Service;
     use App\Models\WholeSalePrice;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +19,6 @@
 
         public function toArray(Request $request) : array
         {
-            $is_variation = $this->variation_id;
             $price_data   = NULL;
             if ( $this->price ) {
                 if ( $this->price instanceof RetailPrice ) {
@@ -36,10 +38,20 @@
                     ];
                 }
             }
+
+            $itemResource = null;
+            if ($this->item_type === ProductVariation::class) {
+                $itemResource = new ProductVariationResource($this->whenLoaded('item'));
+            } elseif ($this->item_type === Product::class) {
+                $itemResource = new SimpleProductDetailsResource($this->whenLoaded('item'));
+            } elseif ($this->item_type === Service::class) {
+                $itemResource = new ServiceResource($this->whenLoaded('item'));
+            }
+
             return [
                 'id'                          => $this->id ,
                 'quantity'                    => (float) $this->quantity ,
-                'is_variation'                => $this->is_variation ,
+                'is_variation'                => $this->item_type === ProductVariation::class,
                 'is_return'                   => $this->is_return ,
                 'is_exchange'                 => $this->is_exchange ,
                 'quantity_picked'             => (float) $this->quantity_picked ,
@@ -50,7 +62,7 @@
                 'quantity_text'               => number_format( $this->quantity ) ,
                 'quantity_picked_text'        => number_format( $this->quantity_picked ) ,
                 'total'                       => (float) $this->total ,
-                'item'                        => $is_variation ? new ProductVariationResource( $this->item ) : new SimpleProductDetailsResource( $this->item ) ,
+                'item'                        => $itemResource,
                 'total_currency'              => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'unit_price'                  => (float) $this->unit_price ,
                 'unit_price_currency'         => AppLibrary::currencyAmountFormat( $this->unit_price ) ,

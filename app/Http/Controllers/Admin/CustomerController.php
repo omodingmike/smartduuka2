@@ -43,13 +43,13 @@
         ) : Response | AnonymousResourceCollection | Application | ResponseFactory
         {
             try {
-                $per_page        = $request->integer( 'per_page' );
                 $customerQuery = $this->customerService->list( $request );
+                $paginate      = $request->boolean( 'paginate' , TRUE );
                 $totalCredit   = ( clone $customerQuery )->get()->sum( 'credits' );
-                if ( $per_page > 0 ) {
+                if ( $paginate ) {
                     $customers = $customerQuery->paginate(
-                        perPage: $request->input( 'per_page' , 10 ) ,
-                        page: $request->input( 'page' , 1 )
+                        perPage: $request->integer( 'per_page' , 10 ) ,
+                        page: $request->integer( 'page' , 1 )
                     );
                 }
                 else {
@@ -198,7 +198,7 @@
         public function debtPayments(Request $request)
         {
             $page     = $request->integer( 'page' , 1 );
-            $per_page   = $request->integer( 'per_page' , 15 );
+            $per_page = $request->integer( 'per_page' , 15 );
             $payments = CustomerPayment::where( 'customer_payment_type' , CustomerPaymentType::DEBT )
                                        ->paginate( perPage: $per_page , page: $page );
             return CustomerPaymentResource::collection( $payments );
@@ -214,5 +214,14 @@
                 $request->reference
             );
             return new CustomerWalletTransactionResource( $data );
+        }
+
+        public function simpleCustomers(Request $request)
+        {
+            try {
+                return $this->customerService->simpleList( $request );
+            } catch ( Exception $e ) {
+                return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
+            }
         }
     }

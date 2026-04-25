@@ -13,6 +13,8 @@
             'service_id' ,
         ];
 
+        protected $casts = ['price' => 'float'];
+
         public function service() : BelongsTo
         {
             return $this->belongsTo( Service::class );

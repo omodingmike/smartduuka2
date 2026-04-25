@@ -14,7 +14,7 @@
             'service_id' ,
         ];
 
-        protected $casts = [];
+        protected $casts = ['price' => 'float'];
 
         public function service() : BelongsTo
         {

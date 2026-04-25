@@ -69,6 +69,15 @@
             }
         }
 
+        public function serviceQuotationStore(QuotationRequest $request)
+        {
+            try {
+                return $this->orderService->serviceQuotationStore( $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function quotationUpdate(Order $order , QuotationRequest $request)
         {
             try {

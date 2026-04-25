@@ -12,6 +12,7 @@
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
     use App\Enums\QuotationStatus;
+    use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
     use App\Enums\ReturnStatus;
     use App\Enums\SaleOrderType;
@@ -35,6 +36,7 @@
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\RetailPrice;
+    use App\Models\Service;
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\User;
@@ -72,13 +74,15 @@
         /**
          * @throws Exception
          */
+        /**
+         * @throws Exception
+         */
         public function list(Request $request)
         {
             try {
                 $orderColumn    = $request->input( 'order_column' ) ?? 'id';
                 $orderBy        = $request->input( 'order_by' ) ?? 'desc';
                 $page           = $request->input( 'page' ) ?? 1;
-                $per_page       = $request->input( 'per_page' ) ?? 10;
                 $per_page       = $request->input( 'per_page' ) ?? 10;
                 $status         = $request->integer( 'status' );
                 $payment_status = $request->integer( 'payment_status' );
@@ -95,7 +99,11 @@
                     'orderProducts.item' => function ($query) {
                         $query->withTrashed();
                     } ,
-                    'user' , 'creator' , 'paymentMethods.paymentMethod' , 'originalOrder'
+                    'user' ,
+                    'creator' ,
+                    'paymentMethods.paymentMethod' ,
+                    'originalOrder' ,
+                    'posPayments.paymentMethod'
                 ] )->when( $query , function (Builder $q) use ($query) {
                     $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
                       ->orWhere( 'id' , 'ilike' , "%$query%" )
@@ -131,38 +139,41 @@
 
                 $baseQuery                = clone $orders;
                 $totalSales               = $baseQuery->sum( 'total' );
-                $totalPendingReturnOrders = ( clone $baseQuery )
-                    ->where( 'return_status' , ReturnStatus::PENDING->value )
-                    ->sum( 'total' );
-                $totalPendingRefundOrders = ( clone $baseQuery )
-                    ->where( 'refund_status' , RefundStatus::REFUNDED->value )
-                    ->sum( 'total' );
+                $totalPendingReturnOrders = ( clone $baseQuery )->where( 'return_status' , ReturnStatus::PENDING->value )->sum( 'total' );
+                $totalPendingRefundOrders = ( clone $baseQuery )->where( 'refund_status' , RefundStatus::REFUNDED->value )->sum( 'total' );
 
-                $quotations = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION )->get();
-                $pending    = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
-                $approved   = $quotations->where( 'quotation_status' , QuotationStatus::CONVERTED )->count();
-                $rejected   = $quotations->whereIn( 'quotation_status' , [
-                    QuotationStatus::CANCELLED ,
-                    QuotationStatus::EXPIRED
-                ] )->count();
-                $total      = $quotations->count();
-
+                $quotations     = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION )->get();
+                $pending        = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
+                $approved       = $quotations->where( 'quotation_status' , QuotationStatus::CONVERTED )->count();
+                $rejected       = $quotations->whereIn( 'quotation_status' , [ QuotationStatus::CANCELLED , QuotationStatus::EXPIRED ] )->count();
+                $total          = $quotations->count();
                 $conversionRate = $total > 0 ? round( ( $approved / $total ) * 100 ) : 0;
 
-                return OrderResource::collection( $orders->orderBy( $orderColumn , $orderBy )
-                                                         ->paginate( $per_page , [ '*' ] , 'page' , $page ) )
-                                    ->additional(
-                                        [
-                                            'meta' => [
-                                                'totalSales'                  => currency( $totalSales ) ,
-                                                'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
-                                                'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
-                                                'pending'                     => $pending ,
-                                                'approved'                    => $approved ,
-                                                'rejected'                    => $rejected ,
-                                                'conversionRate'              => $conversionRate
-                                            ]
-                                        ] );
+                $paginatedOrders = $orders->orderBy( $orderColumn , $orderBy )
+                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
+
+                $paginatedOrders->getCollection()->transform( function ($order) {
+                    $order->calculated_last_paid = $order->posPayments->sortByDesc( 'created_at' )->first();
+
+                    $order->calculated_new_total = $order->orderProducts->sum( function ($product) {
+                        return $product->unit_price * $product->quantity;
+                    } );
+
+                    return $order;
+                } );
+
+                return OrderResource::collection( $paginatedOrders )
+                                    ->additional( [
+                                        'meta' => [
+                                            'totalSales'                  => currency( $totalSales ) ,
+                                            'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
+                                            'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
+                                            'pending'                     => $pending ,
+                                            'approved'                    => $approved ,
+                                            'rejected'                    => $rejected ,
+                                            'conversionRate'              => $conversionRate
+                                        ]
+                                    ] );
 
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
@@ -747,6 +758,7 @@
                             'user_id'          => $request->customer_id ,
                             'due_date'         => $request->expiry_date ,
                             'quotation_status' => QuotationStatus::PENDING ,
+                            'quotation_type'   => QuotationType::PRODUCT ,
                             'change'           => 0 ,
                             'status'           => OrderStatus::PENDING ,
                             'payment_type'     => PaymentType::QUOTATION ,
@@ -803,6 +815,63 @@
                             ] );
 
                             if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+                        }
+                    }
+                    $this->order->save();
+                } );
+
+                return response()->json();
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function serviceQuotationStore(QuotationRequest $request)
+        {
+            try {
+                DB::transaction( function () use ($request) {
+                    $order = Order::create(
+                        array_merge( $request->validated() , [
+                            'paid'             => 0 ,
+                            'balance'          => 0 ,
+                            'shipping_charge'  => 0 ,
+                            'user_id'          => $request->customer_id ,
+                            'quotation_type'   => QuotationType::SERVICE ,
+                            'due_date'         => $request->expiry_date ,
+                            'quotation_status' => QuotationStatus::PENDING ,
+                            'change'           => 0 ,
+                            'status'           => OrderStatus::PENDING ,
+                            'payment_type'     => PaymentType::QUOTATION ,
+                            'creator_id'       => auth()->id() ,
+                            'creator_type'     => User::class ,
+                            'payment_status'   => PaymentStatus::UNPAID ,
+                            'warehouse_id'     => $request->warehouse_id ?? Warehouse::first()->id ,
+                            'order_datetime'   => $request->date ,
+                            'reason'           => $request->notes ,
+                            'register_id'      => register()?->id
+                        ] )
+                    );
+
+                    $this->order = $order;
+
+                    $this->order->order_serial_no = orderSerialNo( $this->order );
+                    $this->order->save();
+                    activity()->log( 'Created Service Quotation: ' . $order->order_serial_no );
+
+                    $services = json_decode( $request->services , TRUE );
+
+                    if ( ! blank( $services ) ) {
+                        foreach ( $services as $service ) {
+                            OrderProduct::create( [
+                                'order_id'   => $this->order->id ,
+                                'item_id'    => $service[ 'service_id' ] ,
+                                'item_type'  => Service::class ,
+                                'quantity'   => $service[ 'quantity' ] ,
+                                'total'      => $service[ 'quantity' ] * $service[ 'price' ] ,
+                                'unit_price' => $service[ 'price' ] ,
+                            ] );
                         }
                     }
                     $this->order->save();

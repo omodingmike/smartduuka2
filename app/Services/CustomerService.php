@@ -4,6 +4,7 @@
 
     use App\Enums\Ask;
     use App\Enums\CustomerPaymentType;
+    use App\Enums\OrderStatus;
     use App\Enums\PaymentStatus;
     use App\Enums\PosPaymentType;
     use App\Enums\Role as EnumRole;
@@ -12,6 +13,7 @@
     use App\Http\Requests\CustomerPaymentRequest;
     use App\Http\Requests\CustomerRequest;
     use App\Http\Requests\UserChangePasswordRequest;
+    use App\Http\Resources\SimpleCustomerResource;
     use App\Libraries\QueryExceptionLibrary;
     use App\Models\CustomerLedger;
     use App\Models\CustomerPayment;
@@ -36,10 +38,20 @@
         public function list(Request $request) : Builder
         {
             try {
-                $query   = $request->input( 'query' ) ?? NULL;
-                $debtors = $request->boolean( 'debtors' );
+                $debtors  = $request->boolean( 'debtors' );
+                $query    = $request->input( 'query' );
 
-                return User::with( [ 'media' , 'addresses' , 'debtPayments' , 'ledgers' ] )
+                return User::with( [
+                    'media' ,
+                    'addresses' ,
+                    'debtPayments' ,
+                    'ledgers' ,
+                    'walletTransactions' ,
+                    'orders.posPayments' ,
+                    'creditAndDeposit.posPayments' ,
+                    'creditAndDeposit.orderProducts.item' ,
+                    'legacyDebts'
+                ] )
                            ->role( EnumRole::CUSTOMER )
                            ->when( $query , function ($q) use ($query) {
                                $q->where( 'name' , 'ilike' , "%" . $query . "%" );
@@ -53,8 +65,38 @@
                                } );
                            } )
                            ->orderBy( 'created_at' , 'desc' );
+
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function simpleList(Request $request)
+        {
+            try {
+                $query    = $request->input( 'query' );
+                $paginate = $request->boolean( 'paginate' , TRUE );
+                $per_page = $request->integer( 'per_page' , 10 );
+
+                $customers = User::role( EnumRole::CUSTOMER )
+                                 ->withSum( 'walletTransactions as wallet_sum' , 'amount' )
+                                 ->withSum( [ 'orders as total_paid' => function ($q) {
+                                     $q->join( 'pos_payments' , 'orders.id' , '=' , 'pos_payments.order_id' )
+                                       ->where( 'orders.status' , '<>' , OrderStatus::CANCELED );
+                                 }
+                                 ] , 'pos_payments.amount' )
+                                 ->when( $query , function ($q) use ($query) {
+                                     $q->where( 'name' , 'ilike' , '%' . $query . '%' );
+                                 } )
+                                 ->select( [ 'id' , 'name' , 'email' , 'phone' , 'type' , 'status' , 'created_at' ] )
+                                 ->orderBy( 'created_at' , 'desc' );
+
+                $result = $paginate ? $customers->paginate( $per_page ) : $customers->get();
+
+                return SimpleCustomerResource::collection( $result );
+            } catch ( Exception $exception ) {
+                Log::error( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
             }
         }
