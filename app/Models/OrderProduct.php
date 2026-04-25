@@ -67,6 +67,9 @@
 
         public function totalCost()
         {
+            if ($this->item_type === Service::class) {
+                return 0;
+            }
             $total = 0;
             if ( $this->item_type === Product::class ) {
                 $product = Product::find( $this->item_id );

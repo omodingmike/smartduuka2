@@ -39,8 +39,7 @@
             $this->orderService    = $orderService;
         }
 
-        public function index(Request $request
-        ) : Response | AnonymousResourceCollection | Application | ResponseFactory
+        public function index(Request $request)
         {
             try {
                 $customerQuery = $this->customerService->list( $request );
@@ -199,7 +198,8 @@
         {
             $page     = $request->integer( 'page' , 1 );
             $per_page = $request->integer( 'per_page' , 15 );
-            $payments = CustomerPayment::where( 'customer_payment_type' , CustomerPaymentType::DEBT )
+            $payments = CustomerPayment::with('paymentMethod')
+                                       ->where( 'customer_payment_type' , CustomerPaymentType::DEBT )
                                        ->paginate( perPage: $per_page , page: $page );
             return CustomerPaymentResource::collection( $payments );
         }

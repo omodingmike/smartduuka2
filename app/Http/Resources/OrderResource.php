@@ -74,7 +74,6 @@
                 'creator'           => new UserResource( $this->whenLoaded( 'creator' ) ) ,
                 'orderProducts'     => OrderProductResourceNew::collection( $this->whenLoaded( 'orderProducts' ) ) ,
                 'paymentMethods'    => PosPaymentResource::collection( $this->whenLoaded( 'paymentMethods' ) ) ,
-                'unit'              => new UnitResource( $this->whenLoaded( 'unit' ) ) ,
 
                 'delivery_address'               => $this->delivery_address ,
                 'subtotal_currency_price'        => AppLibrary::currencyAmountFormat( $this->subtotal ) ,

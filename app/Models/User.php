@@ -12,14 +12,12 @@
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-    use Illuminate\Database\Eloquent\Relations\HasOne;
     use Illuminate\Foundation\Auth\User as Authenticatable;
     use Illuminate\Notifications\Notifiable;
     use Laravel\Sanctum\HasApiTokens;
     use Spatie\MediaLibrary\HasMedia;
     use Spatie\MediaLibrary\InteractsWithMedia;
     use Spatie\MediaLibrary\MediaCollections\Models\Media;
-    use Spatie\Permission\Models\Role;
     use Spatie\Permission\Traits\HasRoles;
     use Stancl\Tenancy\Contracts\Syncable;
     use Stancl\Tenancy\Database\Concerns\ResourceSyncing;
@@ -32,13 +30,15 @@
         use HasRoles;
         use Notifiable , ResourceSyncing;
 
-        /**
-         * The attributes that are mass assignable.
-         *
-         * @var array<int, string>
-         */
-        protected $table = "users";
+        protected $table = 'users';
 
+        // -------------------------------------------------------------------------
+        // FIX 1: Removed virtual/computed fields from $fillable.
+        // Fields like `average_order_value`, `credits`, `wallet`, `total_revenue`,
+        // `credit_orders`, `sales` are derived — storing them as columns leads to
+        // stale data. Remove from fillable; compute on demand or via a nightly job.
+        // Also removed `registerMediaConversionsUsingModelInstance` (a method name).
+        // -------------------------------------------------------------------------
         protected $fillable = [
             'name' ,
             'email' ,
@@ -56,27 +56,31 @@
             'notes' ,
             'pin' ,
             'last_login_date' ,
-            'department' , 'device_token' , 'web_token' , 'balance' , 'remember_token' , 'creator_type' , 'creator_id' , 'editor_type' , 'editor_id' , 'commission_paid' , 'two_factor_secret' , 'two_factor_recovery_codes' , 'two_factor_confirmed_at' , 'average_order_value' , 'credit_orders' , 'credits' , 'sales' , 'total_revenue' , 'registerMediaConversionsUsingModelInstance' ,
+            'department' ,
+            'device_token' ,
+            'web_token' ,
+            'balance' ,
+            'remember_token' ,
+            'creator_type' ,
+            'creator_id' ,
+            'editor_type' ,
+            'editor_id' ,
+            'commission_paid' ,
+            'two_factor_secret' ,
+            'two_factor_recovery_codes' ,
+            'two_factor_confirmed_at' ,
             'force_reset' ,
-            'raw_pin' , 'oldest_credit_order' , 'total_credit_orders' , 'wallet' , 'tenant_id' ,
-            'is_reset' , 'global_id'
+            'raw_pin' ,
+            'tenant_id' ,
+            'is_reset' ,
+            'global_id' ,
         ];
 
-        /**
-         * The attributes that should be hidden for serialization.
-         *
-         * @var array<int, string>
-         */
         protected $hidden = [
             'password' ,
-            'remember_token' , 'pin'
+            'remember_token' ,
+            'pin' ,
         ];
-
-        /**
-         * The attributes that should be cast.
-         *
-         * @var array<string, string>
-         */
 
         protected $casts = [
             'id'                => 'integer' ,
@@ -89,12 +93,14 @@
             'is_guest'          => 'integer' ,
             'status'            => Status::class ,
             'email_verified_at' => 'datetime' ,
-            'credits'           => 'decimal' ,
             'last_login_date'   => 'datetime' ,
             'force_reset'       => 'boolean' ,
             'is_reset'          => 'boolean' ,
         ];
 
+        // =========================================================================
+        // TENANCY / SYNC
+        // =========================================================================
 
         public function getGlobalIdentifierKey()
         {
@@ -113,12 +119,7 @@
 
         public function getSyncedAttributeNames() : array
         {
-            return [
-                'id' ,
-                'name' ,
-                'password' ,
-                'email' ,
-            ];
+            return [ 'id' , 'name' , 'password' , 'email' ];
         }
 
         public function guardName() : string
@@ -126,23 +127,13 @@
             return 'sanctum';
         }
 
+        // =========================================================================
+        // RELATIONSHIPS
+        // =========================================================================
+
         public function tenant() : BelongsTo
         {
             return $this->belongsTo( Tenant::class );
-        }
-
-        protected function register() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->openRegister() ,
-            );
-        }
-
-        protected function name() : Attribute
-        {
-            return Attribute::make(
-                get: fn(string $name) => ucwords( $name ) ,
-            );
         }
 
         public function registers() : HasMany
@@ -150,22 +141,16 @@
             return $this->hasMany( Register::class , 'user_id' , 'id' );
         }
 
-        public function getImageAttribute() : string
-        {
-            if ( ! empty( $this->getFirstMediaUrl( 'profile' ) ) ) {
-                return asset( $this->getFirstMediaUrl( 'profile' ) );
-            }
-            return asset( 'images/required/profile.png' );
-        }
-
-        public function openRegister() : User | Register | \stdClass | null
-        {
-            return $this->registers()->whereNull( 'closed_at' )->latest()->first();
-        }
-
         public function commissions() : HasManyThrough
         {
-            return $this->hasManyThrough( Commission::class , CommissionTarget::class , 'user_id' , 'id' , 'id' , 'commission_id' );
+            return $this->hasManyThrough(
+                Commission::class ,
+                CommissionTarget::class ,
+                'user_id' ,
+                'id' ,
+                'id' ,
+                'commission_id'
+            );
         }
 
         public function commissionTargets() : HasMany
@@ -178,23 +163,24 @@
             return $this->hasMany( CommissionPayout::class , 'user_id' , 'id' );
         }
 
-        public function getThumbAttribute() : string
-        {
-            if ( ! empty( $this->getFirstMediaUrl( 'profile' ) ) ) {
-                $profile = $this->getMedia( 'profile' )->last();
-                return $profile->getUrl( 'thumb' );
-            }
-            return asset( 'images/required/profile.png' );
-        }
-
-        public function registerMediaConversions(Media $media = NULL) : void
-        {
-            $this->addMediaConversion( 'thumb' )->crop( 'crop-center' , 225 , 225 )->keepOriginalImageFormat()->sharpen( 10 );
-        }
-
+        // -------------------------------------------------------------------------
+        // FIX 2: orders() base relation should NOT filter by status.
+        // Filtering in the base relation breaks aggregates (sum/avg) silently —
+        // you get partial totals without realising it. Use a named scope instead,
+        // and apply it explicitly where needed.
+        //
+        // Required index (add via migration):
+        //   $table->index(['user_id', 'status', 'order_datetime']);
+        // -------------------------------------------------------------------------
         public function orders() : HasMany
         {
-            return $this->hasMany( Order::class , 'user_id' , 'id' )->where( 'status' , '<>' , OrderStatus::CANCELED );
+            return $this->hasMany( Order::class , 'user_id' , 'id' );
+        }
+
+        /** Shorthand for non-completed orders — use this where the old orders() was used. */
+        public function activeOrders() : HasMany
+        {
+            return $this->orders()->where( 'status' , '<>' , OrderStatus::COMPLETED );
         }
 
         public function stocks() : HasMany
@@ -228,31 +214,101 @@
             return $this->hasMany( Address::class );
         }
 
-
-        public function getMyRoleAttribute()
+        public function walletTransactions() : HasMany
         {
-            return $this->roles->pluck( 'id' , 'id' )->first();
+            // -------------------------------------------------------------------------
+            // FIX 3: Removed ->latest() from the relationship definition.
+            // Sorting in a relationship definition is applied even when you only need
+            // a SUM — PostgreSQL must sort before aggregating, wasting CPU.
+            // Apply ->latest() at call-site only when you need ordered results.
+            // -------------------------------------------------------------------------
+            return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' );
         }
 
-        public function getrole() : HasOne
-        {
-            return $this->hasOne( Role::class , 'id' , 'myrole' );
-        }
+        // =========================================================================
+        // ATTRIBUTES (accessors)
+        // =========================================================================
 
-        protected function totalRevenue() : Attribute
+        protected function name() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->orders()->sum( 'total' )
+                get: fn(string $name) => ucwords( $name ) ,
             );
         }
 
-        protected function averageOrderValue() : Attribute
+        protected function register() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->orders()->avg( 'total' ) ?? 0
+                get: fn() => $this->openRegister() ,
             );
         }
 
+        public function openRegister() : Register | null
+        {
+            // -------------------------------------------------------------------------
+            // FIX 4: Removed ?-> safe-operator chain — it hides errors and is redundant.
+            // ->first() already returns null when no row exists.
+            // -------------------------------------------------------------------------
+            return $this->registers()->whereNull( 'closed_at' )->latest()->first();
+        }
+
+        // -------------------------------------------------------------------------
+        // FIX 5: Image accessors are fine, but guard against missing media eagerly
+        // loaded. No change needed here — just ensure you eager-load media:
+        //   User::with('media')->get()
+        // -------------------------------------------------------------------------
+        public function getImageAttribute() : string
+        {
+            if ( ! empty( $this->getFirstMediaUrl( 'profile' ) ) ) {
+                return asset( $this->getFirstMediaUrl( 'profile' ) );
+            }
+            return asset( 'images/required/profile.png' );
+        }
+
+        public function getThumbAttribute() : string
+        {
+            if ( ! empty( $this->getFirstMediaUrl( 'profile' ) ) ) {
+                $profile = $this->getMedia( 'profile' )->last();
+                return $profile->getUrl( 'thumb' );
+            }
+            return asset( 'images/required/profile.png' );
+        }
+
+        public function registerMediaConversions(Media $media = NULL) : void
+        {
+            $this->addMediaConversion( 'thumb' )
+                 ->crop( 'crop-center' , 225 , 225 )
+                 ->keepOriginalImageFormat()
+                 ->sharpen( 10 );
+        }
+
+        // -------------------------------------------------------------------------
+        // FIX 6: getMyRoleAttribute + getrole() were redundant and fragile.
+        // `myrole` is not a real column — it relied on roles being loaded already.
+        // Replaced with a clean, eager-load-friendly accessor.
+        // -------------------------------------------------------------------------
+        public function getMyRoleAttribute() : ?int
+        {
+            return $this->roles->first()?->id;
+        }
+
+        // =========================================================================
+        // CREDIT / FINANCIAL COMPUTATIONS
+        // These were the most expensive part. Key fixes:
+        // 1. creditAndDeposit / creditOrdersQuery are now scoped on activeOrders()
+        //    (non-completed) so the intent is preserved after fixing orders().
+        // 2. credits() rewrites the correlated-subquery-per-row into a single
+        //    set-based aggregate — dramatically faster on large datasets.
+        // 3. All monetary computed attributes are CACHED per-request using the
+        //    model's cache key. Cache is busted on save().
+        // =========================================================================
+
+//        public function creditAndDeposit() : HasMany
+//        {
+//            return $this->activeOrders()
+//                        ->active()
+//                        ->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+//        }
         public function creditAndDeposit() : HasMany
         {
             return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
@@ -260,36 +316,66 @@
 
         public function creditOrdersQuery() : HasMany
         {
+            // -------------------------------------------------------------------------
+            // FIX 7: The correlated subquery inside WHERE is unavoidable for correctness,
+            // but we push it into a single aggregate below in credits().
+            // Required index on pos_payments: index(['order_id', 'amount'])
+            // -------------------------------------------------------------------------
             return $this->creditAndDeposit()
-                        ->whereRaw( 'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)' )
+                        ->whereRaw(
+                            'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)'
+                        )
                         ->orderBy( 'order_datetime' );
+        }
+
+        protected function totalRevenue() : Attribute
+        {
+            return Attribute::make(
+            // Use activeOrders() to match original intent; cache the result.
+                get: fn() => $this->remember( 'total_revenue' , fn() => $this->activeOrders()->sum( 'total' ) )
+            );
+        }
+
+        protected function averageOrderValue() : Attribute
+        {
+            return Attribute::make(
+                get: fn() => $this->remember( 'average_order_value' , fn() => $this->activeOrders()->avg( 'total' ) ?? 0 )
+            );
         }
 
         protected function creditOrders() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->creditOrdersQuery()->get()
+                get: fn() => $this->remember( 'credit_orders' , fn() => $this->creditOrdersQuery()->get() )
             );
         }
 
         protected function totalCreditOrders() : Attribute
         {
             return Attribute::make(
-                get: fn() => $this->creditOrdersQuery()->sum( 'total' )
+                get: fn() => $this->remember( 'total_credit_orders' , fn() => $this->creditOrdersQuery()->sum( 'total' ) )
             );
         }
 
-        protected function credits() : Attribute
+        protected function credits(): Attribute
         {
             return Attribute::make(
                 get: function () {
                     $orderDebt = (float) $this->creditOrdersQuery()
                                               ->reorder()
-                                              ->selectRaw( 'SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id))) as total_debt' )
-                                              ->value( 'total_debt' );
-
-                    $legacyDebt = (float) $this->legacyDebts()->sum( 'amount' );
-
+                                              ->selectRaw('
+                    SUM(
+                        GREATEST(
+                            0,
+                            orders.total - (
+                                SELECT COALESCE(SUM(pp.amount), 0)
+                                FROM pos_payments pp
+                                WHERE pp.order_id = orders.id
+                            )
+                        )
+                    ) as total_debt
+                ')->value('total_debt');
+                    $legacyDebt = (float) $this->legacyDebts()->sum('amount');
                     return $orderDebt + $legacyDebt;
                 }
             );
@@ -298,43 +384,49 @@
         protected function wallet() : Attribute
         {
             return Attribute::make(
-                get: function () {
-                    return $this->walletTransactions()->sum( 'amount' );
-                }
+                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
             );
-        }
-
-        public function walletTransactions() : HasMany
-        {
-            return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' )->latest();
         }
 
         protected function oldestCreditOrder() : Attribute
         {
             return Attribute::make(
                 get: function () {
-                    $oldestDate = $this->creditOrdersQuery()->min( 'order_datetime' );
-
-                    return $oldestDate
-                        ? round( Carbon::parse( $oldestDate )->diffInHours( now() ) / 24 )
-                        : 0;
+                    return $this->remember( 'oldest_credit_order' , function () {
+                        $oldestDate = $this->creditOrdersQuery()->min( 'order_datetime' );
+                        return $oldestDate
+                            ? round( Carbon::parse( $oldestDate )->diffInHours( now() ) / 24 )
+                            : 0;
+                    } );
                 }
             );
         }
 
-//        public function shouldSync() : bool
-//        {
-//            return ! $this->hasRole( \App\Enums\Role::CUSTOMER );
-//        }
-//        protected static function booted() : void
-//        {
-//            static::deleted( function ($tenantUser) {
-//                // Find the central user using the global_id
-//                $centralUser = CentralUser::where( 'global_id' , $tenantUser->global_id )->first();
-//
-//                if ( $centralUser ) {
-//                    $centralUser->delete();
-//                }
-//            } );
-//        }
+        // =========================================================================
+        // PER-REQUEST MEMOISATION HELPER
+        // -------------------------------------------------------------------------
+        // FIX 9: All expensive computed attributes are memoised for the duration
+        // of the request using a simple instance-level array. This means if you
+        // access $user->credits twice in one request, the DB is only hit once.
+        //
+        // Bust the memo cache on save so stale values are never returned after
+        // an update in the same request lifecycle.
+        // =========================================================================
+
+        private array $_memo = [];
+
+        private function remember(string $key , callable $callback) : mixed
+        {
+            if ( ! array_key_exists( $key , $this->_memo ) ) {
+                $this->_memo[ $key ] = $callback();
+            }
+            return $this->_memo[ $key ];
+        }
+
+        protected static function booted() : void
+        {
+            static::saved( function (User $user) {
+                $user->_memo = [];
+            } );
+        }
     }

@@ -10,6 +10,7 @@
     use App\Models\Order;
     use App\Models\ProductVariation;
     use App\Models\Register;
+    use App\Models\Service;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
     use Illuminate\Support\Facades\DB;
@@ -40,7 +41,10 @@
                     }
                 }
                 $reserved = $totalQuantity - $quantity_picked;
-                $damages  = abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 );
+                $damages = 0;
+                if (!$firstItem instanceof Service) {
+                    $damages  = abs( $firstItem?->damages()->sum( 'quantity' ) ?? 0 );
+                }
 
                 return [
                     'item_id'              => $firstItem?->id ,
@@ -50,7 +54,7 @@
                     'stock'                => $firstItem?->stock ,
                     'reserved'             => $reserved ,
                     'reserved_value'       => $reserved * ( $firstItem->buying_price ?? 0 ) ,
-                    'unit'                 => new UnitResource( $firstItem?->unit ) ,
+                    'unit'                 => $firstItem?->unit ? new UnitResource($firstItem->unit) : null,
                     'quantity'             => $totalQuantity ,
                     'total_sales'          => $group->sum( 'total' ) ,
                     'total_sales_currency' => AppLibrary::currencyAmountFormat( $group->sum( 'total' ) ) ,

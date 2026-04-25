@@ -4,6 +4,7 @@
 
     use App\Enums\ServiceType;
     use App\Enums\Status;
+    use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -39,6 +40,20 @@
         public function tiers() : HasMany
         {
             return $this->hasMany( ServiceTier::class , 'service_id' , 'id' );
+        }
+
+        protected function stock(): Attribute
+        {
+            return Attribute::make(
+                get: fn () => 0,
+            );
+        }
+
+        protected function unit(): Attribute
+        {
+            return Attribute::make(
+                get: fn () => null,
+            );
         }
 
     }

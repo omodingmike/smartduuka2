@@ -20,7 +20,7 @@
         public function toArray(Request $request) : array
         {
             $price_data   = NULL;
-            if ( $this->price ) {
+            if ( $this->price && $this->item_type !== Service::class) {
                 if ( $this->price instanceof RetailPrice ) {
                     $price_data = [
                         'selling_price'      => (int) $this->price->selling_price ,

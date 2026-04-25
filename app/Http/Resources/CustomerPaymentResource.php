@@ -21,7 +21,7 @@
                 'payment_method'   => $this?->paymentMethod?->name ,
                 'reference'        => $this->reference ?? '' ,
                 'creator'          => $this?->creator?->name ,
-                'customer'         => $this?->customer?->name ,
+//                'customer'         => $this?->customer?->name ,
             ];
         }
     }

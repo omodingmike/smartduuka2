@@ -10,6 +10,7 @@
     {
         public function boot(Request $request) : void
         {
+//            Model::preventLazyLoading();
             require_once app_path( 'Helpers/functions.php' );
             ResetPassword::createUrlUsing( function (object $notifiable , string $token) {
                 return config( 'app.frontend_url' ) . "/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";

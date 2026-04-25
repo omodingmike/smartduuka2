@@ -12,7 +12,6 @@
     {
         use HasFactory;
 
-        protected $appends = [ 'stocks' ];
 
         protected $fillable = [
             'name' ,
@@ -30,11 +29,11 @@
             'status'    => Status::class,
         ];
 
-        public function getStocksAttribute()
-        {
-            $stockService = new StockService();
-            $request      = new PaginateRequest();
-            $request->merge( [ 'warehouse_id' => $this->id ] );
-            return $stockService->list( $request );
-        }
+//        public function getStocksAttribute()
+//        {
+//            $stockService = new StockService();
+//            $request      = new PaginateRequest();
+//            $request->merge( [ 'warehouse_id' => $this->id ] );
+//            return $stockService->list( $request );
+//        }
     }

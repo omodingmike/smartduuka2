@@ -14,29 +14,18 @@
 
     class WarehouseController extends Controller
     {
-        public array  $warehouseFilter = [ 'name' , 'email' , 'location' , 'phone' ];
         public object $warehouse;
 
         public function index(PaginateRequest $request)
         {
             try {
-                $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'asc';
 
-                $warehouses = Warehouse::where( function ($query) use ($requests) {
-                    foreach ( $requests as $key => $request ) {
-                        if ( in_array( $key , $this->warehouseFilter ) && $request ) {
-                            $query->where( $key , 'like' , '%' . $request . '%' );
-                        }
-                    }
-                } )->orderBy( $orderColumn , $orderType )->$method(
-                    $methodValue
-                );
+                $paginate = $request->boolean( 'paginate' );
 
-                return WarehouseResource::collection( $warehouses );
+                $query = Warehouse::query();
+                $data  = $paginate ? $query->paginate() : $query->get();
+
+                return WarehouseResource::collection( $data );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
