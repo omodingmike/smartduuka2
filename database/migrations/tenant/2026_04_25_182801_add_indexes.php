@@ -37,7 +37,6 @@
                 $table->index( 'user_id' , 'idx_legacy_debts_user_id' );
             } );
 
-            // customer_payments: user_id + customer_payment_type (used by debtPayments())
             Schema::table( 'customer_payments' , function (Blueprint $table) {
                 $table->index( [ 'user_id' , 'customer_payment_type' ] , 'idx_customer_payments_user_type' );
             } );

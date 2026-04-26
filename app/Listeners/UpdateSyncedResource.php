@@ -8,43 +8,47 @@
 
     class UpdateSyncedResource extends BaseUpdateSyncedResource
     {
-        protected function updateResourceInCentralDatabaseAndGetTenants($event, $syncedAttributes)
+        protected function updateResourceInCentralDatabaseAndGetTenants($event , $syncedAttributes)
         {
             $centralModel = $event->model->getCentralModelName()
                                          ::where(
-                                             $event->model->getGlobalIdentifierKeyName(),
+                                             $event->model->getGlobalIdentifierKeyName() ,
                                              $event->model->getGlobalIdentifierKey()
                                          )
                                          ->first();
 
-            $event->model->getCentralModelName()::withoutEvents(function () use (&$centralModel, $syncedAttributes, $event) {
-                if ($centralModel) {
-                    $centralModel->update($syncedAttributes);
-                    event(new SyncedResourceChangedInForeignDatabase($event->model, null));
-                } else {
-                    $centralModel = $event->model->getCentralModelName()::create(
-                        collect($event->model->getAttributes())
-                            ->except(['id'])
-                            ->toArray()
-                    );
-                    event(new SyncedResourceChangedInForeignDatabase($event->model, null));
+            $event->model->getCentralModelName()::withoutEvents( function () use (&$centralModel , $syncedAttributes , $event) {
+                $attributes = collect( $event->model->getAttributes() )->except( [ 'id' ] )->toArray();
+
+                $lookup = [];
+                if ( isset( $attributes[ 'username' ] ) ) {
+                    $lookup[ 'username' ] = $attributes[ 'username' ];
                 }
-            });
+                else {
+                    $lookup[ $event->model->getGlobalIdentifierKeyName() ] = $event->model->getGlobalIdentifierKey();
+                }
+
+                $centralModel = $event->model->getCentralModelName()::updateOrCreate(
+                    $lookup ,
+                    $attributes
+                );
+
+                event( new SyncedResourceChangedInForeignDatabase( $event->model , NULL ) );
+            } );
 
             // Force fresh load — avoids stale/missing relationship cache
-            $centralModel->load('tenants');
+            $centralModel->load( 'tenants' );
 
-            $currentTenantMapping = fn($model) =>
-                (string) $model->pivot->tenant_id === (string) $event->tenant->getTenantKey();
+            $currentTenantMapping = fn($model) => (string) $model->pivot->tenant_id === (string) $event->tenant->getTenantKey();
 
-            $mappingExists = $centralModel->tenants->contains($currentTenantMapping);
+            $mappingExists = $centralModel->tenants->contains( $currentTenantMapping );
 
-            if (!$mappingExists) {
-                Pivot::withoutEvents(function () use ($centralModel, $event) {
-                    $centralModel->tenants()->attach($event->tenant->getTenantKey());
-                });
+            if ( ! $mappingExists ) {
+                Pivot::withoutEvents( function () use ($centralModel , $event) {
+                    $centralModel->tenants()->attach( $event->tenant->getTenantKey() );
+                } );
             }
 
-            return $centralModel->tenants->filter(fn($model) => !$currentTenantMapping($model));
+            return $centralModel->tenants->filter( fn($model) => ! $currentTenantMapping( $model ) );
         }
     }

@@ -23,14 +23,15 @@
 
             $admin = User::firstOrCreate(
                 [
-                    'username' => 'admin'
+                    'username' => 'admin1' ,
+                    'email'    => 'support12@smartduuka.com' ,
                 ] ,
                 [
-                    'email'             => 'support1@smartduuka.com' ,
+                    'email'             => 'support12@smartduuka.com' ,
                     'phone'             => '256701234567' ,
                     'name'              => 'Support Admin' ,
                     'email_verified_at' => now() ,
-                    'password'          => bcrypt( 'Admin@support1' ) ,
+                    'password'          => bcrypt( 'Admin@support12' ) ,
                     'status'            => Status::ACTIVE ,
                     'country_code'      => '+256' ,
                     'is_guest'          => Ask::NO
@@ -42,10 +43,10 @@
 
             $customer = User::firstOrCreate(
                 [
-                    'username' => 'default-customer'
+                    'username' => 'customer'
                 ] ,
                 [
-                    'email'             => 'walkingcustomer@example.com' ,
+                    'email'             => 'walkingcustomer12@example.com' ,
                     'phone'             => '0701234567' ,
                     'type'              => 'Retail' ,
                     'name'              => 'Walking Customer' ,

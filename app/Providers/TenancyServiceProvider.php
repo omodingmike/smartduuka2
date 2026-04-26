@@ -107,7 +107,7 @@
                 // Resource syncing
                 Events\SyncedResourceSaved::class                    => [
 //                    UpdateSyncedResource::class ,
-                    SyncNonCustomerUser::class
+//                    SyncNonCustomerUser::class
                 ] ,
 
                 // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
