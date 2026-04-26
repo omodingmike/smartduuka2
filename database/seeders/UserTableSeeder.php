@@ -26,13 +26,13 @@
                     'username' => 'admin'
                 ] ,
                 [
-                    'email'             => 'support@smartduuka.com' ,
-                    'phone'             => '0701034242' ,
+                    'email'             => 'support1@smartduuka.com' ,
+                    'phone'             => '256701234567' ,
                     'name'              => 'Support Admin' ,
                     'email_verified_at' => now() ,
-                    'password'          => bcrypt( 'Admin@support12' ) ,
+                    'password'          => bcrypt( 'Admin@support1' ) ,
                     'status'            => Status::ACTIVE ,
-                    'country_code'      => '+880' ,
+                    'country_code'      => '+256' ,
                     'is_guest'          => Ask::NO
                 ]
             );
