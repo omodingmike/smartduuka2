@@ -81,7 +81,7 @@
             if ( ! $env_editor->keyExists( 'PROJECT_ID' ) ) {
                 $data[ 'PROJECT_ID' ] = Str::uuid()->getHex();
             }
-            $email = settingValue( key: 'company_email' , group: 'company' );
+            $email = setting( key: 'company_email' , group: 'company' );
             if ( $email && ! config( 'app.main_app' ) ) {
                 $env_editor->addData( [ 'MAIL_REPLY_ADDRESS' => $email ] );
             }

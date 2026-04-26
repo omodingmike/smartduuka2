@@ -146,9 +146,14 @@
         return filter_var( Settings::group( $group )->get( $key ) ?? FALSE , FILTER_VALIDATE_BOOLEAN );
     }
 
-    function settingValue(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : string | null
+    function setting(string $key , string $group = SettingsEnum::APP_SETTINGS->value) : string | null
     {
         return Settings::group( $group )->get( $key );
+    }
+
+    function company()
+    {
+        return Settings::group( 'company' )->all();
     }
 
     function addPayment(Order $order = NULL , int $amount = 0 , int $payment_method = 0 , string $reference = NULL , PosPaymentType $pos_payment_type =

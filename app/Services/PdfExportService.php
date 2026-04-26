@@ -114,7 +114,7 @@
                     'logo'           => ThemeSetting::where( [ 'key' => 'theme_logo' ] )->first()->logo ,
                 ];
                 foreach ( $colors as $color ) {
-                    $data[ $color ] = settingValue( $color );
+                    $data[ $color ] = setting( $color );
                 }
                 return view( $view , $data )->render();
             } catch ( Exception $exception ) {

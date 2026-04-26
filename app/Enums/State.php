@@ -12,4 +12,6 @@
         const AWAITING_PAYMENT_PHONE_ADD     = 'awaiting_payment_phone_add';
         const AWAITING_PLAN_UPGRADE          = 'awaiting_plan_upgrade';
         const AWAITING_PAYMENT_PHONE_UPGRADE = 'awaiting_payment_phone_upgrade';
+        const AWAITING_OTP                   = 'awaiting_otp';
+        const VERIFIED                       = 'verified';
     }

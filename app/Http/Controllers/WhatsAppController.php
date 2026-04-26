@@ -14,6 +14,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Arr;
     use Illuminate\Support\Facades\Http;
+    use Illuminate\Validation\ValidationException;
 
     class WhatsAppController extends Controller
     {
@@ -494,6 +495,48 @@
 
             // Log the response to check for success or validation errors from Meta
             info( 'Template Creation Response: ' . $response->body() );
+
+            return $response->json();
+        }
+
+        /**
+         * @throws ValidationException
+         */
+        public function registerPhoneNumber(Request $request)
+        {
+            $full_phone_number = $request->input( 'phone_number' );
+
+            $country_code   = substr( $full_phone_number , 1 , 3 );
+            $national_number = substr( $full_phone_number , 4 );
+
+            $wabaId = config( 'whatsapp.whatsapp_business_id' );
+            $token  = config( 'whatsapp.whatsapp_access_token' );
+
+            $response = Http::withToken( $token )
+                            ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers" , [
+                                'cc'                   => $country_code ,
+                                'phone_number'         => $national_number ,
+                                'migrate_phone_number' => false ,
+                                'verified_name'        => $business->business_name ,
+                                'code_method'          => 'SMS' ,
+                            ] );
+
+            return $response->json();
+        }
+
+        public function verifyOtp(Request $request)
+        {
+            $validated = $request->validate( [
+                'code' => 'required|string' ,
+            ] );
+
+            $wabaId = config( 'whatsapp.whatsapp_business_id' );
+            $token  = config( 'whatsapp.whatsapp_access_token' );
+
+            $response = Http::withToken( $token )
+                            ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers/verify_code" , [
+                                'code' => $validated[ 'code' ] ,
+                            ] );
 
             return $response->json();
         }

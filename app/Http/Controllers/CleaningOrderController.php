@@ -48,7 +48,7 @@
         public function store(CleaningOrderRequest $request)
         {
             $data   = $request->validated();
-            $prefix = settingValue( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
+            $prefix = setting( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
             return DB::transaction( function () use ($prefix , $data) {
                 $order = CleaningOrder::create( [
                     'order_id'                     => $prefix . time() ,
@@ -89,7 +89,7 @@
         public function storeClient(ClientCleaningOrderRequest $request)
         {
             $data           = $request->validated();
-            $prefix         = settingValue( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
+            $prefix         = setting( 'order_prefix' , SettingsKeyEnum::CLEANING ) ?? 'SDCC-';
             $customer       = json_decode( $data[ 'customer' ] , TRUE );
             $order_customer = CleaningServiceCustomer::firstOrCreate( [
                 'phone' => $customer[ 'phone' ] ,
