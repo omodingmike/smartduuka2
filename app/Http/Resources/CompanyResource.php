@@ -18,16 +18,17 @@
         public function toArray($request) : array
         {
             return [
-                "company_name"            => $this->info[ 'company_name' ] ?? '',
-                "company_email"           => $this->info[ 'company_email' ] ?? '',
-                "company_phone"           => $this->info[ 'company_phone' ] ?? '',
+                "company_name"            => $this->info[ 'company_name' ] ?? '' ,
+                "company_email"           => $this->info[ 'company_email' ] ?? '' ,
+                "company_phone"           => $this->info[ 'company_phone' ] ?? '' ,
+                "company_whatsapp_phone"  => $this->info[ 'company_whatsapp_phone' ] ?? '' ,
                 "company_phone_alternate" => $this->info[ 'company_phone_alternate' ] ?? '' ,
-                "company_website"         => $this->info[ 'company_website' ] ?? '',
-                "company_city"            => $this->info[ 'company_city' ] ?? '',
-                "company_state"           => $this->info[ 'company_state' ] ?? '',
-                "company_country_code"    => $this->info[ 'company_country_code' ] ?? '',
-                "company_zip_code"        => $this->info[ 'company_zip_code' ] ?? '',
-                "company_address"         => $this->info[ 'company_address' ] ?? '',
+                "company_website"         => $this->info[ 'company_website' ] ?? '' ,
+                "company_city"            => $this->info[ 'company_city' ] ?? '' ,
+                "company_state"           => $this->info[ 'company_state' ] ?? '' ,
+                "company_country_code"    => $this->info[ 'company_country_code' ] ?? '' ,
+                "company_zip_code"        => $this->info[ 'company_zip_code' ] ?? '' ,
+                "company_address"         => $this->info[ 'company_address' ] ?? '' ,
             ];
         }
     }

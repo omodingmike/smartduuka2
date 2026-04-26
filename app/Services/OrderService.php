@@ -30,13 +30,15 @@
     use App\Models\CreditDepositPurchase;
     use App\Models\Order;
     use App\Models\OrderProduct;
+    use App\Models\OrderServiceAdon;
+    use App\Models\OrderServiceProduct;
+    use App\Models\OrderServiceTier;
     use App\Models\PaymentMethod;
     use App\Models\PaymentMethodTransaction;
     use App\Models\PosPayment;
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\RetailPrice;
-    use App\Models\Service;
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\User;
@@ -71,116 +73,6 @@
             'excepts'
         ];
 
-        /**
-         * @throws Exception
-         */
-        /**
-         * @throws Exception
-         */
-        public function list1(Request $request)
-        {
-            try {
-                $orderColumn    = $request->input( 'order_column' ) ?? 'id';
-                $orderBy        = $request->input( 'order_by' ) ?? 'desc';
-                $page           = $request->input( 'page' ) ?? 1;
-                $per_page       = $request->input( 'per_page' ) ?? 10;
-                $status         = $request->integer( 'status' );
-                $payment_status = $request->integer( 'payment_status' );
-                $order_type     = $request->integer( 'order_type' );
-                $query          = $request->input( 'query' );
-                $start          = $request->date( 'start' );
-                $end            = $request->date( 'end' );
-                $report         = $request->string( 'report' );
-                $exclude        = $request->integer( 'exclude' );
-                $query          = $query ? trim( $query ) : NULL;
-                $type           = $request->integer( 'type' );
-
-                $orders = Order::with( [
-                    'orderProducts.item' => function ($query) {
-                        $query->withTrashed();
-                    } ,
-                    'user' ,
-                    'creator' ,
-                    'paymentMethods.paymentMethod' ,
-                    'originalOrder' ,
-                    'posPayments'        => fn($q) => $q->latest() ,
-                    'posPayments.paymentMethod'
-                ] )->when( $query , function (Builder $q) use ($query) {
-                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
-                      ->orWhere( 'id' , 'ilike' , "%$query%" )
-                      ->orWhereHas( 'user' , function ($q) use ($query) {
-                          $q->where( 'name' , 'ilike' , "%$query%" );
-                      } );
-                } )
-                               ->when( ( $payment_status && $payment_status > 0 ) , function (Builder $q) use ($payment_status) {
-                                   $q->where( 'payment_status' , $payment_status );
-                               } )
-                               ->when( ( $status && $status > 0 ) , function (Builder $q) use ($status) {
-                                   $q->where( 'status' , $status );
-                               } )
-                               ->when( ( $report == 'sales' ) , function (Builder $q) {
-                                   $q->where( 'status' , '<>' , OrderStatus::CANCELED );
-                               } )
-                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
-                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-                               } )
-                               ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-                               } )
-                               ->when( ( $order_type && $order_type > 0 ) , function (Builder $q) use ($order_type) {
-                                   $q->where( 'order_type' , $order_type );
-                               } )
-                               ->when( $type , function (Builder $q) use ($type) {
-                                   $q->where( 'payment_type' , $type );
-                               } )
-                               ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
-                                   $q->whereIn( 'payment_type' , [ $type ] );
-                               } );
-
-
-                $baseQuery                = clone $orders;
-                $totalSales               = $baseQuery->sum( 'total' );
-                $totalPendingReturnOrders = ( clone $baseQuery )->where( 'return_status' , ReturnStatus::PENDING->value )->sum( 'total' );
-                $totalPendingRefundOrders = ( clone $baseQuery )->where( 'refund_status' , RefundStatus::REFUNDED->value )->sum( 'total' );
-
-                $quotations     = ( clone $baseQuery )->where( 'order_type' , OrderType::QUOTATION )->get();
-                $pending        = $quotations->where( 'quotation_status' , QuotationStatus::PENDING )->count();
-                $approved       = $quotations->where( 'quotation_status' , QuotationStatus::CONVERTED )->count();
-                $rejected       = $quotations->whereIn( 'quotation_status' , [ QuotationStatus::CANCELLED , QuotationStatus::EXPIRED ] )->count();
-                $total          = $quotations->count();
-                $conversionRate = $total > 0 ? round( ( $approved / $total ) * 100 ) : 0;
-
-                $paginatedOrders = $orders->orderBy( $orderColumn , $orderBy )
-                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
-
-                $paginatedOrders->getCollection()->transform( function ($order) {
-                    $order->calculated_last_paid = $order->posPayments->sortByDesc( 'created_at' )->first();
-
-                    $order->calculated_new_total = $order->orderProducts->sum( function ($product) {
-                        return $product->unit_price * $product->quantity;
-                    } );
-
-                    return $order;
-                } );
-
-                return OrderResource::collection( $paginatedOrders )
-                                    ->additional( [
-                                        'meta' => [
-                                            'totalSales'                  => currency( $totalSales ) ,
-                                            'total_pending_return_orders' => currency( $totalPendingReturnOrders ) ,
-                                            'total_refund_orders'         => currency( $totalPendingRefundOrders ) ,
-                                            'pending'                     => $pending ,
-                                            'approved'                    => $approved ,
-                                            'rejected'                    => $rejected ,
-                                            'conversionRate'              => $conversionRate
-                                        ]
-                                    ] );
-
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
         public function list(Request $request)
         {
             try {
@@ -199,21 +91,23 @@
                 $query          = $query ? trim( $query ) : NULL;
                 $type           = $request->integer( 'type' );
 
-                $orders = Order::select('orders.*')
-                               ->with([
-                    'orderProducts.item' => function ($q) {
-                        $q->withTrashed();
-                    },
-                    'user',
-                    'creator',
-                    'paymentMethods.paymentMethod',
-                    'originalOrder',
-                    // 2. FIX: Combine sorting and nested relationships in ONE place
-                    'posPayments' => fn($q) => $q->latest(),
-                    'posPayments.paymentMethod'
-                ])
-                               ->withSum('posPayments as calculated_net_paid', 'amount')
-                               ->withSum('orderProducts as calculated_new_total', DB::raw('unit_price * quantity'))
+                $orders = Order::select( 'orders.*' )
+                               ->with( [
+                                   'orderProducts.item' => function ($q) {
+                                       $q->withTrashed();
+                                   } ,
+                                   'user' ,
+                                   'creator' ,
+                                   'paymentMethods.paymentMethod' ,
+                                   'originalOrder' ,
+                                   'posPayments'        => fn($q) => $q->latest() ,
+                                   'posPayments.paymentMethod' ,
+                                   'orderServiceProducts.service' ,
+                                   'orderServiceProducts.addons.addon' ,
+                                   'orderServiceProducts.tier.serviceTier'
+                               ] )
+                               ->withSum( 'posPayments as calculated_net_paid' , 'amount' )
+                               ->withSum( 'orderProducts as calculated_new_total' , DB::raw( 'unit_price * quantity' ) )
                                ->when( $query , function (Builder $q) use ($query) {
                                    $q->where( 'order_serial_no' , 'ilike' , "%$query%" )
                                      ->orWhere( 'id' , 'ilike' , "%$query%" )
@@ -240,7 +134,15 @@
                                    $q->where( 'order_type' , $order_type );
                                } )
                                ->when( $type , function (Builder $q) use ($type) {
-                                   $q->where( 'payment_type' , $type );
+                                   if ( $type == PaymentType::CASH->value ) {
+                                       $q->where( function (Builder $query) use ($type) {
+                                           $query->where( 'payment_type' , $type )
+                                                 ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED );
+                                       } );
+                                   }
+                                   else {
+                                       $q->where( 'payment_type' , $type );
+                                   }
                                } )
                                ->when( ( $exclude && $order_type !== OrderType::QUOTATION->value ) , function (Builder $q) use ($type) {
                                    $q->whereIn( 'payment_type' , [ $type ] );
@@ -263,7 +165,7 @@
 
                 $paginatedOrders->getCollection()->transform( function ($order) {
                     $order->calculated_last_paid = $order->posPayments->first();
-                    $order->net_paid = $order->calculated_net_paid ?? 0;
+                    $order->net_paid             = $order->calculated_net_paid ?? 0;
                     $order->calculated_new_total = $order->calculated_new_total ?? 0;
                     return $order;
                 } );
@@ -970,20 +872,91 @@
 
                     if ( ! blank( $services ) ) {
                         foreach ( $services as $service ) {
-                            OrderProduct::create( [
+                            $orderServiceProduct = OrderServiceProduct::create( [
                                 'order_id'   => $this->order->id ,
-                                'item_id'    => $service[ 'service_id' ] ,
-                                'item_type'  => Service::class ,
+                                'service_id' => $service[ 'service_id' ] ,
                                 'quantity'   => $service[ 'quantity' ] ,
                                 'total'      => $service[ 'quantity' ] * $service[ 'price' ] ,
                                 'unit_price' => $service[ 'price' ] ,
                             ] );
+
+                            foreach ( $service[ 'addons' ] as $addon ) {
+                                OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
+                            }
+
+                            if ( isset( $service[ 'tier_id' ] ) ) {
+                                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
+                            }
                         }
                     }
+                    $subtotal              = $this->order->orderServiceProducts()->sum( 'total' );
+                    $this->order->subtotal = $subtotal;
+                    $this->order->total    = $subtotal + $this->order->shipping_charge - $this->order->discount;
                     $this->order->save();
                 } );
 
                 return response()->json();
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function serviceQuotationUpdate(Order $order , QuotationRequest $request)
+        {
+            try {
+                DB::transaction( function () use ($order , $request) {
+                    $order->update(
+                        array_merge( $request->validated() , [
+                            'user_id'        => $request->customer_id ,
+                            'due_date'       => $request->expiry_date ,
+                            'order_datetime' => $request->date ,
+                            'reason'         => $request->notes ?? $order->reason ,
+                        ] )
+                    );
+
+                    $this->order = $order;
+                    activity()->log( 'Updated Service Quotation: ' . $order->order_serial_no );
+
+                    // Remove existing service items before attaching the updated ones
+                    foreach ( $order->orderServiceProducts as $product ) {
+                        $product->addons()->delete();
+                        $product->tier()->delete();
+                    }
+                    $order->orderServiceProducts()->delete();
+
+
+                    $services = json_decode( $request->items , TRUE );
+
+                    if ( ! blank( $services ) ) {
+                        foreach ( $services as $service ) {
+                            $orderServiceProduct = OrderServiceProduct::create( [
+                                'order_id'   => $this->order->id ,
+                                'service_id' => $service[ 'service_id' ] ,
+                                'quantity'   => $service[ 'quantity' ] ,
+                                'total'      => $service[ 'quantity' ] * $service[ 'price' ] ,
+                                'unit_price' => $service[ 'price' ] ,
+                            ] );
+
+                            if ( isset( $service[ 'addons' ] ) ) {
+                                foreach ( $service[ 'addons' ] as $addon ) {
+                                    OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
+                                }
+                            }
+
+                            if ( isset( $service[ 'tier_id' ] ) ) {
+                                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
+                            }
+                        }
+                    }
+                    $subtotal              = $this->order->orderServiceProducts()->sum( 'total' );
+                    $this->order->subtotal = $subtotal;
+                    $this->order->total    = $subtotal + $this->order->shipping_charge - $this->order->discount;
+                    $this->order->save();
+                } );
+
+                return response()->json( [ 'message' => 'Service quotation updated successfully' ] );
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
@@ -1508,6 +1481,95 @@
             }
         }
 
+        public function makeServiceSale(Order $order , Request $request)
+        {
+            try {
+                return DB::transaction( function () use ($request , $order) {
+                    $order->load( 'orderServiceProducts.service.items' );
+                    $status      = $request->integer( 'status' );
+                    $paymentType = $request->integer( 'paymentType' );
+
+                    foreach ( $order->orderServiceProducts as $orderServiceProduct ) {
+                        foreach ( $orderServiceProduct->service->items as $item ) {
+                            $itemType = ( str_contains( $item->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
+
+                            $is_variation = $itemType === ProductVariation::class;
+                            $product      = $itemType::find( $item->item_id );
+
+                            if ( $product->stock < $item->quantity ) {
+                                if ( $is_variation ) {
+                                    $parentProduct = Product::find( $product->product_id );
+                                    $name          = $parentProduct->name . ' (' . $product->productAttributeOption?->name . ')';
+                                }
+                                else {
+                                    $name = $product->name;
+                                }
+                                throw new Exception( "{$name} stock not enough" );
+                            }
+
+                            $stock = Stock::where( [
+                                'item_id'      => $item->item_id ,
+                                'item_type'    => $itemType ,
+                                'status'       => StockStatus::RECEIVED ,
+                                'warehouse_id' => $order->warehouse_id
+                            ] )->first();
+                            $stock?->decrement( 'quantity' , $item->quantity );
+                        }
+                    }
+
+                    activityLog( 'Converted Service Quotation to sale :' . $order->order_serial_no );
+                    $user   = $order->user;
+                    $ledger = NULL;
+                    if ( $paymentType == PaymentType::CREDIT->value || $paymentType == PaymentType::DEPOSIT->value ) {
+                        $ledger = addToLedger( user: $user , reference: 'Service Quotation converted' , bill_amount: $order->total , paid: 0 );
+                    }
+                    $payments = json_decode( $request->payments , TRUE );
+
+                    $paymentStatus = match ( $status ) {
+                        SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
+                        default                         => PaymentStatus::UNPAID
+                    };
+
+                    if ( $status == SaleOrderType::DEPOSIT->value ) {
+                        $paymentStatus = PaymentStatus::PARTIALLY_PAID;
+                    }
+
+                    $order->update( [
+                        'quotation_status' => QuotationStatus::CONVERTED ,
+                        'status'           => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
+                        'payment_status'   => $paymentStatus
+                    ] );
+                    if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
+
+                    foreach ( $payments as $p ) {
+                        $amount     = $p[ 'amount' ];
+                        $net_amount = $amount;
+                        if ( $amount > 0 ) {
+                            $payment = PaymentMethod::find( $p[ 'id' ] );
+                            if ( $ledger ) {
+                                $ledger->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
+                            }
+                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
+                            if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
+                                addToCustomerWalletTransaction(
+                                    $user ,
+                                    -$net_amount ,
+                                    CustomerWalletTransactionType::PURCHASE ,
+                                    $payment->id ,
+                                    $order->order_serial_no
+                                );
+                            }
+                        }
+                    }
+                    return response()->json();
+                } );
+            } catch ( Exception $exception ) {
+                DB::rollBack();
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
         public function update(PosOrderRequest $request) : object
         {
             try {
@@ -1580,8 +1642,28 @@
         public function show(Order $order) : OrderResource
         {
             try {
-                return new OrderResource( $order->load(
-                    [ 'creditDepositPurchases.paymentMethod' , 'orderProducts.product.taxes.tax' , 'orderProducts.product.unit:id,code' , 'orderProducts.product.sellingUnits:id,code' , 'user.addresses' , 'stocks' ] ) );
+                $relations = [
+                    'creditDepositPurchases.paymentMethod' ,
+                    'user.addresses' ,
+                    'stocks' ,
+                    'user' ,
+                    'creator' ,
+                    'paymentMethods.paymentMethod'
+                ];
+
+                if ( $order->quotation_type === QuotationType::SERVICE ) {
+                    $relations[] = 'orderServiceProducts.service';
+                    $relations[] = 'orderServiceProducts.addons.addon';
+                    $relations[] = 'orderServiceProducts.tier.serviceTier';
+                }
+                else {
+                    $relations[] = 'orderProducts.item';
+                    $relations[] = 'orderProducts.product.taxes.tax';
+                    $relations[] = 'orderProducts.product.unit:id,code';
+                    $relations[] = 'orderProducts.product.sellingUnits:id,code';
+                }
+
+                return new OrderResource( $order->load( $relations ) );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -1821,7 +1903,6 @@
         {
             try {
                 return DB::transaction( function () use ($order , $request) {
-//                    $order->load( 'orderProducts' );
                     $status = $request->integer( 'status' );
                     if ( $status == QuotationStatus::COUNTER_OFFER->value ) {
                         $order->update( [
@@ -1835,24 +1916,36 @@
                         ] );
                     }
 
-//                    if ( $status == QuotationStatus::CONVERTED->value ) {
-//                        foreach ( $order->orderProducts as $orderProduct ) {
-//                            $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
-//
-//                            $stock = Stock::where( [
-//                                'item_id'      => $orderProduct->item_id ,
-//                                'item_type'    => $itemType ,
-//                                'status'       => StockStatus::RECEIVED ,
-//                                'warehouse_id' => $order->warehouse_id
-//                            ] )->first();
-//                            $stock?->increment( 'quantity' , $orderProduct->quantity );
-//                        }
-//                    }
-
                     $order->update( [ 'quotation_status' => $status ] );
 
                     activityLog( "Updated Quotation Status: {$order->order_serial_no}" );
 
+                    return response()->json();
+                } );
+            } catch ( Exception $exception ) {
+                Log::info( $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        public function updateServiceQuotationStatus(Order $order , Request $request) : object
+        {
+            try {
+                return DB::transaction( function () use ($order , $request) {
+                    $status = $request->integer( 'status' );
+                    if ( $status == QuotationStatus::COUNTER_OFFER->value ) {
+                        $order->update( [
+                            'offer_amount'  => $request->amount ,
+                            'offer_message' => $request->message ,
+                        ] );
+                    }
+                    if ( $status == QuotationStatus::CANCELLED->value ) {
+                        $order->update( [
+                            'decline_message' => $request->reason ,
+                        ] );
+                    }
+                    $order->update( [ 'quotation_status' => $status ] );
+                    activityLog( "Updated Service Quotation Status: {$order->order_serial_no}" );
                     return response()->json();
                 } );
             } catch ( Exception $exception ) {

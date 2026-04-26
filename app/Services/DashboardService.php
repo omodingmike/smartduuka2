@@ -46,16 +46,10 @@
                     $endDate   = Carbon::now()->copy()->endOfMonth();
                 }
 
-                // Unpaid Invoices (Assuming 'UNPAID' or 'PARTIALLY_PAID' status)
                 $unpaidInvoicesQuery = Order::active()->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
                                             ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
 
                 $totalUnpaidInvoices = $unpaidInvoicesQuery->sum( 'balance' );
-
-//                $paidInvoiceAmount = PosPayment::whereHas( 'order' , function ($query) use ($startDate , $endDate) {
-//                    $query->whereIn( 'payment_status' , [ PaymentStatus::UNPAID , PaymentStatus::PARTIALLY_PAID ] )
-//                          ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] );
-//                } )->sum( 'amount' );
 
                 // Overdue Invoices (Due date < Today)
                 $overdueInvoices = Order::active()
@@ -131,8 +125,6 @@
                 $prevStartDate = $startDate->copy()->subDays( $duration );
                 $prevEndDate   = $endDate->copy()->subDays( $duration );
 
-                // Sales — total value of ALL orders placed (Cash + Credit + Deposit),
-                // matching RegisterResource $total_sales_value accrual logic.
                 $currentSales = Order::active()
                                      ->whereBetween( 'order_datetime' , [ $startDate , $endDate ] )
                                      ->sum( 'total' );

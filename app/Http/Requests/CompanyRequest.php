@@ -6,28 +6,18 @@
 
     class CompanyRequest extends FormRequest
     {
-        /**
-         * Determine if the user is authorized to make this request.
-         *
-         * @return bool
-         */
         public function authorize() : bool
         {
             return TRUE;
         }
 
-        /**
-         * Get the validation rules that apply to the request.
-         *
-         * @return array
-         */
         public function rules() : array
         {
             return [
                 'company_name'            => [ 'required' , 'string' , 'max:190' ] ,
                 'company_email'           => [ 'required' , 'email' , 'max:190' ] ,
-//                'company_calling_code'    => [ 'required' , 'string' , 'max:20' ] ,
                 'company_phone'           => [ 'required' , 'string' , 'max:20' ] ,
+                'company_whatsapp_phone'  => [ 'nullable' , 'string' , 'max:20' ] ,
                 'company_phone_alternate' => [ 'sometimes' , 'string' , 'max:20' ] ,
                 'company_website'         => [ 'nullable' , 'url' , 'max:500' ] ,
                 'company_city'            => [ 'nullable' , 'string' , 'max:190' ] ,

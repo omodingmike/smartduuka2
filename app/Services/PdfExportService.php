@@ -2,6 +2,7 @@
 
     namespace App\Services;
 
+    use App\Enums\QuotationType;
     use App\Models\Order;
     use App\Models\PaymentMethod;
     use App\Models\ThemeSetting;
@@ -66,18 +67,34 @@
         {
             try {
                 $colors = [ 'primaryColor' , 'primaryLight' , 'secondaryColor' , 'secondaryLight' ];
-                $order->load(
-                    [
-                        'orderProducts.item' ,
-                        'creditDepositPurchases.paymentMethod' ,
-                        'orderProducts.product.taxes.tax' ,
-                        'orderProducts.product.unit:id,code' ,
-                        'orderProducts.product.sellingUnits:id,code' ,
-                        'user.addresses' , 'stocks' , 'user' , 'creator' , 'paymentMethods.paymentMethod'
-                    ] );
+
+                $relations = [
+                    'creditDepositPurchases.paymentMethod' ,
+                    'user.addresses' ,
+                    'stocks' ,
+                    'user' ,
+                    'creator' ,
+                    'paymentMethods.paymentMethod'
+                ];
+
+                if ( $order->quotation_type === QuotationType::SERVICE ) {
+                    $relations[] = 'orderServiceProducts.service';
+                    $view        = 'quotations.service-quotation';
+                }
+                else {
+                    $relations[] = 'orderProducts.item';
+                    $relations[] = 'orderProducts.product.taxes.tax';
+                    $relations[] = 'orderProducts.product.unit:id,code';
+                    $relations[] = 'orderProducts.product.sellingUnits:id,code';
+                    $view        = 'quotations.quotation';
+                }
+
+                $order->load( $relations );
+
                 $methods = $order->creditDepositPurchases->map( function ($purchase) {
                     return $purchase->paymentMethod;
                 } )->unique();
+
                 if ( $order->payment_method ) {
                     $data[]         = $order->paymentMethod;
                     $paymentMethods = $data;
@@ -92,7 +109,6 @@
                     'order'          => $order ,
                     'balance'        => ( $order->total - $order->paid ) < 0 ? 0 : $order->total - $order->paid ,
                     'label'          => orderLabel( $order ) ,
-//                    'paymentMethods' => $order->payment_status == PaymentStatus::PAID ? $methods : PaymentMethod::all() ,
                     'paymentMethods' => $paymentMethods ,
                     'company'        => (object) Settings::group( 'company' )->all() ,
                     'logo'           => ThemeSetting::where( [ 'key' => 'theme_logo' ] )->first()->logo ,
@@ -100,7 +116,7 @@
                 foreach ( $colors as $color ) {
                     $data[ $color ] = settingValue( $color );
                 }
-                return view( 'quotations.quotation' , $data )->render();
+                return view( $view , $data )->render();
             } catch ( Exception $exception ) {
                 info( $exception->getMessage() );
                 return NULL;

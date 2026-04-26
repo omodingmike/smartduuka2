@@ -8,6 +8,7 @@
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
+    use Illuminate\Database\Eloquent\Relations\HasOne;
 
     class Service extends Model
     {
@@ -20,7 +21,7 @@
             'status'
         ];
 
-        protected $casts = [ 'type' => ServiceType::class , 'status' => Status::class,'base_price' => 'float' ];
+        protected $casts = [ 'type' => ServiceType::class , 'status' => Status::class , 'base_price' => 'float' ];
 
         public function serviceCategory() : BelongsTo
         {
@@ -42,17 +43,28 @@
             return $this->hasMany( ServiceTier::class , 'service_id' , 'id' );
         }
 
-        protected function stock(): Attribute
+        public function orderAddOns() : HasMany
+        {
+            return $this->hasMany( OrderServiceAdon::class );
+        }
+
+        public function orderTier() : HasOne
+        {
+            return $this->hasOne( OrderServiceTier::class );
+        }
+
+        protected function stock() : Attribute
         {
             return Attribute::make(
-                get: fn () => 0,
+                get: fn() => 0 ,
             );
         }
 
-        protected function unit(): Attribute
+
+        protected function unit() : Attribute
         {
             return Attribute::make(
-                get: fn () => null,
+                get: fn() => NULL ,
             );
         }
 

@@ -36,16 +36,15 @@
             Settings::group( 'company' )->set( [ 'company_city' => '' ] );
             $data = $request->validated();
             Settings::group( 'company' )->set( $data );
-//            $this->envService->addData( [ 'APP_NAME' => $request->company_name ] );
 
             Business::where( [ 'project_id' => config( 'app.project_id' ) ] )
                     ->update( [ 'business_name' => Settings::group( 'company' )->get( 'company_name' ) , 'phone_number' => phoneNumber() ] );
 
             tenant()->update( [
-                'APP_NAME' => $request->company_name
+                'APP_NAME'               => $request->company_name ,
+                'company_whatsapp_phone' => $request->company_whatsapp_phone
             ] );
 
-//            UpdateConfigJob::dispatchAfterResponse();
             return $this->list();
 
         }

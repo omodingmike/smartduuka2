@@ -3,13 +3,14 @@
     namespace App\Http\Resources;
 
     use App\Models\Service;
-    use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\JsonResource;
 
-    /** @mixin Service */
+    /**
+     * @mixin Service
+     */
     class ServiceResource extends JsonResource
     {
-        public function toArray(Request $request) : array
+        public function toArray($request)
         {
             $addOnsTotal = $this->add_ons_sum_price ?? 0;
             $total_price = $this->base_price + $addOnsTotal;
@@ -31,6 +32,8 @@
                 'addOns'               => ServiceAddOnResource::collection( $this->whenLoaded( 'addOns' ) ) ,
                 'tiers'                => ServiceTierResource::collection( $this->whenLoaded( 'tiers' ) ) ,
                 'items'                => ServiceItemResource::collection( $this->whenLoaded( 'items' ) ) ,
+                'orderAddOns'          => ServiceItemResource::collection( $this->whenLoaded( 'orderAddOns' ) ) ,
+//                'orderTier'            => ServiceItemResource::collection( $this->whenLoaded( 'orderTier' ) ) ,
             ];
         }
     }

@@ -20,10 +20,15 @@
         private IotecController $iotec;
         private Request         $request;
 
+        private string $phoneNumberId;
+        private string $accessToken;
+
         public function __construct()
         {
-            $this->iotec   = new IotecController();
-            $this->request = new Request();
+            $this->iotec         = new IotecController();
+            $this->request       = new Request();
+            $this->phoneNumberId = config( 'whatsapp.whatsapp_phone_number_id' );
+            $this->accessToken   = config( 'whatsapp.whatsapp_access_token' );
         }
 
         public function index(Request $request)
@@ -34,6 +39,12 @@
                 return $hub_challenge;
             }
             return NULL;
+        }
+
+        public function setTenantCredentials(string $phoneNumberId , string $accessToken) : void
+        {
+            $this->phoneNumberId = $phoneNumberId;
+            $this->accessToken   = $accessToken;
         }
 
         /**
@@ -446,10 +457,8 @@
                     ]
                 ]
             ];
-            info( $components );
 
-            $res = $this->sendTemplate( $quotation->user->phone , 'quotation_invoice' , $components );
-            info( $res );
+            $this->sendTemplate( $quotation->user->phone , 'quotation_invoice' , $components );
         }
 
         public function createDocumentTemplate()

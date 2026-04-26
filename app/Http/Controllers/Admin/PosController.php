@@ -3,6 +3,7 @@
     namespace App\Http\Controllers\Admin;
 
     use App\Enums\OrderStatus;
+    use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
     use App\Enums\RegisterStatus;
     use App\Enums\ReturnStatus;
@@ -78,6 +79,15 @@
             }
         }
 
+        public function serviceQuotationUpdate(Order $order , QuotationRequest $request)
+        {
+            try {
+                return $this->orderService->serviceQuotationUpdate( $order , $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
         public function quotationUpdate(Order $order , QuotationRequest $request)
         {
             try {
@@ -90,7 +100,10 @@
         public function quotationStatusUpdate(Order $order , Request $request)
         {
             try {
-                return $this->orderService->updateQuotationStatus( $order , $request );
+                if ( $order->quotation_type == QuotationType::PRODUCT ) {
+                    return $this->orderService->updateQuotationStatus( $order , $request );
+                }
+                return $this->orderService->updateServiceQuotationStatus( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -293,7 +306,19 @@
         public function makeQuotationSale(Order $order , Request $request)
         {
             try {
-                return $this->orderService->makeQuotationSale( $order , $request );
+                if ( $order->quotation_type == QuotationType::PRODUCT->value ) {
+                    return $this->orderService->makeQuotationSale( $order , $request );
+                }
+                return $this->orderService->makeServiceSale( $order , $request );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
+        }
+
+        public function makeServiceSale(Order $order , Request $request)
+        {
+            try {
+                return $this->orderService->makeServiceSale( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

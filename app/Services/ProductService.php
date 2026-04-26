@@ -455,7 +455,7 @@
 //                    $product->commissionTargets()->delete();
 
                     // 2. Delete POS and Inventory Records
-                    // This cleans up records from OrderService::posOrderStore
+                    // This cleans up records from OrdersService::posOrderStore
 //                    $product->orderProducts()->delete();
 //                    $product->stocks()->delete();
 

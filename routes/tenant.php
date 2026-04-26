@@ -767,6 +767,7 @@
                 Route::get( '/export-quotation' , [ PosOrderController::class , 'exportOrder' ] );
                 Route::put( '/mail-quotation/{order}' , [ PosOrderController::class , 'mailQuotation' ] );
                 Route::put( '/make-quotation-sale/{order}' , [ PosController::class , 'makeQuotationSale' ] );
+
                 Route::post( '/fulfill' , [ PosOrderController::class , 'fullFill' ] );
                 Route::post( '/fulfill-preorder/{order}' , [ PreOrderFulfillmentController::class , 'fulfill' ] );
                 Route::post( '/quotation-css-variables' , [ PosOrderController::class , 'updateCssVariables' ] );
@@ -796,7 +797,7 @@
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
                 Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
                 Route::post( '/service-quotation' , [ PosController::class , 'serviceQuotationStore' ] )->middleware( 'register' );
-                Route::post( '/service-quotation' , [ PosController::class , 'serviceQuotationStore' ] )->middleware( 'register' );
+                Route::put( '/service-quotation/{order}' , [ PosController::class , 'serviceQuotationUpdate' ] )->middleware( 'register' );
                 Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
 //                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );

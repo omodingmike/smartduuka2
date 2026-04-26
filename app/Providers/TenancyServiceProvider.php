@@ -12,7 +12,6 @@
     use Illuminate\Support\ServiceProvider;
     use Spatie\Permission\PermissionRegistrar;
     use Stancl\JobPipeline\JobPipeline;
-    use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
     use Stancl\Tenancy\Events;
     use Stancl\Tenancy\Features\TenantConfig;
     use Stancl\Tenancy\Jobs;
@@ -141,6 +140,7 @@
                 'business_id'                => 'app.business_id' ,
                 'pin_pepper'                 => 'app.pin_pepper' ,
                 'print_agent_token'          => 'app.print_agent_token' ,
+                'company_whatsapp_phone'     => 'app.company_whatsapp_phone' ,
 
                 // From at.php
                 'AT_USERNAME'                => 'at.username' ,

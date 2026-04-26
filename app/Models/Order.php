@@ -60,7 +60,7 @@
             'is_returned' ,
             'quotation_status' ,
             'offer_amount' ,
-            'offer_message' ,'quotation_type',
+            'offer_message' , 'quotation_type' ,
             'decline_message'
         ];
 
@@ -99,6 +99,11 @@
             return $this->hasMany( OrderProduct::class );
         }
 
+        public function orderServiceProducts() : HasMany
+        {
+            return $this->hasMany( OrderServiceProduct::class );
+        }
+
         protected function orderSerialNo() : Attribute
         {
             return Attribute::make(
@@ -131,7 +136,8 @@
                         ->orWhereNull( 'pre_order_status' );
                   } )
                   ->where( function (Builder $q) {
-                      $q->where( 'status' , '!=' , OrderStatus::CANCELED )
+                      $q->where( 'status' , '=' , OrderStatus::COMPLETED )
+                        ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED )
                         ->orWhereNull( 'status' );
                   } );
         }

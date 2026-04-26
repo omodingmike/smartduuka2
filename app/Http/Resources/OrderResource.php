@@ -29,7 +29,7 @@
                 'original_order_id' => $this->original_order_id && $this->relationLoaded( 'originalOrder' )
                     ? $this->originalOrder->order_serial_no
                     : NULL ,
-                'last_paid'                      => $last_paid ? [
+                'last_paid'         => $last_paid ? [
                     'amount'           => currency( $last_paid?->amount ?? 0 ) ,
                     'previous_balance' => currency( $this->balance + ( $last_paid?->amount ?? 0 ) ) ,
                     'method'           => $last_paid->paymentMethod
@@ -53,23 +53,24 @@
                 'quotation_status'     => $this->quotation_status ,
                 'net_paid'             => $this->net_paid ,
 
-                'net_paid_currency' => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
-                'paid_currency'     => AppLibrary::currencyAmountFormat( $this->paid ) ,
-                'change'            => AppLibrary::currencyAmountFormat( $this->change ) ,
-                'balance'           => $this->balance ,
-                'quotation_type'    => $this->quotation_type ,
-                'balance_currency'  => AppLibrary::currencyAmountFormat( $this->balance ) ,
-                'shipping_charge'   => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
+                'net_paid_currency'    => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
+                'paid_currency'        => AppLibrary::currencyAmountFormat( $this->paid ) ,
+                'change'               => AppLibrary::currencyAmountFormat( $this->change ) ,
+                'balance'              => $this->balance ,
+                'quotation_type'       => $this->quotation_type ,
+                'balance_currency'     => AppLibrary::currencyAmountFormat( $this->balance ) ,
+                'shipping_charge'      => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
 
                 // Use relation checks to prevent errors if not eager loaded
-                'order_items'       => $this->relationLoaded( 'orderProducts' ) ? $this->orderProducts->count() : 0 ,
-                'order_datetime'    => AppLibrary::datetime2( $this->order_datetime ) ,
+                'order_items'          => $this->relationLoaded( 'orderProducts' ) ? $this->orderProducts->count() : 0 ,
+                'order_datetime'       => AppLibrary::datetime2( $this->order_datetime ) ,
 
                 // OPTIMIZATION 3: Use whenLoaded for relationships
-                'user'              => new OrderUserResource( $this->whenLoaded( 'user' ) ) ,
-                'creator'           => new UserResource( $this->whenLoaded( 'creator' ) ) ,
-                'orderProducts'     => OrderProductResourceNew::collection( $this->whenLoaded( 'orderProducts' ) ) ,
-                'paymentMethods'    => PosPaymentResource::collection( $this->whenLoaded( 'paymentMethods' ) ) ,
+                'user'                 => new OrderUserResource( $this->whenLoaded( 'user' ) ) ,
+                'creator'              => new UserResource( $this->whenLoaded( 'creator' ) ) ,
+                'orderProducts'        => OrderProductResourceNew::collection( $this->whenLoaded( 'orderProducts' ) ) ,
+                'orderServiceProducts' => OrderServiceProductResource::collection( $this->whenLoaded( 'orderServiceProducts' ) ) ,
+                'paymentMethods'       => PosPaymentResource::collection( $this->whenLoaded( 'paymentMethods' ) ) ,
 
                 'delivery_address'               => $this->delivery_address ,
                 'subtotal_currency_price'        => AppLibrary::currencyAmountFormat( $this->subtotal ) ,
