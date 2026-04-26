@@ -21,7 +21,8 @@
             'id' ,
             'business_id' ,
             'print_agent_token' ,
-            'data' , 'pin_pepper' , 'frontend_url' , 'name' , 'type' , 'location' , 'email' , 'phone' , 'domain' , 'status','company_whatsapp_phone'
+            'data' , 'pin_pepper' , 'frontend_url' , 'name' , 'type' , 'location' , 'email' , 'phone' , 'domain' , 'status' , 'company_whatsapp_phone' ,
+            'MAIL_HOST' , 'MAIL_PORT' , 'MAIL_USERNAME' , 'MAIL_PASSWORD' , 'MAIL_ENCRYPTION' , 'MAIL_FROM_ADDRESS' , 'MAIL_FROM_NAME' , 'MAIL_MAILER','APP_NAME'
         ];
 
         public static function getCustomColumns() : array

@@ -36,7 +36,6 @@
                 event( new SyncedResourceChangedInForeignDatabase( $event->model , NULL ) );
             } );
 
-            // Force fresh load — avoids stale/missing relationship cache
             $centralModel->load( 'tenants' );
 
             $currentTenantMapping = fn($model) => (string) $model->pivot->tenant_id === (string) $event->tenant->getTenantKey();

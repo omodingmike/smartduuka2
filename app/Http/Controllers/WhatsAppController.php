@@ -393,19 +393,21 @@
             $token  = config( 'whatsapp.whatsapp_access_token' );
 
             $payload = [
-                'name'       => 'quotation_invoice' ,
+                'name'       => 'quotation_invoice1' ,
                 'language'   => 'en_UG' ,
                 'category'   => 'UTILITY' ,
                 'components' => [
                     [
                         'type'    => 'BODY' ,
-                        'text'    => 'Hello {{1}}, here is your quotation #{{2}} for {{3}}. Please click the button below to view and approve it.' ,
+                        'text'    => "Hi {{1}}, here is the quotation you requested from {{2}} 📄\n\n🧾 Quote No: {{3}}\n⏳ Valid Until: {{4}}\n💰 Total Amount: {{5}} \n\nPlease review the attached PDF for a detailed breakdown. If you are ready to proceed, tap the button below.\n\nPowered securely by Smart Duuka" ,
                         'example' => [
                             'body_text' => [
                                 [
-                                    'John Doe' ,   // {{1}} Name
-                                    'QT-1045' ,    // {{2}} Serial
-                                    'UGX 150,000'  // {{3}} Price
+                                    'John Doe' ,        // client_name
+                                    'Smart Duuka' ,     // business_name
+                                    'QT-00123' ,        // quotation_number
+                                    '30-06-2024' ,      // expiry_date
+                                    'UGX 500,000' ,     // total_amount
                                 ]
                             ]
                         ]
@@ -415,8 +417,7 @@
                         'buttons' => [
                             [
                                 'type'    => 'URL' ,
-                                'text'    => 'View Quotation' ,
-                                // Base URL ends with a slash; {{1}} is the dynamic suffix
+                                'text'    => 'Review & Accept' ,
                                 'url'     => 'https://api.smartduuka.com/q/{{1}}' ,
                                 'example' => [
                                     'demoshop/132'
@@ -431,8 +432,6 @@
                             ->withHeaders( [ 'Content-Type' => 'application/json' ] )
                             ->post( "https://graph.facebook.com/v25.0/$wabaId/message_templates" , $payload );
 
-            info( 'Template Creation Response: ' . $response->body() );
-
             return $response->json();
         }
 
@@ -445,7 +444,9 @@
                     'type'       => 'body' ,
                     'parameters' => [
                         [ 'type' => 'text' , 'text' => (string) $quotation->user->name ] ,
+                        [ 'type' => 'text' , 'text' => (string) company()['company_name'] ] ,
                         [ 'type' => 'text' , 'text' => (string) $quotation->order_serial_no ] ,
+                        [ 'type' => 'text' , 'text' => datetime( $quotation->due_date ) ] ,
                         [ 'type' => 'text' , 'text' => currency( $quotation->total ) ] ,
                     ]
                 ] ,
@@ -459,7 +460,7 @@
                 ]
             ];
 
-            $this->sendTemplate( $quotation->user->phone , 'quotation_invoice' , $components );
+            $this->sendTemplate( $quotation->user->phone , 'quotation_invoice1' , $components );
         }
 
         public function createDocumentTemplate()
@@ -506,7 +507,7 @@
         {
             $full_phone_number = $request->input( 'phone_number' );
 
-            $country_code   = substr( $full_phone_number , 1 , 3 );
+            $country_code    = substr( $full_phone_number , 1 , 3 );
             $national_number = substr( $full_phone_number , 4 );
 
             $wabaId = config( 'whatsapp.whatsapp_business_id' );
@@ -516,7 +517,7 @@
                             ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers" , [
                                 'cc'                   => $country_code ,
                                 'phone_number'         => $national_number ,
-                                'migrate_phone_number' => false ,
+                                'migrate_phone_number' => FALSE ,
                                 'verified_name'        => $business->business_name ,
                                 'code_method'          => 'SMS' ,
                             ] );

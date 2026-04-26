@@ -28,6 +28,7 @@
     use App\Models\PosPayment;
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
+    use App\Models\ThemeSetting;
     use App\Models\User;
     use Carbon\Carbon;
     use Illuminate\Database\Eloquent\Model;
@@ -155,6 +156,12 @@
     {
         return Settings::group( 'company' )->all();
     }
+
+    function logo()
+    {
+        return ThemeSetting::where( [ 'key' => 'theme_logo' ] )?->first()?->logo ?? asset( 'logo.png' );
+    }
+
 
     function addPayment(Order $order = NULL , int $amount = 0 , int $payment_method = 0 , string $reference = NULL , PosPaymentType $pos_payment_type =
     PosPaymentType::SALE) : void
