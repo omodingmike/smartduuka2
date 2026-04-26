@@ -5,7 +5,6 @@
     namespace App\Providers;
 
     use App\Jobs\PrepareTenantJob;
-    use App\Listeners\SyncNonCustomerUser;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
@@ -134,7 +133,7 @@
 
             TenantConfig::$storageToConfigMap = [
                 // From app.php
-                'APP_NAME'                   => 'app.name' ,
+                'APP_NAME'                   => [ 'app.name' , 'mail.from.name' ] ,
                 'PROJECT_ID'                 => 'app.project_id' ,
                 'TIMEZONE'                   => 'app.timezone' ,
                 'business_id'                => 'app.business_id' ,
@@ -161,6 +160,7 @@
                 'MAIL_PASSWORD'              => 'mail.mailers.smtp.password' ,
                 'MAIL_ENCRYPTION'            => 'mail.mailers.smtp.encryption' ,
                 'MAIL_FROM_ADDRESS'          => 'mail.from.address' ,
+//                'MAIL_FROM_NAME'             => 'mail.from.name' ,
                 'TELEGRAM_EXCEPTION_TOKEN'   => 'telegram.token' ,
                 'TELEGRAM_EXCEPTION_CHAT_ID' => 'telegram.chat_id' ,
             ];
