@@ -136,7 +136,7 @@
                         ->orWhereNull( 'pre_order_status' );
                   } )
                   ->where( function (Builder $q) {
-                      $q->where( 'status' , '=' , OrderStatus::COMPLETED )
+                      $q->where( 'status' , '!=' , OrderStatus::CANCELED )
                         ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED )
                         ->orWhereNull( 'status' );
                   } );

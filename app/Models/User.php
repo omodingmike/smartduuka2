@@ -296,11 +296,6 @@
 
         public function creditOrdersQuery() : HasMany
         {
-            // -------------------------------------------------------------------------
-            // FIX 7: The correlated subquery inside WHERE is unavoidable for correctness,
-            // but we push it into a single aggregate below in credits().
-            // Required index on pos_payments: index(['order_id', 'amount'])
-            // -------------------------------------------------------------------------
             return $this->creditAndDeposit()
                         ->whereRaw(
                             'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)'
