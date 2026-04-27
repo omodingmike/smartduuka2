@@ -675,7 +675,26 @@
 
                 } );
 
-                return $this->order;
+//                return $this->order;
+                return $this->order->load( [
+                    'orderProducts.item' => function ($q) {
+                        $q->withTrashed();
+                    } ,
+                    'orderProducts.product.taxes.tax' ,
+                    'orderProducts.product.unit:id,code' ,
+                    'orderProducts.product.sellingUnits:id,code' ,
+                    'user.addresses' ,
+                    'creator' ,
+                    'paymentMethods.paymentMethod' ,
+                    'originalOrder' ,
+                    'posPayments'        => fn($q) => $q->latest() ,
+                    'posPayments.paymentMethod' ,
+                    'orderServiceProducts.service' ,
+                    'orderServiceProducts.addons.addon' ,
+                    'orderServiceProducts.tier.serviceTier' ,
+                    'creditDepositPurchases.paymentMethod' ,
+                    'stocks'
+                ] );
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
