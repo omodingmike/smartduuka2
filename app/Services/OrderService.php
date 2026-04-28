@@ -11,7 +11,7 @@
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
-    use App\Enums\QuotationItemType;
+    use App\Enums\ItemType;
     use App\Enums\QuotationStatus;
     use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
@@ -40,6 +40,7 @@
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\RetailPrice;
+    use App\Models\Service; // Added Service model
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\User;
@@ -494,6 +495,7 @@
                     $customer_id      = $request->integer( 'customer_id' );
                     $delivery_address = $request->delivery_address;
                     $delivery_fee     = $request->delivery_fee;
+                    $warehouse_id     = $request->warehouse_id;
 
                     $user = User::find( $customer_id );
 
@@ -521,7 +523,7 @@
                             'creator_id'      => auth()->id() ,
                             'creator_type'    => User::class ,
                             'payment_status'  => $paymentStatus->value ,
-                            'warehouse_id'    => $request->warehouse_id ,
+                            'warehouse_id'    => $warehouse_id ,
                             'order_datetime'  => now() ,
                             'register_id'     => register()->id
                         ]
@@ -568,64 +570,14 @@
                         }
                     }
 
-                    $products = json_decode( $request->items , TRUE );
+                    $items = json_decode( $request->items , TRUE );
 
-                    if ( ! blank( $products ) ) {
-                        foreach ( $products as $product ) {
-                            $p = Product::find( $product[ 'item_id' ] );
-
-                            $is_variation = isset( $product[ 'variation_id' ] );
-                            $variation    = NULL;
-                            $targetModel  = $p;
-                            $targetClass  = Product::class;
-                            $itemId       = $product[ 'item_id' ];
-
-                            if ( $is_variation ) {
-                                $variation_id = $product[ 'variation_id' ];
-
-                                $variation = ProductVariation::find( $variation_id );
-
-                                if ( $variation ) {
-                                    $targetModel = $variation;
-                                    $targetClass = ProductVariation::class;
-                                    $itemId      = $variation->id;
-                                }
-                            }
-
-                            if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
-                                $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
-                                throw new Exception( "{$name} stock not enough" );
-                            }
-
-                            $order_product = OrderProduct::create( [
-                                'order_id'                    => $this->order->id ,
-                                'item_id'                     => $itemId ,
-                                'item_type'                   => $targetClass ,
-                                'quantity_picked'             => 0 ,
-                                'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price_id' ] ,
-                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
-                                    RetailPrice::class ,
-                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price'                  => $product[ 'unitPrice' ] ,
-                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
-                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
-                            ] );
-
-                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
-
-                            $stock = Stock::where( [
-                                'item_id'      => $itemId ,
-                                'item_type'    => $targetClass ,
-                                'status'       => StockStatus::RECEIVED ,
-                                'warehouse_id' => $request->warehouse_id
-                            ] )->first();
-
-                            $qtyToDecrement = $product[ 'quantity' ];
-                            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
-
-                            if ( $status == SaleOrderType::DEPOSIT->value ) {
-                                $stock->increment( 'quantity_ordered' , $qtyToDecrement );
+                    if ( ! blank( $items ) ) {
+                        foreach ( $items as $item ) {
+                            if ( $item[ 'itemType' ] === ItemType::PRODUCT->value ) {
+                                $this->handlePosProductItem( $this->order , $item , $is_preorder , $warehouse_id , $status );
+                            } elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
+                                $this->handlePosServiceItem( $this->order , $item , $is_preorder , $warehouse_id , $status );
                             }
                         }
                     }
@@ -685,11 +637,11 @@
                         $hasProducts = FALSE;
                         $hasServices = FALSE;
                         foreach ( $items as $item ) {
-                            if ( $item[ 'type' ] === QuotationItemType::PRODUCT->value ) {
+                            if ( $item[ 'type' ] === ItemType::PRODUCT->value ) {
                                 $this->handleProductQuotationItem( $this->order , $item );
                                 $hasProducts = TRUE;
                             }
-                            elseif ( $item[ 'type' ] === QuotationItemType::SERVICE->value ) {
+                            elseif ( $item[ 'type' ] === ItemType::SERVICE->value ) {
                                 $this->handleServiceQuotationItem( $this->order , $item );
                                 $hasServices = TRUE;
                             }
@@ -755,11 +707,11 @@
                         $hasProducts = FALSE;
                         $hasServices = FALSE;
                         foreach ( $items as $item ) {
-                            if ( $item[ 'type' ] === QuotationItemType::PRODUCT->value ) {
+                            if ( $item[ 'type' ] === ItemType::PRODUCT->value ) {
                                 $this->handleProductQuotationItem( $this->order , $item );
                                 $hasProducts = TRUE;
                             }
-                            elseif ( $item[ 'type' ] === QuotationItemType::SERVICE->value ) {
+                            elseif ( $item[ 'type' ] === ItemType::SERVICE->value ) {
                                 $this->handleServiceQuotationItem( $this->order , $item );
                                 $hasServices = TRUE;
                             }
@@ -783,6 +735,121 @@
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
+            }
+        }
+
+        private function handlePosProductItem(Order $order, array $product, bool $is_preorder, int $warehouse_id, int $status): void
+        {
+            $p = Product::find( $product[ 'item_id' ] );
+
+            $is_variation = isset( $product[ 'variation_id' ] );
+            $variation    = NULL;
+            $targetModel  = $p;
+            $targetClass  = Product::class;
+            $itemId       = $product[ 'item_id' ];
+
+            if ( $is_variation ) {
+                $variation_id = $product[ 'variation_id' ];
+
+                $variation = ProductVariation::find( $variation_id );
+
+                if ( $variation ) {
+                    $targetModel = $variation;
+                    $targetClass = ProductVariation::class;
+                    $itemId      = $variation->id;
+                }
+            }
+
+            if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
+                $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
+                throw new Exception( "{$name} stock not enough" );
+            }
+
+            $order_product = OrderProduct::create( [
+                'order_id'                    => $order->id ,
+                'item_id'                     => $itemId ,
+                'item_type'                   => $targetClass ,
+                'quantity_picked'             => 0 ,
+                'quantity'                    => $product[ 'quantity' ] ,
+                'price_id'                    => $product[ 'price_id' ] ,
+                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
+                    RetailPrice::class ,
+                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                'unit_price'                  => $product[ 'unitPrice' ] ,
+                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
+            ] );
+
+            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+
+            $stock = Stock::where( [
+                'item_id'      => $itemId ,
+                'item_type'    => $targetClass ,
+                'status'       => StockStatus::RECEIVED ,
+                'warehouse_id' => $warehouse_id
+            ] )->first();
+
+            $qtyToDecrement = $product[ 'quantity' ];
+            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
+
+            if ( $status == SaleOrderType::DEPOSIT->value ) {
+                $stock->increment( 'quantity_ordered' , $qtyToDecrement );
+            }
+        }
+
+        private function handlePosServiceItem(Order $order, array $service, bool $is_preorder, int $warehouse_id, int $status): void
+        {
+            $orderServiceProduct = OrderServiceProduct::create( [
+                'order_id'            => $order->id ,
+                'service_id'          => $service[ 'item_id' ] ,
+                'quantity'            => $service[ 'quantity' ] ,
+                'total'               => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
+                'unit_price'          => $service[ 'unitPrice' ]
+            ] );
+
+            if ( isset( $service[ 'addons' ] ) ) {
+                foreach ( $service[ 'addons' ] as $addon ) {
+                    OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
+                }
+            }
+
+            if ( isset( $service[ 'tier_id' ] ) ) {
+                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
+            }
+
+            // Handle stock decrement for products consumed by the service
+            $serviceModel = Service::with('serviceProducts.product')->find($service['item_id']);
+            if ($serviceModel && $serviceModel->serviceProducts->isNotEmpty()) {
+                foreach ($serviceModel->serviceProducts as $consumedProduct) {
+                    $item = $consumedProduct->product;
+                    if (!$item) {
+                        continue;
+                    }
+                    $quantity = $consumedProduct->quantity * $service['quantity'];
+
+                    if ( !$is_preorder && $item->stock < $quantity ) {
+                        $name = $item instanceof ProductVariation
+                            ? $item->product->name . ' (' . $item->productAttributeOption?->name . ')'
+                            : $item->name;
+                        throw new Exception( "{$name} stock not enough" );
+                    }
+
+                    $stock = Stock::where( [
+                        'item_id'      => $item->id ,
+                        'item_type'    => get_class( $item ) ,
+                        'status'       => StockStatus::RECEIVED ,
+                        'warehouse_id' => $warehouse_id
+                    ] )->first();
+
+                    if ($stock) {
+                        if ( ! $is_preorder ) {
+                            $stock->decrement( 'quantity' , $quantity );
+                        }
+                        if ( $status == SaleOrderType::DEPOSIT->value ) {
+                            $stock->increment( 'quantity_ordered' , $quantity );
+                        }
+                    }
+                }
             }
         }
 
@@ -814,7 +881,7 @@
                 'unit_price'                  => $product[ 'unitPrice' ] ,
                 'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
                 'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
-                'quotation_item_type'         => QuotationItemType::PRODUCT ,
+                'quotation_item_type'         => ItemType::PRODUCT ,
             ] );
 
             if ( $is_variation ) {
@@ -830,7 +897,7 @@
                 'quantity'            => $service[ 'quantity' ] ,
                 'total'               => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
                 'unit_price'          => $service[ 'unitPrice' ] ,
-                'quotation_item_type' => QuotationItemType::SERVICE ,
+                'quotation_item_type' => ItemType::SERVICE ,
             ] );
 
             if ( isset( $service[ 'addons' ] ) ) {
@@ -988,6 +1055,7 @@
                     $delivery_address = $request->delivery_address;
                     $delivery_fee     = $request->delivery_fee;
                     $is_preorder      = $request->integer( 'is_preorder' );
+                    $warehouse_id     = $request->warehouse_id;
 
                     $paymentStatus = match ( $status ) {
                         SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
@@ -1010,7 +1078,7 @@
                             'channel'         => $request->channel ,
                             'creator_id'      => auth()->id() ,
                             'payment_status'  => $paymentStatus->value ,
-                            'warehouse_id'    => $request->warehouse_id ,
+                            'warehouse_id'    => $warehouse_id ,
                             'register_id'     => register()->id
                         ]
                     );
@@ -1025,6 +1093,7 @@
                     }
                     $order->save();
 
+                    // Revert stock for old products
                     foreach ( $order->orderProducts as $oldProduct ) {
                         $stock = Stock::where( [
                             'item_id'      => $oldProduct->item_id ,
@@ -1037,7 +1106,27 @@
                             $stock?->increment( 'quantity' , $oldProduct->quantity );
                         }
                     }
+
+                    // Revert stock for old service products if they consumed stock
+                    foreach ($order->orderServiceProducts as $oldServiceProduct) {
+                        $serviceModel = Service::with('serviceProducts.product')->find($oldServiceProduct->service_id);
+                        if ($serviceModel && $serviceModel->serviceProducts->isNotEmpty()) {
+                            foreach ($serviceModel->serviceProducts as $consumedProduct) {
+                                $stock = Stock::where( [
+                                    'item_id'      => $consumedProduct->product->id ,
+                                    'item_type'    => get_class($consumedProduct->product) ,
+                                    'status'       => StockStatus::RECEIVED ,
+                                    'warehouse_id' => $order->warehouse_id
+                                ] )->first();
+                                if ( ! $order->pre_order_status ) {
+                                    $stock?->increment( 'quantity' , $consumedProduct->quantity * $oldServiceProduct->quantity );
+                                }
+                            }
+                        }
+                    }
+
                     $order->orderProducts()->delete();
+                    $order->orderServiceProducts()->delete(); // Delete old service products
                     $order->posPayments()->delete();
                     $order->paymentMethodTransactions()->delete();
 
@@ -1068,60 +1157,13 @@
                         }
                     }
 
-                    $products = json_decode( $request->items , TRUE );
-                    if ( ! blank( $products ) ) {
-                        foreach ( $products as $product ) {
-                            $p = Product::find( $product[ 'item_id' ] );
-
-                            $is_variation = isset( $product[ 'variation_id' ] );
-                            $variation    = NULL;
-                            $targetModel  = $p;
-                            $targetClass  = Product::class;
-                            $itemId       = $product[ 'item_id' ];
-
-                            if ( $is_variation ) {
-                                $variation_id = $product[ 'variation_id' ];
-                                $variation    = ProductVariation::find( $variation_id );
-                                if ( $variation ) {
-                                    $targetModel = $variation;
-                                    $targetClass = ProductVariation::class;
-                                    $itemId      = $variation->id;
-                                }
-                            }
-
-                            if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
-                                $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
-                                throw new Exception( "{$name} stock not enough" );
-                            }
-
-                            $order_product = OrderProduct::create( [
-                                'order_id'                    => $order->id ,
-                                'item_id'                     => $itemId ,
-                                'item_type'                   => $targetClass ,
-                                'quantity_picked'             => 0 ,
-                                'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price_id' ] ,
-                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
-                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price'                  => $product[ 'unitPrice' ] ,
-                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
-                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
-                            ] );
-
-                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
-
-                            $stock = Stock::where( [
-                                'item_id'      => $itemId ,
-                                'item_type'    => $targetClass ,
-                                'status'       => StockStatus::RECEIVED ,
-                                'warehouse_id' => $request->warehouse_id
-                            ] )->first();
-
-                            $qtyToDecrement = $product[ 'quantity' ];
-                            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
-
-                            if ( $status == SaleOrderType::DEPOSIT->value ) {
-                                $stock->increment( 'quantity_ordered' , $qtyToDecrement );
+                    $items = json_decode( $request->items , TRUE );
+                    if ( ! blank( $items ) ) {
+                        foreach ( $items as $item ) {
+                            if ( $item[ 'itemType' ] === ItemType::PRODUCT->value ) {
+                                $this->handlePosProductItem( $order , $item , $is_preorder , $warehouse_id , $status );
+                            } elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
+                                $this->handlePosServiceItem( $order , $item , $is_preorder , $warehouse_id , $status );
                             }
                         }
                     }

@@ -14,7 +14,7 @@
         public function rules() : array
         {
             return [
-                'customer_id' => [ 'required' , 'numeric' ] ,
+                'customer_id' => [ 'required' , 'numeric' , 'not_in:0' ] ,
                 'subtotal'    => [ 'required' , 'numeric' ] ,
                 'tax'         => [ 'required' , 'numeric' ] ,
                 'total'       => [ 'required' , 'numeric' ] ,

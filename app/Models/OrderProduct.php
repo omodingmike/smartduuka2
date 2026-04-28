@@ -2,7 +2,7 @@
 
     namespace App\Models;
 
-    use App\Enums\QuotationItemType;
+    use App\Enums\ItemType;
     use App\Enums\ReturnType;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -35,7 +35,7 @@
             'return_quantity' ,
             'quotation_item_type' ,
         ];
-        protected $casts    = [ 'return_type' => ReturnType::class , 'quotation_item_type' => QuotationItemType::class ];
+        protected $casts    = [ 'return_type' => ReturnType::class , 'quotation_item_type' => ItemType::class ];
 
         public function order() : BelongsTo
         {

@@ -2,7 +2,7 @@
 
     namespace App\Models;
 
-    use App\Enums\QuotationItemType;
+    use App\Enums\ItemType;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,7 +21,7 @@
             'quotation_item_type' ,
         ];
         protected $table    = 'order_services';
-        protected $casts    = [ 'quotation_item_type' => QuotationItemType::class ];
+        protected $casts    = [ 'quotation_item_type' => ItemType::class ];
 
         public function order() : BelongsTo
         {

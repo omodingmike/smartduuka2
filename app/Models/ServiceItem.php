@@ -3,6 +3,7 @@
     namespace App\Models;
 
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
 
     class ServiceItem extends Model
@@ -23,5 +24,15 @@
         public function item() : MorphTo
         {
             return $this->morphTo();
+        }
+
+        public function product() : BelongsTo
+        {
+            return $this->belongsTo( Product::class , 'item_id' );
+        }
+
+        public function service() : BelongsTo
+        {
+            return $this->belongsTo( Service::class );
         }
     }

@@ -38,6 +38,11 @@
             return $this->hasMany( ServiceItem::class , 'service_id' , 'id' );
         }
 
+        public function serviceProducts() : HasMany
+        {
+            return $this->hasMany( ServiceItem::class , 'service_id' , 'id' );
+        }
+
         public function tiers() : HasMany
         {
             return $this->hasMany( ServiceTier::class , 'service_id' , 'id' );

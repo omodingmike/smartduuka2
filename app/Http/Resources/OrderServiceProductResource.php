@@ -13,13 +13,15 @@
         public function toArray($request)
         {
             return [
-                'id'         => $this->id ,
-                'service'    => new ServiceResource( $this->whenLoaded( 'service' ) ) ,
-                'addons'     => OrderServiceAdonResource::collection( $this->whenLoaded( 'addons' ) ) ,
-                'tier'       => new ServiceTierResource( $this->whenLoaded( 'tier' ) ) ,
-                'quantity'   => $this->quantity ,
-                'unit_price' => $this->unit_price ,
-                'total'      => $this->total ,
+                'id'                  => $this->id ,
+                'service'             => new ServiceResource( $this->whenLoaded( 'service' ) ) ,
+                'addons'              => OrderServiceAdonResource::collection( $this->whenLoaded( 'addons' ) ) ,
+                'tier'                => new ServiceTierResource( $this->whenLoaded( 'tier' ) ) ,
+                'quantity'            => $this->quantity ,
+                'unit_price'          => $this->unit_price ,
+                'unit_price_currency' => currency( $this->unit_price ) ,
+                'total'               => $this->total ,
+                'total_currency'      => currency( $this->total ) ,
             ];
         }
     }
