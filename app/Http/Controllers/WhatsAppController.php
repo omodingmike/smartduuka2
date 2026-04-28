@@ -13,11 +13,17 @@
     use Illuminate\Http\Client\ConnectionException;
     use Illuminate\Http\Request;
     use Illuminate\Support\Arr;
+    use Illuminate\Support\Facades\Cache;
     use Illuminate\Support\Facades\Http;
     use Illuminate\Validation\ValidationException;
+    use Smartisan\Settings\Facades\Settings;
 
     class WhatsAppController extends Controller
     {
+        /**
+         * @var IotecController $iotec
+         *     https://developers.facebook.com/documentation/business-messaging/whatsapp
+         */
         private IotecController $iotec;
         private Request         $request;
 
@@ -26,10 +32,9 @@
 
         public function __construct()
         {
-            $this->iotec         = new IotecController();
-            $this->request       = new Request();
-            $this->phoneNumberId = config( 'whatsapp.whatsapp_phone_number_id' );
-            $this->accessToken   = config( 'whatsapp.whatsapp_access_token' );
+            $this->iotec = new IotecController();
+//            $this->phoneNumberId = config( 'app.whatsapp_phone_number_id' );
+            $this->accessToken = config( 'whatsapp.whatsapp_access_token' );
         }
 
         public function index(Request $request)
@@ -40,12 +45,6 @@
                 return $hub_challenge;
             }
             return NULL;
-        }
-
-        public function setTenantCredentials(string $phoneNumberId , string $accessToken) : void
-        {
-            $this->phoneNumberId = $phoneNumberId;
-            $this->accessToken   = $accessToken;
         }
 
         /**
@@ -212,7 +211,7 @@
         private function sendTemplate(string $to , string $templateName , array $components)
         {
             $token           = config( 'whatsapp.whatsapp_access_token' );
-            $phone_number_id = config( 'whatsapp.whatsapp_phone_number_id' );
+            $phone_number_id = config( 'app.whatsapp_phone_number_id' );
 
             $data = [
                 'messaging_product' => 'whatsapp' ,
@@ -309,7 +308,7 @@
         private function send(array $data)
         {
             $token           = config( 'whatsapp.whatsapp_access_token' );
-            $phone_number_id = config( 'whatsapp.whatsapp_phone_number_id' );
+            $phone_number_id = config( 'app.whatsapp_phone_number_id' );
             return Http::withToken( $token )
                        ->withHeaders( [
                            'Authorization' => "Bearer $token" ,
@@ -345,7 +344,7 @@
         {
             try {
                 $token           = config( 'whatsapp.whatsapp_access_token' );
-                $phone_number_id = config( 'whatsapp.whatsapp_phone_number_id' );
+                $phone_number_id = config( 'app.whatsapp_phone_number_id' );
 
                 $response = Http::withToken( $token )
                                 ->attach( 'file' , $pdfBytes , $filename , [ 'Content-Type' => 'application/pdf' ] )
@@ -444,7 +443,7 @@
                     'type'       => 'body' ,
                     'parameters' => [
                         [ 'type' => 'text' , 'text' => (string) $quotation->user->name ] ,
-                        [ 'type' => 'text' , 'text' => (string) company()['company_name'] ] ,
+                        [ 'type' => 'text' , 'text' => (string) company()[ 'company_name' ] ] ,
                         [ 'type' => 'text' , 'text' => (string) $quotation->order_serial_no ] ,
                         [ 'type' => 'text' , 'text' => datetime( $quotation->due_date ) ] ,
                         [ 'type' => 'text' , 'text' => currency( $quotation->total ) ] ,
@@ -460,7 +459,8 @@
                 ]
             ];
 
-            $this->sendTemplate( $quotation->user->phone , 'quotation_invoice1' , $components );
+            $re = $this->sendTemplate( $quotation->user->phone , 'quotation_invoice1' , $components );
+            info( $re );
         }
 
         public function createDocumentTemplate()
@@ -502,43 +502,155 @@
 
         /**
          * @throws ValidationException
+         * @throws ConnectionException
          */
         public function registerPhoneNumber(Request $request)
         {
-            $full_phone_number = $request->input( 'phone_number' );
-
-            $country_code    = substr( $full_phone_number , 1 , 3 );
-            $national_number = substr( $full_phone_number , 4 );
+            $full_phone_number = $request->string( 'phone' );
+            $country_code      = substr( $full_phone_number , 1 , 3 );
+            $national_number   = substr( $full_phone_number , 4 );
 
             $wabaId = config( 'whatsapp.whatsapp_business_id' );
             $token  = config( 'whatsapp.whatsapp_access_token' );
 
-            $response = Http::withToken( $token )
-                            ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers" , [
-                                'cc'                   => $country_code ,
-                                'phone_number'         => $national_number ,
-                                'migrate_phone_number' => FALSE ,
-                                'verified_name'        => $business->business_name ,
-                                'code_method'          => 'SMS' ,
-                            ] );
+            // 1. Register the phone number
+            $registerResponse = Http::withToken( $token )
+                                    ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers" , [
+                                        'cc'                   => $country_code ,
+                                        'phone_number'         => $national_number ,
+                                        'migrate_phone_number' => FALSE ,
+                                        'verified_name'        => company()[ 'company_name' ] ,
+                                    ] );
 
-            return $response->json();
+            if ( ! $registerResponse->successful() ) {
+                return response()->json( [
+                    'success' => FALSE ,
+                    'message' => 'Failed to register phone number.' ,
+                    'error'   => $registerResponse->json()
+                ] , 400 );
+            }
+            info( $registerResponse->json() );
+
+            $phoneNumberId = $registerResponse->json( 'id' ) ?? config( 'app.whatsapp_phone_number_id' );
+
+            if ( $phoneNumberId ) {
+                Settings::group( 'company' )->set( [ 'company_whatsapp_phone' => $full_phone_number ] );
+
+                tenant()->update( [
+                    'company_whatsapp_phone' => $full_phone_number
+                ] );
+
+            }
+
+            // 2. Cache the ID for 15 minutes so the verify method can find it
+            // Using auth()->id() ensures this doesn't conflict if multiple tenants do this at once
+            $cacheKey = 'pending_wa_id_' . auth()->id();
+            Cache::put( $cacheKey , $phoneNumberId , now()->addMinutes( 15 ) );
+
+            // 3. Automatically request the SMS verification code
+            $codeResponse = Http::withToken( $token )
+                                ->post( "https://graph.facebook.com/v25.0/{$phoneNumberId}/request_code" , [
+                                    'code_method' => 'SMS' ,
+                                    'language'    => 'en_UG'
+                                ] );
+            info( $codeResponse->json() );
+
+            if ( ! $codeResponse->successful() ) {
+                return response()->json( [
+                    'success' => FALSE ,
+                    'message' => 'Phone registered, but failed to send SMS verification code.' ,
+                    'error'   => $codeResponse->json()
+                ] , 400 );
+            }
+
+            return response()->json( [
+                'success' => TRUE ,
+                'message' => 'Phone number registered and SMS code requested.' ,
+            ] );
         }
 
         public function verifyOtp(Request $request)
         {
             $validated = $request->validate( [
-                'code' => 'required|string' ,
+                'otp' => 'required|string' ,
             ] );
 
-            $wabaId = config( 'whatsapp.whatsapp_business_id' );
-            $token  = config( 'whatsapp.whatsapp_access_token' );
+            // Retrieve the cached ID (and remove it from the cache at the same time using pull)
+            $cacheKey      = 'pending_wa_id_' . auth()->id();
+            $phoneNumberId = Cache::pull( $cacheKey ) ?? config( 'app.whatsapp_phone_number_id' );
+
+            $token = config( 'whatsapp.whatsapp_access_token' );
 
             $response = Http::withToken( $token )
-                            ->post( "https://graph.facebook.com/v25.0/{$wabaId}/phone_numbers/verify_code" , [
-                                'code' => $validated[ 'code' ] ,
+                            ->post( "https://graph.facebook.com/v25.0/{$phoneNumberId}/verify_code" , [
+                                'code' => $validated[ 'otp' ] ,
                             ] );
 
-            return $response->json();
+            info( $response->json() );
+
+            if ( ! $response->successful() ) {
+                return response()->json( [
+                    'success' => FALSE ,
+                    'message' => 'Verification failed.' ,
+                    'error'   => $response->json()
+                ] , 400 );
+            }
+
+            tenant()->update( [
+                'whatsapp_phone_number_id' => $phoneNumberId
+            ] );
+
+            return response()->json( [
+                'success' => TRUE ,
+                'message' => 'Phone number verified successfully.' ,
+                'data'    => $response->json()
+            ] );
+        }
+
+        /**
+         * @param Request $request
+         *
+         * @return \Illuminate\Http\JsonResponse
+         * @throws ConnectionException
+         *  https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/registering-phone-numbers#step-4--register-the-number
+         */
+        public function registerVerifiedNumber(Request $request)
+        {
+            $validated = $request->validate([
+                'pin' => 'required|string|size:6',
+            ]);
+
+            // Retrieve the phone number ID from the tenant. Fallback to config if necessary.
+            $phoneNumberId = tenant('whatsapp_phone_number_id') ?? config('app.whatsapp_phone_number_id');
+            $token         = config('whatsapp.whatsapp_access_token');
+
+            if (!$phoneNumberId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Phone number ID not found. Ensure the OTP was verified first.',
+                ], 400);
+            }
+
+            $response = Http::withToken($token)
+                            ->post("https://graph.facebook.com/v25.0/{$phoneNumberId}/register", [
+                                'messaging_product' => 'whatsapp',
+                                'pin'               => $validated['pin'],
+                            ]);
+
+            info('WhatsApp Number Registration Response: ' . $response->body());
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to register the phone number.',
+                    'error'   => $response->json()
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Phone number successfully registered and ready for messaging.',
+                'data'    => $response->json()
+            ]);
         }
     }

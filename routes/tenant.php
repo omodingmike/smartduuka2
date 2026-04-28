@@ -91,6 +91,7 @@
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\WarehouseController;
+    use App\Http\Controllers\WhatsAppController;
     use App\Mail\SendEmail;
     use App\Mail\TestMail;
     use App\Services\OrderService;
@@ -214,7 +215,8 @@
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
-
+            Route::post( 'whatsapp/register' , [ WhatsAppController::class , 'registerPhoneNumber' ] );
+            Route::post( 'whatsapp/verifyOtp' , [ WhatsAppController::class , 'verifyOtp' ] );
             Route::put( 'whatsapp-quotation/{order}' , [ OrderService::class , 'sendWhatsappQuotation' ] );
 
             Route::apiResource( 'expense-categories' , ExpenseCategoryController::class )->except( 'destroy' );

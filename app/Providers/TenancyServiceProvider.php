@@ -137,6 +137,8 @@
                 'PROJECT_ID'                 => 'app.project_id' ,
                 'TIMEZONE'                   => 'app.timezone' ,
                 'business_id'                => 'app.business_id' ,
+                'whatsapp_status'            => 'app.whatsapp_status' ,
+                'whatsapp_phone_number_id'   => 'app.whatsapp_phone_number_id' ,
                 'pin_pepper'                 => 'app.pin_pepper' ,
                 'print_agent_token'          => 'app.print_agent_token' ,
                 'company_whatsapp_phone'     => 'app.company_whatsapp_phone' ,

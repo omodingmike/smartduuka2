@@ -15,7 +15,6 @@
 
             Route::get( 'whatsapp' , [ WhatsAppController::class , 'index' ] )->name( 'whats-app.index' );
             Route::post( 'whatsapp' , [ WhatsAppController::class , 'message' ] )->name( 'whats-app.message' );
-            Route::post( 'whatsapp/register' , [ WhatsAppController::class , 'registerPhoneNumber' ] );
             Route::post( 'whatsapp/verify' , [ WhatsAppController::class , 'verifyOtp' ] );
 
             Route::apiResource( 'subscriptions' , SubscriptionController::class );

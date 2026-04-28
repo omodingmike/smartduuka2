@@ -1,9 +1,7 @@
 <?php
 
-//    $now = now( config( 'app.timezone' ) );
-
-
     use App\Enums\PreOrderStatus;
+    use App\Enums\QuotationStatus;
     use App\Models\Order;
     use App\Models\Tenant;
 
@@ -128,6 +126,18 @@
     //                     }
     //                 } );
     //        } )->everyMinute();
+
+    Schedule::call( function () {
+        Tenant::all()->runForEach( function () {
+            Order::where( 'due_date' , '<' , now() )
+                 ->where( 'quotation_status' , '<>' , QuotationStatus::EXPIRED )
+                 ->chunkById( 100 , function ($orders) {
+                     foreach ( $orders as $order ) {
+                         $order->update( [ 'quotation_status' => QuotationStatus::EXPIRED ] );
+                     }
+                 } );
+        } );
+    } )->everyMinute()->name( 'update_expiry_status' )->withoutOverlapping();
 
     Schedule::call( function () {
         Tenant::all()->runForEach( function ($tenant) {
