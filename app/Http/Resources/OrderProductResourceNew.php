@@ -19,8 +19,8 @@
 
         public function toArray(Request $request) : array
         {
-            $price_data   = NULL;
-            if ( $this->price && $this->item_type !== Service::class) {
+            $price_data = NULL;
+            if ( $this->price && $this->item_type !== Service::class ) {
                 if ( $this->price instanceof RetailPrice ) {
                     $price_data = [
                         'selling_price'      => (int) $this->price->selling_price ,
@@ -39,19 +39,21 @@
                 }
             }
 
-            $itemResource = null;
-            if ($this->item_type === ProductVariation::class) {
-                $itemResource = new ProductVariationResource($this->whenLoaded('item'));
-            } elseif ($this->item_type === Product::class) {
-                $itemResource = new SimpleProductDetailsResource($this->whenLoaded('item'));
-            } elseif ($this->item_type === Service::class) {
-                $itemResource = new ServiceResource($this->whenLoaded('item'));
+            $itemResource = NULL;
+            if ( $this->item_type === ProductVariation::class ) {
+                $itemResource = new ProductVariationResource( $this->whenLoaded( 'item' ) );
+            }
+            elseif ( $this->item_type === Product::class ) {
+                $itemResource = new SimpleProductDetailsResource( $this->whenLoaded( 'item' ) );
+            }
+            elseif ( $this->item_type === Service::class ) {
+                $itemResource = new ServiceResource( $this->whenLoaded( 'item' ) );
             }
 
             return [
                 'id'                          => $this->id ,
                 'quantity'                    => (float) $this->quantity ,
-                'is_variation'                => $this->item_type === ProductVariation::class,
+                'is_variation'                => $this->item_type === ProductVariation::class ,
                 'is_return'                   => $this->is_return ,
                 'is_exchange'                 => $this->is_exchange ,
                 'quantity_picked'             => (float) $this->quantity_picked ,
@@ -62,10 +64,11 @@
                 'quantity_text'               => number_format( $this->quantity ) ,
                 'quantity_picked_text'        => number_format( $this->quantity_picked ) ,
                 'total'                       => (float) $this->total ,
-                'item'                        => $itemResource,
+                'item'                        => $itemResource ,
                 'total_currency'              => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'unit_price'                  => (float) $this->unit_price ,
                 'unit_price_currency'         => AppLibrary::currencyAmountFormat( $this->unit_price ) ,
+                'quotation_item_type'         => $this->quotation_item_type ,
             ];
         }
     }

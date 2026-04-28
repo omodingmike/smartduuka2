@@ -12,7 +12,7 @@
     {
         use HasFactory , HasImageMedia;
 
-        protected $fillable = [ 'name' , 'merchant_code' , 'balance' ];
+        protected $fillable = [ 'name' , 'merchant_code' , 'balance' , 'status' , 'slug' ];
         protected $appends  = [ 'image' , 'total_in' , 'total_out' ];
 
         public function transactions() : HasMany | PaymentMethod

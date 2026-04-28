@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\QuotationItemType;
     use App\Enums\ReturnType;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -31,9 +32,10 @@
             'is_return' ,
             'is_exchange' ,
             'return_type' ,
-            'return_quantity'
+            'return_quantity' ,
+            'quotation_item_type' ,
         ];
-        protected $casts    = [ 'return_type' => ReturnType::class ];
+        protected $casts    = [ 'return_type' => ReturnType::class , 'quotation_item_type' => QuotationItemType::class ];
 
         public function order() : BelongsTo
         {
@@ -67,7 +69,7 @@
 
         public function totalCost()
         {
-            if ($this->item_type === Service::class) {
+            if ( $this->item_type === Service::class ) {
                 return 0;
             }
             $total = 0;

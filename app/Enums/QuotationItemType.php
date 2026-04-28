@@ -4,18 +4,16 @@
 
     use JsonSerializable;
 
-    enum QuotationType : int implements JsonSerializable
+    enum QuotationItemType : int implements JsonSerializable
     {
         case PRODUCT = 1;
         case SERVICE = 2;
-        case COMBINED = 3;
 
         public function label() : string
         {
             return match ( $this ) {
                 self::PRODUCT => 'Product' ,
                 self::SERVICE => 'Service' ,
-                self::COMBINED => 'Comnined' ,
             };
         }
 

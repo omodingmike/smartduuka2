@@ -81,6 +81,14 @@
                     $relations[] = 'orderServiceProducts.service';
                     $view        = 'quotations.service-quotation';
                 }
+                else if ( $order->quotation_type === QuotationType::COMBINED ) {
+                    $relations[] = 'orderServiceProducts.service';
+                    $relations[] = 'orderProducts.item';
+                    $relations[] = 'orderProducts.product.taxes.tax';
+                    $relations[] = 'orderProducts.product.unit:id,code';
+                    $relations[] = 'orderProducts.product.sellingUnits:id,code';
+                    $view        = 'quotations.combined-quotation';
+                }
                 else {
                     $relations[] = 'orderProducts.item';
                     $relations[] = 'orderProducts.product.taxes.tax';

@@ -93,7 +93,6 @@
     use App\Http\Controllers\WarehouseController;
     use App\Http\Controllers\WhatsAppController;
     use App\Mail\SendEmail;
-    use App\Mail\TestMail;
     use App\Services\OrderService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -172,7 +171,6 @@
         Route::get( '/theme' , [ ThemeController::class , 'index' ] );
         Route::get( 'pdf/{order}' , [ PosOrderController::class , 'pdf' ] );
 
-//    Route::post('pay' , [ PaymentController::class , 'requestToPay' ]);
         Route::post( 'status' , [ PaymentController::class , 'requesttoPayTransactionStatus' ] );
 
         Route::match( [ 'get' , 'post' ] , '/refresh-token' , [ RefreshTokenController::class , 'refreshToken' ] )->middleware( [ 'installed' ] );
@@ -202,7 +200,6 @@
             } );
         } );
 
-        /* all routes must be singular word*/
         Route::prefix( 'profile' )->name( 'profile.' )->middleware( [ 'auth:sanctum' ] )->group( function () {
             Route::get( '/' , [ ProfileController::class , 'profile' ] );
             Route::match( [ 'post' , 'put' , 'patch' ] , '/' , [ ProfileController::class , 'update' ] );
@@ -211,7 +208,6 @@
         } );
 
         Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
-//    Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' ] )->group( function () {
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
@@ -223,18 +219,13 @@
             Route::delete( 'expense-categories/delete' , [ ExpenseCategoryController::class , 'destroy' ] );
 
             Route::prefix( 'print-agent' )->group( function () {
-                // React Dashboard Routes
                 Route::post( '/trigger-scan' , [ PrintAgentController::class , 'triggerScan' ] );
                 Route::get( '/latest-scan' , [ PrintAgentController::class , 'latestScan' ] );
                 Route::post( '/print' , [ PrintAgentController::class , 'print' ] );
                 Route::post( '/open-drawer' , [ PrintAgentController::class , 'openDrawer' ] );
                 Route::get( '/status' , [ PrintAgentController::class , 'status' ] );
-
-                // Electron Agent Routes
                 Route::post( '/report-printers' , [ PrintAgentController::class , 'reportPrinters' ] );
-                Route::post( '/status' , [ PrintAgentController::class , 'updateJobStatus' ] ); // Job success/fail reports
-
-                // Agent Authentication Profile Fetch (From your previous logs)
+                Route::post( '/status' , [ PrintAgentController::class , 'updateJobStatus' ] );
                 Route::get( '/me' , function (Request $request) {
                     return response()->json( [
                         'business_id' => $request->user()->business_id ,
@@ -373,7 +364,6 @@
                     Route::post( '/' , [ CurrencyController::class , 'store' ] );
                     Route::post( '/base/{currency}' , [ CurrencyController::class , 'setBase' ] );
                     Route::match( [ 'put' , 'patch' ] , '/{currency}' , [ CurrencyController::class , 'update' ] );
-                    // Route::delete( '/{currency}' , [ CurrencyController::class , 'destroy' ] );
                     Route::delete( '/delete' , [ CurrencyController::class , 'deleteMethods' ] );
                 } );
 
@@ -407,7 +397,6 @@
                     Route::post( '/' , [ ProductBrandController::class , 'store' ] );
                     Route::match( [ 'post' , 'put' , 'patch' ] , '/{productBrand}' , [ ProductBrandController::class , 'update' ] );
                     Route::delete( '/delete' , [ ProductBrandController::class , 'destroy' ] );
-//                Route::delete( '/{productBrand}' , [ ProductBrandController::class , 'destroy' ] );
                 } );
 
                 Route::prefix( 'language' )->name( 'language.' )->group( function () {
@@ -447,7 +436,6 @@
                     Route::get( '/{productAttribute}/show/{productAttributeOption}' , [ ProductAttributeOptionController::class , 'show' ] );
                     Route::post( '/{productAttribute}' , [ ProductAttributeOptionController::class , 'store' ] );
                     Route::match( [ 'put' , 'patch' ] , '/{productAttribute}/{productAttributeOption}' , [ ProductAttributeOptionController::class , 'update' ] );
-//                Route::delete( '/{productAttribute}/{productAttributeOption}/delete' , [ ProductAttributeOptionController::class , 'destroy' ] );
                     Route::delete( '/delete' , [ ProductAttributeOptionController::class , 'destroy' ] );
                 } );
 
@@ -482,7 +470,6 @@
                 Route::prefix( 'permission' )->name( 'permission.' )->group( function () {
                     Route::get( '/{role}' , [ PermissionController::class , 'index_old' ] );
                     Route::post( '/{role}' , [ PermissionController::class , 'update' ] );
-//                Route::match( [ 'put' , 'patch' ] , '/{role}' , [ PermissionController::class , 'update' ] );
                 } );
             } );
 
@@ -542,7 +529,6 @@
                 Route::get( '/show/{administrator}' , [ AdministratorController::class , 'show' ] );
                 Route::post( '/' , [ AdministratorController::class , 'store' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/{administrator}' , [ AdministratorController::class , 'update' ] );
-//            Route::delete( '/{administrator}' , [ AdministratorController::class , 'destroy' ] );
                 Route::delete( '/delete' , [ AdministratorController::class , 'destroy' ] );
                 Route::get( '/export' , [ AdministratorController::class , 'export' ] );
                 Route::post( '/change-password/{administrator}' , [ AdministratorController::class , 'changePassword' ] );
@@ -593,7 +579,6 @@
             Route::prefix( 'customer' )->name( 'customer.' )->group( function () {
                 Route::get( '/' , [ CustomerController::class , 'index' ] );
                 Route::get( '/simple' , [ CustomerController::class , 'simpleCustomers' ] );
-//                Route::get( '/' , [ CustomerController::class , 'simpleCustomers' ] );
                 Route::get( '/pos' , [ CustomerController::class , 'posCustomers' ] );
                 Route::get( '/debtPayments' , [ CustomerController::class , 'debtPayments' ] );
                 Route::post( '/' , [ CustomerController::class , 'store' ] );
@@ -632,7 +617,6 @@
                 Route::post( '/' , [ EmployeeController::class , 'store' ] );
                 Route::get( '/show/{employee}' , [ EmployeeController::class , 'show' ] );
                 Route::match( [ 'put' , 'patch' ] , '/{employee}' , [ EmployeeController::class , 'update' ] );
-//            Route::delete( '/{employee}' , [ EmployeeController::class , 'destroy' ] );
                 Route::delete( 'delete' , [ EmployeeController::class , 'destroy' ] );
                 Route::get( '/export' , [ EmployeeController::class , 'export' ] );
                 Route::post( '/change-password/{employee}' , [ EmployeeController::class , 'changePassword' ] );
@@ -656,7 +640,6 @@
                 Route::get( '/category' , [ SalesReportController::class , 'listPerCategory' ] );
                 Route::get( '/export' , [ SalesReportController::class , 'export' ] );
                 Route::get( '/overview' , [ SalesReportController::class , 'salesReportOverview' ] );
-                Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
                 Route::get( '/export-pdf' , [ SalesReportController::class , 'exportPdf' ] );
             } );
             Route::prefix( 'registers-report' )->name( 'sales-report.' )->group( function () {
@@ -693,7 +676,6 @@
                 Route::get( '/show/{purchase}' , [ PurchaseController::class , 'show' ] );
                 Route::get( '/edit/{purchase}' , [ PurchaseController::class , 'edit' ] );
                 Route::match( [ 'post' , 'put' , 'patch' ] , '/update/{purchase}' , [ PurchaseController::class , 'update' ] );
-//            Route::delete( '/{purchase}' , [ PurchaseController::class , 'destroy' ] );
                 Route::get( '/export' , [ PurchaseController::class , 'export' ] );
                 Route::get( '/download-attachment/{purchase}' , [ PurchaseController::class , 'downloadAttachment' ] );
                 Route::get( '/payment/{type}/{purchase}' , [ PurchaseController::class , 'paymentHistory' ] );
@@ -795,46 +777,25 @@
             Route::delete( 'serviceCategories' , [ ServicecategoryController::class , 'destroy' ] );
 
             Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
-                // 1. SPECIFIC ENDPOINTS FIRST
                 Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
                 Route::post( '/quotation' , [ PosController::class , 'quotationStore' ] )->middleware( 'register' );
-                Route::post( '/service-quotation' , [ PosController::class , 'serviceQuotationStore' ] )->middleware( 'register' );
-                Route::put( '/service-quotation/{order}' , [ PosController::class , 'serviceQuotationUpdate' ] )->middleware( 'register' );
                 Route::put( '/quotation/{order}' , [ PosController::class , 'quotationUpdate' ] )->middleware( 'register' );
-//                Route::put( '/quotation/status/{order}' , [ PosController::class , 'quotationStatusUpdate' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStore' , [ PosController::class , 'returnOrderStore' ] )->middleware( 'register' );
                 Route::post( '/returnOrderStatus/{order}' , [ PosController::class , 'returnOrderStatus' ] )->middleware( 'register' );
                 Route::post( '/returnOrderRefundPaymentStatus/{order}' , [ PosController::class , 'returnOrderRefundPaymentStatus' ] )->middleware( 'register' );
                 Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
                 Route::delete( '/deleteRefundOrder' , [ PosController::class , 'deleteRefundOrder' ] );
-                Route::post( '/update' , [ PosController::class , 'update' ] ); // Note: You might not need this if you use the dynamic route below
+                Route::post( '/update' , [ PosController::class , 'update' ] );
                 Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
                 Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );
                 Route::post( '/close-register' , [ PosController::class , 'closeRegister' ] );
                 Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
                 Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
                 Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
-
-                // 2. DYNAMIC ENDPOINTS LAST
                 Route::put( '/customer/{customer}' , [ PosController::class , 'updateCustomer' ] );
                 Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
                 Route::get( '/{order}' , [ PosController::class , 'index' ] );
             } );
-
-//            Route::prefix( 'pos' )->name( 'pos.' )->group( function () {
-//                Route::post( '/' , [ PosController::class , 'store' ] )->middleware( 'register' );
-//                Route::match( [ 'post' , 'put' ] , '/{order}' , [ PosController::class , 'update' ] )->middleware( 'register' );
-//                Route::delete( '/delete' , [ PosController::class , 'destroy' ] );
-//                Route::post( '/update' , [ PosController::class , 'update' ] );
-//                Route::post( '/open-register' , [ PosController::class , 'openRegister' ] );
-//                Route::get( '/register-details' , [ PosController::class , 'registerDetails' ] );
-//                Route::post( '/close-register' , [ PosController::class , 'closeRegister' ] );
-//                Route::post( '/makeSale' , [ PosController::class , 'makeSale' ] );
-//                Route::post( '/cancel' , [ PosController::class , 'cancel' ] );
-//                Route::post( '/customer' , [ PosController::class , 'storeCustomer' ] );
-//                Route::put( '/customer/{customer}' , [ PosController::class , 'updateCustomer' ] );
-//                Route::get( '/{order}' , [ PosController::class , 'index' ] );
-//            } );
         } );
 
         Route::prefix( 'frontend' )->name( 'frontend.' )->group( function () {

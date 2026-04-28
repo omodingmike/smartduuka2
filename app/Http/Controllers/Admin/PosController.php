@@ -3,7 +3,6 @@
     namespace App\Http\Controllers\Admin;
 
     use App\Enums\OrderStatus;
-    use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
     use App\Enums\RegisterStatus;
     use App\Enums\ReturnStatus;
@@ -70,24 +69,6 @@
             }
         }
 
-        public function serviceQuotationStore(QuotationRequest $request)
-        {
-            try {
-                return $this->orderService->serviceQuotationStore( $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function serviceQuotationUpdate(Order $order , QuotationRequest $request)
-        {
-            try {
-                return $this->orderService->serviceQuotationUpdate( $order , $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
         public function quotationUpdate(Order $order , QuotationRequest $request)
         {
             try {
@@ -100,10 +81,7 @@
         public function quotationStatusUpdate(Order $order , Request $request)
         {
             try {
-                if ( $order->quotation_type == QuotationType::PRODUCT ) {
-                    return $this->orderService->updateQuotationStatus( $order , $request );
-                }
-                return $this->orderService->updateServiceQuotationStatus( $order , $request );
+                return $this->orderService->updateQuotationStatus( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -169,30 +147,6 @@
                             ] );
                         }
                     }
-
-//                    $total_returns  = $order->orderProducts()->where( 'is_return' , TRUE )->sum( 'total' );
-//                    $total_exchange = $order->orderProducts()->where( 'is_exchange' , TRUE )->sum( 'total' );
-//                    $balance        = $total_returns - $total_exchange;
-
-//                    if ( $balance > 0 ) {
-//                        PosPayment::create( [
-//                            'order_id'          => $order->id ,
-//                            'date'              => now() ,
-//                            'reference_no'      => time() ,
-//                            'amount'            => -$balance ,
-//                            'payment_method_id' => $order->payment_method ,
-//                            'register_id'       => register()->id
-//                        ] );
-//
-//                        PaymentMethodTransaction::create( [
-//                            'amount'            => $balance ,
-//                            'item_type'         => Order::class ,
-//                            'item_id'           => $order->id ,
-//                            'charge'            => 0 ,
-//                            'description'       => 'Order Return/Exchange #' . $order->order_serial_no ,
-//                            'payment_method_id' => $order->payment_method ,
-//                        ] );
-//                    }
                 }
 
                 if ( $status == ReturnStatus::REJECTED->value || $status == ReturnStatus::CANCELED->value ) {
@@ -258,14 +212,10 @@
             $register       = register();
             $closing_amount = $request->integer( 'closing_amount' );
 
-            // 1. Total money that came INTO the drawer (Sales + Debt Recoveries)
             $money_in = $register->posPayments()->sum( 'amount' );
 
-            // 2. Total money that left the drawer (Cash Expenses/Payouts)
-            // We sum all expense payments tied to this register
             $money_out = $register->expensesPayments()->sum( 'amount' );
 
-            // 3. True Expected Drawer Cash
             $expectedFloat = $register->opening_float + $money_in - $money_out;
 
             $difference = $closing_amount - $expectedFloat;
@@ -306,19 +256,7 @@
         public function makeQuotationSale(Order $order , Request $request)
         {
             try {
-                if ( $order->quotation_type == QuotationType::PRODUCT->value ) {
-                    return $this->orderService->makeQuotationSale( $order , $request );
-                }
-                return $this->orderService->makeServiceSale( $order , $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function makeServiceSale(Order $order , Request $request)
-        {
-            try {
-                return $this->orderService->makeServiceSale( $order , $request );
+                return $this->orderService->makeQuotationSale( $order , $request );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -336,7 +274,8 @@
             }
         }
 
-        public function storeCustomer(CustomerRequest $request
+        public function storeCustomer(
+            CustomerRequest $request
         ) : Response | CustomerResource | Application | ResponseFactory
         {
             try {
@@ -347,7 +286,9 @@
             }
         }
 
-        public function updateCustomer(CustomerRequest $request , User $customer
+        public function updateCustomer(
+            CustomerRequest $request ,
+            User $customer
         ) : Response | CustomerResource | Application | ResponseFactory
         {
             try {

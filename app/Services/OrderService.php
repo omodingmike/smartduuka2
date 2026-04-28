@@ -11,6 +11,7 @@
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
+    use App\Enums\QuotationItemType;
     use App\Enums\QuotationStatus;
     use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
@@ -51,6 +52,7 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Str;
 
     class OrderService
     {
@@ -198,7 +200,6 @@
                 $page     = $request->get( 'page' ) ?? 1;
                 $per_page = $request->get( 'per_page' ) ?? 10;
 
-                // 1. The Main Query (Stays exactly the same to preserve pagination)
                 $products = OrderProduct::query()
                                         ->select( 'item_id' , 'item_type' )
                                         ->selectRaw( 'SUM(quantity) as total_sold' )
@@ -221,11 +222,9 @@
                                         ->orderByDesc( 'total_revenue' )
                                         ->paginate( $per_page , [ '*' ] , 'page' , $page );
 
-                // 2. Format the Output and Fetch Breakdowns
                 return $products->through( function ($row) use ($start , $end) {
                     $item = $row->item;
 
-                    // Fetch the price breakdown specifically for this item using the same date filters
                     $breakdowns = OrderProduct::query()
                                               ->select( 'unit_price' )
                                               ->selectRaw( 'SUM(quantity) as quantity_sold' )
@@ -245,7 +244,6 @@
                                               ->orderByDesc( 'total_revenue' )
                                               ->get();
 
-                    // Format the breakdown array for the React UI
                     $formattedBreakdowns = $breakdowns->map( function ($b) {
                         return [
                             'price_currency'         => AppLibrary::currencyAmountFormat( $b->unit_price ) ,
@@ -255,12 +253,12 @@
                     } );
 
                     return [
-                        'id'               => $row->item_id , // Important: Used by React to toggle the dropdown
+                        'id'               => $row->item_id ,
                         'name'             => $item->name ?? 'Unknown Product' ,
                         'category'         => $item->category?->name ?? 'General' ,
                         'quantity_sold'    => (int) $row->total_sold ,
                         'total_revenue'    => AppLibrary::currencyAmountFormat( $row->total_revenue ) ,
-                        'price_breakdowns' => $formattedBreakdowns // The new array!
+                        'price_breakdowns' => $formattedBreakdowns
                     ];
                 } );
 
@@ -321,35 +319,6 @@
                 $query    = $request->get( 'query' );
                 $page     = $request->get( 'page' ) ?? 1;
                 $per_page = $request->get( 'per_page' ) ?? 10;
-
-//                $categories = OrderProduct::query()
-//                                          ->selectRaw( 'products.product_category_id as category_id' )
-//                                          ->selectRaw( 'SUM(order_products.quantity) as total_sold' )
-//                                          ->selectRaw( 'SUM(order_products.total) as total_revenue' )
-//                                          ->join( 'products' , function ($join) {
-//                                              $join->on( 'order_products.item_id' , '=' , 'products.id' )
-//                                                   ->where( 'order_products.item_type' , '=' , Product::class );
-//                                              // Handle variations if needed by joining product_variations then products
-//                                          } )
-//                                          ->whereHas( 'order' , function ($q) use ($start , $end) {
-//                                              $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
-//                                                ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
-//                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
-//                                                } )
-//                                                ->when( ( $start && $end ) , function (Builder $q) use ($start , $end) {
-//                                                    $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $end->copy()->endOfDay() ] );
-//                                                } );
-//                                          } )
-//                                          ->when( $query , function ($q) use ($query) {
-//                                              $q->whereHas( 'product.category' , function ($q) use ($query) {
-//                                                  $q->where( 'name' , 'ilike' , "%$query%" );
-//                                              } );
-//                                          } )
-//                                          ->groupBy( 'products.product_category_id' )
-//                                          ->with( 'product.category' )
-//                                          ->orderByDesc( 'total_revenue' )
-//                                          ->paginate( $per_page , [ '*' ] , 'page' , $page );
-
 
                 $categories = DB::table( 'order_products' )
                                 ->join( 'orders' , 'order_products.order_id' , '=' , 'orders.id' )
@@ -461,9 +430,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function myOrder(PaginateRequest $request)
         {
             try {
@@ -498,9 +464,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function userOrder(PaginateRequest $request , User $user)
         {
             try {
@@ -521,9 +484,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function posOrderStore(PosOrderRequest $request) : object
         {
             try {
@@ -590,8 +550,7 @@
                     }
 
                     foreach ( $payments as $p ) {
-                        $amount = $p[ 'amount' ];
-//                        $net_amount = $amount - $change;
+                        $amount     = $p[ 'amount' ];
                         $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
@@ -633,10 +592,9 @@
                                 }
                             }
 
-                            // Check stock
                             if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
                                 $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
-                                throw  new Exception( "{$name} stock not enough" );
+                                throw new Exception( "{$name} stock not enough" );
                             }
 
                             $order_product = OrderProduct::create( [
@@ -675,7 +633,6 @@
 
                 } );
 
-//                return $this->order;
                 return $this->order->load( [
                     'orderProducts.item' => function ($q) {
                         $q->withTrashed();
@@ -719,49 +676,37 @@
                     $this->order = $order;
                     activity()->log( 'Updated Quotation: ' . $order->order_serial_no );
 
-                    // Remove existing items before attaching the updated ones
                     $order->orderProducts()->delete();
+                    $order->orderServiceProducts()->delete();
 
-                    $products = json_decode( $request->items , TRUE );
+                    $items = json_decode( $request->items , TRUE );
 
-                    if ( ! blank( $products ) ) {
-                        foreach ( $products as $product ) {
-
-                            $is_variation = isset( $product[ 'variation_id' ] );
-                            $variation    = NULL;
-                            $targetClass  = Product::class;
-                            $itemId       = $product[ 'item_id' ];
-
-                            if ( $is_variation ) {
-                                $variation_id = $product[ 'variation_id' ];
-
-                                $variation = ProductVariation::find( $variation_id );
-
-                                if ( $variation ) {
-                                    $targetClass = ProductVariation::class;
-                                    $itemId      = $variation->id;
-                                }
+                    if ( ! blank( $items ) ) {
+                        $hasProducts = FALSE;
+                        $hasServices = FALSE;
+                        foreach ( $items as $item ) {
+                            if ( $item[ 'type' ] === QuotationItemType::PRODUCT->value ) {
+                                $this->handleProductQuotationItem( $this->order , $item );
+                                $hasProducts = TRUE;
                             }
+                            elseif ( $item[ 'type' ] === QuotationItemType::SERVICE->value ) {
+                                $this->handleServiceQuotationItem( $this->order , $item );
+                                $hasServices = TRUE;
+                            }
+                        }
 
-                            $order_product = OrderProduct::create( [
-                                'order_id'                    => $this->order->id ,
-                                'item_id'                     => $itemId ,
-                                'item_type'                   => $targetClass ,
-                                'quantity_picked'             => 0 ,
-                                'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price_id' ] ,
-                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
-                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price'                  => $product[ 'unitPrice' ] ,
-                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
-                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
-                            ] );
-
-                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+                        if ( $hasProducts && $hasServices ) {
+                            $this->order->quotation_type = QuotationType::COMBINED;
+                        }
+                        elseif ( $hasProducts ) {
+                            $this->order->quotation_type = QuotationType::PRODUCT;
+                        }
+                        elseif ( $hasServices ) {
+                            $this->order->quotation_type = QuotationType::SERVICE;
                         }
                     }
 
-                    $this->order->total = $this->order->orderProducts()->sum( 'total' );
+                    $this->order->total = $this->order->orderProducts()->sum( 'total' ) + $this->order->orderServiceProducts()->sum( 'total' );
                     $this->order->save();
 
                 } );
@@ -785,7 +730,6 @@
                             'user_id'          => $request->customer_id ,
                             'due_date'         => $request->expiry_date ,
                             'quotation_status' => QuotationStatus::PENDING ,
-                            'quotation_type'   => QuotationType::PRODUCT ,
                             'change'           => 0 ,
                             'status'           => OrderStatus::PENDING ,
                             'payment_type'     => PaymentType::QUOTATION ,
@@ -805,43 +749,30 @@
                     $this->order->save();
                     activity()->log( 'Created Quotation: ' . $order->order_serial_no );
 
-                    $products = json_decode( $request->items , TRUE );
+                    $items = json_decode( $request->items , TRUE );
 
-                    if ( ! blank( $products ) ) {
-                        foreach ( $products as $product ) {
-
-                            $is_variation = isset( $product[ 'variation_id' ] );
-                            $variation    = NULL;
-                            $targetClass  = Product::class;
-                            $itemId       = $product[ 'item_id' ];
-
-                            if ( $is_variation ) {
-                                $variation_id = $product[ 'variation_id' ];
-
-                                $variation = ProductVariation::find( $variation_id );
-
-                                if ( $variation ) {
-                                    $targetClass = ProductVariation::class;
-                                    $itemId      = $variation->id;
-                                }
+                    if ( ! blank( $items ) ) {
+                        $hasProducts = FALSE;
+                        $hasServices = FALSE;
+                        foreach ( $items as $item ) {
+                            if ( $item[ 'type' ] === QuotationItemType::PRODUCT->value ) {
+                                $this->handleProductQuotationItem( $this->order , $item );
+                                $hasProducts = TRUE;
                             }
+                            elseif ( $item[ 'type' ] === QuotationItemType::SERVICE->value ) {
+                                $this->handleServiceQuotationItem( $this->order , $item );
+                                $hasServices = TRUE;
+                            }
+                        }
 
-                            $order_product = OrderProduct::create( [
-                                'order_id'                    => $this->order->id ,
-                                'item_id'                     => $itemId ,
-                                'item_type'                   => $targetClass ,
-                                'quantity_picked'             => 0 ,
-                                'quantity'                    => $product[ 'quantity' ] ,
-                                'price_id'                    => $product[ 'price_id' ] ,
-                                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class :
-                                    RetailPrice::class ,
-                                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
-                                'unit_price'                  => $product[ 'unitPrice' ] ,
-                                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
-                                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
-                            ] );
-
-                            if ( $is_variation ) $order_product->update( [ 'variation_id' => $variation_id ] );
+                        if ( $hasProducts && $hasServices ) {
+                            $this->order->quotation_type = QuotationType::COMBINED;
+                        }
+                        elseif ( $hasProducts ) {
+                            $this->order->quotation_type = QuotationType::PRODUCT;
+                        }
+                        elseif ( $hasServices ) {
+                            $this->order->quotation_type = QuotationType::SERVICE;
                         }
                     }
                     $this->order->save();
@@ -855,131 +786,61 @@
             }
         }
 
-        public function serviceQuotationStore(QuotationRequest $request)
+        private function handleProductQuotationItem(Order $order , array $product) : void
         {
-            try {
-                DB::transaction( function () use ($request) {
-                    $order = Order::create(
-                        array_merge( $request->validated() , [
-                            'paid'             => 0 ,
-                            'balance'          => 0 ,
-                            'shipping_charge'  => 0 ,
-                            'user_id'          => $request->customer_id ,
-                            'quotation_type'   => QuotationType::SERVICE ,
-                            'due_date'         => $request->expiry_date ,
-                            'quotation_status' => QuotationStatus::PENDING ,
-                            'change'           => 0 ,
-                            'status'           => OrderStatus::PENDING ,
-                            'payment_type'     => PaymentType::QUOTATION ,
-                            'creator_id'       => auth()->id() ,
-                            'creator_type'     => User::class ,
-                            'payment_status'   => PaymentStatus::UNPAID ,
-                            'warehouse_id'     => $request->warehouse_id ?? Warehouse::first()->id ,
-                            'order_datetime'   => $request->date ,
-                            'reason'           => $request->notes ,
-                            'register_id'      => register()?->id
-                        ] )
-                    );
+            $is_variation = isset( $product[ 'variation_id' ] );
+            $variation    = NULL;
+            $targetClass  = Product::class;
+            $itemId       = $product[ 'item_id' ];
 
-                    $this->order = $order;
+            if ( $is_variation ) {
+                $variation_id = $product[ 'variation_id' ];
+                $variation    = ProductVariation::find( $variation_id );
+                if ( $variation ) {
+                    $targetClass = ProductVariation::class;
+                    $itemId      = $variation->id;
+                }
+            }
 
-                    $this->order->order_serial_no = orderSerialNo( $this->order );
-                    $this->order->save();
-                    activity()->log( 'Created Service Quotation: ' . $order->order_serial_no );
+            $order_product = OrderProduct::create( [
+                'order_id'                    => $order->id ,
+                'item_id'                     => $itemId ,
+                'item_type'                   => $targetClass ,
+                'quantity_picked'             => 0 ,
+                'quantity'                    => $product[ 'quantity' ] ,
+                'price_id'                    => $product[ 'price_id' ] ,
+                'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
+                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                'unit_price'                  => $product[ 'unitPrice' ] ,
+                'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
+                'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
+                'quotation_item_type'         => QuotationItemType::PRODUCT ,
+            ] );
 
-                    $services = json_decode( $request->services , TRUE );
-
-                    if ( ! blank( $services ) ) {
-                        foreach ( $services as $service ) {
-                            $orderServiceProduct = OrderServiceProduct::create( [
-                                'order_id'   => $this->order->id ,
-                                'service_id' => $service[ 'service_id' ] ,
-                                'quantity'   => $service[ 'quantity' ] ,
-                                'total'      => $service[ 'quantity' ] * $service[ 'price' ] ,
-                                'unit_price' => $service[ 'price' ] ,
-                            ] );
-
-                            foreach ( $service[ 'addons' ] as $addon ) {
-                                OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
-                            }
-
-                            if ( isset( $service[ 'tier_id' ] ) ) {
-                                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
-                            }
-                        }
-                    }
-                    $subtotal              = $this->order->orderServiceProducts()->sum( 'total' );
-                    $this->order->subtotal = $subtotal;
-                    $this->order->total    = $subtotal + $this->order->shipping_charge - $this->order->discount;
-                    $this->order->save();
-                } );
-
-                return response()->json();
-            } catch ( Exception $exception ) {
-                DB::rollBack();
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+            if ( $is_variation ) {
+                $order_product->update( [ 'variation_id' => $variation_id ] );
             }
         }
 
-        public function serviceQuotationUpdate(Order $order , QuotationRequest $request)
+        private function handleServiceQuotationItem(Order $order , array $service) : void
         {
-            try {
-                DB::transaction( function () use ($order , $request) {
-                    $order->update(
-                        array_merge( $request->validated() , [
-                            'user_id'        => $request->customer_id ,
-                            'due_date'       => $request->expiry_date ,
-                            'order_datetime' => $request->date ,
-                            'reason'         => $request->notes ?? $order->reason ,
-                        ] )
-                    );
+            $orderServiceProduct = OrderServiceProduct::create( [
+                'order_id'            => $order->id ,
+                'service_id'          => $service[ 'item_id' ] ,
+                'quantity'            => $service[ 'quantity' ] ,
+                'total'               => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
+                'unit_price'          => $service[ 'unitPrice' ] ,
+                'quotation_item_type' => QuotationItemType::SERVICE ,
+            ] );
 
-                    $this->order = $order;
-                    activity()->log( 'Updated Service Quotation: ' . $order->order_serial_no );
+            if ( isset( $service[ 'addons' ] ) ) {
+                foreach ( $service[ 'addons' ] as $addon ) {
+                    OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
+                }
+            }
 
-                    // Remove existing service items before attaching the updated ones
-                    foreach ( $order->orderServiceProducts as $product ) {
-                        $product->addons()->delete();
-                        $product->tier()->delete();
-                    }
-                    $order->orderServiceProducts()->delete();
-
-
-                    $services = json_decode( $request->items , TRUE );
-
-                    if ( ! blank( $services ) ) {
-                        foreach ( $services as $service ) {
-                            $orderServiceProduct = OrderServiceProduct::create( [
-                                'order_id'   => $this->order->id ,
-                                'service_id' => $service[ 'service_id' ] ,
-                                'quantity'   => $service[ 'quantity' ] ,
-                                'total'      => $service[ 'quantity' ] * $service[ 'price' ] ,
-                                'unit_price' => $service[ 'price' ] ,
-                            ] );
-
-                            if ( isset( $service[ 'addons' ] ) ) {
-                                foreach ( $service[ 'addons' ] as $addon ) {
-                                    OrderServiceAdon::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'addon_id' => $addon ] );
-                                }
-                            }
-
-                            if ( isset( $service[ 'tier_id' ] ) ) {
-                                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
-                            }
-                        }
-                    }
-                    $subtotal              = $this->order->orderServiceProducts()->sum( 'total' );
-                    $this->order->subtotal = $subtotal;
-                    $this->order->total    = $subtotal + $this->order->shipping_charge - $this->order->discount;
-                    $this->order->save();
-                } );
-
-                return response()->json( [ 'message' => 'Service quotation updated successfully' ] );
-            } catch ( Exception $exception ) {
-                DB::rollBack();
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+            if ( isset( $service[ 'tier_id' ] ) ) {
+                OrderServiceTier::create( [ 'order_service_product_id' => $orderServiceProduct->id , 'service_tier_id' => $service[ 'tier_id' ] ] );
             }
         }
 
@@ -1050,50 +911,6 @@
                                 'price_id'        => $order_product->price_id ,
                                 'price_type'      => $order_product->price_type ,
                             ] );
-//                            $stock = Stock::where( [
-//                                'item_id'      => $order_product->item_id ,
-//                                'item_type'    => $order_product->item_type ,
-//                                'warehouse_id' => $order->warehouse_id ,
-//                                'status'       => StockStatus::RECEIVED
-//                            ] )->first();
-//
-//                            if ( $stock && $return_item_condition == ReturnType::RESELLABLE->value ) {
-//                                $stock->increment( 'quantity' , $return_item_quantity );
-//                            }
-
-//                            if ( $return_item_condition == ReturnType::DAMAGED->value ) {
-//                                $damage = Damage::create( [
-//                                    'date'         => now() ,
-//                                    'reference_no' => 'D-' . time() ,
-//                                    'subtotal'     => 0 ,
-//                                    'creator_id'   => auth()->id() ,
-//                                    'tax'          => 0 ,
-//                                    'discount'     => 0 ,
-//                                    'total'        => 0 ,
-//                                    'note'         => '' ,
-//                                    'reason'       => $reason
-//                                ] );
-//
-//                                $damage->update( [ 'reference_no' => 'D-' . Str::padLeft( $damage->id , Pad::LENGTH , '0' ) ] );
-//
-//                                Stock::create( [
-//                                    'model_type'      => Damage::class ,
-//                                    'model_id'        => $damage->id ,
-//                                    'warehouse_id'    => $originalOrder->warehouse_id ,
-//                                    'item_type'       => $order_product->item_type ,
-//                                    'product_id'      => $order_product->id ,
-//                                    'variation_names' => 'variation_names' ,
-//                                    'item_id'         => $order_product->id ,
-//                                    'price'           => 0 ,
-//                                    'quantity'        => -$return_item_quantity ,
-//                                    'discount'        => 0 ,
-//                                    'tax'             => 0 ,
-//                                    'subtotal'        => 0 ,
-//                                    'total'           => 0 ,
-//                                    'sku'             => 'sku' ,
-//                                    'status'          => StockStatus::RECEIVED
-//                                ] );
-//                            }
                         }
                         else {
                             OrderProduct::create( [
@@ -1136,7 +953,7 @@
                             $name = $is_variation ? $product->name . ' (' . $variation?->name . ')' : $product->name;
                             throw new Exception( "{$name} stock not enough for exchange." );
                         }
-//
+
                         OrderProduct::create( [
                             'order_id'    => $order->id ,
                             'is_exchange' => TRUE ,
@@ -1148,40 +965,6 @@
                             'unit_price'  => $item[ 'price' ] ,
                             'total'       => $item[ 'qty' ] * $item[ 'price' ] ,
                         ] );
-//
-//                        // Deduct Physical Stock
-//                        $stock = Stock::where( [
-//                            'item_id'      => $itemId ,
-//                            'item_type'    => $targetClass ,
-//                            'warehouse_id' => $order->warehouse_id ,
-//                            'status'       => StockStatus::RECEIVED
-//                        ] )->first();
-//
-//                        $stock?->decrement( 'quantity' , $item[ 'qty' ] );
-//                    }
-
-//                    if ( $balance > 0 ) {
-//                        $paymentMethodId = $request->refundMethod;
-//
-//                        PosPayment::create( [
-//                            'order_id'          => $order->id ,
-//                            'date'              => now() ,
-//                            'reference_no'      => time() ,
-//                            'amount'            => -$balance ,
-//                            'payment_method_id' => $paymentMethodId ,
-//                            'register_id'       => register()->id
-//                        ] );
-//
-//                        PaymentMethodTransaction::create( [
-//                            'amount'            => $balance ,
-//                            'item_type'         => Order::class ,
-//                            'item_id'           => $order->id ,
-//                            'charge'            => 0 ,
-//                            'description'       => 'Order Return/Exchange #' . $originalOrder->order_serial_no ,
-//                            'payment_method_id' => $paymentMethodId ,
-//                        ] );
-//
-//                        $order->paid = $balance;
                     }
                     $order->total = $order->orderProducts()->where( 'is_return' , TRUE )->sum( 'total' );
                     $order->save();
@@ -1242,7 +1025,6 @@
                     }
                     $order->save();
 
-                    // Restore stock from old order products
                     foreach ( $order->orderProducts as $oldProduct ) {
                         $stock = Stock::where( [
                             'item_id'      => $oldProduct->item_id ,
@@ -1251,11 +1033,10 @@
                             'warehouse_id' => $order->warehouse_id
                         ] )->first();
 
-                        if ( ! $order->pre_order_status ) { // If it wasn't a pre-order, restore physical stock
+                        if ( ! $order->pre_order_status ) {
                             $stock?->increment( 'quantity' , $oldProduct->quantity );
                         }
                     }
-                    // For simplicity in update, we often delete old items and recreate new ones.
                     $order->orderProducts()->delete();
                     $order->posPayments()->delete();
                     $order->paymentMethodTransactions()->delete();
@@ -1308,10 +1089,9 @@
                                 }
                             }
 
-                            // Check stock
                             if ( $targetModel->stock < $product[ 'quantity' ] && ! $is_preorder ) {
                                 $name = $is_variation ? $p->name . ' (' . $variation?->productAttributeOption?->name . ')' : $p->name;
-                                throw  new Exception( "{$name} stock not enough" );
+                                throw new Exception( "{$name} stock not enough" );
                             }
 
                             $order_product = OrderProduct::create( [
@@ -1356,9 +1136,6 @@
             }
         }
 
-        /**
-         * @throws \Throwable
-         */
         public function posOrderMakeSale(Request $request , CommissionCalculator $commissionCalculator)
         {
             try {
@@ -1416,35 +1193,22 @@
         {
             try {
                 return DB::transaction( function () use ($request , $order) {
-                    $order->load( 'orderProducts' );
-                    $status = $request->integer( 'status' );
-
+                    $order->load( 'orderProducts.item' , 'orderServiceProducts.service.items.item' );
+                    $status      = $request->integer( 'status' );
                     $paymentType = $request->integer( 'paymentType' );
 
-                    foreach ( $order->orderProducts as $orderProduct ) {
-                        $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
-
-                        $is_variation = $itemType === ProductVariation::class;
-                        $item         = $itemType::find( $orderProduct->item_id );
-
-                        if ( $item->stock < $orderProduct->quantity ) {
-                            if ( $is_variation ) {
-                                $product = Product::find( $item->product_id );
-                                $name    = $product->name . ' (' . $item->productAttributeOption?->name . ')';
-                            }
-                            else {
-                                $name = $item->name;
-                            }
-                            throw new Exception( "{$name} stock not enough" );
+                    if ( $order->quotation_type === QuotationType::PRODUCT || $order->quotation_type === QuotationType::COMBINED ) {
+                        foreach ( $order->orderProducts as $orderProduct ) {
+                            $this->checkAndDecrementStock( $orderProduct->item , $orderProduct->quantity , $order->warehouse_id );
                         }
+                    }
 
-                        $stock = Stock::where( [
-                            'item_id'      => $orderProduct->item_id ,
-                            'item_type'    => $itemType ,
-                            'status'       => StockStatus::RECEIVED ,
-                            'warehouse_id' => $order->warehouse_id
-                        ] )->first();
-                        $stock?->decrement( 'quantity' , $orderProduct->quantity );
+                    if ( $order->quotation_type === QuotationType::SERVICE || $order->quotation_type === QuotationType::COMBINED ) {
+                        foreach ( $order->orderServiceProducts as $orderServiceProduct ) {
+                            foreach ( $orderServiceProduct->service->items as $item ) {
+                                $this->checkAndDecrementStock( $item->item , $item->quantity , $order->warehouse_id );
+                            }
+                        }
                     }
 
                     activityLog( 'Converted Quotation to sale :' . $order->order_serial_no );
@@ -1500,93 +1264,22 @@
             }
         }
 
-        public function makeServiceSale(Order $order , Request $request)
+        private function checkAndDecrementStock($item , $quantity , $warehouse_id) : void
         {
-            try {
-                return DB::transaction( function () use ($request , $order) {
-                    $order->load( 'orderServiceProducts.service.items' );
-                    $status      = $request->integer( 'status' );
-                    $paymentType = $request->integer( 'paymentType' );
-
-                    foreach ( $order->orderServiceProducts as $orderServiceProduct ) {
-                        foreach ( $orderServiceProduct->service->items as $item ) {
-                            $itemType = ( str_contains( $item->item_type , 'ProductVariation' ) ) ? ProductVariation::class : Product::class;
-
-                            $is_variation = $itemType === ProductVariation::class;
-                            $product      = $itemType::find( $item->item_id );
-
-                            if ( $product->stock < $item->quantity ) {
-                                if ( $is_variation ) {
-                                    $parentProduct = Product::find( $product->product_id );
-                                    $name          = $parentProduct->name . ' (' . $product->productAttributeOption?->name . ')';
-                                }
-                                else {
-                                    $name = $product->name;
-                                }
-                                throw new Exception( "{$name} stock not enough" );
-                            }
-
-                            $stock = Stock::where( [
-                                'item_id'      => $item->item_id ,
-                                'item_type'    => $itemType ,
-                                'status'       => StockStatus::RECEIVED ,
-                                'warehouse_id' => $order->warehouse_id
-                            ] )->first();
-                            $stock?->decrement( 'quantity' , $item->quantity );
-                        }
-                    }
-
-                    activityLog( 'Converted Service Quotation to sale :' . $order->order_serial_no );
-                    $user   = $order->user;
-                    $ledger = NULL;
-                    if ( $paymentType == PaymentType::CREDIT->value || $paymentType == PaymentType::DEPOSIT->value ) {
-                        $ledger = addToLedger( user: $user , reference: 'Service Quotation converted' , bill_amount: $order->total , paid: 0 );
-                    }
-                    $payments = json_decode( $request->payments , TRUE );
-
-                    $paymentStatus = match ( $status ) {
-                        SaleOrderType::COMPLETED->value => PaymentStatus::PAID ,
-                        default                         => PaymentStatus::UNPAID
-                    };
-
-                    if ( $status == SaleOrderType::DEPOSIT->value ) {
-                        $paymentStatus = PaymentStatus::PARTIALLY_PAID;
-                    }
-
-                    $order->update( [
-                        'quotation_status' => QuotationStatus::CONVERTED ,
-                        'status'           => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
-                        'payment_status'   => $paymentStatus
-                    ] );
-                    if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
-
-                    foreach ( $payments as $p ) {
-                        $amount     = $p[ 'amount' ];
-                        $net_amount = $amount;
-                        if ( $amount > 0 ) {
-                            $payment = PaymentMethod::find( $p[ 'id' ] );
-                            if ( $ledger ) {
-                                $ledger->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
-                            }
-                            addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
-                            if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
-                                addToCustomerWalletTransaction(
-                                    $user ,
-                                    -$net_amount ,
-                                    CustomerWalletTransactionType::PURCHASE ,
-                                    $payment->id ,
-                                    $order->order_serial_no
-                                );
-                            }
-                        }
-                    }
-                    return response()->json();
-                } );
-            } catch ( Exception $exception ) {
-                DB::rollBack();
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+            if ( $item->stock < $quantity ) {
+                $name = $item instanceof ProductVariation
+                    ? $item->product->name . ' (' . $item->productAttributeOption?->name . ')'
+                    : $item->name;
+                throw new Exception( "{$name} stock not enough" );
             }
+
+            $stock = Stock::where( [
+                'item_id'      => $item->id ,
+                'item_type'    => get_class( $item ) ,
+                'status'       => StockStatus::RECEIVED ,
+                'warehouse_id' => $warehouse_id
+            ] )->first();
+            $stock?->decrement( 'quantity' , $quantity );
         }
 
         public function update(PosOrderRequest $request) : object
@@ -1655,9 +1348,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function show(Order $order) : OrderResource
         {
             try {
@@ -1670,7 +1360,16 @@
                     'paymentMethods.paymentMethod'
                 ];
 
-                if ( $order->quotation_type === QuotationType::SERVICE ) {
+                if ( $order->quotation_type === QuotationType::COMBINED ) {
+                    $relations[] = 'orderServiceProducts.service';
+                    $relations[] = 'orderServiceProducts.addons.addon';
+                    $relations[] = 'orderServiceProducts.tier.serviceTier';
+                    $relations[] = 'orderProducts.item';
+                    $relations[] = 'orderProducts.product.taxes.tax';
+                    $relations[] = 'orderProducts.product.unit:id,code';
+                    $relations[] = 'orderProducts.product.sellingUnits:id,code';
+                }
+                elseif ( $order->quotation_type === QuotationType::SERVICE ) {
                     $relations[] = 'orderServiceProducts.service';
                     $relations[] = 'orderServiceProducts.addons.addon';
                     $relations[] = 'orderServiceProducts.tier.serviceTier';
@@ -1689,9 +1388,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function orderDetails(User $user , Order $order) : Order | array
         {
             try {
@@ -1707,9 +1403,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function changeStatus(Order $order , OrderStatusRequest $request , $auth = FALSE) : Order | array
         {
             try {
@@ -1743,9 +1436,6 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function changePaymentStatus(Order $order , PaymentStatusRequest $request , $auth = FALSE) : Order | array
         {
             try {
@@ -1772,14 +1462,10 @@
             }
         }
 
-        /**
-         * @throws Exception
-         */
         public function destroy(Order $order) : void
         {
             try {
                 DB::transaction( function () use ($order) {
-                    // Delete related PosPayments
                     if ( $order->posPayments ) {
                         foreach ( $order->posPayments as $posPayment ) {
                             PaymentMethodTransaction::where( 'description' , 'Order Payment #' . $order->order_serial_no )->delete();
@@ -1787,10 +1473,8 @@
                         $order->posPayments()->delete();
                     }
 
-                    // Delete CreditDepositPurchase records
                     CreditDepositPurchase::where( 'order_id' , $order->id )->delete();
 
-                    // Delete Stocks (and StockTaxes via cascade or manual)
                     if ( $order->stocks ) {
                         $stockIds = $order->stocks->pluck( 'id' );
                         if ( ! blank( $stockIds ) ) {
@@ -1799,7 +1483,6 @@
                         $order->stocks()->delete();
                     }
 
-                    // Delete OrderProducts
                     if ( $order->orderProducts ) {
                         $order->orderProducts()->delete();
                     }
@@ -1873,22 +1556,32 @@
         {
             try {
                 return DB::transaction( function () use ($order , $request) {
-                    $order->load( 'orderProducts' );
+                    $order->load( 'orderProducts.item' , 'orderServiceProducts.service.items.item' );
                     $status = $request->integer( 'status' );
-
                     if ( $status == OrderStatus::CANCELED->value ) {
                         foreach ( $order->orderProducts as $orderProduct ) {
-                            $itemType = ( str_contains( $orderProduct->item_type , 'ProductVariation' ) )
-                                ? ProductVariation::class
-                                : Product::class;
-
                             $stock = Stock::where( [
                                 'item_id'      => $orderProduct->item_id ,
-                                'item_type'    => $itemType ,
+                                'item_type'    => $orderProduct->item_type ,
                                 'status'       => StockStatus::RECEIVED ,
                                 'warehouse_id' => $order->warehouse_id
                             ] )->first();
                             $stock?->increment( 'quantity' , $orderProduct->quantity );
+                        }
+                        if ( $order->orderServiceProducts->isNotEmpty() ) {
+                            foreach ( $order->orderServiceProducts as $orderServiceProduct ) {
+                                if ( $orderServiceProduct->service->items->isNotEmpty() ) {
+                                    foreach ( $orderServiceProduct->service->items as $item ) {
+                                        $stock = Stock::where( [
+                                            'item_id'      => $item->item->id ,
+                                            'item_type'    => get_class( $item->item ) ,
+                                            'status'       => StockStatus::RECEIVED ,
+                                            'warehouse_id' => $order->warehouse_id
+                                        ] )->first();
+                                        $stock?->increment( 'quantity' , $item->quantity );
+                                    }
+                                }
+                            }
                         }
                     }
                     if ( $order->payment_type == PaymentType::PREORDER ) {
@@ -1947,32 +1640,6 @@
             }
         }
 
-        public function updateServiceQuotationStatus(Order $order , Request $request) : object
-        {
-            try {
-                return DB::transaction( function () use ($order , $request) {
-                    $status = $request->integer( 'status' );
-                    if ( $status == QuotationStatus::COUNTER_OFFER->value ) {
-                        $order->update( [
-                            'offer_amount'  => $request->amount ,
-                            'offer_message' => $request->message ,
-                        ] );
-                    }
-                    if ( $status == QuotationStatus::CANCELLED->value ) {
-                        $order->update( [
-                            'decline_message' => $request->reason ,
-                        ] );
-                    }
-                    $order->update( [ 'quotation_status' => $status ] );
-                    activityLog( "Updated Service Quotation Status: {$order->order_serial_no}" );
-                    return response()->json();
-                } );
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
-
         public function fulfillPreOrder(Order $order , array $data) : void
         {
             DB::transaction( function () use ($order , $data) {
@@ -1984,9 +1651,7 @@
 
                     $paymentMethod = PaymentMethod::where( 'name' , $paymentMethodName )->first();
                     if ( ! $paymentMethod ) {
-                        // Fallback or throw error. Assuming 'Cash' exists or create one?
-                        // For now, let's assume it exists or use ID 1 (Cash usually)
-                        $paymentMethod = PaymentMethod::firstOrCreate( [ 'name' => $paymentMethodName ] , [ 'slug' => \Illuminate\Support\Str::slug( $paymentMethodName ) , 'status' => Status::ACTIVE ] );
+                        $paymentMethod = PaymentMethod::firstOrCreate( [ 'name' => $paymentMethodName ] , [ 'slug' => Str::slug( $paymentMethodName ) , 'status' => Status::ACTIVE ] );
                     }
 
                     PosPayment::create( [
@@ -2008,7 +1673,7 @@
                     ] );
 
                     $order->increment( 'paid' , $topUpAmount );
-                    $order->increment( 'total' , $topUpAmount ); // Increase total to match the new price
+                    $order->increment( 'total' , $topUpAmount );
                 }
                 elseif ( $action === 'PRORATE' ) {
                     $proratedItems = $data[ 'proratedItems' ];
@@ -2020,7 +1685,6 @@
                             $diff   = $oldQty - $newQty;
 
                             if ( $diff > 0 ) {
-                                // Release reserved stock for the difference
                                 $stock = Stock::where( [
                                     'item_id'      => $orderProduct->item_id ,
                                     'item_type'    => $orderProduct->item_type ,
@@ -2028,32 +1692,14 @@
                                     'warehouse_id' => $order->warehouse_id
                                 ] )->first();
 
-                                // Since it was a pre-order, stock was reserved (quantity_ordered incremented)
-                                // We need to decrement quantity_ordered by the difference
-                                // And since we are fulfilling, we will decrement quantity later for the fulfilled amount.
-                                // Actually, wait.
-                                // When pre-order is created: quantity_ordered += qty. quantity is NOT decremented.
-                                // When fulfilled: quantity -= qty. quantity_ordered -= qty.
-
-                                // Here we are reducing the order quantity. So we should reduce quantity_ordered by the difference.
                                 $stock?->decrement( 'quantity_ordered' , $diff );
 
                                 $orderProduct->update( [ 'quantity' => $newQty , 'total' => $newQty * $orderProduct->unit_price ] );
                             }
                         }
                     }
-                    // Recalculate order total?
-                    // The original payment covers the new quantity at the NEW price (effectively).
-                    // But the order record has 'total' based on OLD price * OLD qty.
-                    // If we prorate, we are essentially saying: "Keep the total amount paid, but reduce quantity so that (new_qty * new_price) ~= paid_amount".
-                    // So the order 'total' might need adjustment or stay same?
-                    // If we change quantity in order_product, the calculated total of the order will drop (since unit_price is old).
-                    // This might be confusing.
-                    // However, for inventory purposes, we just need to deduct the correct amount.
                 }
 
-                // Finalize fulfillment
-                // 1. Deduct stock for the final quantities
                 foreach ( $order->orderProducts as $orderProduct ) {
                     $stock = Stock::where( [
                         'item_id'      => $orderProduct->item_id ,
@@ -2063,16 +1709,14 @@
                     ] )->first();
 
                     if ( $stock ) {
-                        // Deduct physical stock
                         $stock->decrement( 'quantity' , $orderProduct->quantity );
-                        // Clear the reservation
                         $stock->decrement( 'quantity_ordered' , $orderProduct->quantity );
                     }
                 }
 
                 $order->update( [
                     'pre_order_status' => PreOrderStatus::FULFILLED ,
-                    'status'           => OrderStatus::COMPLETED , // Or DELIVERED
+                    'status'           => OrderStatus::COMPLETED ,
                     'payment_status'   => PaymentStatus::PAID
                 ] );
             } );
