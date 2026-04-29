@@ -59,10 +59,11 @@
             }
         }
 
-        public function show(Product $product) : \Illuminate\Foundation\Application | \Illuminate\Http\Response | ProductDetailsAdminResource | Application | ResponseFactory
+        public function show(Product $product)
         {
             try {
-                return new ProductDetailsAdminResource( $this->productService->show( $product ) );
+                return new ProductAdminResource( $this->productService->show( $product ) );
+//                return new ProductDetailsAdminResource( $this->productService->show( $product ) );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

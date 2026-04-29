@@ -15,25 +15,18 @@
         {
             return TRUE;
         }
-
-        /**
-         * Get the validation rules that apply to the request.
-         *
-         * @return array
-         */
         public function rules() : array
         {
             return [
-                'product_attributes'        => [ 'required' , 'string' ] ,
-                'product_attribute_options' => [ 'required' , 'string' ] ,
-                'product_id'                => [ 'required' , 'numeric' ] ,
-//                'name'                        => [ 'required' , 'string' ] ,
-                'sku'                       => [ 'required' , 'string' ] ,
-                'barcode'                   => [ 'required' , 'string' ] ,
-                'trackStock'                => [ 'sometimes' , 'numeric' ] ,
-                'retail_pricing'            => [ 'required' , 'string' ] ,
-                'wholesale_pricing'         => [ 'sometimes' , 'string' ] ,
-                'image'                     => [ 'sometimes' , 'file' ] ,
+//                'product_attributes'        => [ 'required' , 'string' ] ,
+//                'product_attribute_options' => [ 'required' , 'string' ] ,
+                'product_id' => [ 'required' , 'numeric' , 'not_in:0' ] ,
+                'variations' => [ 'required' , 'string' ] ,
+//                'barcode'                   => [ 'required' , 'string' ] ,
+//                'trackStock'                => [ 'sometimes' , 'numeric' ] ,
+//                'retail_pricing'            => [ 'required' , 'string' ] ,
+//                'wholesale_pricing'         => [ 'sometimes' , 'string' ] ,
+//                'image'                     => [ 'sometimes' , 'file' ] ,
             ];
         }
     }

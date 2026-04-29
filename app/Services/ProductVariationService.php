@@ -266,115 +266,126 @@
         public function store(ProductVariationRequest $request , Product $product) : object
         {
             try {
-                DB::beginTransaction();
+                return DB::transaction( function () use ($request , $product) {
 
-                $order      = 1;
-                $parentId   = NULL;
-                $collection = [];
+                    $collection        = [];
+                    $requestVariations = json_decode( $request->input( 'variations' ) , TRUE );
 
-                $attributes    = json_decode( $request->product_attributes , TRUE );
-                $options       = json_decode( $request->product_attribute_options , TRUE );
-                $retailData    = json_decode( $request->retail_pricing , TRUE );
-                $wholesaleData = json_decode( $request->wholesale_pricing , TRUE );
-
-                $sellingPrice     = $retailData[ 0 ][ 'sellingPrice' ] ?? 0;
-                $legacyVariations = [];
-
-                // 1. COMBINE into the legacy format
-                if ( is_array( $attributes ) && count( $attributes ) === count( $options ) ) {
-                    foreach ( $attributes as $key => $attrId ) {
-                        $legacyVariations[] = [
-                            'product_attribute_id'        => (string) $attrId ,
-                            'product_attribute_option_id' => $options[ $key ] ,
-                            'price'                       => (string) $sellingPrice ,
-                            'sku'                         => $request->sku ,
-                            'retail_pricing'              => $retailData ,
-                            'wholesale_pricing'           => $wholesaleData ,
-                        ];
-                    }
-                }
-
-                $variationsCount = count( $legacyVariations ) - 1;
-
-                foreach ( $legacyVariations as $key => $variation ) {
-                    $isLast = ( $key === $variationsCount );
-
-                    // Check if this specific hierarchy step exists
-                    $productVariation = ProductVariation::where( [
-                        'product_id'                  => $product->id ,
-                        'product_attribute_id'        => $variation[ 'product_attribute_id' ] ,
-                        'product_attribute_option_id' => $variation[ 'product_attribute_option_id' ] ,
-                        'parent_id'                   => $parentId
-                    ] )->orderBy( 'id' , 'desc' )->first();
-
-                    if ( $productVariation ) {
-                        // Update existing record
-                        $productVariation->update( [
-                            'price' => $variation[ 'price' ] ,
-                            'sku'   => $isLast ? $variation[ 'sku' ] : NULL ,
-                        ] );
-                    }
-                    else {
-                        // Calculate order for new record
-                        $lastVariationInLevel = ProductVariation::where( [
-                            'product_id'           => $product->id ,
-                            'product_attribute_id' => $variation[ 'product_attribute_id' ] ,
-                        ] )->max( 'order' );
-
-                        $order = ( $lastVariationInLevel ?? 0 ) + 1;
-
-                        // Create new record
-                        $productVariation = ProductVariation::create( [
-                            'product_id'                  => $product->id ,
-                            'product_attribute_id'        => $variation[ 'product_attribute_id' ] ,
-                            'product_attribute_option_id' => $variation[ 'product_attribute_option_id' ] ,
-                            'price'                       => $variation[ 'price' ] ,
-                            'sku'                         => $isLast ? $variation[ 'sku' ] : NULL ,
-                            'parent_id'                   => $parentId ,
-                            'order'                       => $order
-                        ] );
+                    if ( ! is_array( $requestVariations ) ) {
+                        throw new \Exception( 'Variations data is not a valid array.' );
                     }
 
-                    $parentId     = $productVariation->id;
-                    $collection[] = $productVariation;
+                    foreach ( $requestVariations as $variationData ) {
+                        $parentId = NULL;
 
-                    // Only run pricing and media for the leaf (final) variation
-                    if ( $isLast ) {
-                        // Store Retail Pricing
-                        if ( ! empty( $variation[ 'retail_pricing' ][ 0 ] ) ) {
-                            $retailItem = $variation[ 'retail_pricing' ][ 0 ];
-                            $productVariation->retailPrices()->updateOrCreate(
-                                [ 'unit_id' => $retailItem[ 'unitId' ] ?? NULL ] ,
-                                [
-                                    'buying_price'  => $retailItem[ 'buyingPrice' ] ?? 0 ,
-                                    'selling_price' => $retailItem[ 'sellingPrice' ] ?? 0 ,
-                                ]
-                            );
-                        }
+                        $attributes    = $variationData[ 'product_attributes' ] ?? [];
+                        $options       = $variationData[ 'product_attribute_options' ] ?? [];
+                        $retailData    = $variationData[ 'retail_pricing' ] ?? [];
+                        $wholesaleData = $variationData[ 'wholesale_pricing' ] ?? [];
+                        $sku           = $variationData[ 'sku' ] ?? NULL;
+                        $barcode       = $variationData[ 'barcode' ] ?? NULL;
+                        $stock         = $variationData[ 'stock' ] ?? 0;
+                        $trackStock    = $variationData[ 'trackStock' ] ?? 0;
 
-                        // Store Wholesale Tiers
-                        if ( ! empty( $variation[ 'wholesale_pricing' ] ) ) {
-                            // Consider clearing old tiers if this is an update logic
-                            $productVariation->wholesalePrices()->delete();
-                            foreach ( $variation[ 'wholesale_pricing' ] as $tier ) {
-                                $productVariation->wholesalePrices()->create( [
-                                    'minQuantity' => $tier[ 'minQuantity' ] ?? NULL ,
-                                    'price'       => $tier[ 'price' ] ?? 0 ,
-                                ] );
+                        $sellingPrice = $retailData[ 0 ][ 'sellingPrice' ] ?? 0;
+
+                        $hierarchyVariations = [];
+                        if ( is_array( $attributes ) && count( $attributes ) === count( $options ) ) {
+                            foreach ( $attributes as $key => $attrId ) {
+                                $hierarchyVariations[] = [
+                                    'product_attribute_id'        => (string) $attrId ,
+                                    'product_attribute_option_id' => $options[ $key ] ,
+                                    'price'                       => (string) $sellingPrice ,
+                                ];
                             }
                         }
-                        $this->saveMedia( $request , $productVariation , MediaEnum::IMAGES_COLLECTION );
+
+                        $variationsCount = count( $hierarchyVariations ) - 1;
+
+                        foreach ( $hierarchyVariations as $key => $variation ) {
+                            $isLast = ( $key === $variationsCount );
+
+                            $productVariation = ProductVariation::where( [
+                                'product_id'                  => $product->id ,
+                                'product_attribute_id'        => $variation[ 'product_attribute_id' ] ,
+                                'product_attribute_option_id' => $variation[ 'product_attribute_option_id' ] ,
+                                'parent_id'                   => $parentId
+                            ] )->first();
+
+                            if ( $productVariation ) {
+                                $updateData = [
+                                    'price' => $variation[ 'price' ] ,
+                                    'sku'   => $isLast ? $sku : NULL ,
+                                ];
+                                if ( $isLast ) {
+                                    $updateData[ 'barcode' ]     = $barcode;
+                                    $updateData[ 'stock' ]       = $stock;
+                                    $updateData[ 'track_stock' ] = $trackStock;
+                                }
+                                $productVariation->update( $updateData );
+                            }
+                            else {
+                                $lastVariationInLevel = ProductVariation::where( [
+                                    'product_id'           => $product->id ,
+                                    'product_attribute_id' => $variation[ 'product_attribute_id' ] ,
+                                ] )->max( 'order' );
+
+                                $order = ( $lastVariationInLevel ?? 0 ) + 1;
+
+                                $createData = [
+                                    'product_id'                  => $product->id ,
+                                    'product_attribute_id'        => $variation[ 'product_attribute_id' ] ,
+                                    'product_attribute_option_id' => $variation[ 'product_attribute_option_id' ] ,
+                                    'price'                       => $variation[ 'price' ] ,
+                                    'sku'                         => $isLast ? $sku : NULL ,
+                                    'parent_id'                   => $parentId ,
+                                    'order'                       => $order ,
+                                ];
+                                if ( $isLast ) {
+                                    $createData[ 'barcode' ]     = $barcode;
+                                    $createData[ 'stock' ]       = $stock;
+                                    $createData[ 'track_stock' ] = $trackStock;
+                                }
+
+                                $productVariation = ProductVariation::create( $createData );
+                            }
+
+                            $parentId = $productVariation->id;
+
+                            if ( $isLast ) {
+                                $collection[] = $productVariation;
+
+                                if ( ! empty( $retailData[ 0 ] ) ) {
+                                    $retailItem = $retailData[ 0 ];
+                                    $productVariation->retailPrices()->updateOrCreate(
+                                        [ 'unit_id' => $retailItem[ 'unitId' ] ?? NULL ] ,
+                                        [
+                                            'buying_price'  => $retailItem[ 'buyingPrice' ] ?? 0 ,
+                                            'selling_price' => $retailItem[ 'sellingPrice' ] ?? 0 ,
+                                        ]
+                                    );
+                                }
+
+                                if ( ! empty( $wholesaleData ) ) {
+                                    $productVariation->wholesalePrices()->delete();
+                                    foreach ( $wholesaleData as $tier ) {
+                                        $productVariation->wholesalePrices()->create( [
+                                            'minQuantity' => $tier[ 'minQuantity' ] ?? NULL ,
+                                            'price'       => $tier[ 'price' ] ?? 0 ,
+                                        ] );
+                                    }
+                                }
+                                $this->saveMedia( $request , $productVariation );
+                            }
+                        }
                     }
-                }
 
-                // Update main product minimum price
-                $minPrice = ProductVariation::where( 'product_id' , $product->id )->min( 'price' );
-                if ( $minPrice ) {
-                    $product->update( [ 'variation_price' => $minPrice ] );
-                }
-
-                DB::commit();
-                return collect( $collection );
+                    $minPrice = ProductVariation::where( 'product_id' , $product->id )->whereNotNull( 'sku' )->min( 'price' );
+                    if ( $minPrice ) {
+                        $product->update( [ 'variation_price' => $minPrice ] );
+                    }
+                    return collect( $collection );
+                } );
 
             } catch ( \Exception $exception ) {
                 DB::rollBack();
@@ -546,20 +557,20 @@
         /**
          * @throws Exception
          */
-        public function destroy(Product $product, ProductVariation $productVariation) : void
+        public function destroy(Product $product , ProductVariation $productVariation) : void
         {
             try {
-                DB::transaction(function () use ($product, $productVariation) {
+                DB::transaction( function () use ($product , $productVariation) {
                     // Check if the variation belongs to the product and is a leaf node (has SKU)
-                    if ($productVariation->product_id == $product->id && $productVariation->sku != NULL) {
+                    if ( $productVariation->product_id == $product->id && $productVariation->sku != NULL ) {
 
                         // 1. Delete associated pricing records created in store()
                         $productVariation->wholesalePrices()->delete();
                         $productVariation->retailPrices()->delete();
 
                         // 2. Explicitly clear media collections to remove files from storage
-                        $productVariation->clearMediaCollection(MediaEnum::IMAGES_COLLECTION);
-                        $productVariation->clearMediaCollection('product-variation-barcode');
+                        $productVariation->clearMediaCollection( MediaEnum::IMAGES_COLLECTION );
+                        $productVariation->clearMediaCollection( 'product-variation-barcode' );
 
                         // 3. Store parent_id before deletion for recursive cleanup
                         $parentId = $productVariation->parent_id;
@@ -568,22 +579,22 @@
                         $productVariation->delete();
 
                         // 5. Clean up parent hierarchy if they have no other children
-                        if ($parentId) {
-                            $this->parentDelete($parentId);
+                        if ( $parentId ) {
+                            $this->parentDelete( $parentId );
                         }
 
                         // 6. Update the main product's minimum variation price
-                        $productData = Product::find($product->id);
-                        $checkMinPrice = $productData->variations()->whereNotNull('sku')->min('price');
+                        $productData   = Product::find( $product->id );
+                        $checkMinPrice = $productData->variations()->whereNotNull( 'sku' )->min( 'price' );
 
                         // Update with new min price or set to 0 if no variations remain
                         $productData->variation_price = $checkMinPrice ?? 0;
                         $productData->save();
                     }
-                });
-            } catch (Exception $exception) {
-                Log::error('Product Variation Destroy Error: ' . $exception->getMessage());
-                throw new Exception($exception->getMessage(), 422);
+                } );
+            } catch ( Exception $exception ) {
+                Log::error( 'Product Variation Destroy Error: ' . $exception->getMessage() );
+                throw new Exception( $exception->getMessage() , 422 );
             }
         }
 

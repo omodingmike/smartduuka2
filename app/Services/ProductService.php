@@ -491,7 +491,10 @@
         public function show(Product $product) : Product
         {
             try {
-                return $product->load( [ 'prices.unit' ] );
+                return $product->load( [ 'media' , 'category' , 'variations.wholesalePrices' ,
+                    'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
+                    'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
+                ] );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
@@ -767,7 +770,7 @@
                     }
                 } )->get();
 
-                $per_page      = $request->post( 'per_page' , 30 );
+                $per_page    = $request->post( 'per_page' , 30 );
                 $orderColumn = 'products.name';
                 $orderType   = 'asc';
                 if ( $request->post( 'sort_by' ) == 'newest' ) {
