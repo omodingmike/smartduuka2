@@ -3,7 +3,6 @@
     namespace App\Services;
 
     use App\Enums\Ask;
-    use App\Enums\BarcodeType;
     use App\Enums\MediaEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
@@ -17,7 +16,6 @@
     use App\Models\ProductAttributeOption;
     use App\Models\ProductCategory;
     use App\Models\ProductTag;
-    use App\Models\ProductTax;
     use App\Models\ProductVariation;
     use App\Models\Stock;
     use App\Models\Warehouse;
@@ -26,13 +24,11 @@
     use Carbon\Carbon;
     use Exception;
     use Illuminate\Http\Request;
-    use Illuminate\Support\Arr;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Str;
     use IlluminateAgnostic\Str\Support\Collection;
-    use Picqer\Barcode\BarcodeGeneratorJPG;
 
     class ProductService
     {
@@ -348,6 +344,12 @@
                     // 5. Media handling (Referencing store logic)
                     $this->saveMedia( $request , $product , MediaEnum::PRODUCTS_MEDIA_COLLECTION );
 
+                    $product->load(
+                        [ 'media' , 'category' , 'variations.wholesalePrices' ,
+                            'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
+                            'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
+                        ]
+                    );
                     $this->product = $product;
                 } );
                 return $this->product;
@@ -361,80 +363,6 @@
         /**
          * @throws Exception
          */
-        public function update1(ProductRequest $request , Product $product) : object
-        {
-            try {
-                DB::transaction( function () use ($request , $product) {
-                    if ( $request->barcode_id != $product->barcode_id || $request->sku != $product->sku ) {
-                        if ( $request->barcode_id === BarcodeType::EAN_13 ) {
-                            $barcode_value = str_pad( $request->sku , 13 , '0' , STR_PAD_LEFT );
-                        }
-                        if ( $request->barcode_id === BarcodeType::UPC_A ) {
-                            $barcode_value = str_pad( $request->sku , 12 , '0' , STR_PAD_LEFT );
-                        }
-//                        $product->update(Arr::except($request->validated() , 'tag') + [ 'slug' => Str::slug($request->name) ]);
-
-                        $product->update( Arr::except( $request->validated() , [ 'tags' ] ) + [ 'variation_price' => $request->selling_price ] );
-
-                        $generator = new BarcodeGeneratorJPG();
-                        if ( $product->barcode_id === BarcodeType::EAN_13 ) {
-                            $barcode = $generator->getBarcode( $barcode_value , $generator::TYPE_EAN_13 );
-                        }
-                        if ( $product->barcode_id === BarcodeType::UPC_A ) {
-                            $barcode = $generator->getBarcode( $barcode_value , $generator::TYPE_UPC_A );
-                        }
-                        $tempFilePath = storage_path( 'app/public/barcode.jpg' );
-                        file_put_contents( $tempFilePath , $barcode );
-                        $product->clearMediaCollection( 'product-barcode' );
-                        $product->addMedia( $tempFilePath )->toMediaCollection( 'product-barcode' );
-                    }
-                    else {
-//                        $product->update(Arr::except($request->validated() , 'other_unit_id') + [ 'slug' => Str::slug($request->name) ]);
-                        $product->update( Arr::except( $request->validated() , [ 'tags' ] ) + [ 'variation_price' => $request->selling_price ] );
-                    }
-//                    $product->sellingUnits()->sync($request->other_unit_id);
-
-                    if ( $request->tags ) {
-                        $product->tags()->delete();
-                        $tagItems = json_decode( $request->tags , TRUE );
-                        foreach ( $tagItems as $tagItem ) {
-                            ProductTag::create( [
-                                'product_id' => $product->id ,
-                                'name'       => $tagItem[ 'text' ]
-                            ] );
-                        }
-                    }
-                    if ( $request->tax_id ) {
-                        $product->taxes()->delete();
-                        foreach ( $request->tax_id as $tax ) {
-                            ProductTax::create( [
-                                'product_id' => $product->id ,
-                                'tax_id'     => $tax
-                            ] );
-                        }
-                    }
-
-                    if ( ! $request->tax_id ) {
-                        $product->taxes()->delete();
-                    }
-
-                    if ( $product->variations ) {
-                        $this->product = Product::find( $product->id );
-                        $checkMinPrice = $product->variations->min( 'price' );
-                        if ( $checkMinPrice ) {
-                            $this->product->variation_price = $checkMinPrice;
-                            $this->product->save();
-                        }
-                    }
-                } );
-                return $this->product;
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                info( $exception->getMessage() );
-                DB::rollBack();
-                throw new Exception( $exception->getMessage() , 422 );
-            }
-        }
 
         public function downloadBarcode(Product $product)
         {
@@ -491,10 +419,12 @@
         public function show(Product $product) : Product
         {
             try {
-                return $product->load( [ 'media' , 'category' , 'variations.wholesalePrices' ,
-                    'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
-                    'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
-                ] );
+                return $product->load(
+                    [ 'media' , 'category' , 'variations.wholesalePrices' ,
+                        'variations.retailPrices' , 'brand' , 'taxes' , 'tags' ,
+                        'reviews' , 'unit' , 'stocks' , 'wholesalePrices' , 'retailPrices.unit'
+                    ]
+                );
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );
