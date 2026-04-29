@@ -4,6 +4,7 @@
 
     use App\Enums\CustomerWalletTransactionType;
     use App\Enums\DefaultPaymentMethods;
+    use App\Enums\ItemType;
     use App\Enums\OrderStatus;
     use App\Enums\OrderType;
     use App\Enums\PaymentMethodEnum;
@@ -11,7 +12,6 @@
     use App\Enums\PaymentType;
     use App\Enums\PreOrderStatus;
     use App\Enums\PriceType;
-    use App\Enums\ItemType;
     use App\Enums\QuotationStatus;
     use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
@@ -40,7 +40,7 @@
     use App\Models\Product;
     use App\Models\ProductVariation;
     use App\Models\RetailPrice;
-    use App\Models\Service; // Added Service model
+    use App\Models\Service;
     use App\Models\Stock;
     use App\Models\StockTax;
     use App\Models\User;
@@ -54,6 +54,8 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Str;
+
+    // Added Service model
 
     class OrderService
     {
@@ -574,9 +576,13 @@
 
                     if ( ! blank( $items ) ) {
                         foreach ( $items as $item ) {
+                            if ( ! isset( $item[ 'itemType' ] ) ) {
+                                $item[ 'itemType' ] = ItemType::PRODUCT->value;
+                            }
                             if ( $item[ 'itemType' ] === ItemType::PRODUCT->value ) {
                                 $this->handlePosProductItem( $this->order , $item , $is_preorder , $warehouse_id , $status );
-                            } elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
+                            }
+                            elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
                                 $this->handlePosServiceItem( $this->order , $item , $is_preorder , $warehouse_id , $status );
                             }
                         }
@@ -738,7 +744,7 @@
             }
         }
 
-        private function handlePosProductItem(Order $order, array $product, bool $is_preorder, int $warehouse_id, int $status): void
+        private function handlePosProductItem(Order $order , array $product , bool $is_preorder , int $warehouse_id , int $status) : void
         {
             $p = Product::find( $product[ 'item_id' ] );
 
@@ -797,14 +803,14 @@
             }
         }
 
-        private function handlePosServiceItem(Order $order, array $service, bool $is_preorder, int $warehouse_id, int $status): void
+        private function handlePosServiceItem(Order $order , array $service , bool $is_preorder , int $warehouse_id , int $status) : void
         {
             $orderServiceProduct = OrderServiceProduct::create( [
-                'order_id'            => $order->id ,
-                'service_id'          => $service[ 'item_id' ] ,
-                'quantity'            => $service[ 'quantity' ] ,
-                'total'               => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
-                'unit_price'          => $service[ 'unitPrice' ]
+                'order_id'   => $order->id ,
+                'service_id' => $service[ 'item_id' ] ,
+                'quantity'   => $service[ 'quantity' ] ,
+                'total'      => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
+                'unit_price' => $service[ 'unitPrice' ]
             ] );
 
             if ( isset( $service[ 'addons' ] ) ) {
@@ -818,16 +824,16 @@
             }
 
             // Handle stock decrement for products consumed by the service
-            $serviceModel = Service::with('serviceProducts.product')->find($service['item_id']);
-            if ($serviceModel && $serviceModel->serviceProducts->isNotEmpty()) {
-                foreach ($serviceModel->serviceProducts as $consumedProduct) {
+            $serviceModel = Service::with( 'serviceProducts.product' )->find( $service[ 'item_id' ] );
+            if ( $serviceModel && $serviceModel->serviceProducts->isNotEmpty() ) {
+                foreach ( $serviceModel->serviceProducts as $consumedProduct ) {
                     $item = $consumedProduct->product;
-                    if (!$item) {
+                    if ( ! $item ) {
                         continue;
                     }
-                    $quantity = $consumedProduct->quantity * $service['quantity'];
+                    $quantity = $consumedProduct->quantity * $service[ 'quantity' ];
 
-                    if ( !$is_preorder && $item->stock < $quantity ) {
+                    if ( ! $is_preorder && $item->stock < $quantity ) {
                         $name = $item instanceof ProductVariation
                             ? $item->product->name . ' (' . $item->productAttributeOption?->name . ')'
                             : $item->name;
@@ -841,7 +847,7 @@
                         'warehouse_id' => $warehouse_id
                     ] )->first();
 
-                    if ($stock) {
+                    if ( $stock ) {
                         if ( ! $is_preorder ) {
                             $stock->decrement( 'quantity' , $quantity );
                         }
@@ -1108,13 +1114,13 @@
                     }
 
                     // Revert stock for old service products if they consumed stock
-                    foreach ($order->orderServiceProducts as $oldServiceProduct) {
-                        $serviceModel = Service::with('serviceProducts.product')->find($oldServiceProduct->service_id);
-                        if ($serviceModel && $serviceModel->serviceProducts->isNotEmpty()) {
-                            foreach ($serviceModel->serviceProducts as $consumedProduct) {
+                    foreach ( $order->orderServiceProducts as $oldServiceProduct ) {
+                        $serviceModel = Service::with( 'serviceProducts.product' )->find( $oldServiceProduct->service_id );
+                        if ( $serviceModel && $serviceModel->serviceProducts->isNotEmpty() ) {
+                            foreach ( $serviceModel->serviceProducts as $consumedProduct ) {
                                 $stock = Stock::where( [
                                     'item_id'      => $consumedProduct->product->id ,
-                                    'item_type'    => get_class($consumedProduct->product) ,
+                                    'item_type'    => get_class( $consumedProduct->product ) ,
                                     'status'       => StockStatus::RECEIVED ,
                                     'warehouse_id' => $order->warehouse_id
                                 ] )->first();
@@ -1162,7 +1168,8 @@
                         foreach ( $items as $item ) {
                             if ( $item[ 'itemType' ] === ItemType::PRODUCT->value ) {
                                 $this->handlePosProductItem( $order , $item , $is_preorder , $warehouse_id , $status );
-                            } elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
+                            }
+                            elseif ( $item[ 'itemType' ] === ItemType::SERVICE->value ) {
                                 $this->handlePosServiceItem( $order , $item , $is_preorder , $warehouse_id , $status );
                             }
                         }
