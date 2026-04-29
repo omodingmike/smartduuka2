@@ -5,11 +5,15 @@
 
     use App\Enums\BarcodeType;
     use App\Enums\MediaEnum;
+    use App\Enums\StockStatus;
     use App\Http\Requests\PaginateRequest;
     use App\Http\Requests\ProductVariationRequest;
     use App\Libraries\AppLibrary;
     use App\Models\Product;
+    use App\Models\ProductAttributeOption;
     use App\Models\ProductVariation;
+    use App\Models\Stock;
+    use App\Models\Warehouse;
     use App\Traits\SaveMedia;
     use Exception;
     use Illuminate\Database\Eloquent\Collection;
@@ -263,6 +267,9 @@
          * @throws Exception
          */
 
+        /**
+         * @throws Exception
+         */
         public function store(ProductVariationRequest $request , Product $product) : object
         {
             try {
@@ -376,6 +383,58 @@
                                     }
                                 }
                                 $this->saveMedia( $request , $productVariation );
+
+                                // ---------------------------------------------------------
+                                // ADD STOCK TO VARIATION LOGIC
+                                // ---------------------------------------------------------
+
+                                // Prevent duplicate initial stock insertions if variation is just being updated
+                                $existingStock = Stock::where('item_type', ProductVariation::class)
+                                                      ->where('variation_id', $productVariation->id)
+                                                      ->exists();
+
+                                if ($trackStock == 1 && $stock > 0 && !$existingStock) {
+                                    // Defaulting to the first warehouse since payload lacks warehouse_id
+                                    $warehouse   = Warehouse::first();
+                                    $warehouseId = $warehouse ? $warehouse->id : 1;
+                                    $batch       = 'B' . time();
+                                    $buyingPrice = $retailData[0]['buyingPrice'] ?? ($product->buying_price ?? 0);
+                                    $total       = $stock * $buyingPrice;
+
+                                    // Construct variation_names string dynamically
+                                    $names = [];
+                                    foreach ($hierarchyVariations as $hv) {
+                                        $option = ProductAttributeOption::with('productAttribute')->find($hv['product_attribute_option_id']);
+                                        if ($option && $option->productAttribute) {
+                                            $names[] = $option->productAttribute->name . ' :: ' . $option->name;
+                                        }
+                                    }
+                                    $variationNames = implode(' > ', $names);
+
+                                    Stock::create([
+                                        'model_type'      => ProductVariation::class,
+                                        'model_id'        => $productVariation->id,
+                                        'warehouse_id'    => $warehouseId,
+                                        'reference'       => 'S' . time(),
+                                        'item_type'       => ProductVariation::class,
+                                        'item_id'         => $productVariation->id,
+                                        'product_id'      => $product->id,
+                                        'variation_id'    => $productVariation->id,
+                                        'variation_names' => $variationNames,
+                                        'price'           => $buyingPrice,
+                                        'quantity'        => $stock,
+                                        'expiry_date'     => null,
+                                        'discount'        => 0,
+                                        'tax'             => 0,
+                                        'batch'           => $batch,
+                                        'subtotal'        => $total,
+                                        'total'           => $total,
+                                        'sku'             => $sku,
+                                        'status'          => StockStatus::RECEIVED,
+                                        'creator'         => auth()->id(),
+                                        'user_id'         => auth()->id()
+                                    ]);
+                                }
                             }
                         }
                     }
