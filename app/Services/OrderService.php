@@ -235,7 +235,7 @@
                                               ->where( 'item_id' , $row->item_id )
                                               ->where( 'item_type' , $row->item_type )
                                               ->whereHas( 'order' , function ($q) use ($start , $end) {
-                                                  $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                                  $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
                                                     ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                                         $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                                     } )
