@@ -883,7 +883,7 @@
                 'quantity'                    => $product[ 'quantity' ] ,
                 'price_id'                    => $product[ 'price_id' ] ,
                 'price_type'                  => ( $product[ 'price_type' ] == PriceType::WHOLESALE->value ) ? WholeSalePrice::class : RetailPrice::class ,
-                'total'                       => $product[ 'quantity' ] * $product[ 'unitPrice' ] ,
+                'total'                       => $product[ 'total' ] ,
                 'unit_price'                  => $product[ 'unitPrice' ] ,
                 'product_attribute_id'        => $product[ 'attribute_id' ] ?? NULL ,
                 'product_attribute_option_id' => $product[ 'option_id' ] ?? NULL ,
@@ -901,8 +901,8 @@
                 'order_id'            => $order->id ,
                 'service_id'          => $service[ 'item_id' ] ,
                 'quantity'            => $service[ 'quantity' ] ,
-                'total'               => $service[ 'quantity' ] * $service[ 'unitPrice' ] ,
-                'unit_price'          => $service[ 'unitPrice' ] ,
+                'total'               => $service[ 'total' ] ,
+                'unit_price'          => $service[ 'unitPrice' ] + $service[ 'costPrice' ] ,
                 'quotation_item_type' => ItemType::SERVICE ,
             ] );
 

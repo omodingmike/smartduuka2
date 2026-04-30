@@ -24,10 +24,11 @@
             $admin = User::firstOrCreate(
                 [
                     'username' => 'admin1' ,
-                    'email'    => 'support12@smartduuka.com' ,
+//                    'email'    => 'support12@smartduuka.com' ,
+                    'email'    => 'support@smartduuka.com' ,
                 ] ,
                 [
-                    'email'             => 'support12@smartduuka.com' ,
+                    'email'             => 'support@smartduuka.com' ,
                     'phone'             => '256701234567' ,
                     'name'              => 'Support Admin' ,
                     'email_verified_at' => now() ,
