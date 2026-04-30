@@ -291,10 +291,11 @@
 //        }
         public function creditAndDeposit() : HasMany
         {
-            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+//            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+            return $this->orders()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
         }
 
-        public function creditOrdersQuery() : HasMany
+        public function creditOrdersQuery()
         {
             return $this->creditAndDeposit()
                         ->whereRaw(
@@ -332,13 +333,13 @@
             );
         }
 
-        protected function credits(): Attribute
+        protected function credits() : Attribute
         {
             return Attribute::make(
                 get: function () {
-                    $orderDebt = (float) $this->creditOrdersQuery()
-                                              ->reorder()
-                                              ->selectRaw('
+                    $orderDebt  = (float) $this->creditOrdersQuery()
+                                               ->reorder()
+                                               ->selectRaw( '
                     SUM(
                         GREATEST(
                             0,
@@ -349,8 +350,8 @@
                             )
                         )
                     ) as total_debt
-                ')->value('total_debt');
-                    $legacyDebt = (float) $this->legacyDebts()->sum('amount');
+                ' )->value( 'total_debt' );
+                    $legacyDebt = (float) $this->legacyDebts()->sum( 'amount' );
                     return $orderDebt + $legacyDebt;
                 }
             );
