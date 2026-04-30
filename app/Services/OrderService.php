@@ -208,7 +208,7 @@
                                         ->selectRaw( 'SUM(quantity) as total_sold' )
                                         ->selectRaw( 'SUM(total) as total_revenue' )
                                         ->whereHas( 'order' , function ($q) use ($start , $end) {
-                                            $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                            $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID , PaymentStatus::UNPAID ] )
                                               ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                                   $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                               } )
@@ -284,7 +284,7 @@
                                   ->select( 'user_id' )
                                   ->selectRaw( 'COUNT(id) as total_orders' )
                                   ->selectRaw( 'SUM(total) as total_revenue' )
-                                  ->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                  ->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
                                   ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                       $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                   } )
@@ -343,7 +343,7 @@
                                     DB::raw( 'SUM(order_products.quantity) as total_sold' ) ,
                                     DB::raw( 'SUM(order_products.total) as total_revenue' )
                                 )
-                                ->whereIn( 'orders.payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID ] )
+                                ->whereIn( 'orders.payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
                                 ->when( ( $start && ! $end ) , function ($q) use ($start) {
                                     $q->whereBetween( 'orders.created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                 } )
