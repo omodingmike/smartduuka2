@@ -5,6 +5,7 @@
     use App\Enums\Ask;
     use App\Enums\CustomerPaymentType;
     use App\Enums\PaymentStatus;
+    use App\Enums\PaymentType;
     use App\Enums\PosPaymentType;
     use App\Enums\Role as EnumRole;
     use App\Enums\Status;
@@ -37,7 +38,110 @@
             }
         }
 
+        // =========================================================================
+        // SHARED DB SUBQUERIES
+        // These return sub-select Builder instances for use with addSelect().
+        // Keeping them here avoids duplicating SQL across list() and simpleList().
+        // =========================================================================
+
         /**
+         * Correlated subquery: total amount paid across all pos_payments for a customer.
+         */
+        private function totalSpentSubquery() : \Illuminate\Database\Query\Builder
+        {
+            return DB::table( 'pos_payments' )
+                     ->join( 'orders' , 'orders.id' , '=' , 'pos_payments.order_id' )
+                     ->whereColumn( 'orders.user_id' , 'users.id' )
+                     ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' );
+        }
+
+        /**
+         * Correlated subquery: sum of outstanding credit-order debt (order total minus payments).
+         * Mirrors the PHP logic in User::credits but runs entirely in the DB.
+         */
+        private function creditOrderDebtSubquery() : \Illuminate\Database\Query\Builder
+        {
+            return DB::table( 'orders' )
+                     ->whereColumn( 'orders.user_id' , 'users.id' )
+                     ->whereIn( 'orders.payment_type' , [
+                         PaymentType::CREDIT->value ,
+                         PaymentType::DEPOSIT->value ,
+                     ] )
+                     ->whereRaw(
+                         'orders.total > (SELECT COALESCE(SUM(pp.amount),0) FROM pos_payments pp WHERE pp.order_id = orders.id)'
+                     )
+                     ->selectRaw(
+                         'COALESCE(SUM(
+                             GREATEST(0, orders.total - (
+                                 SELECT COALESCE(SUM(pp.amount), 0)
+                                 FROM pos_payments pp
+                                 WHERE pp.order_id = orders.id
+                             ))
+                         ), 0)'
+                     );
+        }
+
+        /**
+         * Correlated subquery: sum of unpaid legacy debts for a customer.
+         */
+        private function legacyDebtSubquery() : \Illuminate\Database\Query\Builder
+        {
+            return DB::table( 'legacy_debts' )
+                     ->whereColumn( 'legacy_debts.user_id' , 'users.id' )
+                     ->selectRaw( 'COALESCE(SUM(amount), 0)' );
+        }
+
+        /**
+         * Correlated subquery: total debt payments already made by a customer.
+         */
+        private function debtPaidSubquery() : \Illuminate\Database\Query\Builder
+        {
+            return DB::table( 'customer_payments' )
+                     ->whereColumn( 'customer_payments.user_id' , 'users.id' )
+                     ->where( 'customer_payment_type' , CustomerPaymentType::DEBT->value )
+                     ->selectRaw( 'COALESCE(SUM(amount), 0)' );
+        }
+
+        /**
+         * Correlated subquery: total credit order face value (before payments).
+         */
+        private function totalCreditOrdersSubquery() : \Illuminate\Database\Query\Builder
+        {
+            return DB::table( 'orders' )
+                     ->whereColumn( 'orders.user_id' , 'users.id' )
+                     ->whereIn( 'orders.payment_type' , [
+                         PaymentType::CREDIT->value ,
+                         PaymentType::DEPOSIT->value ,
+                     ] )
+                     ->whereRaw(
+                         'orders.total > (SELECT COALESCE(SUM(pp.amount),0) FROM pos_payments pp WHERE pp.order_id = orders.id)'
+                     )
+                     ->selectRaw( 'COALESCE(SUM(orders.total), 0)' );
+        }
+
+        // =========================================================================
+        // PUBLIC SERVICE METHODS
+        // =========================================================================
+
+        /**
+         * Full customer list query used by index() and export().
+         *
+         * OPTIMIZATIONS vs previous version:
+         *   1. credits is now a DB subquery (order debt + legacy debt) — no PHP loop.
+         *   2. debt_paid is a DB subquery — CustomerResource no longer calls
+         *      $this->debtPayments->sum('amount') in PHP.
+         *   3. total_credit_orders is a DB subquery — User::$totalCreditOrders
+         *      attribute no longer re-queries per customer.
+         *   4. Removed the redundant bare `orders.posPayments` eager load — it was
+         *      never used in CustomerResource; only creditAndDeposit.posPayments is.
+         *   5. Removed bare `walletTransactions` collection load — wallet balance is
+         *      already covered by withSum(...as wallet). The resource only renders
+         *      walletTransactions when loaded, which show() handles separately.
+         *   6. Removed `payments` (all payments) — the resource only needs
+         *      `debtPayments` on the list view. `payments` is only needed in show().
+         *   7. creditAndDeposit.posPayments no longer loaded twice (was in both the
+         *      root with() list and inside the creditAndDeposit closure).
+         *
          * @throws Exception
          */
         public function list(Request $request) : Builder
@@ -47,47 +151,76 @@
 
             return User::select( 'users.*' )
                        ->addSelect( [
-                           'total_spent' => DB::table( 'pos_payments' )
-                                              ->join( 'orders' , 'orders.id' , '=' , 'pos_payments.order_id' )
-                                              ->whereColumn( 'orders.user_id' , 'users.id' )
-                                              ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' )
+                           'total_spent'         => $this->totalSpentSubquery() ,
+                           'debt_paid'           => $this->debtPaidSubquery() ,
+                           'total_credit_orders' => $this->totalCreditOrdersSubquery() ,
+                           'wallet'              => DB::table( 'customer_wallet_transactions' )
+                                                      ->whereColumn( 'user_id' , 'users.id' )
+                                                      ->selectRaw( 'COALESCE(SUM(amount), 0)' ) ,
                        ] )
-                       ->withSum( 'walletTransactions as wallet' , 'amount' )
-                       ->withCount( [ 'orders as order_count' => function ($query) {
-                           $query->active();
-                       }
+                       ->selectRaw(
+                           '(' . $this->creditOrderDebtSubquery()->toSql() . ') + (' . $this->legacyDebtSubquery()->toSql() . ') as credits' ,
+                           array_merge(
+                               $this->creditOrderDebtSubquery()->getBindings() ,
+                               $this->legacyDebtSubquery()->getBindings()
+                           )
+                       )
+                       ->withCount( [
+                           'orders as order_count' => fn($q) => $q->active() ,
                        ] )
                        ->with( [
+                           // Media for avatars
                            'media' ,
-                           'legacyDebts' ,
-                           'orders.posPayments' ,
-                           'walletTransactions' ,
+                           // Debt payments with their method (shown in resource list)
                            'debtPayments.paymentMethod' ,
-                           'payments' , 'payments.paymentMethod' ,
+                           // Ledger entries
                            'ledgers' ,
+                           // Addresses
                            'addresses' ,
-                           'creditAndDeposit.posPayments' ,
+                           // Credit orders with aggregates and line items
                            'creditAndDeposit' => fn($q) => $q
                                ->withSum( 'posPayments as total_paid' , 'amount' )
-                               ->withSum( 'orderProducts as items_count' , 'quantity' )
-                               ->with( [ 'orderProducts' => fn($q) => $q->select( 'id' , 'order_id' , 'item_id' , 'quantity' ) ,
-                                   'orderProducts.item:id,name'
+                               ->withCount( [ 'orderProducts as items_count' ] )
+                               ->with( [
+                                   'orderProducts' => fn($q) => $q->select( 'id' , 'order_id' , 'item_id' , 'quantity' ) ,
+                                   'orderProducts.item:id,name' ,
                                ] ) ,
-                           'creditAndDeposit.orderProducts.item' ,
                        ] )
                        ->role( EnumRole::CUSTOMER )
                        ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
                        ->when( $debtors , function ($q) {
-                           $q->where( function ($query) {
-                               $query->whereHas( 'creditOrdersQuery' )
-                                     ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
-                                         $legacyQuery->where( 'amount' , '>' , 0 );
+                           // Filter to only customers who have outstanding debt —
+                           // use EXISTS correlated subqueries instead of whereHas
+                           // (avoids a COUNT(*) that PostgreSQL must fully materialise).
+                           $q->where( function ($inner) {
+                               $inner->whereExists( function ($sub) {
+                                   $sub->from( 'orders' )
+                                       ->whereColumn( 'orders.user_id' , 'users.id' )
+                                       ->whereIn( 'orders.payment_type' , [
+                                           PaymentType::CREDIT->value ,
+                                           PaymentType::DEPOSIT->value ,
+                                       ] )
+                                       ->whereRaw(
+                                           'orders.total > (SELECT COALESCE(SUM(pp.amount),0) FROM pos_payments pp WHERE pp.order_id = orders.id)'
+                                       );
+                               } )
+                                     ->orWhereExists( function ($sub) {
+                                         $sub->from( 'legacy_debts' )
+                                             ->whereColumn( 'legacy_debts.user_id' , 'users.id' )
+                                             ->where( 'amount' , '>' , 0 );
                                      } );
                            } );
                        } )
                        ->orderByDesc( 'created_at' );
         }
 
+        /**
+         * Lightweight list for dropdowns / autocomplete.
+         *
+         * OPTIMIZATIONS:
+         *   Same DB subquery pattern as list(), but strips the heavy
+         *   creditAndDeposit eager load that's not needed here.
+         */
         public function simpleList(Request $request) : AnonymousResourceCollection
         {
             $query    = $request->input( 'query' );
@@ -99,29 +232,49 @@
             $customers = User::select( 'users.*' )
                              ->role( EnumRole::CUSTOMER )
                              ->addSelect( [
-                                 'total_spent' => DB::table( 'pos_payments' )
-                                                    ->join( 'orders' , 'orders.id' , '=' , 'pos_payments.order_id' )
-                                                    ->whereColumn( 'orders.user_id' , 'users.id' )
-                                                    ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' )
+                                 'total_spent' => $this->totalSpentSubquery() ,
+                                 'debt_paid'   => $this->debtPaidSubquery() ,
+                                 'wallet'      => DB::table( 'customer_wallet_transactions' )
+                                                    ->whereColumn( 'user_id' , 'users.id' )
+                                                    ->selectRaw( 'COALESCE(SUM(amount), 0)' ) ,
                              ] )
-                             ->withCount( [ 'orders as order_count' => function ($query) {
-                                 $query->active();
-                             }
+                             ->selectRaw(
+                                 '(' . $this->creditOrderDebtSubquery()->toSql() . ') + (' . $this->legacyDebtSubquery()->toSql() . ') as credits' ,
+                                 array_merge(
+                                     $this->creditOrderDebtSubquery()->getBindings() ,
+                                     $this->legacyDebtSubquery()->getBindings()
+                                 )
+                             )
+                             ->withCount( [
+                                 'orders as order_count' => fn($q) => $q->active() ,
                              ] )
                              ->with( [ 'debtPayments.paymentMethod' , 'ledgers' ] )
                              ->when( $debtors , function ($q) {
-                                 $q->where( function ($query) {
-                                     $query->whereHas( 'creditOrdersQuery' )
-                                           ->orWhereHas( 'legacyDebts' , function ($legacyQuery) {
-                                               $legacyQuery->where( 'amount' , '>' , 0 );
+                                 $q->where( function ($inner) {
+                                     $inner->whereExists( function ($sub) {
+                                         $sub->from( 'orders' )
+                                             ->whereColumn( 'orders.user_id' , 'users.id' )
+                                             ->whereIn( 'orders.payment_type' , [
+                                                 PaymentType::CREDIT->value ,
+                                                 PaymentType::DEPOSIT->value ,
+                                             ] )
+                                             ->whereRaw(
+                                                 'orders.total > (SELECT COALESCE(SUM(pp.amount),0) FROM pos_payments pp WHERE pp.order_id = orders.id)'
+                                             );
+                                     } )
+                                           ->orWhereExists( function ($sub) {
+                                               $sub->from( 'legacy_debts' )
+                                                   ->whereColumn( 'legacy_debts.user_id' , 'users.id' )
+                                                   ->where( 'amount' , '>' , 0 );
                                            } );
                                  } );
                              } )
-                             ->withSum( 'walletTransactions as wallet_sum' , 'amount' )
                              ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
                              ->orderByDesc( 'created_at' );
 
-            $result = $paginate ? $customers->paginate( perPage: $per_page , page: $page ) : $customers->get();
+            $result = $paginate
+                ? $customers->paginate( perPage: $per_page , page: $page )
+                : $customers->get();
 
             return SimpleCustomerResource::collection( $result );
         }
@@ -167,10 +320,6 @@
                 $this->authorizeNotBlocked();
 
                 DB::transaction( function () use ($customer , $request) {
-                    // -------------------------------------------------------------------------
-                    // FIX 5: update() was setting fields one-by-one and calling save().
-                    // Use fill() + save() — single dirty-check, single UPDATE statement.
-                    // -------------------------------------------------------------------------
                     $data = array_filter( [
                         'name'   => $request->name ,
                         'type'   => $request->type ,
@@ -213,12 +362,6 @@
                             ->orderByDesc( 'created_at' ) ,
                     ] );
 
-                    // -------------------------------------------------------------------------
-                    // FIX 6: credit_orders was accessed via the computed Attribute which
-                    // runs creditOrdersQuery() fresh. Since we're inside a transaction and
-                    // about to mutate these rows, load them explicitly once and work from
-                    // the in-memory collection — avoids re-querying mid-loop.
-                    // -------------------------------------------------------------------------
                     $creditOrders = $customer->creditOrdersQuery()->get();
 
                     $payment = CustomerPayment::create( [
@@ -230,17 +373,8 @@
                         'balance'               => $customer->credits - $amount ,
                     ] );
 
-                    // -------------------------------------------------------------------------
-                    // FIX 7: The two debt-settling loops called $customer->refresh() mid-loop
-                    // to recompute `credits` for ledger entries. refresh() reloads ALL relations
-                    // and columns — very expensive inside a loop.
-                    //
-                    // Instead, track the running balance locally. `credits` is only needed
-                    // for ledger entries, so compute it once and decrement manually.
-                    // -------------------------------------------------------------------------
                     $runningBalance = (float) $customer->credits;
 
-                    // --- Settle legacy debts first ---
                     foreach ( $customer->legacyDebts as $debt ) {
                         if ( $amount <= 0 ) break;
 
@@ -276,7 +410,6 @@
                         }
                     }
 
-                    // --- Settle credit orders ---
                     foreach ( $creditOrders as $order ) {
                         if ( $amount <= 0 ) break;
 
@@ -321,11 +454,6 @@
                         }
                     }
 
-                    // -------------------------------------------------------------------------
-                    // FIX 8: $payment->load('customer') was triggering a fresh DB query
-                    // just to attach the already-loaded $customer model. Avoid by setting
-                    // the relation directly on the payment instance.
-                    // -------------------------------------------------------------------------
                     $payment->setRelation( 'customer' , $customer );
                     $payment->reference = $reference;
                     $payment->creator   = auth()->user();
@@ -346,24 +474,21 @@
             try {
                 $this->authorizeNotBlocked();
 
-                // -------------------------------------------------------------------------
-                // FIX 9: show() only loaded walletTransactions, but CustomerResource
-                // accesses orders, debtPayments, payments, ledgers, addresses, media,
-                // credit_orders, legacyDebts, and orderProducts.item — all as lazy loads,
-                // causing an N+1 per customer show.
-                //
-                // Load everything the resource needs in one shot here.
-                // -------------------------------------------------------------------------
                 $customer->load( [
                     'media' ,
                     'walletTransactions' ,
-                    'debtPayments' ,
-                    'payments' ,
+                    'debtPayments.paymentMethod' ,
+                    'payments.paymentMethod' ,
                     'ledgers' ,
                     'addresses' ,
                     'legacyDebts' ,
-                    'creditAndDeposit.posPayments' ,
-                    'creditAndDeposit.orderProducts.item' ,
+                    'creditAndDeposit' => fn($q) => $q
+                        ->withSum( 'posPayments as total_paid' , 'amount' )
+                        ->withCount( [ 'orderProducts as items_count' ] )
+                        ->with( [
+                            'orderProducts' => fn($q) => $q->select( 'id' , 'order_id' , 'item_id' , 'quantity' ) ,
+                            'orderProducts.item:id,name' ,
+                        ] ) ,
                 ] );
 
                 return $customer;

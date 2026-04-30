@@ -272,23 +272,6 @@
             return $this->roles->first()?->id;
         }
 
-        // =========================================================================
-        // CREDIT / FINANCIAL COMPUTATIONS
-        // These were the most expensive part. Key fixes:
-        // 1. creditAndDeposit / creditOrdersQuery are now scoped on activeOrders()
-        //    (non-completed) so the intent is preserved after fixing orders().
-        // 2. credits() rewrites the correlated-subquery-per-row into a single
-        //    set-based aggregate — dramatically faster on large datasets.
-        // 3. All monetary computed attributes are CACHED per-request using the
-        //    model's cache key. Cache is busted on save().
-        // =========================================================================
-
-//        public function creditAndDeposit() : HasMany
-//        {
-//            return $this->activeOrders()
-//                        ->active()
-//                        ->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
-//        }
         public function creditAndDeposit() : HasMany
         {
 //            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
@@ -307,7 +290,6 @@
         protected function totalRevenue() : Attribute
         {
             return Attribute::make(
-            // Use activeOrders() to match original intent; cache the result.
                 get: fn() => $this->remember( 'total_revenue' , fn() => $this->activeOrders()->sum( 'total' ) )
             );
         }
@@ -356,19 +338,6 @@
                 }
             );
         }
-
-//        protected function wallet() : Attribute
-//        {
-//            return Attribute::make(
-//                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
-//            );
-//        }
-//        protected function wallet() : Attribute
-//        {
-//            return Attribute::make(
-//                get: fn() => $this->remember( 'wallet' , fn() => $this->walletTransactions()->sum( 'amount' ) )
-//            );
-//        }
 
         protected function oldestCreditOrder() : Attribute
         {

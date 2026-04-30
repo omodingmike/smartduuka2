@@ -25,6 +25,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
+    use Illuminate\Support\Facades\DB;
     use Maatwebsite\Excel\Facades\Excel;
 
     class CustomerController extends AdminController
@@ -39,12 +40,46 @@
             $this->orderService    = $orderService;
         }
 
+        public function list()
+        {
+            $customers = User::role(EnumRole::CUSTOMER)
+                             ->get(['id', 'name'])
+                             ->append('credits');
+
+            $totalCredit = $customers->sum('credits');
+
+            return response()->json([
+                'data' => $customers,
+                'meta' => [
+                    'total_credit' => currency($totalCredit)
+                ]
+            ]);
+        }
+
         public function index(Request $request)
         {
             try {
                 $customerQuery = $this->customerService->list( $request );
                 $paginate      = $request->boolean( 'paginate' , TRUE );
-                $totalCredit   = ( clone $customerQuery )->get()->sum( 'credits' );
+
+                // -------------------------------------------------------------------------
+                // OPTIMIZATION: total_credit is now computed in the DB as a subquery column
+                // on every row. We sum that column from a cheap aggregate query instead of
+                // hydrating every customer into PHP objects just to call ->sum('credits').
+                //
+                // Before: ( clone $customerQuery )->get()->sum('credits')
+                //   — fetches ALL columns for ALL customers, hydrates Eloquent models,
+                //     then sums the PHP-computed `credits` attribute one-by-one.
+                //
+                // After: ( clone $customerQuery )->sum('credits')
+                //   — single SQL SUM() over the subquery column; no PHP hydration.
+                // -------------------------------------------------------------------------
+//                $totalCredit = ( clone $customerQuery )->sum( 'credits' );
+
+                $totalCredit = DB::query()
+                                 ->fromSub(clone $customerQuery, 'sub')
+                                 ->sum('credits');
+
                 if ( $paginate ) {
                     $customers = $customerQuery->paginate(
                         perPage: $request->integer( 'per_page' , 10 ) ,
@@ -65,17 +100,23 @@
             }
         }
 
-        public function posCustomers(Request $request
-        )
+        public function posCustomers(Request $request)
         {
             try {
-                $query = $request->input( 'query' ) ?? NULL;
-                $c     = User::role( EnumRole::CUSTOMER )
-                             ->when( $query , function ($q) use ($query) {
-                                 $q->where( 'name' , 'ilike' , '%' . $query . '%' );
-                             } )
-                             ->orderBy( 'created_at' , 'desc' );
-                return response()->json( [ 'data' => $c->get() ] );
+                $query = $request->input( 'query' );
+
+                // -------------------------------------------------------------------------
+                // OPTIMIZATION: Only select the columns the caller actually needs.
+                // Previously this loaded full User models (all columns + relations) for
+                // what is typically a lightweight POS customer-search dropdown.
+                // -------------------------------------------------------------------------
+                $customers = User::role( EnumRole::CUSTOMER )
+                                 ->select( 'id' , 'name' , 'phone' , 'email' , 'status' )
+                                 ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
+                                 ->orderByDesc( 'created_at' )
+                                 ->get();
+
+                return response()->json( [ 'data' => $customers ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -137,8 +178,7 @@
             }
         }
 
-        public function credits(User $customer
-        ) : Response
+        public function credits(User $customer) : Response
         {
             try {
                 return response( [ 'data' => $customer->credits ] );
@@ -146,7 +186,6 @@
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
         }
-
 
         public function export(PaginateRequest $request
         ) : Response | \Symfony\Component\HttpFoundation\BinaryFileResponse | Application | ResponseFactory
@@ -198,7 +237,7 @@
         {
             $page     = $request->integer( 'page' , 1 );
             $per_page = $request->integer( 'per_page' , 15 );
-            $payments = CustomerPayment::with('paymentMethod')
+            $payments = CustomerPayment::with( 'paymentMethod' )
                                        ->where( 'customer_payment_type' , CustomerPaymentType::DEBT )
                                        ->paginate( perPage: $per_page , page: $page );
             return CustomerPaymentResource::collection( $payments );
