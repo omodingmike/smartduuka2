@@ -235,7 +235,7 @@
                                               ->where( 'item_id' , $row->item_id )
                                               ->where( 'item_type' , $row->item_type )
                                               ->whereHas( 'order' , function ($q) use ($start , $end) {
-                                                  $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
+                                                  $q->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID , PaymentStatus::UNPAID ] )
                                                     ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                                         $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                                     } )
@@ -284,7 +284,7 @@
                                   ->select( 'user_id' )
                                   ->selectRaw( 'COUNT(id) as total_orders' )
                                   ->selectRaw( 'SUM(total) as total_revenue' )
-                                  ->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
+                                  ->whereIn( 'payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID , PaymentStatus::UNPAID ] )
                                   ->when( ( $start && ! $end ) , function (Builder $q) use ($start) {
                                       $q->whereBetween( 'created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                   } )
@@ -343,7 +343,7 @@
                                     DB::raw( 'SUM(order_products.quantity) as total_sold' ) ,
                                     DB::raw( 'SUM(order_products.total) as total_revenue' )
                                 )
-                                ->whereIn( 'orders.payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID, PaymentStatus::UNPAID ] )
+                                ->whereIn( 'orders.payment_status' , [ PaymentStatus::PAID , PaymentStatus::PARTIALLY_PAID , PaymentStatus::UNPAID ] )
                                 ->when( ( $start && ! $end ) , function ($q) use ($start) {
                                     $q->whereBetween( 'orders.created_at' , [ $start->copy()->startOfDay() , $start->copy()->endOfDay() ] );
                                 } )
@@ -559,7 +559,7 @@
                         $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
+                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => userCredit( $user) - $net_amount ] );
                             addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
                             if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
                                 addToCustomerWalletTransaction(
@@ -1290,9 +1290,7 @@
                         $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            if ( $ledger ) {
-                                $ledger->update( [ 'paid' => $net_amount , 'balance' => $user->credits - $net_amount ] );
-                            }
+                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => userCredit( $user ) - $net_amount ] );
                             addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
                             if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
                                 addToCustomerWalletTransaction(

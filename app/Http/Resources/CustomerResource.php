@@ -22,51 +22,6 @@
 
         public function toArray($request) : array
         {
-            $creditOrders = $this->whenLoaded(
-                'creditOrDepositOrders' ,
-                function () {
-                    return $this->creditOrDepositOrders
-                        ->sortByDesc( 'id' )
-                        ->map( function ($order) {
-                            $paid       = $order->total_paid ?? 0;
-                            $itemsCount = $order->items_count ?? 0;
-
-                            return [
-                                'id'               => $order->id ,
-                                'order_serial_no'  => $order->order_serial_no ,
-                                'order_datetime'   => datetime( $order->order_datetime ) ,
-                                'age'              => round( Carbon::parse( $order->order_datetime )->diffInHours( $this->_now ) / 24 ) ,
-                                'total_amount'     => $order->total ,
-                                'paid_currency'    => AppLibrary::currencyAmountFormat( $paid ) ,
-                                'total_currency'   => AppLibrary::currencyAmountFormat( $order->total ) ,
-                                'balance'          => $order->balance ,
-                                'balance_currency' => AppLibrary::currencyAmountFormat( $order->balance ) ,
-                                'status'           => [
-                                    'label' => $order->status->label() ,
-                                    'value' => $order->status->value ,
-                                ] ,
-                                'payment_status'   => [
-                                    'label' => $order->payment_status->label() ,
-                                    'value' => $order->payment_status->value ,
-                                ] ,
-                                'payment_type'     => [
-                                    'label' => $order->payment_type->label() ,
-                                    'value' => $order->payment_type->value ,
-                                ] ,
-                                'items_count'      => $itemsCount ,
-                                'items_summary'    => $order->orderProducts
-                                    ->map( fn($op) => ( $op->item?->name ?? '?' ) . ' (x' . $op->quantity . ')' )
-                                    ->implode( ', ' ) ,
-                            ];
-                        } )
-                        ->values();
-                } ,
-                []
-            );
-
-            // FIX: Consolidate total credits based on the withDebtMetrics scope (falling back to standard properties safely)
-            $creditsValue = $this->getRawOriginal( 'total_credits' ) ?? $this->total_credits ?? $this->credits ?? 0;
-
             return [
                 'id'              => $this->id ,
                 'name'            => ucwords( $this->name ) ,
@@ -98,17 +53,17 @@
                 'phone'  => $this->phone ?? '' ,
                 'status' => $this->status ,
 
-                'credits'                 => $creditsValue ,
+                'credits'                 => $this->total_credits ,
                 'total_spent'             => $this->total_spent ,
                 'wallet_balance'          => $this->wallet_balance ,
                 'wallet_balance_currency' => currency( $this->wallet_balance ) ,
                 'total_spent_currency'    => currency( $this->total_spent ) ,
-                'credits_currency'        => currency( $creditsValue ) ,
+                'credits_currency'        => currency( $this->total_credits ) ,
 
                 'ledgers'             => CustomerLedgerResource::collection(
                     $this->whenLoaded( 'ledgers' )
                 ) ,
-                'show_pay'            => $creditsValue > 0 ,
+//                'show_pay'            => $creditsValue > 0 ,
                 'show_pay_list'       => $this->whenLoaded(
                     'payments' ,
                     fn() => $this->payments->isNotEmpty() ,
@@ -117,12 +72,12 @@
                 'image'               => $this->image ,
                 'notes'               => $this->notes ,
                 'oldest_credit_order' => $this->oldest_credit_order ,
-                'totalBalance'        => currency( $creditsValue ) ,
+//                'totalBalance'        => currency( $creditsValue ) ,
                 'totalSpent'          => currency( $this->total_spent ?? 0 ) ,
                 'addresses'           => AddressResource::collection(
                     $this->whenLoaded( 'addresses' )
                 ) ,
-                'creditOrders'        => $creditOrders ,
+                'creditOrders'        => OrderResource::collection( $this->unPaidOrders ) ,
                 'creditProfile'       => [] ,
                 'created_at'          => AppLibrary::date( $this->created_at ) ,
             ];

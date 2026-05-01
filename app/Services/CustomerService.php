@@ -43,11 +43,10 @@
             return User::query()
                        ->withDebtMetrics()
                        ->withTotalSpent()
-                       ->withCredits()
                        ->withSum( 'walletTransactions as wallet_balance' , 'amount' )
                        ->withCount( [ 'orders as order_count' ] )
                        ->with( [
-                           'media' , 'debtPayments.paymentMethod' , 'ledgers' , 'addresses' ,
+                           'media' , 'debtPayments.paymentMethod' , 'ledgers' , 'addresses' ,'unPaidOrders.posPayments.paymentMethod'
                        ] )
                        ->role( EnumRole::CUSTOMER )
                        ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
@@ -155,10 +154,10 @@
                         'payment_method_id'     => $payment_method ,
                         'customer_payment_type' => CustomerPaymentType::DEBT ,
                         'user_id'               => $customer->id ,
-                        'balance'               => $customer->credits - $amount ,
+                        'balance'               => userCredit( $customer) - $amount ,
                     ] );
 
-                    $runningBalance = (float) $customer->credits;
+                    $runningBalance = (float) userCredit( $customer );
 
                     foreach ( $customer->legacyDebts as $debt ) {
                         if ( $amount <= 0 ) break;

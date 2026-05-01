@@ -74,9 +74,9 @@
                 'ledgers'                 => CustomerLedgerResource::collection(
                     $this->whenLoaded( 'ledgers' )
                 ) ,
-                'credits_currency'        => currency( $this->credits ) ,
+                'credits_currency'        => currency( $this->total_credits ) ,
                 'notes'                   => $this->notes ,
-                'credits'                 => $this->credits ,
+                'credits'                 => $this->total_credits ,
                 'order_count'             => $this->order_count ,
                 'total_spent'             => $this->total_spent ?? 0 ,
                 'total_spent_currency'    => currency( $this->total_spent ?? 0 ) ,

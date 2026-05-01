@@ -195,8 +195,15 @@
             'description' => $reference ,
             'bill_amount' => $bill_amount ,
             'paid'        => $paid ,
-            'balance'     => $user->credits - $paid
+            'balance'     => userCredit( $user ) - $paid
         ] );
+    }
+
+    function userCredit(User $user)
+    {
+        return User::withDebtMetrics()
+                   ->where( 'id' , $user->id )
+                   ->value( 'total_credits' );
     }
 
     function register() : Register | null

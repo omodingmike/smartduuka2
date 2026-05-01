@@ -45,18 +45,20 @@
             try {
                 $customerQuery = $this->customerService->list( $request );
 
-                $totalCredit = DB::query()
-                                 ->fromSub( clone $customerQuery , 'sub' )
-                                 ->sum( 'total_credits' );
+//                $totalCredit = DB::query()
+//                                 ->fromSub( clone $customerQuery , 'sub' )
+//                                 ->sum( 'total_credits' );
 
                 $customers = $customerQuery->get();
 
-                return response()->json( [
-                    'data' => $customers ,
-                    'meta' => [
-                        'total_credit' => currency( $totalCredit ) ,
-                    ] ,
-                ] );
+                return CustomerResource::collection( $customers );
+
+//                return response()->json( [
+//                    'data' => $customers ,
+//                    'meta' => [
+//                        'total_credit' => currency( $totalCredit ) ,
+//                    ] ,
+//                ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }
@@ -167,7 +169,7 @@
         public function credits(User $customer) : Response
         {
             try {
-                return response( [ 'data' => $customer->credits ] );
+                return response( [ 'data' => userCredit( $customer ) ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

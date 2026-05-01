@@ -34,7 +34,7 @@
                     'description' => 'Legacy Debt' ,
                     'bill_amount' => $debt[ 'amount' ] ,
                     'paid'        => 0 ,
-                    'balance'     => $user->credits
+                    'balance'     => userCredit( $user)
                 ] );
             }
             return response()->json();

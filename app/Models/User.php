@@ -103,6 +103,17 @@
                         );
         }
 
+        public function unPaidOrders() : HasMany
+        {
+            $creditTypes = self::creditPaymentTypes();
+
+            return $this->orders()
+                        ->whereIn( 'payment_type' , $creditTypes )
+                        ->whereRaw(
+                            'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)'
+                        );
+        }
+
         public function scopeWithCredits($query)
         {
             $creditTypes = [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ];
