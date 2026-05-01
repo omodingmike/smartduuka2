@@ -4,7 +4,6 @@
 
     use App\Enums\CustomerPaymentType;
     use App\Enums\CustomerWalletTransactionType;
-    use App\Enums\PaymentType;
     use App\Enums\Role as EnumRole;
     use App\Exports\CustomerExport;
     use App\Http\Requests\ChangeImageRequest;
@@ -23,7 +22,6 @@
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
-    use Illuminate\Database\Query\Builder;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
@@ -49,7 +47,7 @@
 
                 $totalCredit = DB::query()
                                  ->fromSub( clone $customerQuery , 'sub' )
-                                 ->sum( 'credits' );
+                                 ->sum( 'total_credits' );
 
                 $customers = $customerQuery->get();
 
@@ -72,8 +70,7 @@
 
                 $totalCredit = DB::query()
                                  ->fromSub( clone $customerQuery , 'sub' )
-                                 ->sum( 'credits' );
-
+                                 ->sum( 'total_credits' );
                 if ( $paginate ) {
                     $customers = $customerQuery->paginate(
                         perPage: $request->integer( 'per_page' , 10 ) ,
@@ -99,11 +96,6 @@
             try {
                 $query = $request->input( 'query' );
 
-                // -------------------------------------------------------------------------
-                // OPTIMIZATION: Only select the columns the caller actually needs.
-                // Previously this loaded full User models (all columns + relations) for
-                // what is typically a lightweight POS customer-search dropdown.
-                // -------------------------------------------------------------------------
                 $customers = User::role( EnumRole::CUSTOMER )
                                  ->select( 'id' , 'name' , 'phone' , 'email' , 'status' )
                                  ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )

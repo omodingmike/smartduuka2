@@ -23,9 +23,9 @@
         public function toArray($request) : array
         {
             $creditOrders = $this->whenLoaded(
-                'creditAndDeposit' ,
+                'creditOrDepositOrders' ,
                 function () {
-                    return $this->creditAndDeposit
+                    return $this->creditOrDepositOrders
                         ->sortByDesc( 'id' )
                         ->map( function ($order) {
                             $paid       = $order->total_paid ?? 0;
@@ -64,63 +64,51 @@
                 []
             );
 
+            // FIX: Consolidate total credits based on the withDebtMetrics scope (falling back to standard properties safely)
+            $creditsValue = $this->getRawOriginal( 'total_credits' ) ?? $this->total_credits ?? $this->credits ?? 0;
+
             return [
-                'id'                  => $this->id ,
-                'name'                => ucwords( $this->name ) ,
-                'username'            => $this->username ,
-                'email'               => $this->email ,
-                'type'                => $this->type ,
+                'id'              => $this->id ,
+                'name'            => ucwords( $this->name ) ,
+                'username'        => $this->username ,
+                'email'           => $this->email ,
+                'type'            => $this->type ,
 
-                // -------------------------------------------------------------------------
-                // OPTIMIZATION: wallet is now a DB-computed column (addSelect subquery)
-                // returned as a scalar. No walletTransactions collection needed on the list.
-                // -------------------------------------------------------------------------
-                'wallet'              => $this->wallet ?? 0 ,
-                'wallet_currency'     => currency( $this->wallet ?? 0 ) ,
+                // FIX: Map wallet metrics to the actual 'balance' attribute on the User model
+                'wallet'          => $this->balance ?? 0 ,
+                'wallet_currency' => currency( $this->balance ?? 0 ) ,
 
-                // walletTransactions collection is only loaded in show(), so this renders
-                // an empty collection on the list view without triggering any extra queries.
                 'wallet_transactions' => CustomerWalletTransactionResource::collection(
                     $this->whenLoaded( 'walletTransactions' )
                 ) ,
 
-                // -------------------------------------------------------------------------
-                // OPTIMIZATION: debt_paid is now a DB-computed column.
-                // Before: $this->debtPayments->sum('amount') — iterated a PHP collection.
-                // After:  $this->debt_paid — already summed by the DB in the list query.
-                // Falls back to collection sum for show() where debt_paid isn't a column.
-                // -------------------------------------------------------------------------
-                'debtPaid'            => currency(
+                'debtPaid'          => currency(
                     $this->debt_paid ?? $this->debtPayments->sum( 'amount' )
                 ) ,
 
-                // -------------------------------------------------------------------------
-                // OPTIMIZATION: total_credit_orders is now a DB-computed column.
-                // Before: User::$totalCreditOrders ran creditOrdersQuery()->sum('total')
-                //         per customer — one extra query per row on the list.
-                // After:  $this->total_credit_orders reads the pre-computed column.
-                // Falls back to the attribute for show() where it isn't pre-computed.
-                // -------------------------------------------------------------------------
-                'totalCreditOrders'   => currency(
-                    $this->total_credit_orders ?? $this->totalCreditOrders
+                // FIX: Align total credit orders with the dynamic column generated in the model's scope
+                'totalCreditOrders' => currency(
+                    $this->total_order_debt ?? $this->totalCreditOrders ?? 0
                 ) ,
 
                 'debtPayments' => CustomerPaymentResource::collection(
                     $this->whenLoaded( 'debtPayments' , fn() => $this->debtPayments )
                 ) ,
 
-                'phone'            => $this->phone ?? '' ,
-                'status'           => $this->status ,
+                'phone'  => $this->phone ?? '' ,
+                'status' => $this->status ,
 
-                // credits is now a DB-computed column on list; falls back to PHP attribute
-                // on show() where the model is loaded without addSelect subqueries.
-                'credits'          => $this->getRawOriginal( 'credits' ) ?? $this->credits ,
-                'credits_currency' => currency( $this->getRawOriginal( 'credits' ) ?? $this->credits ) ,
+                'credits'                 => $creditsValue ,
+                'total_spent'             => $this->total_spent ,
+                'wallet_balance'          => $this->wallet_balance ,
+                'wallet_balance_currency' => currency( $this->wallet_balance ) ,
+                'total_spent_currency'    => currency( $this->total_spent ) ,
+                'credits_currency'        => currency( $creditsValue ) ,
 
                 'ledgers'             => CustomerLedgerResource::collection(
                     $this->whenLoaded( 'ledgers' )
                 ) ,
-                'show_pay'            => ( $this->getRawOriginal( 'credits' ) ?? $this->credits ) > 0 ,
+                'show_pay'            => $creditsValue > 0 ,
                 'show_pay_list'       => $this->whenLoaded(
                     'payments' ,
                     fn() => $this->payments->isNotEmpty() ,
@@ -129,7 +117,7 @@
                 'image'               => $this->image ,
                 'notes'               => $this->notes ,
                 'oldest_credit_order' => $this->oldest_credit_order ,
-                'totalBalance'        => currency( $this->getRawOriginal( 'credits' ) ?? $this->credits ) ,
+                'totalBalance'        => currency( $creditsValue ) ,
                 'totalSpent'          => currency( $this->total_spent ?? 0 ) ,
                 'addresses'           => AddressResource::collection(
                     $this->whenLoaded( 'addresses' )

@@ -518,7 +518,7 @@
                             'user_id'         => $request->customer_id ,
                             'original_type'   => PaymentMethodEnum::TAKE_AWAY ,
                             'due_date'        => now()->addDays( 30 ) ,
-                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED->value : OrderStatus::ACCEPT->value ,
+                            'status'          => $status == SaleOrderType::COMPLETED->value ? OrderStatus::COMPLETED : OrderStatus::ACCEPT ,
                             'change'          => $request->change ,
                             'payment_type'    => $paymentType ,
                             'channel'         => $request->channel ,
@@ -534,6 +534,7 @@
                     if ( $is_preorder ) {
                         $order->update( [ 'pre_order_status' => PreOrderStatus::PENDING_STOCK ] );
                     }
+
                     if ( $order->paid >= $order->total ) $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
 
                     $this->order = $order;

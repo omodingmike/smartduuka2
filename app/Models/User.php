@@ -6,12 +6,10 @@
     use App\Enums\OrderStatus;
     use App\Enums\PaymentType;
     use App\Enums\Status;
-    use Carbon\Carbon;
     use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
-    use Illuminate\Database\Eloquent\Relations\HasManyThrough;
     use Illuminate\Foundation\Auth\User as Authenticatable;
     use Illuminate\Notifications\Notifiable;
     use Laravel\Sanctum\HasApiTokens;
@@ -24,72 +22,33 @@
 
     class User extends Authenticatable implements HasMedia , Syncable
     {
-        use InteractsWithMedia;
-        use HasApiTokens;
-        use HasFactory;
-        use HasRoles;
-        use Notifiable , ResourceSyncing;
+        use InteractsWithMedia , HasApiTokens , HasFactory , HasRoles , Notifiable , ResourceSyncing;
 
         protected $table = 'users';
 
         protected $fillable = [
-            'name' ,
-            'email' ,
-            'password' ,
-            'username' ,
-            'phone' ,
-            'country_code' ,
-            'is_guest' ,
-            'status' ,
-            'email_verified_at' ,
-            'commission' ,
-            'branch_id' ,
-            'phone2' ,
-            'type' ,
-            'notes' ,
-            'pin' ,
-            'last_login_date' ,
-            'department' ,
-            'device_token' ,
-            'web_token' ,
-            'balance' ,
-            'remember_token' ,
-            'creator_type' ,
-            'creator_id' ,
-            'editor_type' ,
-            'editor_id' ,
-            'commission_paid' ,
-            'two_factor_secret' ,
-            'two_factor_recovery_codes' ,
-            'two_factor_confirmed_at' ,
-            'force_reset' ,
-            'raw_pin' ,
-            'tenant_id' ,
-            'is_reset' ,
-            'global_id' ,
+            'name' , 'email' , 'password' , 'username' , 'phone' , 'country_code' , 'is_guest' , 'status' ,
+            'email_verified_at' , 'commission' , 'branch_id' , 'phone2' , 'type' , 'notes' , 'pin' ,
+            'last_login_date' , 'department' , 'device_token' , 'web_token' , 'balance' , 'remember_token' ,
+            'creator_type' , 'creator_id' , 'editor_type' , 'editor_id' , 'commission_paid' ,
+            'two_factor_secret' , 'two_factor_recovery_codes' , 'two_factor_confirmed_at' ,
+            'force_reset' , 'raw_pin' , 'tenant_id' , 'is_reset' , 'global_id' ,
         ];
 
-        protected $hidden = [
-            'password' ,
-            'remember_token' ,
-            'pin' ,
-        ];
+        protected $hidden = [ 'password' , 'remember_token' , 'pin' ];
 
         protected $casts = [
             'id'                => 'integer' ,
-            'name'              => 'string' ,
-            'email'             => 'string' ,
-            'password'          => 'hashed' ,
-            'username'          => 'string' ,
-            'phone'             => 'string' ,
-            'country_code'      => 'string' ,
-            'is_guest'          => 'integer' ,
             'status'            => Status::class ,
             'email_verified_at' => 'datetime' ,
             'last_login_date'   => 'datetime' ,
             'force_reset'       => 'boolean' ,
             'is_reset'          => 'boolean' ,
         ];
+
+        // =========================================================================
+        // STANCL TENANCY & SYNCING METHODS (PRESERVED)
+        // =========================================================================
 
         public function getGlobalIdentifierKey()
         {
@@ -117,7 +76,7 @@
         }
 
         // =========================================================================
-        // RELATIONSHIPS
+        // RELATIONSHIPS (RESTORED & FIXED)
         // =========================================================================
 
         public function tenant() : BelongsTo
@@ -130,26 +89,56 @@
             return $this->hasMany( Register::class , 'user_id' , 'id' );
         }
 
-        public function commissions() : HasManyThrough
+        public function creditAndDeposit() : HasMany
         {
-            return $this->hasManyThrough(
-                Commission::class ,
-                CommissionTarget::class ,
-                'user_id' ,
-                'id' ,
-                'id' ,
-                'commission_id'
-            );
+//            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+            return $this->orders()->whereIn( 'payment_type' , [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ] );
         }
 
-        public function commissionTargets() : HasMany
+        public function unPaidOrdersQuery()
         {
-            return $this->hasMany( CommissionTarget::class );
+            return $this->creditAndDeposit()
+                        ->whereRaw(
+                            'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)'
+                        );
         }
 
-        public function payouts() : HasMany
+        public function scopeWithCredits($query)
         {
-            return $this->hasMany( CommissionPayout::class , 'user_id' , 'id' );
+            $creditTypes = [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ];
+
+            // Logic for Order Debt calculation
+            $orderDebtRaw = 'SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)))';
+
+            return $query->addSelect( [
+                'order_debt_total' => Order::selectRaw( "COALESCE($orderDebtRaw, 0)" )
+                                           ->whereColumn( 'user_id' , 'users.id' )
+                                           ->whereIn( 'payment_type' , $creditTypes ) ,
+
+                'legacy_debt_total' => LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
+                                                 ->whereColumn( 'user_id' , 'users.id' ) ,
+
+
+                'credits' => function ($subquery) use ($orderDebtRaw , $creditTypes) {
+                    $subquery->selectRaw( "
+                (SELECT COALESCE($orderDebtRaw, 0) FROM orders WHERE orders.user_id = users.id AND orders.payment_type IN (" . implode( ',' , $creditTypes ) . '))
+                + 
+                (SELECT COALESCE(SUM(amount), 0) FROM legacy_debts WHERE legacy_debts.user_id = users.id)
+            ' );
+                }
+            ] );
+        }
+
+        public function scopeWithTotalSpent($query)
+        {
+            return $query->addSelect( [
+                'total_spent' => function ($subquery) {
+                    $subquery->selectRaw( 'COALESCE(SUM(pp.amount), 0)' )
+                             ->from( 'pos_payments as pp' )
+                             ->join( 'orders as o' , 'pp.order_id' , '=' , 'o.id' )
+                             ->whereColumn( 'o.user_id' , 'users.id' );
+                }
+            ] );
         }
 
         public function orders() : HasMany
@@ -157,20 +146,9 @@
             return $this->hasMany( Order::class , 'user_id' , 'id' );
         }
 
-        /** Shorthand for non-completed orders — use this where the old orders() was used. */
         public function activeOrders() : HasMany
         {
             return $this->orders()->where( 'status' , '<>' , OrderStatus::COMPLETED );
-        }
-
-        public function stocks() : HasMany
-        {
-            return $this->hasMany( Stock::class , 'user_id' , 'id' );
-        }
-
-        public function payments() : HasMany
-        {
-            return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' );
         }
 
         public function debtPayments() : HasMany
@@ -178,6 +156,12 @@
             return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' )
                         ->where( 'customer_payment_type' , CustomerPaymentType::DEBT );
         }
+
+        public function payments() : HasMany
+        {
+            return $this->hasMany( CustomerPayment::class , 'user_id' , 'id' );
+        }
+
 
         public function legacyDebts() : HasMany
         {
@@ -191,28 +175,50 @@
 
         public function addresses() : HasMany
         {
-            return $this->hasMany( Address::class );
+            return $this->hasMany( Address::class , 'user_id' , 'id' );
         }
 
         public function walletTransactions() : HasMany
         {
-            // -------------------------------------------------------------------------
-            // FIX 3: Removed ->latest() from the relationship definition.
-            // Sorting in a relationship definition is applied even when you only need
-            // a SUM — PostgreSQL must sort before aggregating, wasting CPU.
-            // Apply ->latest() at call-site only when you need ordered results.
-            // -------------------------------------------------------------------------
             return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' );
         }
 
         // =========================================================================
-        // ATTRIBUTES (accessors)
+        // DYNAMIC SCOPES
         // =========================================================================
 
-        protected function name() : Attribute
+        private static function orderDebtSql() : string
         {
-            return Attribute::make(
-                get: fn(string $name) => ucwords( $name ) ,
+            return 'orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)';
+        }
+
+        private static function creditPaymentTypes() : array
+        {
+            return [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ];
+        }
+
+        public function scopeWithDebtMetrics($query)
+        {
+            $debtSql     = self::orderDebtSql();
+            $creditTypes = self::creditPaymentTypes();
+
+            $orderDebtSub = Order::selectRaw( "COALESCE(SUM($debtSql), 0)" )
+                                 ->whereColumn( 'user_id' , 'users.id' )
+                                 ->whereIn( 'payment_type' , $creditTypes );
+
+            $legacyDebtSub = LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
+                                       ->whereColumn( 'user_id' , 'users.id' );
+
+            return $query->addSelect( [
+                'total_order_debt' => Order::selectRaw( "SUM($debtSql)" )
+                                           ->whereColumn( 'user_id' , 'users.id' )
+                                           ->whereIn( 'payment_type' , $creditTypes ) ,
+
+                'total_legacy_debt' => LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
+                                                 ->whereColumn( 'user_id' , 'users.id' ) ,
+            ] )->selectRaw(
+                '( ' . $orderDebtSub->toSql() . ' ) + ( ' . $legacyDebtSub->toSql() . ' ) as total_credits' ,
+                array_merge( $orderDebtSub->getBindings() , $legacyDebtSub->getBindings() )
             );
         }
 
@@ -223,26 +229,44 @@
             );
         }
 
-        public function openRegister() : Register | null
+        public function openRegister() : Register
         {
-            // -------------------------------------------------------------------------
-            // FIX 4: Removed ?-> safe-operator chain — it hides errors and is redundant.
-            // ->first() already returns null when no row exists.
-            // -------------------------------------------------------------------------
             return $this->registers()->whereNull( 'closed_at' )->latest()->first();
         }
 
-        // -------------------------------------------------------------------------
-        // FIX 5: Image accessors are fine, but guard against missing media eagerly
-        // loaded. No change needed here — just ensure you eager-load media:
-        //   User::with('media')->get()
-        // -------------------------------------------------------------------------
+        public function scopeWhereHasDebt($query)
+        {
+            $debtSql     = self::orderDebtSql();
+            $creditTypes = self::creditPaymentTypes();
+
+            $orderDebtSub = Order::selectRaw( "COALESCE(SUM($debtSql), 0)" )
+                                 ->whereColumn( 'user_id' , 'users.id' )
+                                 ->whereIn( 'payment_type' , $creditTypes );
+
+            $legacyDebtSub = LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
+                                       ->whereColumn( 'user_id' , 'users.id' );
+
+            return $query->whereRaw(
+                '( ( ' . $orderDebtSub->toSql() . ' ) + ( ' . $legacyDebtSub->toSql() . ' ) ) > 0' ,
+                array_merge( $orderDebtSub->getBindings() , $legacyDebtSub->getBindings() )
+            );
+        }
+
+        // =========================================================================
+        // MEDIA & ATTRIBUTES
+        // =========================================================================
+
         public function getImageAttribute() : string
         {
             if ( ! empty( $this->getFirstMediaUrl( 'profile' ) ) ) {
                 return asset( $this->getFirstMediaUrl( 'profile' ) );
             }
             return asset( 'images/required/profile.png' );
+        }
+
+        public function getMyRoleAttribute() : ?int
+        {
+            return $this->roles->first()?->id;
         }
 
         public function getThumbAttribute() : string
@@ -260,113 +284,5 @@
                  ->crop( 'crop-center' , 225 , 225 )
                  ->keepOriginalImageFormat()
                  ->sharpen( 10 );
-        }
-
-        // -------------------------------------------------------------------------
-        // FIX 6: getMyRoleAttribute + getrole() were redundant and fragile.
-        // `myrole` is not a real column — it relied on roles being loaded already.
-        // Replaced with a clean, eager-load-friendly accessor.
-        // -------------------------------------------------------------------------
-        public function getMyRoleAttribute() : ?int
-        {
-            return $this->roles->first()?->id;
-        }
-
-        public function creditAndDeposit() : HasMany
-        {
-//            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
-            return $this->orders()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
-        }
-
-        public function creditOrdersQuery()
-        {
-            return $this->creditAndDeposit()
-                        ->whereRaw(
-                            'total > (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)'
-                        )
-                        ->orderBy( 'order_datetime' );
-        }
-
-        protected function totalRevenue() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->remember( 'total_revenue' , fn() => $this->activeOrders()->sum( 'total' ) )
-            );
-        }
-
-        protected function averageOrderValue() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->remember( 'average_order_value' , fn() => $this->activeOrders()->avg( 'total' ) ?? 0 )
-            );
-        }
-
-        protected function creditOrders() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->remember( 'credit_orders' , fn() => $this->creditOrdersQuery()->get() )
-            );
-        }
-
-        protected function totalCreditOrders() : Attribute
-        {
-            return Attribute::make(
-                get: fn() => $this->remember( 'total_credit_orders' , fn() => $this->creditOrdersQuery()->sum( 'total' ) )
-            );
-        }
-
-        protected function credits() : Attribute
-        {
-            return Attribute::make(
-                get: function () {
-                    $orderDebt  = (float) $this->creditOrdersQuery()
-                                               ->reorder()
-                                               ->selectRaw( '
-                    SUM(
-                        GREATEST(
-                            0,
-                            orders.total - (
-                                SELECT COALESCE(SUM(pp.amount), 0)
-                                FROM pos_payments pp
-                                WHERE pp.order_id = orders.id
-                            )
-                        )
-                    ) as total_debt
-                ' )->value( 'total_debt' );
-                    $legacyDebt = (float) $this->legacyDebts()->sum( 'amount' );
-                    return $orderDebt + $legacyDebt;
-                }
-            );
-        }
-
-        protected function oldestCreditOrder() : Attribute
-        {
-            return Attribute::make(
-                get: function () {
-                    return $this->remember( 'oldest_credit_order' , function () {
-                        $oldestDate = $this->creditOrdersQuery()->min( 'order_datetime' );
-                        return $oldestDate
-                            ? round( Carbon::parse( $oldestDate )->diffInHours( now() ) / 24 )
-                            : 0;
-                    } );
-                }
-            );
-        }
-
-        private array $_memo = [];
-
-        private function remember(string $key , callable $callback) : mixed
-        {
-            if ( ! array_key_exists( $key , $this->_memo ) ) {
-                $this->_memo[ $key ] = $callback();
-            }
-            return $this->_memo[ $key ];
-        }
-
-        protected static function booted() : void
-        {
-            static::saved( function (User $user) {
-                $user->_memo = [];
-            } );
         }
     }

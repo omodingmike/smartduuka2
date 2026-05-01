@@ -16,7 +16,7 @@
         public function toArray(Request $request) : array
         {
             $creditOrders = $this->whenLoaded(
-                'creditAndDeposit' ,
+                'creditOrDepositOrders' ,
                 function () {
                     return $this->creditAndDeposit
                         ->sortByDesc( 'id' )
