@@ -38,16 +38,7 @@
             }
         }
 
-        // =========================================================================
-        // SHARED DB SUBQUERIES
-        // These return sub-select Builder instances for use with addSelect().
-        // Keeping them here avoids duplicating SQL across list() and simpleList().
-        // =========================================================================
-
-        /**
-         * Correlated subquery: total amount paid across all pos_payments for a customer.
-         */
-        private function totalSpentSubquery() : \Illuminate\Database\Query\Builder
+        private function totalSpentSubquery()
         {
             return DB::table( 'pos_payments' )
                      ->join( 'orders' , 'orders.id' , '=' , 'pos_payments.order_id' )
@@ -55,11 +46,8 @@
                      ->selectRaw( 'COALESCE(SUM(pos_payments.amount), 0)' );
         }
 
-        /**
-         * Correlated subquery: sum of outstanding credit-order debt (order total minus payments).
-         * Mirrors the PHP logic in User::credits but runs entirely in the DB.
-         */
-        private function creditOrderDebtSubquery() : \Illuminate\Database\Query\Builder
+
+        private function creditOrderDebtSubquery()
         {
             return DB::table( 'orders' )
                      ->whereColumn( 'orders.user_id' , 'users.id' )
@@ -81,20 +69,14 @@
                      );
         }
 
-        /**
-         * Correlated subquery: sum of unpaid legacy debts for a customer.
-         */
-        private function legacyDebtSubquery() : \Illuminate\Database\Query\Builder
+        private function legacyDebtSubquery()
         {
             return DB::table( 'legacy_debts' )
                      ->whereColumn( 'legacy_debts.user_id' , 'users.id' )
                      ->selectRaw( 'COALESCE(SUM(amount), 0)' );
         }
 
-        /**
-         * Correlated subquery: total debt payments already made by a customer.
-         */
-        private function debtPaidSubquery() : \Illuminate\Database\Query\Builder
+        private function debtPaidSubquery()
         {
             return DB::table( 'customer_payments' )
                      ->whereColumn( 'customer_payments.user_id' , 'users.id' )
@@ -102,10 +84,7 @@
                      ->selectRaw( 'COALESCE(SUM(amount), 0)' );
         }
 
-        /**
-         * Correlated subquery: total credit order face value (before payments).
-         */
-        private function totalCreditOrdersSubquery() : \Illuminate\Database\Query\Builder
+        private function totalCreditOrdersSubquery()
         {
             return DB::table( 'orders' )
                      ->whereColumn( 'orders.user_id' , 'users.id' )
@@ -119,31 +98,6 @@
                      ->selectRaw( 'COALESCE(SUM(orders.total), 0)' );
         }
 
-        // =========================================================================
-        // PUBLIC SERVICE METHODS
-        // =========================================================================
-
-        /**
-         * Full customer list query used by index() and export().
-         *
-         * OPTIMIZATIONS vs previous version:
-         *   1. credits is now a DB subquery (order debt + legacy debt) — no PHP loop.
-         *   2. debt_paid is a DB subquery — CustomerResource no longer calls
-         *      $this->debtPayments->sum('amount') in PHP.
-         *   3. total_credit_orders is a DB subquery — User::$totalCreditOrders
-         *      attribute no longer re-queries per customer.
-         *   4. Removed the redundant bare `orders.posPayments` eager load — it was
-         *      never used in CustomerResource; only creditAndDeposit.posPayments is.
-         *   5. Removed bare `walletTransactions` collection load — wallet balance is
-         *      already covered by withSum(...as wallet). The resource only renders
-         *      walletTransactions when loaded, which show() handles separately.
-         *   6. Removed `payments` (all payments) — the resource only needs
-         *      `debtPayments` on the list view. `payments` is only needed in show().
-         *   7. creditAndDeposit.posPayments no longer loaded twice (was in both the
-         *      root with() list and inside the creditAndDeposit closure).
-         *
-         * @throws Exception
-         */
         public function list(Request $request) : Builder
         {
             $debtors = $request->boolean( 'debtors' );
@@ -189,9 +143,6 @@
                        ->role( EnumRole::CUSTOMER )
                        ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
                        ->when( $debtors , function ($q) {
-                           // Filter to only customers who have outstanding debt —
-                           // use EXISTS correlated subqueries instead of whereHas
-                           // (avoids a COUNT(*) that PostgreSQL must fully materialise).
                            $q->where( function ($inner) {
                                $inner->whereExists( function ($sub) {
                                    $sub->from( 'orders' )

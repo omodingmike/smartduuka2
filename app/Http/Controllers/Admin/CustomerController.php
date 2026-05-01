@@ -4,6 +4,7 @@
 
     use App\Enums\CustomerPaymentType;
     use App\Enums\CustomerWalletTransactionType;
+    use App\Enums\PaymentType;
     use App\Enums\Role as EnumRole;
     use App\Exports\CustomerExport;
     use App\Http\Requests\ChangeImageRequest;
@@ -22,6 +23,7 @@
     use Exception;
     use Illuminate\Contracts\Foundation\Application;
     use Illuminate\Contracts\Routing\ResponseFactory;
+    use Illuminate\Database\Query\Builder;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
@@ -40,20 +42,26 @@
             $this->orderService    = $orderService;
         }
 
-        public function list()
+        public function list(Request $request)
         {
-            $customers = User::role(EnumRole::CUSTOMER)
-                             ->get(['id', 'name'])
-                             ->append('credits');
+            try {
+                $customerQuery = $this->customerService->list( $request );
 
-            $totalCredit = $customers->sum('credits');
+                $totalCredit = DB::query()
+                                 ->fromSub( clone $customerQuery , 'sub' )
+                                 ->sum( 'credits' );
 
-            return response()->json([
-                'data' => $customers,
-                'meta' => [
-                    'total_credit' => currency($totalCredit)
-                ]
-            ]);
+                $customers = $customerQuery->get();
+
+                return response()->json( [
+                    'data' => $customers ,
+                    'meta' => [
+                        'total_credit' => currency( $totalCredit ) ,
+                    ] ,
+                ] );
+            } catch ( Exception $exception ) {
+                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+            }
         }
 
         public function index(Request $request)
@@ -62,23 +70,9 @@
                 $customerQuery = $this->customerService->list( $request );
                 $paginate      = $request->boolean( 'paginate' , TRUE );
 
-                // -------------------------------------------------------------------------
-                // OPTIMIZATION: total_credit is now computed in the DB as a subquery column
-                // on every row. We sum that column from a cheap aggregate query instead of
-                // hydrating every customer into PHP objects just to call ->sum('credits').
-                //
-                // Before: ( clone $customerQuery )->get()->sum('credits')
-                //   — fetches ALL columns for ALL customers, hydrates Eloquent models,
-                //     then sums the PHP-computed `credits` attribute one-by-one.
-                //
-                // After: ( clone $customerQuery )->sum('credits')
-                //   — single SQL SUM() over the subquery column; no PHP hydration.
-                // -------------------------------------------------------------------------
-//                $totalCredit = ( clone $customerQuery )->sum( 'credits' );
-
                 $totalCredit = DB::query()
-                                 ->fromSub(clone $customerQuery, 'sub')
-                                 ->sum('credits');
+                                 ->fromSub( clone $customerQuery , 'sub' )
+                                 ->sum( 'credits' );
 
                 if ( $paginate ) {
                     $customers = $customerQuery->paginate(
