@@ -4,6 +4,6 @@ namespace App\Enums;
 
 interface Ask
 {
-    const YES = 5;
-    const NO  = 10;
+    const int YES = 5;
+    const int NO  = 10;
 }

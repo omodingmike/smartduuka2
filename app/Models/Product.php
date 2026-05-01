@@ -220,7 +220,6 @@
 //        }
 
 
-
 //        public function wholesalePrices() : MorphMany
 //        {
 //            return $this->morphMany( WholeSalePrice::class , 'item' );
@@ -470,9 +469,9 @@
             return $this->stocks()->where( 'status' , Status::ACTIVE );
         }
 
-        public function taxes() : HasMany
+        public function taxes() : MorphMany
         {
-            return $this->hasMany( ProductTax::class , 'product_id' , 'id' );
+            return $this->morphMany( ItemTax::class , 'item' );
         }
 
         public function productTaxes() : HasMany

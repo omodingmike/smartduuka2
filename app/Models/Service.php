@@ -9,6 +9,7 @@
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Database\Eloquent\Relations\HasOne;
+    use Illuminate\Database\Eloquent\Relations\MorphMany;
 
     class Service extends Model
     {
@@ -18,7 +19,8 @@
             'base_price' ,
             'duration' ,
             'description' , 'type' , 'service_type' ,
-            'status'
+            'status' ,
+            'tax_inclusive'
         ];
 
         protected $casts = [ 'type' => ServiceType::class , 'status' => Status::class , 'base_price' => 'float' ];
@@ -46,6 +48,11 @@
         public function tiers() : HasMany
         {
             return $this->hasMany( ServiceTier::class , 'service_id' , 'id' );
+        }
+
+        public function taxes() : MorphMany
+        {
+            return $this->morphMany( ItemTax::class , 'item' );
         }
 
         public function orderAddOns() : HasMany

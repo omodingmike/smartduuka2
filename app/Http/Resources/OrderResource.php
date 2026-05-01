@@ -53,13 +53,19 @@
                 'quotation_status'     => $this->quotation_status ,
                 'net_paid'             => $this->net_paid ,
 
-                'net_paid_currency'    => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
-                'paid_currency'        => AppLibrary::currencyAmountFormat( $this->paid ) ,
-                'change'               => AppLibrary::currencyAmountFormat( $this->change ) ,
-                'balance'              => $this->balance ,
-                'quotation_type'       => $this->quotation_type ,
-                'balance_currency'     => AppLibrary::currencyAmountFormat( $this->balance ) ,
-                'shipping_charge'      => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
+                'net_paid_currency' => AppLibrary::currencyAmountFormat( $this->net_paid ) ,
+                'paid_currency'     => AppLibrary::currencyAmountFormat( $this->paid ) ,
+                'change'            => AppLibrary::currencyAmountFormat( $this->change ) ,
+                'balance'           => $this->balance ,
+                'quotation_type'    => $this->quotation_type ,
+                'balance_currency'  => AppLibrary::currencyAmountFormat( $this->balance ) ,
+                'shipping_charge'   => AppLibrary::currencyAmountFormat( $this->shipping_charge ) ,
+
+                'taxes'                => TaxResource::collection( $this->whenLoaded( 'taxes' , function () {
+                    return $this->taxes->map->tax;
+                } ) ) ,
+                'tax_inclusive'        => $this->tax_inclusive ,
+                'tax_ids'              => $this->taxes->map( fn($t) => $t->id ) ,
 
                 // Use relation checks to prevent errors if not eager loaded
                 'order_items'          => $this->relationLoaded( 'orderProducts' ) ? $this->orderProducts->count() : 0 ,

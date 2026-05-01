@@ -103,6 +103,10 @@
         {
             return $this->hasMany( OrderServiceProduct::class );
         }
+        public function taxes() : MorphMany
+        {
+            return $this->morphMany( ItemTax::class , 'item' );
+        }
 
         protected function orderSerialNo() : Attribute
         {

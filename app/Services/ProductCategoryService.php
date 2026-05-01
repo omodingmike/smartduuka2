@@ -77,29 +77,12 @@
         public function list(Request $request)
         {
             try {
-                $requests    = $request->all();
-                $per_page      = $request->get( 'per_page' , 10 );
-                $page        = $request->get( 'page' , 1 );
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $per_page = $request->integer( 'per_page' , 10 );
+                $page     = $request->integer( 'page' , 1 );
+                $paginate = $request->boolean( 'paginate' );
 
-                return ProductCategory::tree()->depthFirst()->with( 'parent_category' , 'media' , 'products' )
-                                      ->where( function ($query) use ($requests) {
-                                          foreach ( $requests as $key => $request ) {
-                                              if ( in_array( $key , $this->productCateFilter ) ) {
-                                                  $query->where( $key , 'like' , '%' . $request . '%' );
-                                              }
-
-                                              if ( in_array( $key , $this->exceptFilter ) ) {
-                                                  $explodes = explode( '|' , $request );
-                                                  if ( is_array( $explodes ) ) {
-                                                      foreach ( $explodes as $explode ) {
-                                                          $query->where( 'id' , '!=' , $explode );
-                                                      }
-                                                  }
-                                              }
-                                          }
-                                      } )->orderBy( $orderColumn , $orderType )->paginate( perPage: $per_page , page: $page );
+                $query = ProductCategory::tree()->depthFirst()->with( 'parent_category' , 'media' , 'products' )->latest();
+                return $paginate ? $query->paginate( perPage: $per_page , page: $page ) : $query->get();
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
                 throw new Exception( $exception->getMessage() , 422 );

@@ -4,18 +4,22 @@
 
     use App\Enums\PriceType;
     use App\Libraries\AppLibrary;
+    use App\Models\Product;
     use Illuminate\Http\Resources\Json\JsonResource;
 
+    /**
+     * @mixin Product
+     */
     class ProductAdminResource extends JsonResource
     {
         public function toArray($request) : array
         {
-            $price         = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
+            $price = count( $this->variations ) > 0 ? $this->variation_price : $this->selling_price;
 
-            $retail        = $this->retailPrices->map( function ($pr) {
+            $retail = $this->retailPrices->map( function ($pr) {
                 return [
                     'price'      => $pr->selling_price ,
-                    'price_text' => currency($pr->selling_price) ,
+                    'price_text' => currency( $pr->selling_price ) ,
                     'id'         => $pr->id ,
                     'type'       => PriceType::RETAIL->value ,
                 ];
@@ -24,7 +28,7 @@
             $wholesale = $this->wholesalePrices->map( function ($pw) {
                 return [
                     'price'      => $pw->price ,
-                    'price_text' => currency($pw->price) ,
+                    'price_text' => currency( $pw->price ) ,
                     'id'         => $pw->id ,
                     'type'       => PriceType::WHOLESALE->value ,
                 ];
@@ -56,6 +60,10 @@
                 "product_brand_id"           => $this->product_brand_id ,
                 "unit_id"                    => $this->unit_id ,
                 "single_tree"                => $this->single_tree ,
+                'taxes'                      => TaxResource::collection( $this->whenLoaded( 'taxes' , function () {
+                    return $this->taxes->map->tax;
+                } ) ) ,
+                'tax_inclusive'              => $this->tax_inclusive ,
 //                "variations"                 => ProductVariationResource::collection( $this->variations ) ,
                 // Inside ProductAdminResource.php -> toArray()
                 'variations'                 => $this->variations->map( function ($variation) {

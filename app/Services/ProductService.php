@@ -12,11 +12,13 @@
     use App\Http\Requests\ProductRequest;
     use App\Libraries\AppLibrary;
     use App\Models\Ingredient;
+    use App\Models\ItemTax;
     use App\Models\Product;
     use App\Models\ProductAttributeOption;
     use App\Models\ProductCategory;
     use App\Models\ProductTag;
     use App\Models\ProductVariation;
+    use App\Models\Service;
     use App\Models\Stock;
     use App\Models\Warehouse;
     use App\Models\WholeSalePrice;
@@ -155,6 +157,9 @@
                     $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
                     $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
 
+                    $tax_inclusive = $request->input( 'tax_inclusive' );
+                    $tax_ids       = json_decode( $request->tax_ids );
+
                     $product = Product::create( [
                         'name'                => $data[ 'name' ] ,
                         'slug'                => $data[ 'name' ] ,
@@ -173,7 +178,16 @@
                         'unit_id'             => $retail_pricing[ 0 ][ 'unitId' ] ,
                         'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
                         'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
+                        'tax_inclusive'       => $tax_inclusive ,
                     ] );
+
+                    foreach ( $tax_ids as $tax_id ) {
+                        ItemTax::create( [
+                            'item_id'   => $product->id ,
+                            'item_type' => Product::class ,
+                            'tax_id'    => $tax_id
+                        ] );
+                    }
 
                     activityLog( "Created product {$product->name}" );
 
@@ -274,6 +288,8 @@
                     $data              = $request->validated();
                     $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
                     $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
+                    $tax_inclusive = $request->input( 'tax_inclusive' );
+                    $tax_ids       = json_decode( $request->tax_ids );
 
                     // 1. Update Product attributes exactly as per store() method logic
                     $product->update( [
@@ -295,6 +311,15 @@
                         'buying_price'        => $retail_pricing[ 0 ][ 'buyingPrice' ] ,
                         'selling_price'       => $retail_pricing[ 0 ][ 'sellingPrice' ] ,
                     ] );
+
+                    $product->taxes()->delete();
+                    foreach ( $tax_ids as $tax_id ) {
+                        ItemTax::create( [
+                            'item_id'   => $product->id ,
+                            'item_type' => Product::class ,
+                            'tax_id'    => $tax_id
+                        ] );
+                    }
 
                     if ( isset( $data[ 'trackStock' ] ) && $data[ 'trackStock' ] == 1 ) {
                         $track_stock                         = $data[ 'trackStock' ];

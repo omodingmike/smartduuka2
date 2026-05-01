@@ -25,6 +25,10 @@
                 'description'          => $this->description ,
                 'created_at'           => $this->created_at ,
                 'type'                 => $this->type ,
+                'taxes'                => TaxResource::collection( $this->whenLoaded( 'taxes' , function () {
+                    return $this->taxes->map->tax;
+                } ) ) ,
+                'tax_inclusive'        => $this->tax_inclusive ,
                 'status'               => $this->status ,
                 'service_type'         => $this->service_type ,
                 'service_category_id'  => $this->service_category_id ,

@@ -4,6 +4,7 @@
 
     use App\Http\Requests\ServiceRequest;
     use App\Http\Resources\ServiceResource;
+    use App\Models\ItemTax;
     use App\Models\Product;
     use App\Models\Service;
     use App\Models\ServiceAddOn;
@@ -17,7 +18,7 @@
         public function index(Request $request)
         {
             $paginate = $request->boolean( 'paginate' );
-            $s        = Service::with( [ 'serviceCategory' , 'items.item' , 'addOns' , 'tiers' ] )
+            $s        = Service::with( [ 'serviceCategory' , 'items.item' , 'addOns' , 'tiers', 'taxes.tax' ] )
                                ->withSum( 'addOns' , 'price' )
                                ->latest();
             return ServiceResource::collection( $paginate ? $s->paginate() : $s->get() );
@@ -26,6 +27,10 @@
         public function store(ServiceRequest $request)
         {
             return DB::transaction( function () use ($request) {
+
+                $tax_inclusive = $request->input( 'tax_inclusive' );
+                $tax_ids           = json_decode( $request->tax_ids );
+
                 $service           = Service::create( [
                     'name'                => $request->input( 'name' ) ,
                     'service_category_id' => $request->input( 'service_category_id' ) ,
@@ -34,10 +39,20 @@
                     'description'         => $request->input( 'description' , '' ) ,
                     'type'                => $request->input( 'type' ) ,
                     'status'              => $request->input( 'status' ) ,
+                    'tax_inclusive'       => $tax_inclusive ,
                 ] );
                 $stockConsumptions = json_decode( $request->stockConsumption , TRUE );
                 $addons            = json_decode( $request->addons , TRUE );
                 $tiers             = json_decode( $request->tiers , TRUE );
+
+
+                foreach ( $tax_ids as $tax_id ) {
+                    ItemTax::create( [
+                        'item_id'   => $service->id ,
+                        'item_type' => Service::class ,
+                        'tax_id'    => $tax_id
+                    ] );
+                }
 
                 foreach ( $addons as $addon ) {
                     ServiceAddOn::create( [
@@ -82,11 +97,22 @@
                     'description'         => $request->input( 'description' ) ,
                     'type'                => $request->input( 'type' ) ,
                     'status'              => $request->input( 'status' ) ,
+                    'tax_inclusive'       => $request->input( 'tax_inclusive' ) ,
                 ] );
 
                 $stockConsumptions = json_decode( $request->stockConsumption , TRUE );
                 $addons            = json_decode( $request->addons , TRUE );
                 $tiers             = json_decode( $request->tiers , TRUE );
+                $tax_ids           = json_decode( $request->tax_ids );
+
+                $service->taxes()->delete();
+                foreach ( $tax_ids as $tax_id ) {
+                    ItemTax::create( [
+                        'item_id'   => $service->id ,
+                        'item_type' => Service::class ,
+                        'tax_id'    => $tax_id
+                    ] );
+                }
 
                 $service->addOns()->delete();
                 foreach ( $addons as $addon ) {
