@@ -148,7 +148,8 @@
                   ->where( function (Builder $q) {
                       $q->where( 'status' , '!=' , OrderStatus::CANCELED )
 //                        ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED )
-                        ->orWhereNull( 'status' );
+//                        ->orWhereNull( 'status' )
+                      ;
                   } );
         }
 
