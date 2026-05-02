@@ -18,7 +18,6 @@
     use App\Models\ProductCategory;
     use App\Models\ProductTag;
     use App\Models\ProductVariation;
-    use App\Models\Service;
     use App\Models\Stock;
     use App\Models\Warehouse;
     use App\Models\WholeSalePrice;
@@ -288,8 +287,8 @@
                     $data              = $request->validated();
                     $retail_pricing    = json_decode( $request->string( 'retail_pricing' ) , TRUE );
                     $wholesale_pricing = json_decode( $request->string( 'wholesale_pricing' ) , TRUE );
-                    $tax_inclusive = $request->input( 'tax_inclusive' );
-                    $tax_ids       = json_decode( $request->tax_ids );
+                    $tax_inclusive     = $request->input( 'tax_inclusive' );
+                    $tax_ids           = json_decode( $request->tax_ids );
 
                     // 1. Update Product attributes exactly as per store() method logic
                     $product->update( [
@@ -297,6 +296,7 @@
                         'slug'                => $data[ 'name' ] ,
                         'type'                => $data[ 'type' ] ,
                         'sku'                 => $data[ 'sku' ] ,
+                        'tax_inclusive'       => $tax_inclusive ,
                         'barcode'             => $data[ 'barcode' ] ,
                         'product_category_id' => $data[ 'product_category_id' ] ,
                         'product_brand_id'    => $data[ 'product_brand_id' ] ?? NULL ,
