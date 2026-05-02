@@ -123,3 +123,5 @@ php artisan migrate --path=database/migrations/2026_04_19_125831_create_tenant_s
 Editing booking throws an error.
 All customers.
 Adding service optional fields: Estimated duration, description
+
+total orders: 1720000, 1450000

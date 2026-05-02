@@ -148,7 +148,7 @@
                             ->orderByDesc( 'created_at' ) ,
                     ] );
 
-                    $creditOrders = $customer->unPaidOrdersQuery()->get();
+                    $un_paid_orders = $customer->unPaidOrdersQuery()->get();
 
                     $payment = CustomerPayment::create( [
                         'date'                  => now() ,
@@ -162,81 +162,79 @@
                     $runningBalance = (float) userCredit( $customer );
 
                     foreach ( $customer->legacyDebts as $debt ) {
-                        if ( $amount <= 0 ) break;
+                        if ( $amount > 0 ) {
+                            $debtAmount = (float) $debt->amount;
+                            if ( $amount >= $debtAmount ) {
+                                $debt->update( [ 'amount' => 0 , 'payment_status' => PaymentStatus::PAID ] );
+                                addToLedger(
+                                    user: $customer ,
+                                    reference: $reference ,
+                                    bill_amount: $debtAmount ,
+                                    paid: $debtAmount
+                                );
+                                $amount         -= $debtAmount;
+                                $runningBalance -= $debtAmount;
+                            }
+                            else {
+                                $debt->decrement( 'amount' , $amount );
+                                $debt->update( [ 'payment_status' => PaymentStatus::PARTIALLY_PAID ] );
+                                $runningBalance -= $amount;
 
-                        $debtAmount = (float) $debt->amount;
+                                CustomerLedger::create( [
+                                    'user_id'     => $customer->id ,
+                                    'date'        => now() ,
+                                    'reference'   => $reference ,
+                                    'description' => 'Debt Payment' ,
+                                    'bill_amount' => $debtAmount ,
+                                    'paid'        => $amount ,
+                                    'balance'     => $runningBalance ,
+                                ] );
 
-                        if ( $amount >= $debtAmount ) {
-                            $debt->update( [ 'amount' => 0 , 'payment_status' => PaymentStatus::PAID ] );
-                            addToLedger(
-                                user: $customer ,
-                                reference: $reference ,
-                                bill_amount: $debtAmount ,
-                                paid: $debtAmount
-                            );
-                            $amount         -= $debtAmount;
-                            $runningBalance -= $debtAmount;
-                        }
-                        else {
-                            $debt->decrement( 'amount' , $amount );
-                            $debt->update( [ 'payment_status' => PaymentStatus::PARTIALLY_PAID ] );
-                            $runningBalance -= $amount;
-
-                            CustomerLedger::create( [
-                                'user_id'     => $customer->id ,
-                                'date'        => now() ,
-                                'reference'   => $reference ,
-                                'description' => 'Debt Payment' ,
-                                'bill_amount' => $debtAmount ,
-                                'paid'        => $amount ,
-                                'balance'     => $runningBalance ,
-                            ] );
-
-                            $amount = 0;
+                                $amount = 0;
+                            }
                         }
                     }
 
-                    foreach ( $creditOrders as $order ) {
-                        if ( $amount <= 0 ) break;
+                    foreach ( $un_paid_orders as $order ) {
+                        if ( $amount > 0 ) {
+                            $balance = (float) $order->balance;
+                            if ( $amount >= $balance ) {
+                                $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
+                                addPayment( $order , $balance , $payment_method , $reference , PosPaymentType::DEBT );
+                                $runningBalance -= $balance;
 
-                        $balance = (float) $order->balance;
+                                CustomerLedger::create( [
+                                    'user_id'     => $customer->id ,
+                                    'date'        => now() ,
+                                    'reference'   => $reference ,
+                                    'description' => 'Debt Payment' ,
+                                    'bill_amount' => $balance ,
+                                    'paid'        => $balance ,
+                                    'balance'     => $runningBalance ,
+                                ] );
 
-                        if ( $amount >= $balance ) {
-                            $order->update( [ 'payment_status' => PaymentStatus::PAID ] );
-                            addPayment( $order , $balance , $payment_method , $reference , PosPaymentType::DEBT );
-                            $runningBalance -= $balance;
+                                $amount -= $balance;
+                            }
+                            else {
+                                $order->update( [
+                                    'payment_status' => PaymentStatus::PARTIALLY_PAID ,
+                                    'paid'           => $amount ,
+                                ] );
+                                addPayment( $order , $amount , $payment_method , $reference , PosPaymentType::DEBT );
+                                $runningBalance -= $amount;
 
-                            CustomerLedger::create( [
-                                'user_id'     => $customer->id ,
-                                'date'        => now() ,
-                                'reference'   => $reference ,
-                                'description' => 'Debt Payment' ,
-                                'bill_amount' => $balance ,
-                                'paid'        => $balance ,
-                                'balance'     => $runningBalance ,
-                            ] );
+                                CustomerLedger::create( [
+                                    'user_id'     => $customer->id ,
+                                    'date'        => now() ,
+                                    'reference'   => $reference ,
+                                    'description' => 'Debt Payment' ,
+                                    'bill_amount' => $balance ,
+                                    'paid'        => $amount ,
+                                    'balance'     => $runningBalance ,
+                                ] );
 
-                            $amount -= $balance;
-                        }
-                        else {
-                            $order->update( [
-                                'payment_status' => PaymentStatus::PARTIALLY_PAID ,
-                                'paid'           => $amount ,
-                            ] );
-                            addPayment( $order , $amount , $payment_method , $reference , PosPaymentType::DEBT );
-                            $runningBalance -= $amount;
-
-                            CustomerLedger::create( [
-                                'user_id'     => $customer->id ,
-                                'date'        => now() ,
-                                'reference'   => $reference ,
-                                'description' => 'Debt Payment' ,
-                                'bill_amount' => $balance ,
-                                'paid'        => $amount ,
-                                'balance'     => $runningBalance ,
-                            ] );
-
-                            $amount = 0;
+                                $amount = 0;
+                            }
                         }
                     }
 

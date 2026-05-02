@@ -103,9 +103,15 @@
         {
             return $this->hasMany( OrderServiceProduct::class );
         }
+
         public function taxes() : MorphMany
         {
             return $this->morphMany( ItemTax::class , 'item' );
+        }
+
+        public function getBalanceAttribute()
+        {
+            return $this->total - $this->posPayments()->sum( 'amount' );
         }
 
         protected function orderSerialNo() : Attribute
@@ -141,7 +147,7 @@
                   } )
                   ->where( function (Builder $q) {
                       $q->where( 'status' , '!=' , OrderStatus::CANCELED )
-                        ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED )
+//                        ->orWhere( 'quotation_status' , QuotationStatus::CONVERTED )
                         ->orWhereNull( 'status' );
                   } );
         }
@@ -158,10 +164,6 @@
             return $this->posPayments()->sum( 'amount' );
         }
 
-        public function getBalanceAttribute()
-        {
-            return $this->total - $this->posPayments()->sum( 'amount' );
-        }
 
         public function paymentMethods()
         {

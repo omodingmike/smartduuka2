@@ -132,10 +132,7 @@
             }
         }
 
-        public function payment(
-            CustomerPaymentRequest $request ,
-            User $customer
-        )
+        public function payment(CustomerPaymentRequest $request , User $customer)
         {
             try {
                 return new CustomerPaymentResource( $this->customerService->payment( $request , $customer ) );

@@ -89,13 +89,18 @@
             return $this->hasMany( Register::class , 'user_id' , 'id' );
         }
 
-        public function creditAndDeposit() : HasMany
+        public function orders() : HasMany
         {
-//            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
-            return $this->orders()->whereIn( 'payment_type' , [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ] );
+            return $this->hasMany( Order::class , 'user_id' , 'id' );
         }
 
-        public function unPaidOrdersQuery()
+        public function creditAndDeposit() : HasMany
+        {
+            return $this->orders()->active()->whereIn( 'payment_type' , [ PaymentType::CREDIT , PaymentType::DEPOSIT ] );
+//            return $this->orders()->whereIn( 'payment_type' , [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ] );
+        }
+
+        public function unPaidOrdersQuery() : HasMany
         {
             return $this->creditAndDeposit()
                         ->whereRaw(
@@ -162,10 +167,6 @@
             ] );
         }
 
-        public function orders() : HasMany
-        {
-            return $this->hasMany( Order::class , 'user_id' , 'id' );
-        }
 
         public function activeOrders() : HasMany
         {
@@ -206,13 +207,13 @@
 
         public function scopeWithWalletBalance($query)
         {
-            return $query->addSelect([
+            return $query->addSelect( [
                 'wallet_balance' => function ($subquery) {
-                    $subquery->selectRaw('COALESCE(SUM(amount), 0)')
-                             ->from('customer_wallet_transactions')
-                             ->whereColumn('user_id', 'users.id');
+                    $subquery->selectRaw( 'COALESCE(SUM(amount), 0)' )
+                             ->from( 'customer_wallet_transactions' )
+                             ->whereColumn( 'user_id' , 'users.id' );
                 }
-            ]);
+            ] );
         }
 
         // =========================================================================
