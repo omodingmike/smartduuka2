@@ -46,10 +46,6 @@
             'is_reset'          => 'boolean' ,
         ];
 
-        // =========================================================================
-        // STANCL TENANCY & SYNCING METHODS (PRESERVED)
-        // =========================================================================
-
         public function getGlobalIdentifierKey()
         {
             return $this->getAttribute( $this->getGlobalIdentifierKeyName() );
@@ -74,10 +70,6 @@
         {
             return 'sanctum';
         }
-
-        // =========================================================================
-        // RELATIONSHIPS (RESTORED & FIXED)
-        // =========================================================================
 
         public function tenant() : BelongsTo
         {
@@ -126,6 +118,7 @@
 
             return $query->addSelect( [
                 'oldest_credit_order_days' => Order::selectRaw( 'COALESCE(CURRENT_DATE - CAST(MIN(order_datetime) AS DATE), 0)' )
+                                                   ->whereNotIn( 'status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] )
                                                    ->whereColumn( 'user_id' , 'users.id' )
                                                    ->whereIn( 'payment_type' , $creditTypes )
             ] );
@@ -135,11 +128,11 @@
         {
             $creditTypes = [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ];
 
-            // Logic for Order Debt calculation
             $orderDebtRaw = 'SUM(GREATEST(0, orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)))';
 
             return $query->addSelect( [
                 'order_debt_total' => Order::selectRaw( "COALESCE($orderDebtRaw, 0)" )
+                                           ->whereNotIn( 'status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] )
                                            ->whereColumn( 'user_id' , 'users.id' )
                                            ->whereIn( 'payment_type' , $creditTypes ) ,
 
@@ -148,7 +141,7 @@
 
                 'credits' => function ($subquery) use ($orderDebtRaw , $creditTypes) {
                     $subquery->selectRaw( "
-                (SELECT COALESCE($orderDebtRaw, 0) FROM orders WHERE orders.user_id = users.id AND orders.payment_type IN (" . implode( ',' , $creditTypes ) . '))
+                (SELECT COALESCE($orderDebtRaw, 0) FROM orders WHERE orders.user_id = users.id AND orders.payment_type IN (" . implode( ',' , $creditTypes ) . ') AND orders.status NOT IN (' . OrderStatus::CANCELED->value . ', ' . OrderStatus::REJECTED->value . '))
                 + 
                 (SELECT COALESCE(SUM(amount), 0) FROM legacy_debts WHERE legacy_debts.user_id = users.id)
             ' );
@@ -163,7 +156,8 @@
                     $subquery->selectRaw( 'COALESCE(SUM(pp.amount), 0)' )
                              ->from( 'pos_payments as pp' )
                              ->join( 'orders as o' , 'pp.order_id' , '=' , 'o.id' )
-                             ->whereColumn( 'o.user_id' , 'users.id' );
+                             ->whereColumn( 'o.user_id' , 'users.id' )
+                             ->whereNotIn( 'o.status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] );
                 }
             ] );
         }
@@ -217,10 +211,6 @@
             ] );
         }
 
-        // =========================================================================
-        // DYNAMIC SCOPES
-        // =========================================================================
-
         private static function orderDebtSql() : string
         {
             return 'orders.total - (SELECT COALESCE(SUM(amount), 0) FROM pos_payments WHERE pos_payments.order_id = orders.id)';
@@ -237,6 +227,7 @@
             $creditTypes = self::creditPaymentTypes();
 
             $orderDebtSub = Order::selectRaw( "COALESCE(SUM($debtSql), 0)" )
+                                 ->whereNotIn( 'status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] )
                                  ->whereColumn( 'user_id' , 'users.id' )
                                  ->whereIn( 'payment_type' , $creditTypes );
 
@@ -245,6 +236,7 @@
 
             return $query->addSelect( [
                 'total_order_debt' => Order::selectRaw( "SUM($debtSql)" )
+                                           ->whereNotIn( 'status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] )
                                            ->whereColumn( 'user_id' , 'users.id' )
                                            ->whereIn( 'payment_type' , $creditTypes ) ,
 
@@ -275,6 +267,7 @@
 
             $orderDebtSub = Order::selectRaw( "COALESCE(SUM($debtSql), 0)" )
                                  ->whereColumn( 'user_id' , 'users.id' )
+                                 ->whereNotIn( 'status' , [ OrderStatus::CANCELED , OrderStatus::REJECTED ] )
                                  ->whereIn( 'payment_type' , $creditTypes );
 
             $legacyDebtSub = LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
@@ -286,9 +279,6 @@
             );
         }
 
-        // =========================================================================
-        // MEDIA & ATTRIBUTES
-        // =========================================================================
 
         public function getImageAttribute() : string
         {
