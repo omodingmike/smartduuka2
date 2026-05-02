@@ -6,6 +6,7 @@
     use App\Libraries\AppLibrary;
     use App\Models\Order;
     use Illuminate\Http\Resources\Json\JsonResource;
+    use Illuminate\Support\Carbon;
 
     /**
      * @mixin Order
@@ -87,6 +88,8 @@
                 'due_date'                       => $this->due_date ? AppLibrary::date( $this->due_date ) : NULL ,
                 'order_time'                     => AppLibrary::time( $this->order_datetime ) ,
                 'reason'                         => $this->reason ,
+
+                'age'                            => round( Carbon::parse( $this->order_datetime )->diffInHours( now() ) / 24 ) ,
                 'source'                         => $this->source ,
                 'expiry_date'                    => $this->due_date ? datetime( $this->due_date ) : '' ,
                 'change_currency'                => AppLibrary::currencyAmountFormat( $this->change ) ,

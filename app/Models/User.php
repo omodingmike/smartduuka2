@@ -114,6 +114,17 @@
                         );
         }
 
+        public function scopeWithOldestCreditOrderDays($query)
+        {
+            $creditTypes = self::creditPaymentTypes();
+
+            return $query->addSelect( [
+                'oldest_credit_order_days' => Order::selectRaw( 'COALESCE(CURRENT_DATE - CAST(MIN(order_datetime) AS DATE), 0)' )
+                                                   ->whereColumn( 'user_id' , 'users.id' )
+                                                   ->whereIn( 'payment_type' , $creditTypes )
+            ] );
+        }
+
         public function scopeWithCredits($query)
         {
             $creditTypes = [ PaymentType::CREDIT->value , PaymentType::DEPOSIT->value ];
@@ -128,7 +139,6 @@
 
                 'legacy_debt_total' => LegacyDebt::selectRaw( 'COALESCE(SUM(amount), 0)' )
                                                  ->whereColumn( 'user_id' , 'users.id' ) ,
-
 
                 'credits' => function ($subquery) use ($orderDebtRaw , $creditTypes) {
                     $subquery->selectRaw( "
@@ -192,6 +202,17 @@
         public function walletTransactions() : HasMany
         {
             return $this->hasMany( CustomerWalletTransaction::class , 'user_id' , 'id' );
+        }
+
+        public function scopeWithWalletBalance($query)
+        {
+            return $query->addSelect([
+                'wallet_balance' => function ($subquery) {
+                    $subquery->selectRaw('COALESCE(SUM(amount), 0)')
+                             ->from('customer_wallet_transactions')
+                             ->whereColumn('user_id', 'users.id');
+                }
+            ]);
         }
 
         // =========================================================================

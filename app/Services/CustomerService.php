@@ -43,10 +43,12 @@
             return User::query()
                        ->withDebtMetrics()
                        ->withTotalSpent()
-                       ->withSum( 'walletTransactions as wallet_balance' , 'amount' )
+                       ->withOldestCreditOrderDays()
+                       ->withWalletBalance()
+//                       ->withSum( 'walletTransactions as wallet_balance' , 'amount' )
                        ->withCount( [ 'orders as order_count' ] )
                        ->with( [
-                           'media' , 'debtPayments.paymentMethod' , 'ledgers' , 'addresses' ,'unPaidOrders.posPayments.paymentMethod'
+                           'media' , 'debtPayments.paymentMethod' , 'ledgers' , 'addresses' , 'unPaidOrders.posPayments.paymentMethod'
                        ] )
                        ->role( EnumRole::CUSTOMER )
                        ->when( $query , fn($q) => $q->where( 'name' , 'ilike' , '%' . $query . '%' ) )
@@ -154,7 +156,7 @@
                         'payment_method_id'     => $payment_method ,
                         'customer_payment_type' => CustomerPaymentType::DEBT ,
                         'user_id'               => $customer->id ,
-                        'balance'               => userCredit( $customer) - $amount ,
+                        'balance'               => userCredit( $customer ) - $amount ,
                     ] );
 
                     $runningBalance = (float) userCredit( $customer );

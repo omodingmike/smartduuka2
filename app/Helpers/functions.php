@@ -247,9 +247,14 @@
         ] );
         $transaction->update( [ 'reference' => $reference ?? walletTransactionReferenceNo( $transaction ) ] );
         $customer->refresh();
-        $transaction->update( [ 'balance' => $customer->wallet ] );
+        $transaction->update( [ 'balance' => walletBalance( $customer ) ] );
         addPayment( NULL , $amount , $payment_method_id , NULL , PosPaymentType::DEPOSIT );
         return $transaction;
+    }
+
+    function walletBalance(User $user) : float
+    {
+        return (float) $user->walletTransactions()->sum( 'amount' );
     }
 
     function orderSerialNo(Order $order) : string

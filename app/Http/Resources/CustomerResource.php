@@ -23,15 +23,13 @@
         public function toArray($request) : array
         {
             return [
-                'id'              => $this->id ,
-                'name'            => ucwords( $this->name ) ,
-                'username'        => $this->username ,
-                'email'           => $this->email ,
-                'type'            => $this->type ,
+                'id'       => $this->id ,
+                'name'     => ucwords( $this->name ) ,
+                'username' => $this->username ,
+                'email'    => $this->email ,
+                'type'     => $this->type ,
 
                 // FIX: Map wallet metrics to the actual 'balance' attribute on the User model
-                'wallet'          => $this->balance ?? 0 ,
-                'wallet_currency' => currency( $this->balance ?? 0 ) ,
 
                 'wallet_transactions' => CustomerWalletTransactionResource::collection(
                     $this->whenLoaded( 'walletTransactions' )
@@ -56,6 +54,8 @@
                 'credits'                 => $this->total_credits ,
                 'total_spent'             => $this->total_spent ,
                 'wallet_balance'          => $this->wallet_balance ,
+                'wallet'                  => $this->wallet_balance ?? 0 ,
+                'wallet_currency'         => currency( $this->wallet_balance ?? 0 ) ,
                 'wallet_balance_currency' => currency( $this->wallet_balance ) ,
                 'total_spent_currency'    => currency( $this->total_spent ) ,
                 'credits_currency'        => currency( $this->total_credits ) ,
@@ -71,7 +71,7 @@
                 ) ,
                 'image'               => $this->image ,
                 'notes'               => $this->notes ,
-                'oldest_credit_order' => $this->oldest_credit_order ,
+                'oldest_credit_order' => $this->oldest_credit_order_days ,
 //                'totalBalance'        => currency( $creditsValue ) ,
                 'totalSpent'          => currency( $this->total_spent ?? 0 ) ,
                 'addresses'           => AddressResource::collection(
