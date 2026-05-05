@@ -5,6 +5,7 @@
     namespace App\Providers;
 
     use App\Jobs\PrepareTenantJob;
+    use App\Listeners\SyncNonCustomerUser;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
     use Illuminate\Support\Facades\Route;
@@ -106,7 +107,7 @@
                 // Resource syncing
                 Events\SyncedResourceSaved::class                    => [
 //                    UpdateSyncedResource::class ,
-//                    SyncNonCustomerUser::class
+                    SyncNonCustomerUser::class
                 ] ,
 
                 // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)

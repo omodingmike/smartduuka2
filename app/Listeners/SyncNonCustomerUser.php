@@ -5,24 +5,37 @@
     use App\Enums\Role;
     use App\Models\User;
     use Stancl\Tenancy\Events\SyncedResourceSaved;
+    use Stancl\Tenancy\Listeners\UpdateSyncedResource;
 
     class SyncNonCustomerUser
     {
         /**
          * @throws \Exception
          */
+//        public function handle(SyncedResourceSaved $event) : void
+//        {
+//            $model = $event->model;
+//            if ( $model instanceof User ) {
+//                if ( tenancy()->initialized ) {
+//                    if ( $model->hasRole( Role::CUSTOMER ) ) {
+//                        return;
+//                    }
+//                }
+//                return;
+//            }
+//
+//            app( UpdateSyncedResource::class )->handle( $event );
+//        }
         public function handle(SyncedResourceSaved $event) : void
         {
             $model = $event->model;
-            if ( $model instanceof User ) {
-                if ( tenancy()->initialized ) {
-                    if ( $model->hasRole( Role::CUSTOMER ) ) {
-                        return;
-                    }
+
+            if ( $model instanceof User && tenancy()->initialized ) {
+                if ( $model->hasRole( Role::CUSTOMER ) ) {
+                    return;
                 }
-                return;
             }
 
-            app( \Stancl\Tenancy\Listeners\UpdateSyncedResource::class )->handle( $event );
+            app( UpdateSyncedResource::class )->handle( $event );
         }
     }
