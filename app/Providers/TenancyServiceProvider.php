@@ -106,7 +106,6 @@
 
                 // Resource syncing
                 Events\SyncedResourceSaved::class                    => [
-//                    UpdateSyncedResource::class ,
                     SyncNonCustomerUser::class
                 ] ,
 

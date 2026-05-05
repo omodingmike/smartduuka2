@@ -65,7 +65,7 @@
 
         public function getSyncedAttributeNames() : array
         {
-            return [ 'id' , 'name' , 'password' , 'email' ];
+            return [ 'name' , 'password' , 'email' ];
         }
 
         public function guardName() : string
@@ -312,12 +312,12 @@
                  ->sharpen( 10 );
         }
 
-        protected static function getCacheKeysToForget(): array
+        protected static function getCacheKeysToForget() : array
         {
             return [
-                CacheEnum::POS_CUSTOMERS,
+                CacheEnum::POS_CUSTOMERS ,
                 // dynamic keys now receive the instance as an argument:
-                fn (self $model) => "pos_customer.{$model->id}",
+                fn(self $model) => "pos_customer.{$model->id}" ,
             ];
         }
     }

@@ -125,3 +125,6 @@ All customers.
 Adding service optional fields: Estimated duration, description
 
 total orders: 1720000, 1450000
+
+php artisan create-tenant glowcitybeauty
+php artisan delete-tenant glowcitybeauty
