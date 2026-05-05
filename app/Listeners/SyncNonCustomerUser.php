@@ -10,33 +10,33 @@
     class SyncNonCustomerUser
     {
 
-//        public function handle(SyncedResourceSaved $event) : void
-//        {
-//            $model = $event->model;
-//            if ( $model instanceof User ) {
-//                if ( tenancy()->initialized ) {
-//                    if ( $model->hasRole( Role::CUSTOMER ) ) {
-//                        return;
-//                    }
-//                }
-//                return;
-//            }
-//
-//            app( UpdateSyncedResource::class )->handle( $event );
-//        }
         public function handle(SyncedResourceSaved $event) : void
         {
             $model = $event->model;
-
             if ( $model instanceof User ) {
                 if ( tenancy()->initialized ) {
-                    return;
+                    if ( $model->hasRole( Role::CUSTOMER ) ) {
+                        return;
+                    }
                 }
-
-                if ( $model->hasRole( Role::CUSTOMER ) ) {
-                    return;
-                }
+                return;
             }
+
+            app( UpdateSyncedResource::class )->handle( $event );
+        }
+//        public function handle(SyncedResourceSaved $event) : void
+//        {
+//            $model = $event->model;
+//
+//            if ( $model instanceof User ) {
+//                if ( tenancy()->initialized ) {
+//                    return;
+//                }
+//
+//                if ( $model->hasRole( Role::CUSTOMER ) ) {
+//                    return;
+//                }
+//            }
 
 //            if ( $model instanceof User && tenancy()->initialized ) {
 //                if ( $model->hasRole( Role::CUSTOMER ) ) {
@@ -44,6 +44,6 @@
 //                }
 //            }
 
-            app( UpdateSyncedResource::class )->handle( $event );
-        }
+//            app( UpdateSyncedResource::class )->handle( $event );
+//        }
     }
