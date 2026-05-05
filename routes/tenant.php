@@ -164,6 +164,8 @@
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
         Route::get( 'printing' , [ CompanyController::class , 'printing' ] );
+        Route::get( 'print-mode' , [ CompanyController::class , 'getPrintMode' ] );
+        Route::post( 'print-mode' , [ CompanyController::class , 'printMode' ] );
 
         Route::get( 'pin' , [ LoginController::class , 'pin' ] );
         Route::get( 'order/{order}' , [ PosOrderController::class , 'show' ] );
