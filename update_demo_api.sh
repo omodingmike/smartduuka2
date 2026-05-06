@@ -12,12 +12,16 @@ fail() { echo "❌ $*" >&2; exit 1; }
 
 # Clone or pull
 if [ ! -d "$BACKEND_DIR/.git" ]; then
-  log "📥 Cloning dev branch..."
-  git clone --branch "$BRANCH" "$REPO_URL" "$BACKEND_DIR"
+  log "📥 Cloning dev branch only..."
+  # Use --single-branch to fetch only the dev branch
+  git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$BACKEND_DIR"
 else
   log "⬇ Pulling latest dev changes..."
   sudo chown -R "$(whoami):$(whoami)" "$BACKEND_DIR"
-  git -C "$BACKEND_DIR" fetch origin
+  # Fetch only from the dev branch
+  git -C "$BACKEND_DIR" fetch origin "$BRANCH"
+  # Ensure the local branch is strictly aligned with origin/dev
+  git -C "$BACKEND_DIR" checkout -B "$BRANCH"
   git -C "$BACKEND_DIR" reset --hard origin/"$BRANCH"
 fi
 
