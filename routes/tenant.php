@@ -126,6 +126,7 @@
         } );
 
         Route::get( '/mail' , function () {
+
             return ( new SendEmail( 'emails.newusertemplate' , 'New user' ,
                 [
                     'name'         => 'Mike' ,
