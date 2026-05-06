@@ -113,7 +113,11 @@
     ] )->group( function () {
 
         Route::get( '/' , function () {
-            return response()->json( [ 'tenant' => tenant( 'id' ) ] );
+            return response()->json(
+                [
+                    'tenant' => tenant( 'id' ) ,
+                    'mode'   => 'demo' ,
+                ] );
         } );
 
         Route::middleware( [ 'auth:sanctum' ] )->group( function () {
