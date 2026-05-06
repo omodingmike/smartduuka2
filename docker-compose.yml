@@ -13,6 +13,7 @@ services:
       - .:/app:ro
       - /home/deploy/ssl:/etc/nginx/ssl:ro
       - php_socket:/var/run/php
+      - smartduuka_php_socket_demo:/var/run/php_demo:ro
       - assets_media:/app/public/media:ro
       - demo_assets_media:/app/public/media:ro
 

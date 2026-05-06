@@ -27,7 +27,7 @@ volumes:
 
   php_socket_demo:
     external: true
-    name: smartduuka_php_socket
+    name: smartduuka_php_socket_demo
 
 networks:
   smartduuka_network:
