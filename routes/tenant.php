@@ -112,7 +112,7 @@
         PreventAccessFromCentralDomains::class ,
     ] )->group( function () {
         Route::get( '/' , function () {
-            return 'This is your multi-tenant application. The id of the current tenant is ' . tenant( 'id' );
+            return response()->json( [ 'tenant' => tenant( 'id' ) ] );
         } );
         Route::middleware( [ 'auth:sanctum' ] )->group( function () {
             Route::post( 'logout' , [ AuthenticatedSessionController::class , 'destroy' ] );
