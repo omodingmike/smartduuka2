@@ -46,7 +46,7 @@
         {
             try {
                 $p = Settings::group( 'printing' )->get( 'print_mode' );
-                return response()->json( [ 'data' => (int) $p ?? PrintMode::BOTH->value ] );
+                return response()->json( [ 'data' => [ 'printMode' => (int) $p ?? PrintMode::BOTH->value ] ] );
             } catch ( Exception $exception ) {
                 return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
             }

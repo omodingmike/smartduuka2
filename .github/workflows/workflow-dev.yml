@@ -1,0 +1,28 @@
+name: Deploy Demo API (dev branch)
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p 7589 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload and run demo API deploy script
+        run: |
+          scp -P 7589 update_demo_api.sh deploy@${{ secrets.SSH_HOST }}:~/update_demo_api.sh
+          ssh -p 7589 deploy@${{ secrets.SSH_HOST }} 'chmod +x ~/update_demo_api.sh && ~/update_demo_api.sh'

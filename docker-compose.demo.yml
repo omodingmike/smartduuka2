@@ -1,0 +1,37 @@
+services:
+  api_demo:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: api_demo
+    restart: unless-stopped
+    volumes:
+      - app_storage_demo:/app/storage
+      - assets_static_demo:/app/public/static
+      - assets_media_demo:/app/public/media
+      - php_socket_demo:/var/run/php
+      - /home/deploy/sql:/app/database/sql:ro
+    depends_on:
+      db: # reuse prod db container — demo tenant is already isolated by Stancl
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "test", "-S", "/var/run/php/php-fpm.sock" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartduuka_network
+
+volumes:
+  app_storage_demo:
+  assets_static_demo:
+  assets_media_demo:
+  php_socket_demo:
+    name: mikrotik_php_socket
+
+networks:
+  smartduuka_network:
+    external: true
+    name: smartduuka_network
