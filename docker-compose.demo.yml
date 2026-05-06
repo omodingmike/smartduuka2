@@ -8,7 +8,8 @@ services:
     volumes:
       - app_storage_demo:/app/storage
       - assets_static_demo:/app/public/static
-      - assets_media_demo:/app/public/media
+      # FIX: Rename this so Nginx can see it
+      - demo_assets_media:/app/public/media
       - php_socket_demo:/var/run/php
       - /home/deploy/sql:/app/database/sql:ro
 
@@ -23,7 +24,7 @@ services:
 volumes:
   app_storage_demo:
   assets_static_demo:
-  assets_media_demo:
+  demo_assets_media:
 
   php_socket_demo:
     external: true

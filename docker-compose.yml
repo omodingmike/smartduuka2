@@ -10,12 +10,19 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
-      - .:/app:ro
       - /home/deploy/ssl:/etc/nginx/ssl:ro
       - php_socket:/var/run/php
       - smartduuka_php_socket_demo:/var/run/php_demo:ro
+
+      # --- MAIN APP MOUNTS ---
+      - .:/app:ro
+      - app_storage:/app/storage:ro
       - assets_media:/app/public/media:ro
-      - demo_assets_media:/app/public/media:ro
+
+      # --- DEMO APP MOUNTS ---
+      - .:/app_demo:ro                                 # Mount the code again for the demo
+      - app_storage_demo:/app_demo/storage:ro          # Add the demo storage volume!
+      - demo_assets_media:/app_demo/public/media:ro
 
     depends_on:
       - api
@@ -122,6 +129,9 @@ volumes:
   demo_assets_media:
     external: true
   demo_assets_static:
+    external: true
+
+  app_storage_demo:
     external: true
 
 networks:
