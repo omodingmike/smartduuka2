@@ -24,8 +24,10 @@ volumes:
   app_storage_demo:
   assets_static_demo:
   assets_media_demo:
+
   php_socket_demo:
-    name: mikrotik_php_socket
+    external: true
+    name: smartduuka_php_socket
 
 networks:
   smartduuka_network:
