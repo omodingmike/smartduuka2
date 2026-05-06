@@ -126,5 +126,5 @@ Adding service optional fields: Estimated duration, description
 
 total orders: 1720000, 1450000
 
-php artisan create-tenant glowcitybeauty
-php artisan delete-tenant glowcitybeauty
+git clone -b dev git@github-api:omodingmike/smartduuka2.git
+docker compose -f docker-compose.demo.yml up -d --build --force-recreate
