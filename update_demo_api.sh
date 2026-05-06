@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 APP_DIR="$HOME/smartduuka"
 BACKEND_DIR="$APP_DIR/api_demo"
-REPO_URL="git@kimdigitary:kimdigitary/smartduuka-backend.git"  # update to your actual repo
+REPO_URL="git@github-api:omodingmike/smartduuka2.git"
 BRANCH="dev"
 COMPOSE="docker compose -f docker-compose.demo.yml"
 
@@ -35,7 +35,7 @@ $COMPOSE run --rm api_demo bash -c "composer install --no-dev --no-interaction"
 
 # Build containers
 log "🐳 Building demo containers..."
-$COMPOSE up -d --build --force-recreate api_demo nginx_demo
+$COMPOSE up -d --build --force-recreate api_demo
 
 # Wait for api_demo
 log "⏳ Waiting for api_demo to be healthy..."
