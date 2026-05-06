@@ -111,9 +111,11 @@
         InitializeTenancyByDomain::class ,
         PreventAccessFromCentralDomains::class ,
     ] )->group( function () {
+
         Route::get( '/' , function () {
             return response()->json( [ 'tenant' => tenant( 'id' ) ] );
         } );
+
         Route::middleware( [ 'auth:sanctum' ] )->group( function () {
             Route::post( 'logout' , [ AuthenticatedSessionController::class , 'destroy' ] );
             Route::get( '/user' , [ UserController::class , 'user' ] );
