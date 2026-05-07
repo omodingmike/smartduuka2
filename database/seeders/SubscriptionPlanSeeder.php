@@ -1,39 +1,35 @@
 <?php
 
-namespace Database\Seeders;
+    namespace Database\Seeders;
 
-use App\Models\SubscriptionPlan;
-use Illuminate\Database\Seeder;
+    use App\Models\SubscriptionPlan;
+    use Illuminate\Database\Seeder;
 
-class SubscriptionPlanSeeder extends Seeder
-{
-
-    public function run(): void
+    class SubscriptionPlanSeeder extends Seeder
     {
-        $data = [
-            [
-                'name'     => 'Monthly',
-                'amount'   => 50000,
-                'duration' => 1,
-            ],
-            [
-                'name'     => 'Quarterly',
-                'amount'   => 145000,
-                'duration' => 3,
-            ],
-            [
-                'name'     => 'Half Yearly',
-                'amount'   => 285000,
-                'duration' => 6,
-            ],
-            [
-                'name'     => 'Yearly',
-                'amount'   => 555000,
-                'duration' => 12,
-            ],
-        ];
-        foreach ($data as $datum) {
-            SubscriptionPlan::create($datum);
+
+        public function run() : void
+        {
+            $plans = [
+                [
+                    'name'        => 'Starter' ,
+                    'description' => 'Ideal for new businesses.' ,
+                    'base_amount' => 26000 ,
+                    'popular'     => FALSE ,
+                    'features'    => [ 'Up to 3 registers' , 'Basic inventory' ] ,
+                ]
+                ,
+                [
+                    'name'        => 'Professional' ,
+                    'description' => 'For established businesses.' ,
+                    'base_amount' => 52000 ,
+                    'popular'     => TRUE ,
+                    'features'    => [ 'Up to 10 registers' , 'Advanced analytics' ] ,
+                ]
+                ,
+            ];
+            foreach ( $plans as $plan ) {
+                SubscriptionPlan::updateOrCreate( [ 'name' => $plan[ 'name' ] ] , $plan );
+            }
         }
     }
-}

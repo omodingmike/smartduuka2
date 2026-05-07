@@ -12,14 +12,20 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'         => $this->id ,
-                'duration'   => $this->duration ,
-                'plan'       => $this->plan ,
-                'setup'      => $this->setup ,
-                'amount'     => $this->amount ,
-                'created_at' => $this->created_at ,
-                'status'     => $this->status ,
-                'expires_at' => $this->expires_at ,
+                'id'               => $this->id ,
+                'tenant_id'        => $this->tenant_id ,
+                'billing_cycle_id' => $this->billing_cycle_id ,
+                'phone'            => $this->phone ,
+                'invoice_no'       => $this->invoice_no ,
+                'amount'           => $this->amount ,
+                'amount_currency'  => 'UGX ' . number_format( $this->amount ) ,
+                'status'           => $this->status ,
+                'payment_status'   => $this->payment_status ,
+                'expires_at'       => $this->expires_at->format( 'd-M-Y H:i:s' ) ,
+                'created_at'       => $this->created_at->format( 'd-M-Y H:i:s' ) ,
+                'updated_at'       => $this->updated_at ,
+                'billingCycle'     => new BillingCycleResource( $this->whenLoaded( 'billingCycle' ) ) ,
+                'subscriptionPlan' => new SubscriptionPlanResource( $this->whenLoaded( 'subscriptionPlan' ) ) ,
             ];
         }
     }

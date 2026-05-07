@@ -21,7 +21,7 @@
                     $originalData[ 'currency' ]          = Settings::group( 'site' )->get( 'site_default_currency_symbol' );
                     $originalData[ 'business_id' ]       = config( 'app.business_id' );
                     $originalData[ 'print_agent_token' ] = config( 'app.print_agent_token' );
-                    $originalData[ 'is_demo_recheck' ]   = TRUE;
+                    $originalData[ 'tenant' ]            = tenant( 'id' );
                     $response->setData( $originalData );
                 }
             }

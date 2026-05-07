@@ -1,65 +1,46 @@
 <?php
 
-namespace App\Http\Controllers;
+    namespace App\Http\Controllers;
 
-use App\Models\SubscriptionPlan;
-use Illuminate\Http\Request;
+    use App\Http\Requests\SubscriptionPlanRequest;
+    use App\Http\Resources\BillingCycleResource;
+    use App\Http\Resources\SubscriptionPlanResource;
+    use App\Models\BillingCycle;
+    use App\Models\SubscriptionPlan;
 
-class SubscriptionPlanController extends Controller
-{
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    class SubscriptionPlanController extends Controller
     {
-        //
-    }
+        public function index()
+        {
+            return SubscriptionPlanResource::collection( SubscriptionPlan::all() );
+        }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        public function billingCycles()
+        {
+            return BillingCycleResource::collection( BillingCycle::all() );
+        }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        public function store(SubscriptionPlanRequest $request)
+        {
+            return new SubscriptionPlanResource( SubscriptionPlan::create( $request->validated() ) );
+        }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SubscriptionPlan $subscriptionPlan)
-    {
-        //
-    }
+        public function show(SubscriptionPlan $subscriptionPlan)
+        {
+            return new SubscriptionPlanResource( $subscriptionPlan );
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SubscriptionPlan $subscriptionPlan)
-    {
-        //
-    }
+        public function update(SubscriptionPlanRequest $request , SubscriptionPlan $subscriptionPlan)
+        {
+            $subscriptionPlan->update( $request->validated() );
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, SubscriptionPlan $subscriptionPlan)
-    {
-        //
-    }
+            return new SubscriptionPlanResource( $subscriptionPlan );
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(SubscriptionPlan $subscriptionPlan)
-    {
-        //
+        public function destroy(SubscriptionPlan $subscriptionPlan)
+        {
+            $subscriptionPlan->delete();
+
+            return response()->json();
+        }
     }
-}

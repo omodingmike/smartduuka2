@@ -3,6 +3,7 @@
     namespace App\Models;
 
     use App\Enums\Status;
+    use App\Enums\SubscriptionPaymentStatus;
     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Stancl\Tenancy\Contracts\TenantWithDatabase;
@@ -35,9 +36,12 @@
             ];
         }
 
-        public function subscriptions() : HasMany
+        public function activeSubscriptions() : HasMany
         {
-            return $this->hasMany( TenantSubscription::class , 'tenant_id' , 'id' )->latest();
+            return $this->hasMany( TenantSubscription::class , 'tenant_id' , 'id' )
+                        ->where( 'expires_at' , '>=' , now() )
+                        ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
+                        ->latest();
         }
 
         public function users() : BelongsToMany

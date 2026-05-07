@@ -2,8 +2,11 @@
 
     use App\Enums\PreOrderStatus;
     use App\Enums\QuotationStatus;
+    use App\Enums\Status;
     use App\Models\Order;
     use App\Models\Tenant;
+    use App\Models\TenantSubscription;
+    use Illuminate\Support\Facades\Cache;
 
     Schedule::call( function () {
         $logPath = storage_path( 'logs' );
@@ -138,6 +141,23 @@
                  } );
         } );
     } )->everyMinute()->name( 'update_expiry_status' )->withoutOverlapping();
+
+    Schedule::call( function () {
+        $expiredTenantIds = TenantSubscription::where( 'expires_at' , '<' , now() )
+                                              ->where( 'status' , Status::ACTIVE )
+                                              ->pluck( 'tenant_id' );
+        if ( $expiredTenantIds->isEmpty() ) {
+            return;
+        }
+
+        TenantSubscription::whereIn( 'tenant_id' , $expiredTenantIds )
+                          ->update( [ 'status' => Status::INACTIVE ] );
+
+        $expiredTenantIds->each( function ($tenantId) {
+            Cache::forget( "tenant_subscription_{$tenantId}" );
+        } );
+
+    } )->everyThirtyMinutes()->name( 'check_subscription_expiry' )->withoutOverlapping();
 
     Schedule::call( function () {
         Tenant::all()->runForEach( function ($tenant) {

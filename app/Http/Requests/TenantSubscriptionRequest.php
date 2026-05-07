@@ -9,10 +9,11 @@
         public function rules() : array
         {
             return [
-                'duration' => [ 'required' , 'integer' ] ,
-                'plan'     => [ 'required' , 'integer' ] ,
-                'setup'    => [ 'required' , 'decimal:2' ] ,
-                'amount'   => [ 'required' , 'decimal:2' ] ,
+                'phone'            => [ 'required' , 'string' ] ,
+                'tenant'           => [ 'required' , 'string' ] ,
+                'amount'           => [ 'required' , 'numeric:' ] ,
+                'billingCycle'     => [ 'required' , 'numeric:' ] ,
+                'subscriptionPlan' => [ 'required' , 'numeric:' ] ,
             ];
         }
 

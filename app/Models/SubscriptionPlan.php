@@ -2,13 +2,16 @@
 
     namespace App\Models;
 
-    use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
 
     class SubscriptionPlan extends Model
     {
-        use HasFactory;
-
-        protected $fillable   = [ 'name' , 'amount' , 'duration' ];
-        protected $connection = 'pgsql2';
+        protected $fillable = [
+            'name' ,
+            'description' ,
+            'features' ,
+            'base_amount' ,
+            'popular' ,
+        ];
+        protected $casts    = [ 'popular' => 'boolean' , 'features' => 'array' ];
     }

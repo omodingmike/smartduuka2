@@ -21,5 +21,6 @@
             $this->call( PrintDesignSeeder::class );
             $this->call( PrintTemplateSeeder::class );
             $this->call( PrinterTemplatesSeeder::class );
+            $this->call( BillingCycleSeeder::class );
         }
     }

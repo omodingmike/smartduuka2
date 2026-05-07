@@ -5,6 +5,7 @@
     use App\Http\Middleware\CheckActiveRegister;
     use App\Http\Middleware\ForceAdminLogin;
     use App\Http\Middleware\PermissionMiddleware;
+    use App\Http\Middleware\SubscribedMiddleware;
     use Illuminate\Foundation\Application;
     use Illuminate\Foundation\Configuration\Exceptions;
     use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,7 @@
                       )
                       ->withMiddleware( function (Middleware $middleware) : void {
                           $middleware->alias( [
+                              'subscribed'      => SubscribedMiddleware::class ,
                               'permission'      => PermissionMiddleware::class ,
                               'local.auth'      => ForceAdminLogin::class ,
                               'register'        => CheckActiveRegister::class ,

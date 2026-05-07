@@ -12,7 +12,7 @@
 
         public function index(Request $request)
         {
-            $query = Tenant::with( [ 'domains' , 'subscriptions' ] );
+            $query = Tenant::with( [ 'domains' , 'activeSubscriptions' ] );
             return TenantResource::collection( $this->filter( $query , $request ) );
         }
 

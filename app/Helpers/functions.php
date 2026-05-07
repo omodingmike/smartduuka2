@@ -81,8 +81,8 @@
 
     function recordId(string $prefix , Model $model) : string
     {
-        $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
-        return $prefix . '-' . Str::padLeft( $model->id , $dynamicPadding , '0' );
+//        $dynamicPadding = max( 3 , strlen( (string) $model->id ) + 1 );
+        return $prefix . '-' . Str::padLeft( $model->id , 6 , '0' );
     }
 
     function permissionWithAccess(&$permissions , $rolePermissions) : object
@@ -423,6 +423,7 @@
 
     function datetime($value) : string
     {
+        if ( ! $value ) return '';
         return AppLibrary::datetime2( $value );
     }
 
@@ -575,3 +576,4 @@
             default                   => NULL
         };
     }
+//    function hasActiveSubscription

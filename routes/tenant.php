@@ -95,14 +95,11 @@
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\WarehouseController;
     use App\Http\Controllers\WhatsAppController;
-    use App\Mail\SendEmail;
     use App\Services\OrderService;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Route;
-    use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
     use Laravel\Sanctum\PersonalAccessToken;
-    use Smartisan\Settings\Facades\Settings;
     use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
     use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -124,24 +121,6 @@
             Route::post( 'logout' , [ AuthenticatedSessionController::class , 'destroy' ] );
             Route::get( '/user' , [ UserController::class , 'user' ] );
         } );
-
-        Route::get( '/mail' , function () {
-            return ( new SendEmail( 'emails.newusertemplate' , 'New user' ,
-                [
-                    'name'         => 'Mike' ,
-                    'email'        => 'omodingmike@gmail.com' ,
-                    'password'     => 'omodingmike@gmail.com' ,
-                    'pin'          => 'omodingmike@gmail.com' ,
-                    'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
-                    'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
-                ]
-            ) )->render();
-        } );
-        Route::get( 'sanctum/csrf-cookie' , [ CsrfCookieController::class , 'show' ] )
-             ->middleware( [
-                 'web' ,
-                 InitializeTenancyByDomain::class
-             ] )->name( 'sanctum.csrf-cookie' );
     } );
 
     Route::middleware( [
@@ -170,6 +149,7 @@
         } );
 
         Route::get( 'company' , [ CompanyController::class , 'index' ] );
+
         Route::get( 'printing' , [ CompanyController::class , 'printing' ] );
         Route::get( 'print-mode' , [ CompanyController::class , 'getPrintMode' ] );
         Route::post( 'print-mode' , [ CompanyController::class , 'printMode' ] );
@@ -220,7 +200,7 @@
             Route::post( '/change-image' , [ ProfileController::class , 'changeImage' ] );
         } );
 
-        Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' ] )->group( function () {
+        Route::prefix( 'admin' )->name( 'admin.' )->middleware( [ 'local.auth' , 'auth:sanctum' , 'subscribed' ] )->group( function () {
             Route::prefix( 'timezone' )->name( 'timezone.' )->group( function () {
                 Route::get( '/' , [ TimezoneController::class , 'index' ] );
             } );
@@ -373,7 +353,6 @@
                     Route::get( '/' , [ OtpController::class , 'index' ] );
                     Route::match( [ 'post' , 'patch' ] , '/' , [ OtpController::class , 'update' ] );
                 } );
-
 
                 Route::prefix( 'currency' )->name( 'currency.' )->group( function () {
                     Route::get( '/' , [ CurrencyController::class , 'index' ] );
