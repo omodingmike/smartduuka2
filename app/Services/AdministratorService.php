@@ -30,7 +30,7 @@
         {
             try {
                 $page        = $request->integer( 'page' , 1 );
-                $per_page      = $request->integer( 'per_page' );
+                $per_page    = $request->integer( 'per_page' );
                 $orderColumn = $request->input( 'order_column' ) ?? 'id';
                 $orderType   = $request->input( 'order_type' ) ?? 'desc';
 
@@ -57,9 +57,12 @@
                     $forceReset       = $request->boolean( 'forceReset' );
                     $emailCredentials = $request->boolean( 'emailCredentials' );
                     $pin              = $pin_service->generateUniquePin();
+                    $tenant_id        = tenant( 'id' );
+                    $business_name    = $request->string( 'business_name' );
                     $this->user       = User::create( [
                         'name'              => $request->name ,
                         'email'             => $request->email ,
+                        'tenant_id'         => $tenant_id ,
                         'global_id'         => Str::uuid() ,
                         'phone'             => $request->phone ,
                         'username'          => AppLibrary::username( $request->name ) ,
@@ -84,7 +87,7 @@
                             'password'     => $request->password ,
                             'pin'          => $pin ,
                             'login_url'    => 'https://' . tenant( 'id' ) . config( 'session.domain' ) . '/login' ,
-                            'company_name' => Settings::group( 'company' )->get( 'company_name' ) ,
+                            'company_name' => Settings::group( 'company' )?->get( 'company_name' ) ?? $business_name ,
                         ] );
                     }
                 } );

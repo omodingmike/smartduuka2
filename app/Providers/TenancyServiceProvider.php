@@ -4,7 +4,8 @@
 
     namespace App\Providers;
 
-    use App\Jobs\PrepareTenantJob;
+    use App\Jobs\SendTenantCreatedMailsJob;
+    use App\Listeners\CreateAdminUserForTenant;
     use App\Listeners\CustomUpdateSyncedResource;
     use App\Listeners\SyncNonCustomerUser;
     use Illuminate\Contracts\Http\Kernel;
@@ -35,8 +36,9 @@
                     JobPipeline::make( [
                         Jobs\CreateDatabase::class ,
                         Jobs\MigrateDatabase::class ,
-                        PrepareTenantJob::class ,
                         Jobs\SeedDatabase::class ,
+                        CreateAdminUserForTenant::class ,
+                        SendTenantCreatedMailsJob::class ,
 
                         // Your own jobs to prepare the tenant.
                         // Provision API keys, create S3 buckets, anything you want!
@@ -44,6 +46,7 @@
                     ] )->send( function (Events\TenantCreated $event) {
                         return $event->tenant;
                     } )->shouldBeQueued() , // `true` by default, but you probably want to make this `true` for production.
+
                 ] ,
                 Events\SavingTenant::class        => [] ,
                 Events\TenantSaved::class         => [] ,

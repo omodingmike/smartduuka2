@@ -9,25 +9,28 @@
     use Illuminate\Mail\Mailables\Envelope;
     use Illuminate\Queue\SerializesModels;
 
-    class SendEmail extends Mailable
+    class SendEmails extends Mailable
     {
         use Queueable , SerializesModels;
 
-        public function __construct(public string $template , public string $subj , public array $data) {}
+        public function __construct(public string $subj , public mixed $data , public string $template) {}
 
         public function envelope() : Envelope
         {
-            $tenant = tenant( 'id' );
             return new Envelope(
-                from: new Address( config( 'mail.from.address' ) , "Smartduuka($tenant)" ) ,
+                from: new Address( config( 'mail.from.address' ) , "Smartduuka" ) ,
                 subject: $this->subj ,
             );
         }
+
 
         public function content() : Content
         {
             return new Content(
                 view: $this->template ,
+                with: is_array( $this->data ) ? $this->data : [] ,
+//                view: 'tenants.WelcomeToSmartduukaTemplate' ,
+
             );
         }
 

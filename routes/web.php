@@ -4,10 +4,6 @@
     use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
     foreach ( config( 'tenancy.central_domains' , [] ) as $domain ) {
-        Route::get( 'csrf-cookie' , [ CsrfCookieController::class , 'show' ] )
-             ->middleware( [
-                 'web' ,
-             ] )->name( 'csrf-cookie' );
 
         Route::domain( $domain )->group( function () {
             Route::get( '/' , function () {

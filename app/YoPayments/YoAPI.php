@@ -221,18 +221,18 @@
          * @param string $username
          * @param string $password
          */
-        public function __construct($username , $password , $mode = "production")
+        public function __construct(string $username , string $password , string $mode = "production")
         {
             $this->username = $username;
             $this->password = $password;
 
             if ( strcmp( $mode , "sandbox" ) == 0 ) {
                 $this->YOURL           = $this->sandbox_url;
-                $this->public_key_file = __DIR__ . DIRECTORY_SEPARATOR . $this->public_key_file_for_sandbox;
+                $this->public_key_file = app_path( 'YoPayments/Yo_Uganda_Public_Sandbox_Certificate.crt' );
             }
             else {
                 $this->YOURL           = $this->production_url;
-                $this->public_key_file = __DIR__ . DIRECTORY_SEPARATOR . $this->public_key_file_for_production;
+                $this->public_key_file = app_path( 'YoPayments/public_key.pem' );
             }
         }
 
@@ -1286,19 +1286,14 @@
             return $verification_status;
         }
 
-        public function receive_payment_failure_notification()
+        public function receive_payment_failure_notification(Request $request) : bool
         {
             $verification_status = FALSE;
 
-            if ( $this->verify_payment_failure_notification() ) {
+            if ( $this->verify_payment_failure_notification($request) ) {
                 $verification_status = TRUE;
             }
-
-            return [
-                'is_verified'                  => $verification_status ,
-                'failed_transaction_reference' => $_POST[ 'failed_transaction_reference' ] ,
-                'transaction_init_date'        => $_POST[ 'transaction_init_date' ]
-            ];
+            return $verification_status;
         }
 
         public function generate_public_key_authentication_signature($msisdn , $amount , $narrative)
@@ -1366,11 +1361,12 @@
                 $request->input( 'msisdn' );
 
             $signature = base64_decode( $request->input( 'signature' ) );
-            $keyPath   = app_path( 'YoPayments/Yo_Uganda_Public_Sandbox_Certificate.crt' );
+
+            $keyPath = $this->public_key_file;
             if ( ! file_exists( $keyPath ) ) return FALSE;
             $key_id = openssl_pkey_get_public( file_get_contents( $keyPath ) );
             if ( ! $key_id ) return FALSE;
-            $verified = openssl_verify( $data , $signature , $key_id , OPENSSL_ALGO_SHA1 );
+            $verified = openssl_verify( $data , $signature , $key_id );
             return $verified === 1;
         }
 
@@ -1418,30 +1414,17 @@
             return FALSE;
         }
 
-        protected function verify_payment_failure_notification(Request $request)
+        protected function verify_payment_failure_notification(Request $request) : bool
         {
-//            $post_data = file_get_contents( 'php://input' );
-//            $data      = $_POST[ 'failed_transaction_reference' ] . $_POST[ 'transaction_init_date' ];
-            $data = $request->failed_transaction_reference . $request->transaction_init_date;
-
-//            $signature = base64_decode( $_POST[ 'verification' ] );
+            $data      = $request->failed_transaction_reference . $request->transaction_init_date;
             $signature = base64_decode( $request->verification );
-            $fh        = fopen( $this->public_key_file , 'r' );
-            if ( $fh === FALSE ) {
-                return FALSE;
-            }
+            $keyPath   = $this->public_key_file;
+            $key_id    = openssl_pkey_get_public( file_get_contents( $keyPath ) );
+            if ( ! $key_id ) return FALSE;
 
-            $key = fread( $fh , 8192 );
-            fclose( $fh );
-            $key_id   = openssl_pkey_get_public( $key );
             $verified = openssl_verify( $data , $signature , $key_id );
-            openssl_free_key( $key_id );
 
-            if ( $verified == 1 ) {
-                return TRUE;
-            }
-
-            return FALSE;
+            return $verified === 1;
         }
 
         protected function verify_payment_failure_notification_official()

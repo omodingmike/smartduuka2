@@ -42,7 +42,9 @@
         Route::get( 'subscription-plans' , [ SubscriptionPlanController::class , 'index' ] );
         Route::prefix( 'webhook' )->group( function () {
             Route::post( 'yo' , [ PaymentsController::class , 'yoUganda' ] )->name( 'webhook.yo' );
+            Route::post( 'iotec' , [ PaymentsController::class , 'iotec' ] )->name( 'webhook.iotec' );
         } );
         Route::apiResource( 'tenantSubscription' , TenantSubscriptionController::class );
+        Route::post( 'store-tenant' , [ TenantController::class , 'store' ] );
         Route::get( 'billingCycles' , [ SubscriptionPlanController::class , 'billingCycles' ] );
     } );
