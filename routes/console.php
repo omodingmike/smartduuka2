@@ -1,178 +1,26 @@
 <?php
 
-    use App\Enums\PreOrderStatus;
-    use App\Enums\QuotationStatus;
-    use App\Enums\Status;
-    use App\Models\Order;
-    use App\Models\Tenant;
-    use App\Models\TenantSubscription;
-    use Illuminate\Support\Facades\Cache;
+    use App\Console\Commands\CheckSubscriptionExpiry;
+    use App\Console\Commands\ClearLogFiles;
+    use App\Console\Commands\ExpireQuotations;
+    use App\Console\Commands\ExpireStocks;
+    use App\Console\Commands\SendSubscriptionReminders;
+    use App\Console\Commands\UpdatePreOrderStock;
 
-    Schedule::call( function () {
-        $logPath = storage_path( 'logs' );
-        if ( is_dir( $logPath ) ) {
-            foreach ( glob( "$logPath/*.log" ) as $logFile ) {
-                file_put_contents( $logFile , '' );
-            }
-        }
-    } )->daily();
+    Schedule::command( ClearLogFiles::class )->daily();
 
-    //    if ( config( 'app.main_app' ) ) {
-    //        Schedule::call( function () use ($now) {
-    //            $request              = new Request();
-    //            $whatsAppController   = new WhatsAppController();
-    //            $expired_subscription = Subscription::whereDate( 'expires_at' , '<' , $now )
-    //                                                ->where( 'status' , '<>' , 'expired' )
-    //                                                ->latest()
-    //                                                ->first();
-    //
-    //            $expiring_soon_subscriptions = Subscription::where( 'expires_at' , '>=' , now() )
-    //                                                       ->where( 'expires_at' , '<=' , now()->addDays( 7 ) )
-    //                                                       ->where( 'status' , '<>' , 'expired' )
-    //                                                       ->latest()
-    //                                                       ->first();
-    //
-    ////            if ( $expiring_soon_subscriptions ) {
-    ////                $business = Business::where( 'project_id' , $expiring_soon_subscriptions->project_id )->first();
-    ////                if ( ! $business->reminder_sent ) {
-    ////                    $response   = $whatsAppController->sendTemplateMessage( $request->merge( [
-    ////                        'to'         => $business->phone_number ,
-    ////                        'template'   => 'sub_reminder' ,
-    ////                        'parameters' => [
-    ////                            [
-    ////                                'type'           => 'text' ,
-    ////                                'parameter_name' => 'name' ,
-    ////                                'text'           => $business->business_name ,
-    ////                            ] ,
-    ////                            [
-    ////                                'type'           => 'text' ,
-    ////                                'parameter_name' => 'date' ,
-    ////                                'text'           => AppLibrary::datetime2( $expiring_soon_subscriptions->expires_at ) ,
-    ////                            ] ,
-    ////                        ]
-    ////                    ] ) );
-    ////                    $message_id = Arr::get( $response , 'messages.0.id' );
-    ////                    if ( $message_id ) {
-    ////                        $business->update( [ 'reminder_sent' => TRUE ] );
-    ////                    }
-    ////                }
-    ////            }
-    //
-    //            if ( $expired_subscription ) {
-    //                $expired_subscription->update( [ 'status' => 'expired' ] );
-    //                $business = Business::where( 'project_id' , $expired_subscription->project_id )->first();
-    //                if ( ! $business->expired_sent ) {
-    //                    $response   = $whatsAppController->sendTemplateMessage( $request->merge( [
-    //                        'to'         => $business->phone_number ,
-    //                        'template'   => 'expired' ,
-    //                        'parameters' => [
-    //                            [
-    //                                'type'           => 'text' ,
-    //                                'parameter_name' => 'name' ,
-    //                                'text'           => $business->business_name ,
-    //                            ] ,
-    //                            [
-    //                                'type'           => 'text' ,
-    //                                'parameter_name' => 'date' ,
-    //                                'text'           => AppLibrary::datetime2( $now ) ,
-    //                            ] ,
-    //                        ]
-    //                    ] ) );
-    //                    $message_id = Arr::get( $response , 'messages.0.id' );
-    //                    if ( $message_id ) {
-    //                        $business->update( [ 'expired_sent' => TRUE ] );
-    //                    }
-    //                }
-    //            }
-    //            Order::whereColumn( 'paid' , '>=' , 'total' )->update( [ 'order_type' => OrderType::IN_STORE ] );
-    //        } )->everyFiveMinutes();
+    Schedule::command( SendSubscriptionReminders::class )->daily();
 
-    //        Schedule::call( function () {
-    //            Stock::where( 'expiry_date' , '<>' , NULL )
-    //                 ->where( 'expiry_date' , '<' , now()->copy()->endOfDay() )
-    //                 ->where( 'quantity' , '>' , 0 )
-    //                 ->chunkById( 100 , function ($stocks) {
-    //                     foreach ( $stocks as $stock ) {
-    //                         $stock->quantity = -abs( $stock->quantity );
-    //                         $stock->save();
-    //                         $damage = Damage::create( [
-    //                             'date'         => now() ,
-    //                             'reference_no' => 'D' . time() ,
-    //                             'subtotal'     => $stock->subtotal ,
-    //                             'tax'          => $stock->tax ,
-    //                             'discount'     => $stock->discount ,
-    //                             'total'        => $stock->total ,
-    //                             'note'         => 'Stock Expired' ,
-    //                         ] );
-    //                         if ( $stock->products ) {
-    //                             $model_id = $damage->id;
-    //                             foreach ( $stock->products as $product ) {
-    //                                 $stock = Stock::create( [
-    //                                     'model_type'      => Damage::class ,
-    //                                     'model_id'        => $model_id ,
-    //                                     'reference'       => 'D' . time() ,
-    //                                     'item_type'       => count( $product->variations ) > 0 ? ProductVariation::class : Product::class ,
-    //                                     'product_id'      => $product->id ,
-    //                                     'variation_names' => 'variation_names' ,
-    //                                     'item_id'         => $product->id ,
-    //                                     'price'           => $product->buying_price ,
-    //                                     'quantity'        => -$stock->quantity ,
-    //                                     'discount'        => $stock->discount ,
-    //                                     'tax'             => $stock->tax ,
-    //                                     'subtotal'        => $stock->subtotal ,
-    //                                     'total'           => $stock->total ,
-    //                                     'sku'             => $product->sku ,
-    //                                     'status'          => StockStatus::EXPIRED
-    //                                 ] );
-    //                             }
-    //                         }
-    //                     }
-    //                 } );
-    //        } )->everyMinute();
+    Schedule::command( ExpireStocks::class )->everyMinute()->withoutOverlapping();
 
-    Schedule::call( function () {
-        Tenant::all()->runForEach( function () {
-            Order::where( 'due_date' , '<' , now() )
-                 ->where( 'quotation_status' , '<>' , QuotationStatus::EXPIRED )
-                 ->chunkById( 100 , function ($orders) {
-                     foreach ( $orders as $order ) {
-                         $order->update( [ 'quotation_status' => QuotationStatus::EXPIRED ] );
-                     }
-                 } );
-        } );
-    } )->everyMinute()->name( 'update_expiry_status' )->withoutOverlapping();
+    Schedule::command( ExpireQuotations::class )
+            ->everyMinute()
+            ->withoutOverlapping();
 
-    Schedule::call( function () {
-        $expiredTenantIds = TenantSubscription::where( 'expires_at' , '<' , now() )
-                                              ->where( 'status' , Status::ACTIVE )
-                                              ->pluck( 'tenant_id' );
-        if ( $expiredTenantIds->isEmpty() ) {
-            return;
-        }
+    Schedule::command( CheckSubscriptionExpiry::class )
+            ->everyThirtyMinutes()
+            ->withoutOverlapping();
 
-        TenantSubscription::whereIn( 'tenant_id' , $expiredTenantIds )
-                          ->update( [ 'status' => Status::INACTIVE ] );
-
-        $expiredTenantIds->each( function ($tenantId) {
-            Cache::forget( "tenant_subscription_{$tenantId}" );
-        } );
-
-    } )->everyThirtyMinutes()->name( 'check_subscription_expiry' )->withoutOverlapping();
-
-    Schedule::call( function () {
-        Tenant::all()->runForEach( function ($tenant) {
-            Order::where( 'pre_order_status' , PreOrderStatus::PENDING_STOCK )
-                 ->with( 'orderProducts.item' )
-                 ->chunk( 100 , function ($orders) {
-                     foreach ( $orders as $order ) {
-                         $allProductsHaveEnoughStock = $order->orderProducts->every( function ($orderProduct) {
-                             return $orderProduct->item->stock >= $orderProduct->quantity;
-                         } );
-
-                         if ( $allProductsHaveEnoughStock ) {
-                             $order->update( [ 'pre_order_status' => PreOrderStatus::READY_FOR_PICKUP ] );
-                         }
-                     }
-                 } );
-        } );
-    } )->everyMinute()->name( 'update pre order stock' )->withoutOverlapping();
+    Schedule::command( UpdatePreOrderStock::class )
+            ->everyMinute()
+            ->withoutOverlapping();

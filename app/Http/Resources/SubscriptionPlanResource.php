@@ -12,12 +12,15 @@
         public function toArray(Request $request) : array
         {
             return [
-                'id'          => $this->id ,
-                'name'        => $this->name ,
-                'description' => $this->description ,
-                'features'    => $this->features ,
-                'base_amount' => $this->base_amount ,
-                'popular'     => $this->popular ,
+                'id'             => $this->id ,
+                'name'           => $this->name ,
+                'description'    => $this->description ,
+                'features'       => $this->features ,
+                'base_amount'    => $this->base_amount ,
+                'popular'        => $this->popular ,
+                'setup'          => $this->setup ,
+                'type'           => $this->type ,
+                'setup_currency' => 'UGX ' . number_format( $this->setup ) ,
             ];
         }
     }

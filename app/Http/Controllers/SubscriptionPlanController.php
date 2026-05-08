@@ -10,13 +10,15 @@
     use App\Models\BillingCycle;
     use App\Models\SubscriptionPlan;
     use App\Models\TenantSubscription;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Cache;
 
     class SubscriptionPlanController extends Controller
     {
-        public function index()
+        public function index(Request $request)
         {
-            return SubscriptionPlanResource::collection( SubscriptionPlan::all() );
+            $type = $request->integer( 'type' );
+            return SubscriptionPlanResource::collection( SubscriptionPlan::where( 'type' , $type )->get() );
         }
 
         public function billingCycles()
@@ -57,10 +59,10 @@
 
             tenancy()->central( function () use ($tenantId , &$subscribed) {
                 $subscribed = TenantSubscription::where( 'expires_at' , '>=' , now() )
-                                            ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
-                                            ->where( 'status' , '=' , Status::ACTIVE )
-                                            ->where( 'tenant_id' , $tenantId )
-                                            ->exists();
+                                                ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
+                                                ->where( 'status' , '=' , Status::ACTIVE )
+                                                ->where( 'tenant_id' , $tenantId )
+                                                ->exists();
             } );
 
             if ( ! $subscribed ) {

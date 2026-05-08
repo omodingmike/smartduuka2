@@ -36,7 +36,7 @@
                         'billing_cycle_id'     => $data[ 'billingCycle' ] ,
                         'tenant_id'            => $data[ 'tenant' ] ,
                         'subscription_plan_id' => $data[ 'subscriptionPlan' ] ,
-                        'status'               => Status::ACTIVE ,
+                        'status'               => Status::INACTIVE ,
                     ] );
 
                     $cycle = BillingCycle::find( $data[ 'billingCycle' ] );
@@ -48,7 +48,7 @@
 
                     InitiatePaymentJob::dispatch( $subscription );
 
-                    return new TenantSubscriptionResource( $subscription );
+                    return response()->json();
                 } );
             } catch ( \Throwable $e ) {
                 return response( [ 'status' => FALSE , 'message' => $e->getMessage() ] , 422 );
