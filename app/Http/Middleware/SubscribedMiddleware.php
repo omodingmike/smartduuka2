@@ -17,15 +17,11 @@
             $tenantId = tenant( 'id' );
             $cacheKey = "tenant_subscription_{$tenantId}";
 
-            $subscription = Cache::remember( $cacheKey , now()->addMinutes( 30 ) , function () use ($tenantId) {
+            $subscription = Cache::remember( $cacheKey , now()->addMinutes( 10 ) , function () use ($tenantId) {
                 $result = FALSE;
 
                 tenancy()->central( function () use ($tenantId , &$result) {
-                    $result = TenantSubscription::where( 'expires_at' , '>=' , now() )
-                                                ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
-                                                ->where( 'status' , '=' , Status::ACTIVE )
-                                                ->where( 'tenant_id' , $tenantId )
-                                                ->exists();
+                    $result = tenantSubscriptions( $tenantId )->exists();
                 } );
 
                 return $result;

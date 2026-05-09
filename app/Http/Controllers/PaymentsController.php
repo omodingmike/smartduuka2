@@ -13,6 +13,7 @@
     use App\YoPayments\YoAPI;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Artisan;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Str;
 
     class PaymentsController extends Controller
@@ -32,69 +33,77 @@
 
                     if ( $subscription ) {
 
-                        $subscription->update( [
-                            'payment_status' => SubscriptionPaymentStatus::Paid ,
-                            'status'         => Status::ACTIVE ,
-                            'transaction_id' => $request->network_ref ,
-                        ] );
+                        DB::transaction( function () use ($subscription , $request) {
+                            $onboard = BusinessOnBoard::where( 'tenant' , $subscription->tenant_id )->latest()->first();
+                            $onboard->update( [ 'status' => Status::ACTIVE ] );
 
-                        $onboard = BusinessOnBoard::where( 'tenant' , $subscription->tenant_id )->first();
-
-                        $data = [
-                            'username'        => $request->payer_names ,
-                            'business_name'   => $onboard->name ,
-                            'dashboard_link'  => $onboard->domain ,
-                            'amount_paid'     => number_format( $onboard->amount ) ,
-                            'txn_id'          => $request->network_ref ,
-                            'new_expiry_date' => $subscription->expires_at ,
-                            'payment_method'  => 'Mobile Money' ,
-                        ];
-
-                        SendEmailsJob::dispatch( $onboard->admin_email ,
-                            'Payment Successful - Smart Duuka' ,
-                            'tenants.paymentsuccess' ,
-                            $data );
-
-                        $plan = SubscriptionPlan::find( $subscription->subscription_plan_id );
-
-                        if ( $plan->type == SubscriptionPlanType::Starter ) {
-                            Artisan::call( 'create-tenant' , [
-                                'id' => $subscription->tenant_id ,
+                            $subscription->update( [
+                                'payment_status' => SubscriptionPaymentStatus::Paid ,
+                                'status'         => Status::ACTIVE ,
+                                'transaction_id' => $request->network_ref ,
                             ] );
-                        }
+                            TenantSubscription::where( 'tenant_id' , $subscription->tenant_id )
+                                              ->where( 'id' , '!=' , $subscription->id )
+                                              ->where( 'status' , Status::ACTIVE )
+                                              ->update( [ 'status' => Status::INACTIVE ] );
+                            $data = [
+                                'username'        => $request->payer_names ,
+                                'business_name'   => $onboard->name ,
+                                'dashboard_link'  => $onboard->domain ,
+                                'amount_paid'     => number_format( $request->amount ) ,
+                                'txn_id'          => $request->network_ref ,
+                                'new_expiry_date' => $subscription->expires_at ,
+                                'payment_method'  => 'Mobile Money' ,
+                            ];
+
+                            SendEmailsJob::dispatch( $onboard->admin_email ,
+                                'Payment Successful - Smart Duuka' ,
+                                'tenants.paymentsuccess' ,
+                                $data );
+
+                            $plan = SubscriptionPlan::find( $subscription->subscription_plan_id );
+
+                            if ( $plan->type == SubscriptionPlanType::Starter ) {
+                                Artisan::call( 'create-tenant' , [
+                                    'id' => $subscription->tenant_id ,
+                                ] );
+                            }
+                        } );
                     }
                 }
 
                 if ( $receive_payment_failure_notification ) {
-                    $subscription = TenantSubscription::where( [ 'transaction_id' => $request->failed_transaction_reference ] )->first();
+                    DB::transaction( function () use ($receive_payment_failure_notification , $request) {
+                        $subscription = TenantSubscription::where( [ 'transaction_id' => $request->failed_transaction_reference ] )->first();
 
-                    if ( $subscription ) {
-                        $subscription->update( [
-                            'payment_status' => SubscriptionPaymentStatus::Failed ,
-                        ] );
+                        if ( $subscription ) {
+                            $subscription->update( [
+                                'payment_status' => SubscriptionPaymentStatus::Failed ,
+                            ] );
 
-                        $onboard    = BusinessOnBoard::where( 'tenant' , $subscription->tenant_id )->first();
-                        $tenant_url = Tenant::find( $subscription->tenant_id )?->frontend_url;
-                        $plan       = SubscriptionPlan::find( $subscription->subscription_plan_id );
+                            $onboard    = BusinessOnBoard::where( 'tenant' , $subscription->tenant_id )->latest()->first();
+                            $tenant_url = Tenant::find( $subscription->tenant_id )?->frontend_url;
+                            $plan       = SubscriptionPlan::find( $subscription->subscription_plan_id );
 
-                        $data = [
-                            'username'       => $request->payer_names ,
-                            'business_name'  => $onboard->name ,
-                            'dashboard_link' => $onboard->domain ,
-                            'amount_paid'    => $onboard->amount ,
-                        ];
-                        if ( $plan->type == SubscriptionPlanType::Starter ) {
-                            $data[ 'retry_payment_link' ] = 'https://smartduuka.com/pricing';
+                            $data = [
+                                'username'       => $request->payer_names ,
+                                'business_name'  => $onboard->name ,
+                                'dashboard_link' => $onboard->domain ,
+                                'amount_paid'    => $onboard->amount ,
+                            ];
+                            if ( $plan->type == SubscriptionPlanType::Starter ) {
+                                $data[ 'retry_payment_link' ] = 'https://smartduuka.com/pricing';
+                            }
+                            else {
+                                $data[ 'retry_payment_link' ] = "$tenant_url/subscriptions";
+                            }
+
+                            SendEmailsJob::dispatch( $onboard->admin_email ,
+                                'Payment Failed - Smart Duuka' ,
+                                'tenants.paymentfailed' ,
+                                $data );
                         }
-                        else {
-                            $data[ 'retry_payment_link' ] = "$tenant_url/subscriptions";
-                        }
-
-                        SendEmailsJob::dispatch( $onboard->admin_email ,
-                            'Payment Failed - Smart Duuka' ,
-                            'tenants.paymentfailed' ,
-                            $data );
-                    }
+                    } );
                 }
                 return response()->json();
             } catch ( \Exception $e ) {
@@ -129,7 +138,7 @@
             $yoAPI->set_nonblocking( 'TRUE' );
 
             if ( app()->isLocal() ) {
-                $ipn = 'https://exotic-mod-held-compromise.trycloudflare.com/api/webhook/yo';
+                $ipn = 'https://zoning-commissioners-similar-technology.trycloudflare.com/api/webhook/yo';
             }
 
             else {

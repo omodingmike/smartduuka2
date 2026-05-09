@@ -2,14 +2,11 @@
 
     namespace App\Http\Controllers;
 
-    use App\Enums\Status;
-    use App\Enums\SubscriptionPaymentStatus;
     use App\Http\Requests\SubscriptionPlanRequest;
     use App\Http\Resources\BillingCycleResource;
     use App\Http\Resources\SubscriptionPlanResource;
     use App\Models\BillingCycle;
     use App\Models\SubscriptionPlan;
-    use App\Models\TenantSubscription;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Cache;
 
@@ -58,12 +55,9 @@
             $subscribed = FALSE;
 
             tenancy()->central( function () use ($tenantId , &$subscribed) {
-                $subscribed = TenantSubscription::where( 'expires_at' , '>=' , now() )
-                                                ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
-                                                ->where( 'status' , '=' , Status::ACTIVE )
-                                                ->where( 'tenant_id' , $tenantId )
-                                                ->exists();
+                $subscribed = tenantSubscriptions( $tenantId )->exists();
             } );
+
 
             if ( ! $subscribed ) {
                 return response()->json( [

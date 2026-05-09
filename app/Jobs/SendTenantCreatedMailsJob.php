@@ -16,7 +16,7 @@
         public function handle() : void
         {
             $tenant  = $this->tenant->getTenantKey();
-            $onboard = BusinessOnBoard::where( 'tenant' , $tenant )->first();
+            $onboard = BusinessOnBoard::where( 'tenant' , $tenant )->latest()->first();
             $data    = [
                 'username'       => $onboard->admin_name ,
                 'business_name'  => $onboard->name ,

@@ -2,6 +2,7 @@
 
     namespace App\Models;
 
+    use App\Enums\Status;
     use Illuminate\Database\Eloquent\Casts\Attribute;
     use Illuminate\Database\Eloquent\Model;
 
@@ -21,8 +22,9 @@
             'plan_id' ,
             'cycle_id' ,
             'amount' ,
-            'admin_name' ,
+            'admin_name' , 'status'
         ];
+        protected $casts    = [ 'status' => Status::class ];
 
         protected function domain() : Attribute
         {

@@ -18,7 +18,7 @@
         {
             try {
                 $tenant   = $this->tenant->getTenantKey();
-                $on_board = BusinessOnBoard::where( 'tenant' , $tenant )->first();
+                $on_board = BusinessOnBoard::where( 'tenant' , $tenant )->latest()->first();
                 tenancy()->initialize( $tenant );
                 DB::transaction( function () use ($on_board , $administrator_service , $pin_service) {
                     if ( $on_board ) {

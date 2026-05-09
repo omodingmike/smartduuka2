@@ -63,6 +63,7 @@ $COMPOSE exec -T api_demo php artisan optimize:clear
 $COMPOSE exec -T api_demo php artisan config:cache
 $COMPOSE exec -T api_demo php artisan db:seed --force --class=BillingCycleSeeder
 $COMPOSE exec -T api_demo php artisan db:seed --force --class=SubscriptionPlanSeeder
+$COMPOSE exec -T api_demo php artisan db:seed --force --class=BusinessOnBoardSeeder
 #$COMPOSE exec -T api_demo php artisan tenants:seed --class=BillingCycleSeeder
 #$COMPOSE exec -T api_demo php artisan tenants:seed --class=SubscriptionPlanSeeder
 $COMPOSE exec -T api_demo php artisan route:cache

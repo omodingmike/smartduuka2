@@ -2,13 +2,10 @@
 
     namespace App\Console\Commands;
 
-    use App\Enums\Status;
-    use App\Enums\SubscriptionPaymentStatus;
     use App\Http\Controllers\WhatsAppController;
     use App\Jobs\SendEmailsJob;
     use App\Models\BusinessOnBoard;
     use App\Models\Tenant;
-    use App\Models\TenantSubscription;
     use Illuminate\Console\Command;
     use Illuminate\Http\Request;
     use Illuminate\Support\Carbon;
@@ -20,9 +17,9 @@
         protected $description = 'Send email and WhatsApp reminders for expiring and expired subscriptions';
 
         // Define when the "Expired Days Ago" and "Deletion Warning" should trigger
-        private const EXPIRED_REMINDER_DAYS = [ 3 , 7 , 14 ]; // Sends 'expireddaysago' 3, 7, and 14 days after expiry
-        private const DELETION_WARNING_DAY  = 25;             // Sends 'deletionwarning' 25 days after expiry
-        private const TOTAL_RETENTION_DAYS  = 30;             // Data deleted after 30 days (used for the countdown)
+        private const array EXPIRED_REMINDER_DAYS = [ 3 , 7 , 14 ]; // Sends 'expireddaysago' 3, 7, and 14 days after expiry
+        private const int   DELETION_WARNING_DAY  = 25;             // Sends 'deletionwarning' 25 days after expiry
+        private const int   TOTAL_RETENTION_DAYS  = 30;             // Data deleted after 30 days (used for the countdown)
 
         public function handle() : void
         {
@@ -38,18 +35,13 @@
         private function processReminder(Tenant $tenant) : void
         {
             $tenantId     = $tenant->id;
-            $subscription = TenantSubscription::query()
-                                              ->where( 'tenant_id' , $tenantId )
-                                              ->where( 'payment_status' , SubscriptionPaymentStatus::Paid )
-                                              ->where( 'status' , Status::ACTIVE )
-                                              ->latest( 'expires_at' )
-                                              ->first();
+            $subscription = tenantSubscriptions( $tenantId )->first();
 
             if ( ! $subscription ) {
                 return;
             }
 
-            $onboard = BusinessOnBoard::where( 'tenant' , $tenantId )->first();
+            $onboard = BusinessOnBoard::where( 'tenant' , $tenantId )->latest()->first();
 
             if ( ! $onboard ) {
                 $this->warn( "No onboard record found for tenant: {$tenantId}" );

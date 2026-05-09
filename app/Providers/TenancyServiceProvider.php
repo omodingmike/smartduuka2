@@ -10,6 +10,7 @@
     use App\Listeners\SyncNonCustomerUser;
     use Illuminate\Contracts\Http\Kernel;
     use Illuminate\Support\Facades\Event;
+    use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\ServiceProvider;
     use Spatie\Permission\PermissionRegistrar;
@@ -130,12 +131,22 @@
             UpdateSyncedResource::$shouldQueue = TRUE;
 
             $this->makeTenancyMiddlewareHighestPriority();
-//            InitializeTenancyByDomain::$onFail                 = function () {
-//                throw new TenantCouldNotBeIdentifiedException();
-//            };
-//            Middleware\InitializeTenancyByRequestData::$onFail = function () {
-//                abort( 404 );
-//            };
+            InitializeTenancyByDomain::$onFail                 = function ($exception , $request) {
+//                Log::warning( 'Tenancy identification failed!' , [
+//                    'host'       => $request->getHost() ,
+//                    'url'        => $request->fullUrl() ,
+//                    'ip'         => $request->ip() ,
+//                    'user_agent' => $request->userAgent() ,
+//                ] );
+            };
+            Middleware\InitializeTenancyByRequestData::$onFail = function ($exception , $request) {
+//                Log::warning( 'Tenancy identification failed!' , [
+//                    'host'       => $request->getHost() ,
+//                    'url'        => $request->fullUrl() ,
+//                    'ip'         => $request->ip() ,
+//                    'user_agent' => $request->userAgent() ,
+//                ] );
+            };
 
             TenantConfig::$storageToConfigMap = [
                 // From app.php

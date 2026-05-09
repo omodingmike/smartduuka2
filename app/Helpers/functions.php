@@ -15,6 +15,7 @@
     use App\Enums\SettingsEnum;
     use App\Enums\Status;
     use App\Enums\StockStatus;
+    use App\Enums\SubscriptionPaymentStatus;
     use App\Libraries\AppLibrary;
     use App\Models\ChartOfAccountGroup;
     use App\Models\Currency;
@@ -28,6 +29,7 @@
     use App\Models\PosPayment;
     use App\Models\Register;
     use App\Models\RoyaltyPointsExchageRate;
+    use App\Models\TenantSubscription;
     use App\Models\ThemeSetting;
     use App\Models\User;
     use Carbon\Carbon;
@@ -162,6 +164,13 @@
         return ThemeSetting::where( [ 'key' => 'theme_logo' ] )?->first()?->logo ?? asset( 'logo.png' );
     }
 
+    function tenantSubscriptions(string $tenantId)
+    {
+        return TenantSubscription::where( 'expires_at' , '>=' , now() )
+                                 ->where( 'payment_status' , '=' , SubscriptionPaymentStatus::Paid )
+                                 ->where( 'status' , '=' , Status::ACTIVE )
+                                 ->where( 'tenant_id' , $tenantId )->latest();
+    }
 
     function addPayment(Order $order = NULL , int $amount = 0 , int $payment_method = 0 , string $reference = NULL , PosPaymentType $pos_payment_type =
     PosPaymentType::SALE) : void
@@ -576,4 +585,4 @@
             default                   => NULL
         };
     }
-//    function hasActiveSubscription
+    //    function hasActiveSubscription

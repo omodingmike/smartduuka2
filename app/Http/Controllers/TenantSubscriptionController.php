@@ -41,9 +41,12 @@
 
                     $cycle = BillingCycle::find( $data[ 'billingCycle' ] );
 
+                    $activeSubscription = tenantSubscriptions( $data[ 'tenant' ] )->first();
+                    $expiryBase         = $activeSubscription ? $activeSubscription->expires_at : now();
+
                     $subscription->update( [
                         'invoice_no' => recordId( 'INV' , $subscription ) ,
-                        'expires_at' => now()->addMonths( $cycle->multiplier )
+                        'expires_at' => $expiryBase->addMonths( $cycle->multiplier ) ,
                     ] );
 
                     InitiatePaymentJob::dispatch( $subscription );

@@ -6,6 +6,8 @@
     use App\Console\Commands\ExpireStocks;
     use App\Console\Commands\SendSubscriptionReminders;
     use App\Console\Commands\UpdatePreOrderStock;
+    use App\Enums\Status;
+    use App\Models\BusinessOnBoard;
 
     Schedule::command( ClearLogFiles::class )->daily();
 
@@ -24,3 +26,7 @@
     Schedule::command( UpdatePreOrderStock::class )
             ->everyMinute()
             ->withoutOverlapping();
+
+    Schedule::call( function () {
+        BusinessOnBoard::where( 'status' , Status::INACTIVE )->delete();
+    } )->daily();
