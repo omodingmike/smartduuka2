@@ -6,9 +6,6 @@
 
     class SystemNotificationController extends Controller
     {
-        /**
-         * Fetch all notifications for the authenticated user
-         */
         public function index(Request $request)
         {
             try {
@@ -36,9 +33,6 @@
             }
         }
 
-        /**
-         * Mark all notifications as read for the user
-         */
         public function markAllAsRead(Request $request)
         {
             try {
@@ -53,9 +47,6 @@
             }
         }
 
-        /**
-         * Toggle read status for a specific notification
-         */
         public function toggleReadStatus(Request $request , $id)
         {
             try {
@@ -77,9 +68,6 @@
             }
         }
 
-        /**
-         * Delete selected notifications (supports single or bulk delete)
-         */
         public function destroy(Request $request)
         {
             try {

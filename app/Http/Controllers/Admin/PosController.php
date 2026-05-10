@@ -2,7 +2,9 @@
 
     namespace App\Http\Controllers\Admin;
 
+    use App\Enums\ExpenseNature;
     use App\Enums\OrderStatus;
+    use App\Enums\PaymentType;
     use App\Enums\RefundStatus;
     use App\Enums\RegisterStatus;
     use App\Enums\ReturnStatus;
@@ -17,6 +19,7 @@
     use App\Http\Resources\OrderResource;
     use App\Http\Resources\RegisterResource;
     use App\Models\Damage;
+    use App\Models\ExpensePayment;
     use App\Models\Order;
     use App\Models\PaymentMethodTransaction;
     use App\Models\PosPayment;
@@ -24,6 +27,8 @@
     use App\Models\Register;
     use App\Models\Stock;
     use App\Models\User;
+    use App\Notifications\RefundProcessed;
+    use App\Notifications\ShiftClosed;
     use App\Services\CommissionCalculator;
     use App\Services\CustomerService;
     use App\Services\OrderService;
@@ -34,6 +39,8 @@
     use Illuminate\Http\Request;
     use Illuminate\Http\Response;
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Notification;
+    use Smartisan\Settings\Facades\Settings;
 
 
     class PosController extends AdminController
@@ -147,6 +154,41 @@
                             ] );
                         }
                     }
+
+                    $notificationSettings = Settings::group( 'notification' )->all();
+                    $adminEmail           = $notificationSettings[ 'admin_email' ] ?? null;
+                    $adminPhone           = $notificationSettings[ 'admin_phone' ] ?? null;
+
+                    $originalOrder = $order->originalOrder ?? Order::find( $order->original_order_id );
+
+                    $returnItems   = json_decode( $request->returnItems , TRUE ) ?? [];
+                    $exchangeItems = json_decode( $request->exchangeItems , TRUE ) ?? [];
+
+                    $totalReturnValue = collect( $returnItems )->sum( fn($i) => $i[ 'qty' ] * $i[ 'price' ] );
+                    $totalExchangeValue = collect( $exchangeItems )->sum( fn($i) => $i[ 'qty' ] * $i[ 'price' ] );
+
+                    $order->loadMissing( 'user' );
+
+                    Notification::route( 'mail' , $adminEmail )
+                                ->route( 'sms' , $adminPhone )
+                                ->route( 'whatsapp' , $adminPhone )
+                                ->notify( new RefundProcessed(
+                                    title               : 'Refund / Return Processed' ,
+                                    message             : "A return has been processed against order #{$originalOrder?->order_serial_no} by " . auth()->user()->name . '.' ,
+                                    returnOrderNo       : $order->order_serial_no ,
+                                    originalOrderNo     : $originalOrder?->order_serial_no ?? 'N/A' ,
+                                    customerName        : $order->user?->name ?? null ,
+                                    createdBy           : auth()->user()->name ,
+                                    orderDate           : $order->order_datetime?->format( 'd M Y, H:i:s' ) ?? now()->format( 'd M Y, H:i:s' ) ,
+                                    totalReturnValue    : $totalReturnValue ,
+                                    totalExchangeValue  : $totalExchangeValue ,
+                                    refundBalance       : max( 0 , $totalReturnValue - $totalExchangeValue ) ,
+                                    returnItemCount     : count( $returnItems ) ,
+                                    exchangeItemCount   : count( $exchangeItems ) ,
+                                    refundStatus        : $order->refund_status?->label() ?? $order->refund_status?->value ,
+                                    returnStatus        : $order->return_status?->label() ?? $order->return_status?->value ,
+                                    reason              : $request->input( 'reason' ) ?: null ,
+                                ) );
                 }
 
                 if ( $status == ReturnStatus::REJECTED->value || $status == ReturnStatus::CANCELED->value ) {
@@ -208,6 +250,111 @@
         }
 
         public function closeRegister(Request $request)
+        {
+            $register       = register();
+            $closing_amount = $request->integer( 'closing_amount' );
+
+            $money_in  = $register->posPayments()->sum( 'amount' );
+            $money_out = $register->expensesPayments()->sum( 'amount' );
+
+            $expectedFloat = $register->opening_float + $money_in - $money_out;
+            $difference    = $closing_amount - $expectedFloat;
+
+            $register->update( [
+                'expected_float' => $expectedFloat ,
+                'closing_float'  => $closing_amount ,
+                'difference'     => $difference ,
+                'status'         => RegisterStatus::CLOSED->value ,
+                'closed_at'      => now() ,
+            ] );
+
+            if ( $request->notes ) {
+                $register->update( [ 'notes' => $request->notes ] );
+            }
+
+            // --- Replicate RegisterResource calculations ---
+            $register->loadMissing( [ 'orders.orderProducts.item' , 'posPayments.paymentMethod' , 'expensesPayments.expense' , 'walletTransactions' ] );
+
+            $allProducts = $register->orders->flatMap( fn($order) => $order->orderProducts );
+
+            $groupedItems = $allProducts->groupBy( fn($item) => $item->item_id . '-' . $item->item_type )
+                                        ->map( function ($group) {
+                                            $firstItem     = $group->first()->item;
+                                            $totalQuantity = $group->sum( 'quantity' );
+                                            return [
+                                                'total_sales' => $group->sum( 'total' ) ,
+                                                'total_cost'  => $totalQuantity * ( $firstItem->buying_price ?? 0 ) ,
+                                            ];
+                                        } );
+
+            $totalSalesValue  = $groupedItems->sum( 'total_sales' );  // Cash + Credit sales
+            $totalCostOfGoods = $groupedItems->sum( 'total_cost' );
+            $grossProfit      = $totalSalesValue - $totalCostOfGoods;
+            $totalRevenue     = $register->posPayments()->sum( 'amount' ); // Cash actually collected
+
+            $expenses = $register->expensesPayments->sum( function (ExpensePayment $ep) {
+                $expense = $ep->expense;
+                if ( $expense && (
+                        $expense->expense_nature === ExpenseNature::OPERATIONAL ||
+                        ( isset( $expense->expense_nature->value ) && $expense->expense_nature->value === ExpenseNature::OPERATIONAL->value )
+                    ) ) {
+                    return $ep->amount;
+                }
+                return 0;
+            } );
+
+            $netProfit = $grossProfit - $expenses;
+
+            $totalCredit = $register->orders
+                ->where( 'payment_type' , PaymentType::CREDIT )
+                ->sum( 'balance' );
+
+            $deposits = $register->orders()->where( 'payment_type' , '<>' , PaymentType::CASH )->get()
+                                 ->sum( fn($order) => $order->posPayments()->sum( 'amount' ) );
+
+            $walletTransactions = $register->walletTransactions()->sum( 'amount' );
+            // ----------------------------------------------
+
+            // --- Dispatch ShiftClosed Notification ---
+            $notificationSettings = Settings::group( 'notification' )->all();
+            $adminEmail           = $notificationSettings[ 'admin_email' ] ?? NULL;
+            $adminPhone           = $notificationSettings[ 'admin_phone' ] ?? NULL;
+
+            Notification::route( 'mail' , $adminEmail )
+                        ->route( 'sms' , $adminPhone )
+                        ->route( 'whatsapp' , $adminPhone )
+                        ->notify( new ShiftClosed(
+                            title: 'Shift / Register Closed' ,
+                            message: "Register closed by {$register->user->name}. End-of-shift summary below." ,
+                            closedBy: $register->user->name ?? auth()->user()->name ,
+                            closedAt: now()->format( 'd M Y, H:i:s' ) ,
+                            openingFloat: $register->opening_float ,
+                            expectedFloat: $expectedFloat ,
+                            closingFloat: $closing_amount ,
+                            discrepancy: $difference ,
+                            totalSalesValue: $totalSalesValue ,
+                            totalRevenue: $totalRevenue ,
+                            totalCostOfGoods: $totalCostOfGoods ,
+                            grossProfit: $grossProfit ,
+                            expenses: $expenses ,
+                            netProfit: $netProfit ,
+                            totalCredit: $totalCredit ,
+                            deposits: $deposits ,
+                            walletTransactions: $walletTransactions ,
+                        ) );
+            // -----------------------------------------
+
+            return response()->json( [
+                'message' => 'Register closed successfully' ,
+                'audit'   => [
+                    'expected'    => $expectedFloat ,
+                    'actual'      => $closing_amount ,
+                    'discrepancy' => $difference
+                ]
+            ] );
+        }
+
+        public function closeRegister1(Request $request)
         {
             $register       = register();
             $closing_amount = $request->integer( 'closing_amount' );

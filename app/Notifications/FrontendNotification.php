@@ -23,16 +23,10 @@
             $this->message = $message;
         }
 
-        /**
-         * Get the notification's delivery channels.
-         *
-         * @param mixed $notifiable
-         *
-         * @return array
-         */
+
         public function via($notifiable)
         {
-            return [ 'database' ];
+            return [ 'database' , 'mail' ];
         }
 
         /**

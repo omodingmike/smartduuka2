@@ -59,6 +59,7 @@ $COMPOSE exec -T api_demo php artisan migrate --force
 $COMPOSE exec -T api_demo php artisan tenants:migrate --force --tenants=demoshop
 
 # Optimize Laravel for the demo environment
+$COMPOSE exec -T api_demo php artisan reset-notification-settings
 $COMPOSE exec -T api_demo php artisan optimize:clear
 $COMPOSE exec -T api_demo php artisan config:cache
 $COMPOSE exec -T api_demo php artisan db:seed --force --class=BillingCycleSeeder

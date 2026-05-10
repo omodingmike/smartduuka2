@@ -16,6 +16,7 @@
     use App\Enums\QuotationType;
     use App\Enums\RefundStatus;
     use App\Enums\ReturnStatus;
+    use App\Enums\Role;
     use App\Enums\SaleOrderType;
     use App\Enums\Status;
     use App\Enums\StockStatus;
@@ -46,7 +47,7 @@
     use App\Models\User;
     use App\Models\Warehouse;
     use App\Models\WholeSalePrice;
-    use App\Notifications\FrontendNotification;
+    use App\Notifications\NewOrder;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Http\JsonResponse;
@@ -56,6 +57,7 @@
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Facades\Notification;
     use Illuminate\Support\Str;
+    use Smartisan\Settings\Facades\Settings;
 
     // Added Service model
 
@@ -574,7 +576,7 @@
                         $net_amount = $amount;
                         if ( $amount > 0 ) {
                             $payment = PaymentMethod::find( $p[ 'id' ] );
-                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => userCredit( $user) - $net_amount ] );
+                            $ledger?->update( [ 'paid' => $net_amount , 'balance' => userCredit( $user ) - $net_amount ] );
                             addPayment( $order , $net_amount , $payment->id , $p[ 'reference' ] ?? time() );
                             if ( $payment->name == DefaultPaymentMethods::WALLET->value ) {
                                 addToCustomerWalletTransaction(
@@ -604,16 +606,9 @@
                         }
                     }
                     $this->order->save();
-                    if ($user) {
-                        Notification::send($user, new FrontendNotification(
-                            'Order Confirmed!',
-                            'Your order ' . $this->order->order_serial_no . ' has been successfully placed.'
-                        ));
-                    }
-
                 } );
 
-                return $this->order->load( [
+                $this->order->load( [
                     'orderProducts.item' => function ($q) {
                         $q->withTrashed();
                     } ,
@@ -632,6 +627,31 @@
                     'creditDepositPurchases.paymentMethod' ,
                     'stocks'
                 ] );
+                $notificationSettings = Settings::group( 'notification' )->all();
+                $adminEmail           = $notificationSettings[ 'admin_email' ] ?? NULL;
+                $adminPhone           = $notificationSettings[ 'admin_phone' ] ?? NULL;
+
+                $order = $this->order;
+
+                $admins = User::role( Role::ADMIN )->get();
+
+                Notification::send( $admins , new NewOrder(
+                    title: 'New Sale / Order' ,
+                    message: 'A new order has been placed at the POS by ' . auth()->user()->name . '.' ,
+                    orderNo: $order->order_serial_no ,
+                    orderStatus: $order->status?->label() ?? $order->status?->value ,
+                    paymentStatus: $order->payment_status?->label() ?? $order->payment_status?->value ,
+                    paymentType: $order->payment_type?->label() ?? $order->payment_type?->value ,
+                    total: (float) $order->total ,
+                    paid: (float) $order->paid ,
+                    balance: (float) max( 0 , $order->balance ) ,
+                    change: (float) ( $order->change ?? 0 ) ,
+                    customerName: $order->user?->name ?? NULL ,
+                    createdBy: auth()->user()->name ,
+                    orderDate: $order->order_datetime?->format( 'd M Y, H:i:s' ) ?? now()->format( 'd M Y, H:i:s' ) ,
+                    itemCount: $order->orderProducts->count() ,
+                ) );
+                return $this->order;
             } catch ( Exception $exception ) {
                 DB::rollBack();
                 Log::info( $exception->getMessage() );
@@ -818,7 +838,30 @@
             ] )->first();
 
             $qtyToDecrement = $product[ 'quantity' ];
-            if ( ! $is_preorder ) $stock->decrement( 'quantity' , $qtyToDecrement );
+            if ( ! $is_preorder ) {
+                $stock->decrement( 'quantity' , $qtyToDecrement );
+
+                $stock->refresh();
+
+                $threshold = (float) ( $p->low_stock_quantity_warning ?? 0 );
+
+                if ( $p->track_stock && $threshold > 0 && $stock->quantity <= $threshold ) {
+                    $variationLabel = $is_variation
+                        ? $variation?->productAttributeOption?->productAttribute?->name
+                        . ' (' . $variation?->productAttributeOption?->name . ')'
+                        : NULL;
+
+                    LowStockNotifier::check(
+                        productName: $p->name ,
+                        sku: $targetModel->sku ?? $p->sku ,
+                        currentStock: $stock->quantity ,           // real post-decrement value
+                        lowStockThreshold: $threshold ,
+                        variationName: $variationLabel ,
+                        category: $p->productCategory?->name ?? NULL ,
+                        triggeredBy: 'sale' ,
+                    );
+                }
+            }
 
             if ( $status == SaleOrderType::DEPOSIT->value ) {
                 $stock->increment( 'quantity_ordered' , $qtyToDecrement );

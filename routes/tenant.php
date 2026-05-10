@@ -288,7 +288,7 @@
             Route::prefix( 'notifications' )->name( 'notifications.' )->group( function () {
                 Route::get( '/' , [ SystemNotificationController::class , 'index' ] );
                 Route::patch( '/mark-read' , [ SystemNotificationController::class , 'markAllAsRead' ] );
-                Route::put( '/{id}/toggle-read' , [ SystemNotificationController::class , 'toggleReadStatus' ] );
+                Route::put( '/toggle-read/{id}' , [ SystemNotificationController::class , 'toggleReadStatus' ] );
                 Route::delete( '/delete' , [ SystemNotificationController::class , 'destroy' ] );
             } );
 

@@ -6,13 +6,16 @@
     use App\Models\Order;
     use Illuminate\Console\Command;
     use Illuminate\Support\Facades\Log;
+    use Stancl\Tenancy\Concerns\HasATenantsOption;
+    use Stancl\Tenancy\Concerns\TenantAwareCommand;
 
     class UpdatePreOrderStatuses extends Command
     {
+        use TenantAwareCommand , HasATenantsOption;
         protected $signature   = 'app:update-pre-order-statuses';
         protected $description = 'Update pre-order statuses from Pending Stock to Ready for Pickup if stock is available.';
 
-        public function handle()
+        public function handle() : void
         {
             $this->info( 'Checking pre-orders for status updates...' );
 

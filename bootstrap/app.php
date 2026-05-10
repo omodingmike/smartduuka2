@@ -3,6 +3,7 @@
     use App\Http\Middleware\AddCurrencySymbol;
     use App\Http\Middleware\AfterMiddleware;
     use App\Http\Middleware\CheckActiveRegister;
+    use App\Http\Middleware\DetectUnusualLogin;
     use App\Http\Middleware\ForceAdminLogin;
     use App\Http\Middleware\PermissionMiddleware;
     use App\Http\Middleware\SubscribedMiddleware;
@@ -44,6 +45,7 @@
                               AddCurrencySymbol::class ,
                               AfterMiddleware::class
                           ] );
+                          $middleware->appendToGroup( 'web' , DetectUnusualLogin::class );
                       } )
                       ->withExceptions( function (Exceptions $exceptions) : void {
 

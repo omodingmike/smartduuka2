@@ -119,6 +119,7 @@ $COMPOSE exec -T api php artisan storage:link --relative || true
 
 log "🧹 Optimizing Laravel application..."
 # Clear stale/corrupt cache files
+$COMPOSE exec -T api php artisan reset-notification-settings
 $COMPOSE exec -T api php artisan optimize:clear
 
 # Build fresh caches for production performance

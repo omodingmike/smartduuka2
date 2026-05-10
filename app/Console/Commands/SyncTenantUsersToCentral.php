@@ -9,10 +9,13 @@
     use Illuminate\Support\Arr;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Str;
+    use Stancl\Tenancy\Concerns\HasATenantsOption;
+    use Stancl\Tenancy\Concerns\TenantAwareCommand;
     use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedById;
 
     class SyncTenantUsersToCentral extends Command
     {
+
         protected $signature = 'sync-users';
 
         protected $description = 'Sync all tenant users to central database';

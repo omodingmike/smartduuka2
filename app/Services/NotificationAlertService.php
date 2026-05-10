@@ -20,7 +20,6 @@
         {
             try {
                 $settings = Settings::group( 'notification' )->all();
-                Log::info( 'NotificationAlertService list() returning settings:' , $settings ); // Add logging
                 return $settings;
             } catch ( Exception $exception ) {
                 Log::info( $exception->getMessage() );
