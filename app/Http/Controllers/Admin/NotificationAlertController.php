@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class NotificationAlertController extends AdminController
 {
@@ -21,7 +22,7 @@ class NotificationAlertController extends AdminController
     }
 
     public function index(
-    ) : \Illuminate\Http\Response | NotificationResource | Application | ResponseFactory
+    ) : Response | NotificationResource | Application | ResponseFactory
     {
         try {
             return new NotificationResource($this->notificationAlertService->list());

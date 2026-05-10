@@ -91,6 +91,7 @@
     use App\Http\Controllers\ServiceController;
     use App\Http\Controllers\StockTransferController;
     use App\Http\Controllers\SubscriptionPlanController;
+    use App\Http\Controllers\SystemNotificationController;
     use App\Http\Controllers\TemplateTypeController;
     use App\Http\Controllers\UnitConversionController;
     use App\Http\Controllers\UserController;
@@ -284,6 +285,13 @@
                 Route::delete( '/delete' , [ SupplierController::class , 'destroy' ] );
             } );
 
+            Route::prefix( 'notifications' )->name( 'notifications.' )->group( function () {
+                Route::get( '/' , [ SystemNotificationController::class , 'index' ] );
+                Route::patch( '/mark-read' , [ SystemNotificationController::class , 'markAllAsRead' ] );
+                Route::put( '/{id}/toggle-read' , [ SystemNotificationController::class , 'toggleReadStatus' ] );
+                Route::delete( '/delete' , [ SystemNotificationController::class , 'destroy' ] );
+            } );
+
             Route::prefix( 'setting' )->name( 'setting.' )->withoutMiddleware( [ 'subscribed' ] )->group( function () {
                 Route::get( 'printer-templates' , [ PrinterController::class , 'templates' ] );
                 Route::post( 'printer-assign/{printer}' , [ PrinterController::class , 'assign' ] );
@@ -346,7 +354,7 @@
                     Route::post( '/channels' , [ NotificationController::class , 'updateChannels' ] );
                 } );
 
-                Route::prefix( 'notification' )->name( 'notification-alert.' )->group( function () {
+                Route::prefix( 'notification-alerts' )->name( 'notification-alert.' )->group( function () {
                     Route::get( '/' , [ NotificationAlertController::class , 'index' ] );
                     Route::match( [ 'post' , 'patch' ] , '/' , [ NotificationAlertController::class , 'update' ] );
                 } );

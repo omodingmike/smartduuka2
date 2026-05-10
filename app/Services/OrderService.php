@@ -46,6 +46,7 @@
     use App\Models\User;
     use App\Models\Warehouse;
     use App\Models\WholeSalePrice;
+    use App\Notifications\FrontendNotification;
     use Exception;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Http\JsonResponse;
@@ -53,6 +54,7 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Facades\Notification;
     use Illuminate\Support\Str;
 
     // Added Service model
@@ -602,6 +604,12 @@
                         }
                     }
                     $this->order->save();
+                    if ($user) {
+                        Notification::send($user, new FrontendNotification(
+                            'Order Confirmed!',
+                            'Your order ' . $this->order->order_serial_no . ' has been successfully placed.'
+                        ));
+                    }
 
                 } );
 
