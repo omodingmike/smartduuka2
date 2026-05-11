@@ -15,7 +15,7 @@
         | Local tunnel URL (used in isLocal() mode for webhooks)
         |--------------------------------------------------------------------------
         */
-        'local_tunnel_url' => env( 'PAYMENT_LOCAL_TUNNEL_URL' , 'https://serum-won-ecological-trust.trycloudflare.com' ) ,
+        'local_tunnel_url' => env( 'PAYMENT_LOCAL_TUNNEL_URL' , 'https://hope-sql-conceptual-therapist.trycloudflare.com' ) ,
 
         /*
         |--------------------------------------------------------------------------
