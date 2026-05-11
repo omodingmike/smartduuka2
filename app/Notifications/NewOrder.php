@@ -9,7 +9,6 @@
     use Illuminate\Queue\Attributes\MaxExceptions;
     use Illuminate\Queue\Attributes\Timeout;
     use Illuminate\Queue\Attributes\Tries;
-    use Smartisan\Settings\Facades\Settings;
 
     #[Tries( 5 )]
     #[Timeout( 120 )]
@@ -38,52 +37,14 @@
             $this->afterCommit();
         }
 
-        public function routeNotificationForMail($notifiable)
-        {
-            $settings = Settings::group( 'notification' )->all();
-            return $settings[ 'admin_email' ] ?? NULL;
-        }
-
-        public function routeNotificationForSms($notifiable)
-        {
-            $settings = Settings::group( 'notification' )->all();
-            return $settings[ 'admin_phone' ] ?? NULL;
-        }
-
-        public function routeNotificationForWhatsapp($notifiable)
-        {
-            $settings = Settings::group( 'notification' )->all();
-            return $settings[ 'admin_phone' ] ?? NULL;
-        }
-
         public function via(object $notifiable) : array
         {
-            $settings = Settings::group( 'notification' )->all();
-            $channels = [];
-//            $events      = $settings[ 'events' ] ?? [];
-            $events      = $settings[ 'events' ] ?? [];
-            $eventConfig = collect( $events )->firstWhere( 'id' , 'new_order' );
-
-            if ( $eventConfig && isset( $eventConfig[ 'channels' ] ) ) {
-                $channelMap = [
-                    'email'    => 'mail' ,
-                    'sms'      => 'sms' ,
-                    'whatsapp' => 'whatsapp' ,
-                    'system'   => 'database' ,
-                ];
-                foreach ( $channelMap as $settingKey => $laravelChannel ) {
-                    if ( ! empty( $eventConfig[ 'channels' ][ $settingKey ] ) ) {
-                        $channels[] = $laravelChannel;
-                    }
-                }
-            }
-
-            return ! empty( $channels ) ? $channels : [ 'database' ];
+            return notificationChannels( $notifiable , 'new_order' );
         }
 
         public function toMail(object $notifiable) : MailMessage
         {
-            $mail = ( new MailMessage )
+            return ( new MailMessage )
                 ->subject( $this->title )
                 ->greeting( '🛒 New Sale / Order' )
                 ->line( $this->message )
@@ -101,16 +62,11 @@
                 ->line( '**💰 Payment Summary**' )
                 ->line( "Total: {$this->total}" )
                 ->line( "Amount Paid: {$this->paid}" )
-                ->line( "Balance Due: {$this->balance}" );
-
-            if ( $this->change > 0 ) {
-                $mail->line( "Change Given: {$this->change}" );
-            }
-
-            return $mail;
+                ->line( "Balance Due: {$this->balance}" )
+                ->lineIf( $this->change > 0 , "Change Given: {$this->change}" );
         }
 
-        public function toArray($notifiable) : array
+        public function toArray(object $notifiable) : array
         {
             return [
                 'title'          => $this->title ,

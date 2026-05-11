@@ -22,36 +22,9 @@
         {
             $this->afterCommit();
         }
-
         public function via(object $notifiable) : array
         {
-//            $settings = Settings::group( 'notification' )->all();
-            $settings = Settings::group( 'notification' )->get('events');
-
-            $channels = [];
-
-            // Decode the events JSON from settings
-            $events = isset( $settings[ 'events' ] ) ? json_decode( $settings[ 'events' ] , TRUE ) : [];
-
-            // Find the sub_expiring event
-            $eventConfig = collect( $events )->firstWhere( 'id' , 'sub_expiring' );
-
-            if ( $eventConfig && isset( $eventConfig[ 'channels' ] ) ) {
-                $channelMap = [
-                    'email'    => 'mail' ,
-                    'sms'      => 'sms' ,
-                    'whatsapp' => 'whatsapp' ,
-                    'system'   => 'database' ,
-                ];
-
-                foreach ( $channelMap as $settingKey => $laravelChannel ) {
-                    if ( ! empty( $eventConfig[ 'channels' ][ $settingKey ] ) ) {
-                        $channels[] = $laravelChannel;
-                    }
-                }
-            }
-
-            return ! empty( $channels ) ? $channels : [ 'database' ];
+            return notificationChannels( $notifiable , 'sub_expiring' );
         }
 
         public function toMail(object $notifiable) : MailMessage

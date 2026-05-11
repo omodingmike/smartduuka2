@@ -2,6 +2,7 @@
 
     namespace App\Http\Controllers;
 
+    use App\Http\Resources\NotificationsResource;
     use Illuminate\Http\Request;
 
     class SystemNotificationController extends Controller
@@ -9,27 +10,33 @@
         public function index(Request $request)
         {
             try {
-                $notifications = $request->user()->notifications()->latest()->get()->map( function ($notification) {
-                    // Map Laravel's standard DatabaseNotification structure to your frontend interface
-                    return [
-                        'id'       => $notification->id ,
-                        'category' => $notification->data[ 'category' ] ?? 'System' ,
-                        'title'    => $notification->data[ 'title' ] ?? 'Notification' ,
-                        'message'  => $notification->data[ 'message' ] ?? '' ,
-                        'time'     => $notification->created_at->diffForHumans() , // e.g., "2 mins ago"
-                        'date'     => $notification->created_at->format( 'Y-m-d' ) ,
-                        'unread'   => is_null( $notification->read_at ) ,
-                        'icon'     => $notification->data[ 'icon' ] ?? '🔔' ,
-                        'color'    => $notification->data[ 'color' ] ?? 'text-blue-500 bg-blue-50 dark:bg-blue-500/10' ,
-                    ];
-                } );
+                $query = $request->user()->notifications()->latest();
 
-                return response()->json( [
-                    'status' => TRUE ,
-                    'data'   => $notifications
-                ] );
-            } catch ( \Exception $exception ) {
-                return response()->json( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                $category = $request->input('category');
+                $status = $request->input('status');
+
+//                if (!empty($category) && strtolower($category) !== 'all') {
+//                    $query->where('data->category', $category);
+//                }
+
+                if (!empty($status) && strtolower($status) !== 'all') {
+                    if ($status === 'unread') {
+                        $query->whereNull('read_at');
+                    } elseif ($status === 'read') {
+                        $query->whereNotNull('read_at');
+                    }
+                }
+
+                $notifications = $query->paginate(
+                    $request->integer('per_page', 10)
+                );
+
+                return NotificationsResource::collection($notifications);
+            } catch (\Exception $exception) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => $exception->getMessage()
+                ], 422);
             }
         }
 

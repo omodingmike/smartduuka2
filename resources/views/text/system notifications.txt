@@ -1,0 +1,97 @@
+1. Welcome to Smart Duuka
+WhatsApp
+🎉 *Welcome to Smart Duuka!*
+Hi {{username}}, we're thrilled to help you manage *{{business_name}}*. 
+
+Log in here to start tracking your inventory and sales: {{dashboard_link}}
+
+Need help? Just reply to this message!
+
+SMS
+Welcome to Smart Duuka, {{username}}! Start managing {{business_name}} by logging in here: {{dashboard_link}}. Need support? Call 0788948653.
+
+2. Payment Successful
+WhatsApp
+✅ *Payment Successful!*
+Hi {{username}}, we've received your payment of *UGX {{amount_paid}}* for {{business_name}}.
+
+🧾 Txn ID: {{txn_id}}
+📅 New Expiry Date: *{{new_expiry_date}}*
+
+Thank you for choosing Smart Duuka! 
+
+SMS
+Smart Duuka: Payment of UGX {{amount_paid}} received for {{business_name}}. Txn: {{txn_id}}. New expiry: {{new_expiry_date}}. Thank you!
+
+3. Payment Failed
+WhatsApp
+❌ *Payment Failed*
+Hi {{username}}, your recent payment attempt of *UGX {{amount_attempted}}* for {{business_name}} did not go through.
+
+Please check your mobile money balance or connection and try again here: {{retry_payment_link}}
+
+SMS
+Smart Duuka: Payment of UGX {{amount_attempted}} for {{business_name}} failed. Please check your balance and try again here: {{retry_payment_link}}
+
+4. 7 Days Until Expiration (Reminder)
+WhatsApp
+⏰ *Subscription Reminder*
+Hi {{username}}, just a heads up! Your Smart Duuka subscription for *{{business_name}}* expires in *7 days* on {{expiry_date}}.
+
+To renew, login at {{login_link}} or simply reply to this message with your Business ID: *{{business_id}}* to pay via MoMo.
+
+SMS
+Smart Duuka Reminder: Your sub for {{business_name}} expires in 7 days ({{expiry_date}}). Renew at {{login_link}} or pay via WhatsApp.
+
+5. 24 Hours Until Expiration (Final Warning)
+WhatsApp
+⏳ *Final Warning: 24 Hours Left!*
+Hi {{username}}, your subscription for *{{business_name}}* expires TOMORROW ({{expiry_date}}).
+
+Renew now to avoid losing access to recording new sales. 
+👉 Login: {{login_link}} 
+📱 Or reply with ID: *{{business_id}}*
+
+SMS
+URGENT: Smart Duuka sub for {{business_name}} expires TOMORROW. Renew now at {{login_link}} to avoid service interruption. ID: {{business_id}}
+
+6. Subscription Expired Today
+WhatsApp
+🛑 *Service Paused*
+Hi {{username}}, your Smart Duuka subscription for *{{business_name}}* expired TODAY.
+
+You can no longer record new sales. To reactivate immediately, log in here: {{login_link}} or reply with ID: *{{business_id}}* to pay via WhatsApp.
+
+SMS
+Smart Duuka Alert: Your sub for {{business_name}} expired TODAY. Service is paused. Renew immediately at {{login_link}} or reply to this message.
+
+7. Subscription Expired Days Ago
+WhatsApp
+⚠️ *Subscription Paused*
+Hi {{username}}, it's been *{{days_past}} days* since your subscription for *{{business_name}}* expired.
+
+Don't lose track of your inventory and daily sales! Restore your account today: {{login_link}}
+
+SMS
+Smart Duuka: It's been {{days_past}} days since {{business_name}}'s sub expired. Restore your account today to keep tracking sales: {{login_link}}
+
+8. Data Deletion Warning
+WhatsApp
+🚨 *URGENT: Data Deletion Notice*
+Hi {{username}}, your inactive account for *{{business_name}}* is scheduled for permanent deletion in *{{days_until_deletion}} days*.
+
+All historical sales and inventory data will be lost. Save your records by renewing now: {{login_link}}
+
+SMS
+URGENT Smart Duuka: Account data for {{business_name}} will be PERMANENTLY DELETED in {{days_until_deletion}} days. Renew now to save records: {{login_link}}
+
+9. Winback Offer
+WhatsApp
+🎁 *We Miss You!*
+Hi {{username}}, it's been a while since you used Smart Duuka for *{{business_name}}*.
+
+Come back today and get *{{discount_percentage}}% OFF* your next month! Use promo code *{{discount_code}}* at checkout: {{login_link}}
+
+SMS
+We miss you! Come back to Smart Duuka and get {{discount_percentage}}% OFF your next month for {{business_name}}. Use code {{discount_code}} here: {{login_link}}
+

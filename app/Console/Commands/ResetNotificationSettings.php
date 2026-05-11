@@ -19,24 +19,24 @@
         {
             $e = Settings::group( 'notification' )->get( 'events' );
 
-            $eventsArray = is_array($e) ? $e : json_decode($e, true);
+            $eventsArray = is_array( $e ) ? $e : json_decode( $e , TRUE );
 
-            if (is_array($eventsArray)) {
+            if ( is_array( $eventsArray ) ) {
                 foreach ( $eventsArray as &$event ) {
                     if ( isset( $event[ 'channels' ] ) ) {
                         foreach ( $event[ 'channels' ] as $channel => $value ) {
                             if ( $channel !== 'system' ) {
-                                $event[ 'channels' ][ $channel ] = false;
+                                $event[ 'channels' ][ $channel ] = FALSE;
                             }
                             else {
-                                $event[ 'channels' ][ $channel ] = true;
+                                $event[ 'channels' ][ $channel ] = TRUE;
                             }
                         }
                     }
                 }
                 Settings::group( 'notification' )->set( 'events' , $eventsArray );
 
-                $this->info('Notification settings have been reset.');
+                $this->info( 'Notification settings have been reset.' );
             }
         }
     }

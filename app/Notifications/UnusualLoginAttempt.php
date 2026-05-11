@@ -9,7 +9,6 @@
     use Illuminate\Queue\Attributes\MaxExceptions;
     use Illuminate\Queue\Attributes\Timeout;
     use Illuminate\Queue\Attributes\Tries;
-    use Smartisan\Settings\Facades\Settings;
 
     #[Tries( 5 )]
     #[Timeout( 120 )]
@@ -31,28 +30,7 @@
 
         public function via(object $notifiable) : array
         {
-            $settings = Settings::group( 'notification' )->all();
-            $channels = [];
-
-            $events      = $settings[ 'events' ] ?? [];
-            $eventConfig = collect( $events )->firstWhere( 'id' , 'login_alert' );
-
-            if ( $eventConfig && isset( $eventConfig[ 'channels' ] ) ) {
-                $channelMap = [
-                    'email'    => 'mail' ,
-                    'sms'      => 'sms' ,
-                    'whatsapp' => 'whatsapp' ,
-                    'system'   => 'database' ,
-                ];
-
-                foreach ( $channelMap as $settingKey => $laravelChannel ) {
-                    if ( ! empty( $eventConfig[ 'channels' ][ $settingKey ] ) ) {
-                        $channels[] = $laravelChannel;
-                    }
-                }
-            }
-
-            return ! empty( $channels ) ? $channels : [ 'mail' ];
+            return notificationChannels( $notifiable , 'login_alert' );
         }
 
         public function toMail(object $notifiable) : MailMessage

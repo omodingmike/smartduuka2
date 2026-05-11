@@ -229,9 +229,7 @@
     </tr>
 </table>
 
-<script>
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-</script>
+
 </body>
 
 </html>

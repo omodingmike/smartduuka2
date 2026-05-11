@@ -34,6 +34,7 @@
     use App\Models\User;
     use Carbon\Carbon;
     use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Notifications\AnonymousNotifiable;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Cache;
     use Illuminate\Support\Str;
@@ -72,6 +73,53 @@
             }
         }
         return $buildArray;
+    }
+
+    function eventConfig(string $event)
+    {
+        $events = Settings::group( 'notification' )->get( 'events' ) ?? [];
+        if ( is_array( $events ) && isset( $events[ 0 ] ) && is_string( $events[ 0 ] ) ) {
+            $decodedEvents = json_decode( $events[ 0 ] , TRUE );
+        }
+        elseif ( is_string( $events ) ) {
+            $decodedEvents = json_decode( $events , TRUE );
+        }
+        else {
+            $decodedEvents = $events;
+        }
+        return collect( $decodedEvents )->firstWhere( 'id' , $event );
+    }
+
+    function notificationChannels(object $notifiable , string $event) : array
+    {
+        $eventConfig = eventConfig( $event );
+        if ( ! $eventConfig || ! isset( $eventConfig[ 'channels' ] ) ) {
+            return [];
+        }
+
+        $isAnonymous = $notifiable instanceof AnonymousNotifiable;
+
+        $channelMap = [
+            'email'    => 'mail' ,
+            'sms'      => 'sms' ,
+            'whatsapp' => 'whatsapp' ,
+            'system'   => 'database' ,
+        ];
+
+        $channels = collect( $channelMap )
+            ->filter( function ($channel , $key) use ($eventConfig , $isAnonymous) {
+                if ( ! ( $eventConfig[ 'channels' ][ $key ] ?? FALSE ) ) {
+                    return FALSE;   // disabled in settings
+                }
+                if ( $isAnonymous && $channel === 'database' ) {
+                    return FALSE;   // database requires a real system user
+                }
+                return TRUE;
+            } )
+            ->values()
+            ->all();
+
+        return ! empty( $channels ) ? $channels : [];
     }
 
     function phoneNumber() : string

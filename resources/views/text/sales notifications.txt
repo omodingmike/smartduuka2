@@ -1,0 +1,144 @@
+--- BUSINESS USER NOTIFICATIONS (OWNERS / MANAGERS) ---
+
+NEW ORDER RECEIVED (Online Store / Delivery)
+[WhatsApp]
+🎉 New Order Received!
+Hi {{username}}, you have a new order at {{business_name}}.
+Order Ref: {{order_ref}}
+Customer: {{customer_name}}
+Total Value: UGX {{total_amount}}
+Please prepare the items for dispatch.
+
+[SMS]
+Smart Duuka: New order {{order_ref}} received at {{business_name}} from {{customer_name}}. Total: UGX {{total_amount}}.
+
+SALE VOIDED / CANCELLED
+[WhatsApp]
+🚨 Sale Voided Alert
+Hi {{username}}, a completed sale was just voided at {{business_name}}.
+Receipt No: {{receipt_no}}
+Value: UGX {{total_amount}}
+Cashier: {{cashier_name}}
+Reason: {{void_reason}}
+
+[SMS]
+Smart Duuka Alert: Sale {{receipt_no}} (UGX {{total_amount}}) was voided by {{cashier_name}} at {{business_name}}. Reason: {{void_reason}}.
+
+REFUND / SALES RETURN PROCESSED
+[WhatsApp]
+↩️ Refund Processed
+Hi {{username}}, a sales return/refund has been approved at {{business_name}}.
+Receipt No: {{receipt_no}}
+Refund Amount: UGX {{refund_amount}}
+Processed By: {{staff_name}}
+
+[SMS]
+Smart Duuka: Refund of UGX {{refund_amount}} processed for receipt {{receipt_no}} at {{business_name}} by {{staff_name}}.
+
+DEBT PAYMENT RECEIVED
+[WhatsApp]
+💰 Debt Payment Received
+Hi {{username}}, {{customer_name}} has made a payment towards their outstanding credit at {{business_name}}.
+Amount Paid: UGX {{amount_paid}}
+Remaining Balance: UGX {{new_balance}}
+
+[SMS]
+Smart Duuka: {{customer_name}} paid UGX {{amount_paid}} towards their debt at {{business_name}}. Remaining balance: UGX {{new_balance}}.
+
+CREDIT LIMIT WARNING
+[WhatsApp]
+⚠️ Credit Limit Warning
+Hi {{username}}, {{customer_name}} is attempting to make a credit purchase of UGX {{attempted_amount}}, which exceeds their approved credit limit.
+Current Debt: UGX {{current_debt}}
+Limit: UGX {{credit_limit}}
+Action required at POS to approve or deny.
+
+[SMS]
+Smart Duuka Alert: {{customer_name}} exceeded credit limit. Attempted: UGX {{attempted_amount}}. Current Debt: UGX {{current_debt}}. Limit: UGX {{credit_limit}}.
+
+SHIFT / REGISTER CLOSED
+[WhatsApp]
+📊 Shift Closed Summary
+Hi {{username}}, the shift for {{cashier_name}} has been closed.
+Total Sales: UGX {{total_sales}}
+Cash Expected: UGX {{expected_cash}}
+Discrepancy: UGX {{cash_discrepancy}}
+View full report on your dashboard.
+
+[SMS]
+Smart Duuka: Shift closed by {{cashier_name}}. Total Sales: UGX {{total_sales}}. Cash Expected: UGX {{expected_cash}}. Discrepancy: UGX {{cash_discrepancy}}.
+
+======================================================
+
+--- CUSTOMER NOTIFICATIONS (END CLIENTS) ---
+
+DIGITAL RECEIPT (CASH / CARD / MoMo SALE)
+[WhatsApp]
+🧾 Thank you for your purchase!
+Hi {{customer_name}}, thank you for shopping at {{business_name}}.
+Receipt No: {{receipt_no}}
+Total Paid: UGX {{total_amount}}
+Date: {{date}}
+
+View your full digital receipt here: {{receipt_link}}
+We hope to see you again soon!
+
+[SMS]
+{{business_name}}: Thank you for your purchase! Receipt {{receipt_no}}. Total: UGX {{total_amount}}. View receipt: {{receipt_link}}
+
+CREDIT SALE CONFIRMATION (NEW DEBT)
+[WhatsApp]
+🛍️ Credit Sale Confirmation
+Hi {{customer_name}}, here are the details of your recent credit purchase at {{business_name}}.
+Purchase Amount: UGX {{total_amount}}
+Date: {{date}}
+Total Outstanding Balance: UGX {{new_balance}}
+
+View your receipt: {{receipt_link}}
+
+[SMS]
+{{business_name}}: Credit purchase of UGX {{total_amount}} recorded on {{date}}. Your total outstanding balance is now UGX {{new_balance}}.
+
+DEBT BALANCE / CREDIT REMINDER
+[WhatsApp]
+👋 Friendly Reminder
+Hi {{customer_name}}, this is a gentle reminder regarding your outstanding credit balance of UGX {{debt_balance}} at {{business_name}}.
+
+Please arrange for payment by {{due_date}}. If you have already paid, please ignore this message. Thank you for your business!
+
+[SMS]
+{{business_name}}: Friendly reminder of your outstanding balance of UGX {{debt_balance}} due on {{due_date}}. Please arrange for payment. Thank you!
+
+DEBT PAYMENT CONFIRMATION
+[WhatsApp]
+✅ Payment Received
+Hi {{customer_name}}, we have successfully received your payment of UGX {{amount_paid}} towards your account at {{business_name}}.
+
+Updated Balance: UGX {{new_balance}}
+Thank you for clearing your account!
+
+[SMS]
+{{business_name}}: Payment of UGX {{amount_paid}} received with thanks. Your new outstanding balance is UGX {{new_balance}}.
+
+REFUND / SALES RETURN CONFIRMATION
+[WhatsApp]
+↩️ Return Accepted
+Hi {{customer_name}}, your return for Receipt No: {{receipt_no}} has been processed at {{business_name}}.
+Refund Value: UGX {{refund_amount}}
+Method: {{refund_method}}
+
+Thank you for your understanding, and we hope to serve you better next time!
+
+[SMS]
+{{business_name}}: Return processed for receipt {{receipt_no}}. A refund of UGX {{refund_amount}} has been issued via {{refund_method}}.
+
+ORDER READY FOR PICKUP / DISPATCHED
+[WhatsApp]
+🚚 Your Order is Ready!
+Hi {{customer_name}}, great news! Your order {{order_ref}} from {{business_name}} is now ready for pickup / has been dispatched.
+
+Total Due: UGX {{amount_due}}
+Thank you for shopping with us!
+
+[SMS]
+{{business_name}}: Your order {{order_ref}} is ready for pickup/dispatch. Total due: UGX {{amount_due}}. Thank you for shopping with us!

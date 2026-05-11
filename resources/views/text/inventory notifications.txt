@@ -1,0 +1,80 @@
+--- INVENTORY NOTIFICATIONS (WHATSAPP & SMS) ---
+
+1. LOW STOCK ALERT
+[WhatsApp]
+📉 *Low Stock Alert*
+Hi {{username}}, the inventory for *{{product_name}}* is running low at {{business_name}}. 
+Current Stock: *{{current_qty}}* (Reorder Level: {{reorder_level}}). 
+Please restock soon to avoid missing sales!
+
+[SMS]
+Smart Duuka Alert: Low stock for {{product_name}} at {{business_name}}. Current qty: {{current_qty}}. Reorder level: {{reorder_level}}. Please restock.
+
+---
+
+2. OUT OF STOCK ALERT
+[WhatsApp]
+🔴 *Out of Stock Alert*
+Hi {{username}}, *{{product_name}}* is completely OUT OF STOCK at {{business_name}}. 
+Restock immediately to avoid losing customers.
+
+[SMS]
+URGENT Smart Duuka: {{product_name}} is completely OUT OF STOCK at {{business_name}}. Restock immediately to avoid lost sales.
+
+---
+
+3. PRODUCT EXPIRING SOON
+[WhatsApp]
+⚠️ *Product Expiry Warning*
+Hi {{username}}, a batch of *{{product_name}}* at {{business_name}} is expiring on *{{expiry_date}}*. 
+Qty affected: *{{qty_expiring}}*. 
+Consider running a discount promotion to clear this stock quickly.
+
+[SMS]
+Smart Duuka Expiry Alert: {{qty_expiring}} units of {{product_name}} at {{business_name}} expire on {{expiry_date}}. Consider discounting to clear stock.
+
+---
+
+4. PRODUCT EXPIRED (ZERO DAY)
+[WhatsApp]
+❌ *Product Expired*
+Hi {{username}}, *{{qty_expired}}* units of *{{product_name}}* at {{business_name}} have officially expired today. 
+Please remove them from your active inventory and shelves to maintain compliance.
+
+[SMS]
+Smart Duuka Alert: {{qty_expired}} units of {{product_name}} at {{business_name}} expired today. Please remove from shelves immediately.
+
+---
+
+5. PURCHASE ORDER RECEIVED (RESTOCK)
+[WhatsApp]
+📦 *New Stock Arrived*
+Hi {{username}}, a delivery from *{{supplier_name}}* has been officially received at {{business_name}}. 
+*{{item_count}}* items have been successfully added to your inventory.
+
+[SMS]
+Smart Duuka: New stock delivery from {{supplier_name}} successfully received at {{business_name}}. {{item_count}} items added to inventory.
+
+---
+
+6. STOCK TRANSFER RECEIVED
+[WhatsApp]
+🚚 *Stock Transfer Complete*
+Hi {{username}}, the incoming stock transfer from *{{source_branch}}* to *{{destination_branch}}* has been verified and received. 
+Transfer Ref: *{{transfer_ref}}*.
+
+[SMS]
+Smart Duuka: Stock transfer {{transfer_ref}} from {{source_branch}} to {{destination_branch}} has been successfully received and verified.
+
+---
+
+7. STOCK ADJUSTMENT (DAMAGE / LOSS)
+[WhatsApp]
+📝 *Stock Adjustment Alert*
+Hi {{username}}, a manual stock adjustment was just logged at {{business_name}} for *{{product_name}}*.
+Qty Adjusted: *{{qty_adjusted}}*
+Reason: *{{reason}}* (e.g., Damage, Theft, Miscount)
+Adjusted by: *{{staff_name}}*
+
+[SMS]
+Smart Duuka Alert: Stock adjusted for {{product_name}} at {{business_name}}. Qty: {{qty_adjusted}}. Reason: {{reason}}. Logged by: {{staff_name}}.

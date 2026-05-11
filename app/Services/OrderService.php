@@ -633,9 +633,7 @@
 
                 $order = $this->order;
 
-                $admins = User::role( Role::ADMIN )->get();
-
-                Notification::send( $admins , new NewOrder(
+                $notification = new NewOrder(
                     title: 'New Sale / Order' ,
                     message: 'A new order has been placed at the POS by ' . auth()->user()->name . '.' ,
                     orderNo: $order->order_serial_no ,
@@ -650,7 +648,21 @@
                     createdBy: auth()->user()->name ,
                     orderDate: $order->order_datetime?->format( 'd M Y, H:i:s' ) ?? now()->format( 'd M Y, H:i:s' ) ,
                     itemCount: $order->orderProducts->count() ,
-                ) );
+                );
+
+                Notification::route( 'mail' , $adminEmail )
+                            ->route( 'sms' , $adminPhone )
+                            ->route( 'whatsapp' , $adminPhone )
+                            ->notify( $notification );
+
+                $adminUsers = User::role( Role::ADMIN )
+//                                 ->where( 'email' , $adminEmail )
+                                  ->get();
+
+                if ( $adminUsers ) {
+                    Notification::send( $adminUsers , $notification );
+                }
+
                 return $this->order;
             } catch ( Exception $exception ) {
                 DB::rollBack();

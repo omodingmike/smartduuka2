@@ -38,29 +38,9 @@
         {
             $this->afterCommit();
         }
-
         public function via(object $notifiable) : array
         {
-            $settings    = Settings::group( 'notification' )->all();
-            $channels    = [];
-            $events      = $settings[ 'events' ] ?? [];
-            $eventConfig = collect( $events )->firstWhere( 'id' , 'refund_processed' );
-
-            if ( $eventConfig && isset( $eventConfig[ 'channels' ] ) ) {
-                $channelMap = [
-                    'email'    => 'mail' ,
-                    'sms'      => 'sms' ,
-                    'whatsapp' => 'whatsapp' ,
-                    'system'   => 'database' ,
-                ];
-                foreach ( $channelMap as $settingKey => $laravelChannel ) {
-                    if ( ! empty( $eventConfig[ 'channels' ][ $settingKey ] ) ) {
-                        $channels[] = $laravelChannel;
-                    }
-                }
-            }
-
-            return ! empty( $channels ) ? $channels : [ 'mail' ];
+            return notificationChannels( $notifiable , 'refund_processed' );
         }
 
         public function toMail(object $notifiable) : MailMessage

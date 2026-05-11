@@ -1,0 +1,28 @@
+📊 *CLOSE OF BUSINESS SUMMARY* 📊
+*Business:* {{business_name}}
+*Date:* {{date}}
+*Total Registers/Shifts:* {{total_shifts}}
+*Total Transactions:* {{transaction_count}}
+
+🔒 *ZONE 1: AGGREGATE CASH FLOW*
+• Total Opening Floats: *UGX {{total_opening_float}}*
+• Pure Cash Sales: *UGX {{total_cash_sales_only}}*
+• Debt Recoveries: *UGX {{total_debt_recovered}}*
+• Wallet Deposits: *UGX {{total_wallet_deposits}}*
+• Cash Expenses (Payouts): *-UGX {{total_cash_expenses}}*
+------------------------------
+*System Expected Cash:* *UGX {{total_expected_float}}*
+*Actual Cash Counted:* *UGX {{total_actual_counted}}*
+*Overall Variance (Short/Over):* *UGX {{total_variance}}* 📈 *ZONE 2: TRADING PERFORMANCE*
+• Total Trading Value: *UGX {{total_sales_value}}*
+• Aggregate Gross Profit: *UGX {{total_gross_profit}}*
+• Aggregate Net Profit: *UGX {{total_net_profit}}*
+
+⚖️ *CREDIT & DEBT FLOW*
+• Credit Issued (New Debt): *UGX {{total_credit_issued}}*
+• Total Deposited Today: *UGX {{total_deposited}}*
+
+📝 *REMARKS / DISCREPANCIES*
+{{closing_notes_or_discrepancies}}
+
+_Log in to the dashboard to view the full end-of-day report and individual cashier breakdowns._
