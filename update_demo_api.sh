@@ -11,6 +11,10 @@ COMPOSE="docker compose -f docker-compose.demo.yml"
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 fail() { echo "❌ $*" >&2; exit 1; }
 
+# Update system packages
+log "🔄 Updating system packages..."
+sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
+
 # Clone or pull
 if [ ! -d "$BACKEND_DIR/.git" ]; then
   log "📥 Cloning dev branch only..."
@@ -23,29 +27,29 @@ else
   # Fetch specifically from the dev branch
   git -C "$BACKEND_DIR" fetch origin "$BRANCH"
 
-  # Force switch to dev branch and reset to match origin/dev[cite: 5]
+  # Force switch to dev branch and reset to match origin/dev
   git -C "$BACKEND_DIR" checkout -B "$BRANCH"
   git -C "$BACKEND_DIR" reset --hard origin/"$BRANCH"
 fi
 
 cd "$BACKEND_DIR"
 
-# Fix permissions for the demo directory[cite: 5]
+# Fix permissions for the demo directory
 for DIR in storage bootstrap/cache public public/media public/static; do
   sudo mkdir -p "$DIR"
   sudo chown -R 33:33 "$DIR"
   sudo chmod -R 775 "$DIR"
 done
 
-# Install dependencies using the demo compose configuration[cite: 5]
+# Install dependencies using the demo compose configuration
 #$COMPOSE run --rm api_demo bash -c "composer remove maatwebsite/excel"
 $COMPOSE run --rm api_demo bash -c "composer Install --no-dev --no-interaction"
 
-# Build containers using the demo compose configuration[cite: 5]
+# Build containers using the demo compose configuration
 log "🐳 Building demo containers..."
 $COMPOSE up -d --build --force-recreate api_demo
 
-# Wait for api_demo to be healthy[cite: 5]
+# Wait for api_demo to be healthy
 log "⏳ Waiting for api_demo to be healthy..."
 RETRY=0
 until $COMPOSE exec -T api_demo php artisan --version >/dev/null 2>&1; do
@@ -54,7 +58,7 @@ until $COMPOSE exec -T api_demo php artisan --version >/dev/null 2>&1; do
   sleep 3
 done
 
-# Run demo tenant migrations[cite: 5]
+# Run demo tenant migrations
 log "🗄 Running demo tenant migrations..."
 $COMPOSE exec -T api_demo php artisan migrate --force
 $COMPOSE exec -T api_demo php artisan tenants:migrate --force --tenants=demoshop
