@@ -124,7 +124,6 @@
                 $baseQuery = fn() => $this->stockQuery($request)
                                           ->when($type, fn($q) => $q->where('type', $type));
 
-                // Paginate distinct batches at the DB level
                 $batchPage = $baseQuery()
                     ->select('batch', DB::raw('MAX(created_at) as created_at'))
                     ->groupBy('batch')

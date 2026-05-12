@@ -633,9 +633,11 @@
 
                 $order = $this->order;
 
+                $user = auth()->user();
+
                 $notification = new NewOrder(
                     title: 'New Sale / Order' ,
-                    message: 'A new order has been placed at the POS by ' . auth()->user()->name . '.' ,
+                    message: 'A new order has been placed at the POS by ' .$user ->name . '.' ,
                     orderNo: $order->order_serial_no ,
                     orderStatus: $order->status?->label() ?? $order->status?->value ,
                     paymentStatus: $order->payment_status?->label() ?? $order->payment_status?->value ,

@@ -24,7 +24,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" width="600" class="wrapper" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); border-top: 5px solid #EA580C;">
                     <tr>
                         <td bgcolor="#ffffff" align="center" style="padding: 30px 20px 20px 20px; border-bottom: 1px solid #eee;">
-                            <img src="https://via.placeholder.com/200x60/ffffff/EA580C?text=Smart+Duuka+Logo" width="200" height="60" alt="Smart Duuka" style="display: block; border: 0; font-family: sans-serif; font-weight: bold; font-size: 24px; color: #EA580C;">
+                            <img src="{{asset('logo.png')}}" width="200" height="60" alt="Smart Duuka" style="display: block; border: 0; font-family: sans-serif; font-weight: bold; font-size: 24px; color: #EA580C;">
                         </td>
                     </tr>
                     <tr>
@@ -35,9 +35,11 @@
                     </tr>
                     <tr>
                         <td class="mobile-padding" style="padding: 20px 50px 30px 50px;">
-                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #555555;">Hi <strong>{{username}}</strong>, the incoming stock transfer from <strong>{{source_branch}}</strong> to <strong>{{destination_branch}}</strong> has been verified and safely received into inventory.</p>
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 24px; color: #555555;">Hi <strong>{{$username}}</strong>, the incoming
+                                stock transfer from <strong>{{$source_branch}}</strong> to <strong>{{$destination_branch}}</strong> has been verified and
+                                safely received into inventory.</p>
                             <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 15px; margin-bottom: 25px; text-align: center;">
-                                <p style="margin: 0; font-size: 16px; color: #c2410c; font-weight: bold;">Transfer Ref: {{transfer_ref}}</p>
+                                <p style="margin: 0; font-size: 16px; color: #c2410c; font-weight: bold;">Transfer Ref: {{$transfer_ref}}</p>
                             </div>
                             <table border="0" cellspacing="0" cellpadding="0" width="100%">
                                 <tr>
@@ -45,7 +47,8 @@
                                         <table border="0" cellspacing="0" cellpadding="0">
                                             <tr>
                                                 <td align="center" style="border-radius: 50px;" bgcolor="#EA580C">
-                                                    <a href="{{transfer_link}}" target="_blank" class="button" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 50px; border: 1px solid #EA580C; display: inline-block; font-weight: bold; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.3);">View Transfer Details</a>
+                                                    <a href="{{$frontend_url}}" target="_blank" class="button" style="font-size: 16px; font-family:
+                                                    Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 50px; border: 1px solid #EA580C; display: inline-block; font-weight: bold; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.3);">View Transfer Details</a>
                                                 </td>
                                             </tr>
                                         </table>

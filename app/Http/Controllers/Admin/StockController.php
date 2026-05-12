@@ -4,6 +4,7 @@
 
     use App\Enums\PurchasePaymentStatus;
     use App\Enums\PurchaseStatus;
+    use App\Enums\Role;
     use App\Enums\Status;
     use App\Enums\StockStatus;
     use App\Exports\StockExpiryExport;
@@ -21,6 +22,8 @@
     use App\Models\Product;
     use App\Models\Purchase;
     use App\Models\Stock;
+    use App\Models\User;
+    use App\Notifications\StockTransferReceived;
     use App\Services\StockService;
     use Exception;
     use Illuminate\Contracts\Routing\ResponseFactory;
@@ -30,17 +33,19 @@
     use Illuminate\Http\Response;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Log;
+    use Illuminate\Support\Facades\Notification;
     use Maatwebsite\Excel\Facades\Excel;
+    use Smartisan\Settings\Facades\Settings;
     use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
     class StockController extends AdminController
     {
-        protected array $stockFilter = ['name', 'status'];
+        protected array $stockFilter = [ 'name' , 'status' ];
 
         public function __construct(protected StockService $stockService)
         {
             parent::__construct();
-            $this->middleware(['permission:stock'])->only('index', 'export');
+            $this->middleware( [ 'permission:stock' ] )->only( 'index' , 'export' );
         }
 
         // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -48,10 +53,10 @@
         /**
          * Return a standard 422 error response.
          */
-        private function errorResponse(Exception $exception): JsonResponse
+        private function errorResponse(Exception $exception) : JsonResponse
         {
-            Log::error($exception->getMessage(), ['trace' => $exception->getTraceAsString()]);
-            return response()->json(['status' => false, 'message' => $exception->getMessage()], 422);
+            Log::error( $exception->getMessage() , [ 'trace' => $exception->getTraceAsString() ] );
+            return response()->json( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
         }
 
         // ─── Read endpoints ──────────────────────────────────────────────────────────
@@ -61,43 +66,43 @@
             try {
                 $totalStockValue    = 0;
                 $totalLowStockCount = 0;
-                $stocks = $this->stockService->list($request, $totalStockValue, $totalLowStockCount);
+                $stocks             = $this->stockService->list( $request , $totalStockValue , $totalLowStockCount );
 
-                return StockResource::collection($stocks)->additional([
+                return StockResource::collection( $stocks )->additional( [
                     'meta' => [
-                        'total_stock_value'     => currency($totalStockValue),
-                        'total_low_stock_count' => $totalLowStockCount,
-                    ],
-                ]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                        'total_stock_value'     => currency( $totalStockValue ) ,
+                        'total_low_stock_count' => $totalLowStockCount ,
+                    ] ,
+                ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function indexGroupedByBatch(PaginateRequest $request)
         {
             try {
-                return StockResource::collection($this->stockService->listGroupedByBatch($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return StockResource::collection( $this->stockService->listGroupedByBatch( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function indexIngredients(PaginateRequest $request)
         {
             try {
-                return IngredientStockResource::collection($this->stockService->listIngredients($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return IngredientStockResource::collection( $this->stockService->listIngredients( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function expiryList(PaginateRequest $request)
         {
             try {
-                return ExpiryStockResource::collection($this->stockService->expiryList($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return ExpiryStockResource::collection( $this->stockService->expiryList( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -105,58 +110,58 @@
         {
             try {
                 $totalLoss = 0;
-                $wastage   = $this->stockService->wastage($request, $totalLoss);
+                $wastage   = $this->stockService->wastage( $request , $totalLoss );
 
-                return WastageResource::collection($wastage)->additional([
-                    'meta' => ['total_value_lost' => currency($totalLoss)],
-                ]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return WastageResource::collection( $wastage )->additional( [
+                    'meta' => [ 'total_value_lost' => currency( $totalLoss ) ] ,
+                ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function stockCapture(Request $request)
         {
             try {
-                return StockTakeResource::collection($this->stockService->stockCapture($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return StockTakeResource::collection( $this->stockService->stockCapture( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function takings(Request $request)
         {
             try {
-                return RawStockResource::collection($this->stockService->transfers($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return RawStockResource::collection( $this->stockService->transfers( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function stockTransfers(Request $request)
         {
             try {
-                return RawStockResource::collection($this->stockService->transfers($request) ?? collect());
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return RawStockResource::collection( $this->stockService->transfers( $request ) ?? collect() );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function stockReconciliations(PaginateRequest $request)
         {
             try {
-                return StockResource::collection($this->stockService->transfers($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return StockResource::collection( $this->stockService->transfers( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         public function showStockTransfer(Request $request)
         {
             try {
-                return StockTransferResource::collection($this->stockService->transfer($request));
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return StockTransferResource::collection( $this->stockService->transfer( $request ) );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -164,9 +169,9 @@
         {
             try {
                 // TODO: implement reconciliation logic
-                return response()->json(['data' => []]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return response()->json( [ 'data' => [] ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -178,10 +183,10 @@
         public function cancelOrAccept(Request $request)
         {
             try {
-                Stock::where('batch', $request->batch)->update(['status' => $request->status]);
-                return response()->json(['status' => true]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                Stock::where( 'batch' , $request->batch )->update( [ 'status' => $request->status ] );
+                return response()->json( [ 'status' => TRUE ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -191,24 +196,24 @@
         public function approveStockRequest(Request $request)
         {
             try {
-                DB::transaction(function () use ($request) {
-                    $products = json_decode($request->products, true);
+                DB::transaction( function () use ($request) {
+                    $products = json_decode( $request->products , TRUE );
 
-                    foreach ($products as $product) {
-                        Stock::where([
-                            'batch'      => $request->batch,
-                            'product_id' => $product['product_id'],
-                        ])->update([
-                            'status'           => StockStatus::APPROVED,
-                            'approve_quantity' => $product['quantity'],
-                            'quantity'         => -$product['quantity'],
-                        ]);
+                    foreach ( $products as $product ) {
+                        Stock::where( [
+                            'batch'      => $request->batch ,
+                            'product_id' => $product[ 'product_id' ] ,
+                        ] )->update( [
+                            'status'           => StockStatus::APPROVED ,
+                            'approve_quantity' => $product[ 'quantity' ] ,
+                            'quantity'         => -$product[ 'quantity' ] ,
+                        ] );
                     }
-                });
+                } );
 
-                return response()->json(['status' => true]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return response()->json( [ 'status' => TRUE ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -218,33 +223,66 @@
         public function receiveStockRequest(Request $request)
         {
             try {
-                DB::transaction(function () use ($request) {
-                    $products = json_decode($request->products, true);
-
-                    foreach ($products as $product) {
+                $original_stock = NULL;
+                DB::transaction( function () use ($request , &$original_stock) {
+                    $products = json_decode( $request->products , TRUE );
+                    foreach ( $products as $product ) {
                         /** @var Stock $stock */
-                        $stock = Stock::where([
-                            'batch'      => $request->batch,
-                            'product_id' => $product['product_id'],
-                        ])->firstOrFail();
+                        $stock = Stock::where( [
+                            'batch'      => $request->batch ,
+                            'product_id' => $product[ 'product_id' ] ,
+                        ] )->firstOrFail();
 
-                        $stock->update([
-                            'status'           => StockStatus::RECEIVED,
-                            'quantity'         => $product['quantity'],
-                            'approve_quantity' => $product['quantity'],
-                            'warehouse_id'     => $stock->destination_warehouse_id,
-                        ]);
+                        $stock->update( [
+                            'status'           => StockStatus::RECEIVED ,
+                            'quantity'         => $product[ 'quantity' ] ,
+                            'approve_quantity' => $product[ 'quantity' ] ,
+                            'warehouse_id'     => $stock->destination_warehouse_id ,
+                        ] );
 
-                        Stock::where([
-                            'warehouse_id' => $stock->source_warehouse_id,
-                            'product_id'   => $product['product_id'],
-                        ])->decrement('quantity', $product['quantity']);
+                        $original_stock = $stock;
+
+                        Stock::where( [
+                            'warehouse_id' => $stock->source_warehouse_id ,
+                            'product_id'   => $product[ 'product_id' ] ,
+                        ] )->decrement( 'quantity' , $product[ 'quantity' ] );
                     }
-                });
+                } );
 
-                return response()->json(['status' => true]);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                $notificationSettings = Settings::group( 'notification' )->all();
+                $adminEmail           = $notificationSettings[ 'admin_email' ] ?? NULL;
+                $adminPhone           = $notificationSettings[ 'admin_phone' ] ?? NULL;
+
+                $user         = auth()->user();
+                $frontend_url = $user->tenant->frontend_url;
+
+                $notification = new StockTransferReceived(
+                    title: 'Stock Transfer Received' ,
+                    message: "A stock transfer has been received and processed." ,
+                    transferNo: $request->batch ,
+                    fromBranch: $original_stock->sourceWarehouse->name ,
+                    toBranch: $original_stock->destinationWarehouse->name ,
+                    requestDate: datetime2( $original_stock->created_at ) ,
+                    receivedDate: datetime2( now() ) ,
+                    itemCount: 2 ,
+                    receivedBy: auth()->user()->name ,
+                    frontend_url: $frontend_url ,
+                );
+
+                Notification::route( 'mail' , $adminEmail )
+                            ->route( 'sms' , $adminPhone )
+                            ->route( 'whatsapp' , $adminPhone )
+                            ->notify( $notification );
+
+                $adminUsers = User::role( Role::ADMIN )->get();
+
+                if ( $adminUsers ) {
+                    Notification::send( $adminUsers , $notification );
+                }
+
+                return response()->json( [ 'status' => TRUE ] );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -254,42 +292,42 @@
         public function storeIngredientStock(StoreIngredientStockRequest $request)
         {
             try {
-                DB::transaction(function () use ($request) {
-                    $purchase = Purchase::create([
-                        'supplier_id'    => 1,
-                        'date'           => now(),
-                        'reference_no'   => time(),
-                        'subtotal'       => 0,
-                        'tax'            => 0,
-                        'discount'       => 0,
-                        'total'          => 0,
-                        'note'           => $request->note ?? '',
-                        'status'         => PurchaseStatus::RECEIVED,
-                        'payment_status' => PurchasePaymentStatus::FULLY_PAID,
-                    ]);
+                DB::transaction( function () use ($request) {
+                    $purchase = Purchase::create( [
+                        'supplier_id'    => 1 ,
+                        'date'           => now() ,
+                        'reference_no'   => time() ,
+                        'subtotal'       => 0 ,
+                        'tax'            => 0 ,
+                        'discount'       => 0 ,
+                        'total'          => 0 ,
+                        'note'           => $request->note ?? '' ,
+                        'status'         => PurchaseStatus::RECEIVED ,
+                        'payment_status' => PurchasePaymentStatus::FULLY_PAID ,
+                    ] );
 
-                    $stockRows = array_map(fn($product) => [
-                        'model_type' => Purchase::class,
-                        'model_id'   => $purchase->id,
-                        'item_type'  => Ingredient::class,
-                        'product_id' => $product['product_id'],
-                        'item_id'    => $product['product_id'],
-                        'price'      => $product['buying_price'],
-                        'quantity'   => $product['quantity'],
-                        'discount'   => $product['total_discount'],
-                        'tax'        => $product['total_tax'],
-                        'subtotal'   => $product['subtotal'],
-                        'total'      => $product['total'],
-                        'status'     => Status::ACTIVE,
-                    ], $request->products);
+                    $stockRows = array_map( fn($product) => [
+                        'model_type' => Purchase::class ,
+                        'model_id'   => $purchase->id ,
+                        'item_type'  => Ingredient::class ,
+                        'product_id' => $product[ 'product_id' ] ,
+                        'item_id'    => $product[ 'product_id' ] ,
+                        'price'      => $product[ 'buying_price' ] ,
+                        'quantity'   => $product[ 'quantity' ] ,
+                        'discount'   => $product[ 'total_discount' ] ,
+                        'tax'        => $product[ 'total_tax' ] ,
+                        'subtotal'   => $product[ 'subtotal' ] ,
+                        'total'      => $product[ 'total' ] ,
+                        'status'     => Status::ACTIVE ,
+                    ] , $request->products );
 
                     // Bulk insert instead of N individual inserts
-                    Stock::insert($stockRows);
-                });
+                    Stock::insert( $stockRows );
+                } );
 
-                return response()->json(['status' => true], 201);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return response()->json( [ 'status' => TRUE ] , 201 );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
@@ -299,55 +337,56 @@
         public function storeItemStock(StoreIngredientStockRequest $request)
         {
             try {
-                DB::transaction(function () use ($request) {
-                    foreach ($request->products as $product) {
-                        $stock = Stock::where('model_type', Product::class)
-                                      ->where('model_id', $product['product_id'])
+                DB::transaction( function () use ($request) {
+                    foreach ( $request->products as $product ) {
+                        $stock = Stock::where( 'model_type' , Product::class )
+                                      ->where( 'model_id' , $product[ 'product_id' ] )
                                       ->first();
 
-                        if ($stock) {
-                            $stock->increment('quantity', $product['quantity']);
-                        } else {
-                            Stock::create([
-                                'model_type' => Product::class,
-                                'model_id'   => $product['product_id'],
-                                'item_type'  => Product::class,
-                                'product_id' => $product['product_id'],
-                                'price'      => $product['price'],
-                                'quantity'   => $product['quantity'],
-                                'discount'   => $product['total_discount'],
-                                'tax'        => $product['total_tax'],
-                                'subtotal'   => $product['subtotal'],
-                                'total'      => $product['total'],
-                                'status'     => Status::ACTIVE,
-                            ]);
+                        if ( $stock ) {
+                            $stock->increment( 'quantity' , $product[ 'quantity' ] );
+                        }
+                        else {
+                            Stock::create( [
+                                'model_type' => Product::class ,
+                                'model_id'   => $product[ 'product_id' ] ,
+                                'item_type'  => Product::class ,
+                                'product_id' => $product[ 'product_id' ] ,
+                                'price'      => $product[ 'price' ] ,
+                                'quantity'   => $product[ 'quantity' ] ,
+                                'discount'   => $product[ 'total_discount' ] ,
+                                'tax'        => $product[ 'total_tax' ] ,
+                                'subtotal'   => $product[ 'subtotal' ] ,
+                                'total'      => $product[ 'total' ] ,
+                                'status'     => Status::ACTIVE ,
+                            ] );
                         }
                     }
-                });
+                } );
 
-                return response()->json(['status' => true], 201);
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return response()->json( [ 'status' => TRUE ] , 201 );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
         // ─── Export endpoints ────────────────────────────────────────────────────────
 
-        public function export(PaginateRequest $request): Application|Response|BinaryFileResponse|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        public function export(PaginateRequest $request) : Application | Response | BinaryFileResponse | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return Excel::download(new StockExport($this->stockService, $request), 'Stock.xlsx');
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return Excel::download( new StockExport( $this->stockService , $request ) , 'Stock.xlsx' );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
 
-        public function expiryReportExport(PaginateRequest $request): Application|Response|BinaryFileResponse|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        public function expiryReportExport(PaginateRequest $request) : Application | Response | BinaryFileResponse | \Illuminate\Contracts\Foundation\Application | ResponseFactory
         {
             try {
-                return Excel::download(new StockExpiryExport($this->stockService, $request), 'Stock_Expiry_Report.xlsx');
-            } catch (Exception $exception) {
-                return $this->errorResponse($exception);
+                return Excel::download( new StockExpiryExport( $this->stockService , $request ) , 'Stock_Expiry_Report.xlsx' );
+            } catch ( Exception $exception ) {
+                return $this->errorResponse( $exception );
             }
         }
     }

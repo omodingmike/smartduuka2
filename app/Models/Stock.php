@@ -59,6 +59,16 @@
             return $this->belongsTo( Warehouse::class , 'warehouse_id' , 'id' );
         }
 
+        public function sourceWarehouse() : BelongsTo
+        {
+            return $this->belongsTo( Warehouse::class , 'source_warehouse_id' , 'id' );
+        }
+
+        public function destinationWarehouse() : BelongsTo
+        {
+            return $this->belongsTo( Warehouse::class , 'destination_warehouse_id' , 'id' );
+        }
+
         public function unit() : BelongsTo
         {
             return $this->belongsTo( Unit::class , 'unit_id' , 'id' );

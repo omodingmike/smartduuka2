@@ -249,6 +249,11 @@
         ] );
     }
 
+    function datetime2(?Carbon $datetime) : string
+    {
+        return $datetime ? $datetime->format( 'd-M-Y H:i:s' ) : '';
+    }
+
     function addToLedger(User $user , string $reference , float $bill_amount , float $paid)
     {
         return CustomerLedger::create( [

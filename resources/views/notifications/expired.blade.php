@@ -24,7 +24,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" width="600" class="wrapper" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); border-top: 5px solid #EA580C;">
                     <tr>
                         <td bgcolor="#ffffff" align="center" style="padding: 30px 20px 20px 20px; border-bottom: 1px solid #eee;">
-                            <img src="https://via.placeholder.com/200x60/ffffff/EA580C?text=Smart+Duuka+Logo" width="200" height="60" alt="Smart Duuka" style="display: block; border: 0; font-family: sans-serif; font-weight: bold; font-size: 24px; color: #EA580C;">
+                            <img src="{{asset('logo.png')}}" width="200" height="60" alt="Smart Duuka" style="display: block; border: 0; font-family: sans-serif; font-weight: bold; font-size: 24px; color: #EA580C;">
                         </td>
                     </tr>
                     <tr>
