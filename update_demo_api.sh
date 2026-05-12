@@ -39,7 +39,7 @@ done
 
 # Install dependencies using the demo compose configuration[cite: 5]
 $COMPOSE run --rm api_demo bash -c "composer remove maatwebsite/excel"
-$COMPOSE run --rm api_demo bash -c "composer update --no-dev --no-interaction"
+$COMPOSE run --rm api_demo bash -c "composer Install --no-dev --no-interaction"
 
 # Build containers using the demo compose configuration[cite: 5]
 log "🐳 Building demo containers..."

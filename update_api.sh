@@ -76,6 +76,7 @@ log "⬆️  Updating Composer to latest stable version..."
 $COMPOSE run --rm api bash -c "composer self-update --stable --no-interaction"
 
 log "📦 Performing clean vendor installation..."
+$COMPOSE run --rm api_demo bash -c "composer remove maatwebsite/excel"
 $COMPOSE run --rm api bash -c "composer install --no-dev --no-interaction"
 
 # --------------------------------------------------
