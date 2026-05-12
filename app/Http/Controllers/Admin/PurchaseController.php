@@ -43,6 +43,7 @@
     use Exception;
     use Illuminate\Contracts\Routing\ResponseFactory;
     use Illuminate\Foundation\Application;
+    use Illuminate\Http\JsonResponse;
     use Illuminate\Http\Request;
     use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
     use Illuminate\Http\Response;
@@ -55,412 +56,453 @@
     {
         use SaveMedia;
 
-        public PurchaseService         $purchaseService;
-        public ProductVariationService $productVariationService;
-        protected array                $purchaseFilter = [
-            'supplier_id' ,
-            'date' ,
-            'reference_no' ,
-            'status' ,
-            'total' ,
-            'note' ,
-            'except'
+        protected array $purchaseFilter = [
+            'supplier_id',
+            'date',
+            'reference_no',
+            'status',
+            'total',
+            'note',
+            'except',
         ];
 
-        public function __construct(PurchaseService $purchaseService , ProductVariationService $productVariationService)
-        {
+        public function __construct(
+            protected PurchaseService         $purchaseService,
+            protected ProductVariationService $productVariationService,
+        ) {
             parent::__construct();
-            $this->purchaseService         = $purchaseService;
-            $this->productVariationService = $productVariationService;
-//            $this->middleware( [ 'permission:purchase' ] )->only( 'export' , 'downloadAttachment' );
-//            $this->middleware( [ 'permission:purchase_create' ] )->only( 'store' );
-//            $this->middleware( [ 'permission:purchase_edit' ] )->only( 'edit' , 'update' );
-//            $this->middleware( [ 'permission:purchase_delete' ] )->only( 'destroy' );
-//            $this->middleware( [ 'permission:purchase_show' ] )->only( 'show' );
+
+            // Uncomment and adjust permissions as needed:
+            // $this->middleware(['permission:purchase'])->only('export', 'downloadAttachment');
+            // $this->middleware(['permission:purchase_create'])->only('store');
+            // $this->middleware(['permission:purchase_edit'])->only('edit', 'update');
+            // $this->middleware(['permission:purchase_delete'])->only('destroy');
+            // $this->middleware(['permission:purchase_show'])->only('show');
         }
 
+        // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-        public function storeIngredient(PurchaseRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        /**
+         * Return a standard 422 error response and log the exception.
+         */
+        private function errorResponse(Exception $exception): JsonResponse
+        {
+            Log::error($exception->getMessage(), ['trace' => $exception->getTraceAsString()]);
+            return response()->json(['status' => false, 'message' => $exception->getMessage()], 422);
+        }
+
+        // ─── Lookup endpoints ────────────────────────────────────────────────────────
+
+        public function paymentMethods(): AnonymousResourceCollection
+        {
+            return PaymentMethodResource::collection(PaymentMethod::all());
+        }
+
+        public function taxes(): AnonymousResourceCollection
+        {
+            return TaxResource::collection(Tax::all());
+        }
+
+        // ─── List endpoints ──────────────────────────────────────────────────────────
+
+        public function index(PaginateRequest $request): Application|Response|AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                return new PurchaseResource( $this->purchaseService->storeIngredient( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return PurchaseResource::collection($this->purchaseService->list($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function pos(StorePosPaymentRequest $request , Order $order) : object
+        public function indexIngredients(PaginateRequest $request): Application|Response|AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                DB::transaction( function () use ($request , $order) {
-                    $payment_method = PaymentMethod::find( $request->payment_method );
-                    $points         = $request->points;
-                    if ( Str::contains( $payment_method->name , 'points' , TRUE ) ) {
-                        $customer      = $order->user;
-                        $exchange_rate = RoyaltyPointsExchageRate::first();
-                        $points_value  = Constants::ROYALTY_POINTS_DEFAULT_VALUE;
-                        if ( $exchange_rate ) {
-                            $points_value = $exchange_rate->value / $exchange_rate->points;
-                        }
-                        $amount = $points * $points_value;
-                        if ( $customer instanceof RoyaltyCustomer ) {
-                            $customer->decrement( 'points' , $points );
-                            RoyaltyPointsLog::create( [
-                                'customer_id' => $customer->id ,
-                                'points'      => $points ,
-                                'type'        => 'Redeemed Points' ,
-                                'redeemed_by' => auth()->id()
-                            ] );
-                        }
-                    }
-                    else {
-                        $amount = $request->amount;
-                    }
-                    $purchasePayment       = PosPayment::create( [
-                        'order_id'       => $order->id ,
-                        'date'           => date( 'Y-m-d H:i:s' , strtotime( $request->date ) ) ,
-                        'reference_no'   => $request->reference_no ,
-                        'amount'         => $amount ,
-                        'payment_method' => $request->payment_method ,
-                    ] );
-                    $order->payment_method = $request->payment_method;
-                    $order->change         = $request->change;
-                    if ( $order->paid == NULL ) {
-                        $order->paid = $amount;
-                    }
-                    else {
-                        $order->increment( 'paid' , $amount );
-                    }
-
-                    if ( $request->file ) {
-                        $purchasePayment->addMediaFromRequest( 'file' )->toMediaCollection( 'pos_payment' );
-                    }
-                    if ( $request->payment_file ) {
-                        $purchasePayment->addMediaFromRequest( 'payment_file' )->toMediaCollection( 'pos_payment' );
-                    }
-
-                    $checkPosPayment = PosPayment::where( 'order_id' , $order->id )->sum( 'amount' );
-
-                    if ( $checkPosPayment == $order->total ) {
-                        $order->payment_status = PaymentStatus::PAID;
-                        $order->status         = OrderStatus::COMPLETED;
-                    }
-
-                    if ( $checkPosPayment < $order->total ) {
-                        $order->payment_status = PaymentStatus::UNPAID;
-                    }
-                    $order->save();
-                } );
-                return $order;
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                DB::rollBack();
-                throw new Exception( $exception->getMessage() , 422 );
+                return PurchaseResource::collection($this->purchaseService->ingreidentList($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function paymentMethods()
+        public function listRequest(PaginateRequest $request): Application|Response|AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
-            return PaymentMethodResource::collection( PaymentMethod::all() );
+            try {
+                return StockPurchaseRequestResource::collection($this->purchaseService->listRequest($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
         }
 
-        public function taxes()
-        {
-            return TaxResource::collection( Tax::all() );
-        }
-
+        /**
+         * Ingredient purchase list (used by older routes that pass a 'type' filter directly).
+         */
         public function ingreidentList(PaginateRequest $request)
         {
-
             try {
                 $requests    = $request->all();
-                $method      = $request->get( 'paginate' , 0 ) == 1 ? 'paginate' : 'get';
-                $methodValue = $request->get( 'paginate' , 0 ) == 1 ? $request->get( 'per_page' , 10 ) : '*';
-                $orderColumn = $request->get( 'order_column' ) ?? 'id';
-                $orderType   = $request->get( 'order_type' ) ?? 'desc';
+                $method      = $request->get('paginate', 0) == 1 ? 'paginate' : 'get';
+                $methodValue = $request->get('paginate', 0) == 1 ? $request->get('per_page', 10) : '*';
+                $orderColumn = $request->get('order_column', 'id');
+                $orderType   = $request->get('order_type', 'desc');
 
-                return Purchase::with( 'supplier' )->where( function ($query) use ($requests) {
-                    $query->where( 'type' , $requests[ 'type' ] );
-                    foreach ( $requests as $key => $request ) {
-                        if ( in_array( $key , $this->purchaseFilter ) ) {
-                            if ( $key == 'except' ) {
-                                $explodes = explode( '|' , $request );
-                                if ( count( $explodes ) ) {
-                                    foreach ( $explodes as $explode ) {
-                                        $query->where( 'id' , '!=' , $explode );
-                                    }
-                                }
-                            }
-                            else {
-                                if ( $key == 'supplier_id' || $key == 'status' ) {
-                                    $query->where( $key , $request );
-                                }
-                                else if ( $key == 'date' && ! empty( $request ) ) {
-                                    $date_start = date( 'Y-m-d 00:00:00' , strtotime( $request ) );
-                                    $date_end   = date( 'Y-m-d 23:59:59' , strtotime( $request ) );
-                                    $query->where( $key , '>=' , $date_start )->where( $key , '<=' , $date_end );
-                                }
-                                else {
-                                    $query->where( $key , 'like' , '%' . $request . '%' );
-                                }
-                            }
-                        }
-                    }
-                } )->orderBy( $orderColumn , $orderType )->$method( $methodValue );
-            } catch ( Exception $exception ) {
-                Log::info( $exception->getMessage() );
-                throw new Exception( $exception->getMessage() , 422 );
+                return Purchase::with('supplier')
+                               ->where(function ($query) use ($requests) {
+                                   $query->where('type', $requests['type']);
+
+                                   foreach ($requests as $key => $value) {
+                                       if (!in_array($key, $this->purchaseFilter)) {
+                                           continue;
+                                       }
+                                       $this->applyPurchaseFilter($query, $key, $value);
+                                   }
+                               })
+                               ->orderBy($orderColumn, $orderType)
+                               ->$method($methodValue);
+            } catch (Exception $exception) {
+                Log::error($exception->getMessage());
+                throw new Exception($exception->getMessage(), 422);
             }
         }
 
-        public function indexIngredients(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        // ─── CRUD endpoints ──────────────────────────────────────────────────────────
+
+        public function store(PurchaseRequest $request): Application|Response|PurchaseResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                return PurchaseResource::collection( $this->purchaseService->ingreidentList( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return new PurchaseResource($this->purchaseService->store($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function index(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function storeIngredient(PurchaseRequest $request): Application|Response|PurchaseResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                return PurchaseResource::collection( $this->purchaseService->list( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function listRequest(PaginateRequest $request) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
-        {
-            try {
-                return StockPurchaseRequestResource::collection( $this->purchaseService->listRequest( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return new PurchaseResource($this->purchaseService->storeIngredient($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
         public function storeStock(PurchaseRequest $request)
         {
             try {
-                return $this->purchaseService->storeStock( $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return $this->purchaseService->storeStock($request);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function transferStock(StockTransferRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function show(Purchase $purchase): Application|Response|PurchaseDetailsResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                return new PurchaseResource( $this->purchaseService->transferStock( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return new PurchaseDetailsResource($this->purchaseService->show($purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        public function showIngredient(Purchase $purchase): Application|Response|PurchaseDetailsResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                return new PurchaseDetailsResource($this->purchaseService->showIngredient($purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        public function edit(Purchase $purchase): Application|Response|PurchaseDetailsResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                return new PurchaseDetailsResource($this->purchaseService->edit($purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        public function update(PurchaseRequest $request, Purchase $purchase): Application|Response|PurchaseResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                return new PurchaseResource($this->purchaseService->update($request, $purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        public function destroy(Request $request): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                Purchase::destroy($request->ids);
+                return response('', 202);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        // ─── Transfer & reconciliation endpoints ─────────────────────────────────────
+
+        public function transferStock(StockTransferRequest $request): Application|Response|PurchaseResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                return new PurchaseResource($this->purchaseService->transferStock($request));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
         public function reconcileStock(StockReconcilliationRequest $request)
         {
             try {
-                return $this->purchaseService->reconcileStock( $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function store(PurchaseRequest $request) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
-        {
-            try {
-                return new PurchaseResource( $this->purchaseService->store( $request ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function request(StockPurchaseRequestRequest $request)
-        {
-            try {
-                return $this->purchaseService->request( $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function changeRequestStatus(Request $request , StockPurchaseRequest $purchase)
-        {
-            try {
-                DB::transaction( function () use ($purchase , $request) {
-                    $purchase->update( [ 'status' => $request->status ] );
-                    if ( $request->status == PurchaseRequestStatus::ORDERED->value ) {
-                        $warehouse_id = Warehouse::first()->id;
-                        $products     = $purchase->stocks->map( function (Stock $stock) {
-                            return [
-                                'stock_id'         => $stock->id ,
-                                'product_id'       => $stock->product_id ,
-                                'product_name'     => $stock->product->name ,
-                                'price'            => $stock->price ,
-                                'quantity_ordered' => $stock->quantity_ordered ,
-                                'currency_price'   => AppLibrary::currencyAmountFormat( $stock->price ) ,
-                                'total'            => $stock->total ,
-                                'total_currency'   => AppLibrary::currencyAmountFormat( $stock->total ) ,
-                                'quantity'         => $stock->quantity ,
-                                'unit'             => $stock->product->unit->short_name ,
-                            ];
-                        } );
-
-                        $total = $products->sum('total');
-
-                        $p     = Purchase::create( [
-                            'date'           => now() ,
-                            'reference_no'   => 'PO' . time() ,
-                            'subtotal'       => $total ,
-                            'total'          => $total ,
-                            'notes'          => $purchase->reason ,
-                            'status'         => PurchaseStatus::PENDING ,
-                            'shipping'       => 0 ,
-                            'payment_status' => PurchasePaymentStatus::PENDING ,
-                            'warehouse_id'   => $warehouse_id ,
-                            'supplier_id'    => $purchase->supplier_id
-                        ] );
-
-                        info( $products );
-
-                        foreach ( $products as $product ) {
-                            Stock::create( [
-                                'model_type'       => Purchase::class ,
-                                'reference'        => 'S' . time() ,
-                                'model_id'         => $p->id ,
-                                'expiry_date'      => NULL ,
-                                'item_type'        => Product::class ,
-                                'product_id'       => $product[ 'product_id' ] ,
-                                'item_id'          => $product[ 'product_id' ] ,
-                                'variation_names'  => 'variation_names' ,
-                                'price'            => $product[ 'price' ] ,
-                                'quantity'         => 0 ,
-                                'quantity_ordered' => $product[ 'quantity_ordered' ] ,
-                                'discount'         => 0 ,
-                                'tax'              => 0 ,
-                                'subtotal'         => $product[ 'total' ] ,
-                                'total'            => $product[ 'total' ] ,
-                                'sku'              => 'sku' ,
-                                'warehouse_id'     => $warehouse_id ,
-                                'status'           => StockStatus::IN_TRANSIT
-                            ] );
-                        }
-                    }
-                } );
-                return [];
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return $this->purchaseService->reconcileStock($request);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
         public function receive(Request $request)
         {
             try {
-                return $this->purchaseService->receive( $request );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return $this->purchaseService->receive($request);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function show(Purchase $purchase) : Application | Response | PurchaseDetailsResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        // ─── Purchase request endpoints ───────────────────────────────────────────────
+
+        public function request(StockPurchaseRequestRequest $request)
         {
             try {
-                return new PurchaseDetailsResource( $this->purchaseService->show( $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return $this->purchaseService->request($request);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function showIngredient(Purchase $purchase) : Application | Response | PurchaseDetailsResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        /**
+         * Change the status of a StockPurchaseRequest.
+         * When status transitions to ORDERED, creates a Purchase and stock rows in a transaction.
+         */
+        public function changeRequestStatus(Request $request, StockPurchaseRequest $purchase)
         {
             try {
-                return new PurchaseDetailsResource( $this->purchaseService->showIngredient( $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                DB::transaction(function () use ($purchase, $request) {
+                    $purchase->update(['status' => $request->status]);
+
+                    if ((int) $request->status !== PurchaseRequestStatus::ORDERED->value) {
+                        return;
+                    }
+
+                    $warehouseId = Warehouse::value('id'); // single query instead of first()->id
+                    $products    = $purchase->stocks->map(function (Stock $stock) {
+                        return [
+                            'stock_id'         => $stock->id,
+                            'product_id'       => $stock->product_id,
+                            'product_name'     => $stock->product->name,
+                            'price'            => $stock->price,
+                            'quantity_ordered' => $stock->quantity_ordered,
+                            'currency_price'   => AppLibrary::currencyAmountFormat($stock->price),
+                            'total'            => $stock->total,
+                            'total_currency'   => AppLibrary::currencyAmountFormat($stock->total),
+                            'quantity'         => $stock->quantity,
+                            'unit'             => $stock->product->unit->short_name,
+                        ];
+                    });
+
+                    $total = $products->sum('total');
+
+                    $p = Purchase::create([
+                        'date'           => now(),
+                        'reference_no'   => 'PO' . time(),
+                        'subtotal'       => $total,
+                        'total'          => $total,
+                        'notes'          => $purchase->reason,
+                        'status'         => PurchaseStatus::PENDING,
+                        'shipping'       => 0,
+                        'payment_status' => PurchasePaymentStatus::PENDING,
+                        'warehouse_id'   => $warehouseId,
+                        'supplier_id'    => $purchase->supplier_id,
+                    ]);
+
+                    $stockRows = $products->map(fn($product) => [
+                        'model_type'       => Purchase::class,
+                        'reference'        => 'S' . time(),
+                        'model_id'         => $p->id,
+                        'expiry_date'      => null,
+                        'item_type'        => Product::class,
+                        'product_id'       => $product['product_id'],
+                        'item_id'          => $product['product_id'],
+                        'variation_names'  => null,
+                        'price'            => $product['price'],
+                        'quantity'         => 0,
+                        'quantity_ordered' => $product['quantity_ordered'],
+                        'discount'         => 0,
+                        'tax'              => 0,
+                        'subtotal'         => $product['total'],
+                        'total'            => $product['total'],
+                        'sku'              => null,
+                        'warehouse_id'     => $warehouseId,
+                        'status'           => StockStatus::IN_TRANSIT,
+                    ])->all();
+
+                    // Bulk insert instead of N individual inserts
+                    Stock::insert($stockRows);
+                });
+
+                return response()->json([], 200);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function edit(Purchase $purchase) : Application | Response | PurchaseDetailsResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        // ─── POS endpoint ────────────────────────────────────────────────────────────
+
+        /**
+         * Record a POS payment, handle royalty point redemption, and update order status.
+         */
+        public function pos(StorePosPaymentRequest $request, Order $order): object
         {
             try {
-                return new PurchaseDetailsResource( $this->purchaseService->edit( $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                DB::transaction(function () use ($request, $order) {
+                    $paymentMethod = PaymentMethod::findOrFail($request->payment_method);
+                    $amount        = $request->amount;
+
+                    if (Str::contains($paymentMethod->name, 'points', true)) {
+                        $points       = $request->points;
+                        $exchangeRate = RoyaltyPointsExchageRate::first();
+                        $pointsValue  = $exchangeRate
+                            ? ($exchangeRate->value / $exchangeRate->points)
+                            : Constants::ROYALTY_POINTS_DEFAULT_VALUE;
+                        $amount = $points * $pointsValue;
+
+                        if ($order->user instanceof RoyaltyCustomer) {
+                            $order->user->decrement('points', $points);
+                            RoyaltyPointsLog::create([
+                                'customer_id' => $order->user->id,
+                                'points'      => $points,
+                                'type'        => 'Redeemed Points',
+                                'redeemed_by' => auth()->id(),
+                            ]);
+                        }
+                    }
+
+                    $posPayment = PosPayment::create([
+                        'order_id'       => $order->id,
+                        'date'           => now()->parse($request->date)->format('Y-m-d H:i:s'),
+                        'reference_no'   => $request->reference_no,
+                        'amount'         => $amount,
+                        'payment_method' => $request->payment_method,
+                    ]);
+
+                    $order->payment_method = $request->payment_method;
+                    $order->change         = $request->change;
+                    $order->paid === null
+                        ? $order->paid = $amount
+                        : $order->increment('paid', $amount);
+
+                    if ($request->hasFile('file')) {
+                        $posPayment->addMediaFromRequest('file')->toMediaCollection('pos_payment');
+                    }
+                    if ($request->hasFile('payment_file')) {
+                        $posPayment->addMediaFromRequest('payment_file')->toMediaCollection('pos_payment');
+                    }
+
+                    $totalPaid = PosPayment::where('order_id', $order->id)->sum('amount');
+
+                    $order->payment_status = match (true) {
+                        $totalPaid >= $order->total => PaymentStatus::PAID,
+                        default                     => PaymentStatus::UNPAID,
+                    };
+
+                    if ($totalPaid >= $order->total) {
+                        $order->status = OrderStatus::COMPLETED;
+                    }
+
+                    $order->save();
+                });
+
+                return $order;
+            } catch (Exception $exception) {
+                DB::rollBack();
+                Log::error($exception->getMessage());
+                throw new Exception($exception->getMessage(), 422);
             }
         }
 
-        public function update(PurchaseRequest $request , Purchase $purchase) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        // ─── Payment endpoints ───────────────────────────────────────────────────────
+
+        public function payment(PurchasePaymentRequest $request, Purchase $purchase): Application|Response|PurchaseResource|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                return new PurchaseResource( $this->purchaseService->update( $request , $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return new PurchaseResource($this->purchaseService->payment($request, $purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function destroy(Request $request) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function paymentHistory(int $type, Purchase $purchase): Application|Response|AnonymousResourceCollection|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                Purchase::destroy( $request->ids );
-                return response( '' , 202 );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function export(PaginateRequest $request) : Application | Response | \Symfony\Component\HttpFoundation\BinaryFileResponse | \Illuminate\Contracts\Foundation\Application | ResponseFactory
-        {
-            try {
-                return Excel::download( new PurchasesExport( $this->purchaseService , $request ) , 'Purchases.xlsx' );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function downloadAttachment(Purchase $purchase)
-        {
-            try {
-                return $this->purchaseService->downloadAttachment( $purchase );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function payment(PurchasePaymentRequest $request , Purchase $purchase) : Application | Response | PurchaseResource | \Illuminate\Contracts\Foundation\Application | ResponseFactory
-        {
-            try {
-                return new PurchaseResource( $this->purchaseService->payment( $request , $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
-            }
-        }
-
-        public function paymentHistory(int $type , Purchase $purchase) : Application | Response | AnonymousResourceCollection | \Illuminate\Contracts\Foundation\Application | ResponseFactory
-        {
-            try {
-                return PurchasePaymentResource::collection( $this->purchaseService->paymentHistory( $type , $purchase ) );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return PurchasePaymentResource::collection($this->purchaseService->paymentHistory($type, $purchase));
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
         public function paymentDownloadAttachment(PurchasePayment $purchasePayment)
         {
             try {
-                return $this->purchaseService->paymentDownloadAttachment( $purchasePayment );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                return $this->purchaseService->paymentDownloadAttachment($purchasePayment);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
         }
 
-        public function paymentDestroy(int $type , Purchase $purchase , PurchasePayment $purchasePayment) : Application | Response | \Illuminate\Contracts\Foundation\Application | ResponseFactory
+        public function paymentDestroy(int $type, Purchase $purchase, PurchasePayment $purchasePayment): Application|Response|\Illuminate\Contracts\Foundation\Application|ResponseFactory
         {
             try {
-                $this->purchaseService->paymentDestroy( $purchase , $purchasePayment , $type );
-                return response( '' , 202 );
-            } catch ( Exception $exception ) {
-                return response( [ 'status' => FALSE , 'message' => $exception->getMessage() ] , 422 );
+                $this->purchaseService->paymentDestroy($purchase, $purchasePayment, $type);
+                return response('', 202);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
             }
+        }
+
+        // ─── Export / download endpoints ─────────────────────────────────────────────
+
+        public function export(PaginateRequest $request): Application|Response|\Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Contracts\Foundation\Application|ResponseFactory
+        {
+            try {
+                return Excel::download(new PurchasesExport($this->purchaseService, $request), 'Purchases.xlsx');
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        public function downloadAttachment(Purchase $purchase)
+        {
+            try {
+                return $this->purchaseService->downloadAttachment($purchase);
+            } catch (Exception $exception) {
+                return $this->errorResponse($exception);
+            }
+        }
+
+        // ─── Internal helpers ────────────────────────────────────────────────────────
+
+        /**
+         * Apply a single purchase filter clause to the query.
+         */
+        private function applyPurchaseFilter($query, string $key, mixed $value): void
+        {
+            match ($key) {
+                'except' => collect(explode('|', $value))
+                    ->each(fn($id) => $query->where('id', '!=', $id)),
+
+                'supplier_id', 'status' => $query->where($key, $value),
+
+                'date' => !empty($value) ? $query->whereDate($key, $value) : null,
+
+                default => $query->where($key, 'like', '%' . $value . '%'),
+            };
         }
     }

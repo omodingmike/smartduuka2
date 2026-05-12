@@ -4,6 +4,7 @@
 
     use App\Enums\EnumDistributionStockStatusEnum;
     use App\Enums\StockStatus;
+    use App\Enums\StockType;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@
             'tax'                 => 'decimal:6' ,
             'sku'                 => 'string' ,
             'status'              => StockStatus::class ,
+            'type'                => StockType::class ,
             'subtotal'            => 'decimal:6' ,
             'total'               => 'decimal:6' ,
             'rate'                => 'decimal:6' ,

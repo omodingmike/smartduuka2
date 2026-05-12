@@ -2,10 +2,32 @@
 
     namespace App\Enums;
 
-    interface StockType
+    use JsonSerializable;
+
+    enum StockType : int implements JsonSerializable
     {
-        const TRANSFER       = 2; //transfer
-        const REQUESTS       = 3; //requests
-        const DISTRIBUTION   = 4; //distribution
-        const RECONCILIATION = 5; //reconciliation
+        case PURCHASE       = 1;
+        case TRANSFER       = 2;
+        case REQUESTS       = 3;
+        case DISTRIBUTION   = 4;
+        case RECONCILIATION = 5;
+
+        public function label() : string
+        {
+            return match ( $this ) {
+                self::PURCHASE       => 'Purchase' ,
+                self::TRANSFER       => 'Transfer' ,
+                self::REQUESTS       => 'Requests' ,
+                self::DISTRIBUTION   => 'Distribution' ,
+                self::RECONCILIATION => 'Reconciliation' ,
+            };
+        }
+
+        public function jsonSerialize() : array
+        {
+            return [
+                'value' => $this->value ,
+                'label' => $this->label() ,
+            ];
+        }
     }

@@ -40,55 +40,56 @@
                              ->values()
                              ->toArray();
             return [
-                "id"                         => $this->id ,
-                "name"                       => $this->name ,
-                "sku"                        => $this->sku ,
-                "type"                       => $this->type ,
-                "unit"                       => $this->unit ,
-                "barcode"                    => $this->barcode ,
-                "deposited"                  => $this->deposited ,
-                'approve_quantity'           => number_format( $this->approve_quantity ) ,
-                'request_quantity'           => number_format( $this->request_quantity ) ,
-                'quantity'                   => abs( $this->transfer_quantity ) ?? 0 ,
-                'quantity_text'              => number_format( abs( $this->transfer_quantity ) ?? 0 ) ,
-                "stock"                      => $this->stock ,
-                "stock_text"                 => number_format( $this->stock ) ,
-                "slug"                       => $this->slug ,
-                "prices"                     => $prices ,
-                "product_category_id"        => $this->product_category_id ,
-                "barcode_id"                 => $this->barcode_id ,
-                "product_brand_id"           => $this->product_brand_id ,
-                "unit_id"                    => $this->unit_id ,
-                "single_tree"                => $this->single_tree ,
-                'taxes'                      => TaxResource::collection( $this->whenLoaded( 'taxes' , function () {
-                    return $this->taxes->map->tax;
-                } ) ) ,
-                'tax_inclusive'              => $this->tax_inclusive ,
-//                "variations"                 => ProductVariationResource::collection( $this->variations ) ,
+                "id"                  => $this->id ,
+                "name"                => $this->name ,
+                "sku"                 => $this->sku ,
+                "type"                => $this->type ,
+                "unit"                => $this->unit ,
+                "barcode"             => $this->barcode ,
+                "deposited"           => $this->deposited ,
+                'approve_quantity'    => number_format( $this->approve_quantity ) ,
+                'request_quantity'    => number_format( $this->request_quantity ) ,
+                'quantity'            => abs( $this->transfer_quantity ) ?? 0 ,
+                'quantity_text'       => number_format( abs( $this->transfer_quantity ) ?? 0 ) ,
+                "stock"               => $this->stock ,
+                "stock_text"          => number_format( $this->stock ) ,
+                "slug"                => $this->slug ,
+                "prices"              => $prices ,
+                "product_category_id" => $this->product_category_id ,
+                "barcode_id"          => $this->barcode_id ,
+                "product_brand_id"    => $this->product_brand_id ,
+                "unit_id"             => $this->unit_id ,
+                "single_tree"         => $this->single_tree ,
+//                'taxes'                      => TaxResource::collection( $this->whenLoaded( 'taxes' , function () {
+//                    return $this->taxes->map->tax;
+//                } ) ) ,
+                'tax_inclusive'       => $this->tax_inclusive ,
+                "variations"                 => ProductVariationResource::collection( $this->variations ) ,
                 // Inside ProductAdminResource.php -> toArray()
-                'variations'                 => $this->variations->map( function ($variation) {
-                    // Build the options array specifically for this variation
-                    $options = [];
-                    $nodes   = $variation->ancestorsAndSelf()
-                                         ->with( [ 'productAttribute' , 'productAttributeOption' ] )
-                                         ->get()
-                                         ->reverse();
 
-                    foreach ( $nodes as $node ) {
-                        if ( $node->productAttribute && $node->productAttributeOption ) {
-                            $options[] = [
-                                'attribute_name' => $node->productAttribute->name ,
-                                'option_name'    => $node->productAttributeOption->name ,
-                            ];
-                        }
-                    }
+//                'variations' => $this->variations ? $this->variations->map( function ($variation) {
+//                    $options = [];
+//                    $nodes   = $variation->ancestorsAndSelf()
+//                                         ->with( [ 'productAttribute' , 'productAttributeOption' ] )
+//                                         ->get()
+//                                         ->reverse();
+//
+//                    foreach ( $nodes as $node ) {
+//                        if ( $node->productAttribute && $node->productAttributeOption ) {
+//                            $options[] = [
+//                                'attribute_name' => $node->productAttribute->name ,
+//                                'option_name'    => $node->productAttributeOption->name ,
+//                            ];
+//                        }
+//                    }
+//
+//                    return array_merge(
+//                        ( new ProductVariationResource( $variation ) )->toArray( request() ) ,
+//                        [ 'options' => $options ]
+//                    );
+//                } ) : [] ,
 
-                    // Use the existing Resource but merge the new options array
-                    return array_merge(
-                        ( new ProductVariationResource( $variation ) )->toArray( request() ) ,
-                        [ 'options' => $options ]
-                    );
-                } ) ,
+
                 "wholesalePrices"            => WholeSalePriceResource::collection( $this->wholesalePrices ) ,
 //                "wholesalePrices"            => WholeSalePriceResource::collection(
 //                    $this->wholesalePrices->where( 'batch' , $latestBatch )

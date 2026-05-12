@@ -16,7 +16,6 @@
     {
         public function toArray($request) : array
         {
-            $status                = $this->status;
             $source_warehouse      = $this->source_warehouse_id ? Warehouse::find( $this->source_warehouse_id ) : NULL;
             $warehouse             = $this->warehouse_id ? Warehouse::find( $this->warehouse_id ) : NULL;
             $destination_warehouse = $this->destination_warehouse_id ? Warehouse::find( $this->destination_warehouse_id ) : NULL;
@@ -28,7 +27,7 @@
                 'model_type'               => $this->model_type ,
                 'currency'                 => currencySymbol() ,
 //                'products'                 => $this->products ,
-                'products'                 => ProductAdminResource::collection( $this->products ?? [] ) ,
+                'products'                 => $this->products ? ProductAdminResource::collection( $this->products ) : [] ,
                 'location'                 => $warehouse ? new WarehouseResource( $warehouse ) : NULL ,
                 'from'                     => $source_warehouse ? new WarehouseResource( $source_warehouse ) : NULL ,
                 'to'                       => $destination_warehouse ? new WarehouseResource( $destination_warehouse ) : NULL ,
@@ -46,10 +45,7 @@
                 'total'                    => AppLibrary::currencyAmountFormat( $this->total ) ,
                 'created_at'               => AppLibrary::datetime2( $this->created_at ) ,
                 'tax'                      => $this->tax ,
-                'status'                   => [
-                    'value' => $status->value ,
-                    'label' => $status->label() ,
-                ] ,
+                'status'                   => $this->status ,
                 'type'                     => $this->type ,
                 'updated_at'               => $this->updated_at ,
                 'other_quantity'           => $this->other_quantity ,

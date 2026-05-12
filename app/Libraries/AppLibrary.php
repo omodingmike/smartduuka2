@@ -39,11 +39,12 @@
             return Carbon::parse( $dateTime )->format( $pattern );
         }
 
-        public static function datetime2(Carbon $dateTime , $pattern = NULL) : string
+        public static function datetime2(?Carbon $dateTime , $pattern = NULL) : string
         {
             if ( ! $pattern ) {
                 $pattern = config( 'system.date_format' ) . ' ' . config( 'system.time_format' );
             }
+            if ( ! $dateTime ) return '';
             return $dateTime->format( $pattern );
         }
 
