@@ -48,7 +48,7 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" && \
 # 6. Dependency Caching
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer update --no-interaction --no-scripts --no-autoloader --no-dev --ignore-platform-reqs
+RUN composer install --no-interaction --no-scripts --no-autoloader --no-dev --ignore-platform-reqs
 
 # 7. Permissions & Environment Fix
 RUN mkdir -p /var/www/.cache/composer /app/storage /app/bootstrap/cache/filament /var/run/php /app/public/media \
@@ -60,7 +60,7 @@ COPY --chown=www-data:www-data . .
 
 # 9. Finalize Laravel
 RUN git config --global --add safe.directory /app && \
-    composer update --no-dev --optimize-autoloader --no-interaction && \
+    composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs && \
     composer dump-autoload --optimize --no-scripts && \
     php artisan package:discover --ansi && \
     php artisan storage:link || true && \
