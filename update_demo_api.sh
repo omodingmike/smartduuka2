@@ -38,7 +38,7 @@ for DIR in storage bootstrap/cache public public/media public/static; do
 done
 
 # Install dependencies using the demo compose configuration[cite: 5]
-$COMPOSE run --rm api_demo bash -c "composer install --no-dev --no-interaction"
+$COMPOSE run --rm api_demo bash -c "composer update --no-dev --no-interaction"
 
 # Build containers using the demo compose configuration[cite: 5]
 log "🐳 Building demo containers..."
