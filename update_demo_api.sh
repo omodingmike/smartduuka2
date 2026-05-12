@@ -38,7 +38,7 @@ for DIR in storage bootstrap/cache public public/media public/static; do
 done
 
 # Install dependencies using the demo compose configuration[cite: 5]
-$COMPOSE run --rm api_demo bash -c "composer remove maatwebsite/excel"
+#$COMPOSE run --rm api_demo bash -c "composer remove maatwebsite/excel"
 $COMPOSE run --rm api_demo bash -c "composer Install --no-dev --no-interaction"
 
 # Build containers using the demo compose configuration[cite: 5]
