@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "require": {
-    "php": "^8.3",
+    "php": "^8.5",
     "ext-intl": "*",
     "ext-pdo": "*",
     "africastalking/africastalking": "^3.0",
@@ -22,7 +22,6 @@
     "laravel/reverb": "^1.8",
     "laravel/sanctum": "^4.0",
     "laravel/tinker": "^3.0",
-    "maatwebsite/excel": "^3.1",
     "picqer/php-barcode-generator": "^3.2",
     "pragmarx/countries": "^1.0",
     "smartisan/settings": "dev-main@dev",
