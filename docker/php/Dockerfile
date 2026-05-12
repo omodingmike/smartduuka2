@@ -53,7 +53,7 @@ COPY --chown=www-data:www-data . .
 # Must run AFTER full code copy so vendor, app code, and configs are all present.
 # composer install here completes autoloader generation on top of the cached packages from step 5.
 RUN git config --global --add safe.directory /app && \
-    composer install --no-dev --optimize-autoloader --no-interaction && \
+    composer update --no-dev --optimize-autoloader --no-interaction && \
     composer dump-autoload --optimize --no-scripts && \
     php artisan package:discover --ansi && \
     php artisan storage:link || true
