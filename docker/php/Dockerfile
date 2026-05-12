@@ -44,7 +44,7 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" && \
 # dependencies change, not on every code change.
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-scripts --no-autoloader --no-dev --ignore-platform-reqs
+RUN composer update --no-interaction --no-scripts --no-autoloader --no-dev --ignore-platform-reqs
 
 # 6. Copy full application code
 COPY --chown=www-data:www-data . .
