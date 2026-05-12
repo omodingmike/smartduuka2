@@ -17,6 +17,7 @@
                 'billing_cycle_id' => $this->billing_cycle_id ,
                 'phone'            => $this->phone ,
                 'invoice_no'       => $this->invoice_no ,
+                'transaction_id'   => $this->transaction_id ,
                 'amount'           => $this->amount ,
                 'amount_currency'  => 'UGX ' . number_format( $this->amount ) ,
                 'status'           => $this->status ,
