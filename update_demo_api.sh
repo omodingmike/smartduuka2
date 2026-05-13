@@ -13,7 +13,7 @@ fail() { echo "❌ $*" >&2; exit 1; }
 
 # Update system packages
 log "🔄 Updating system packages..."
-sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
+#sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y
 
 # Clone or pull
 if [ ! -d "$BACKEND_DIR/.git" ]; then
