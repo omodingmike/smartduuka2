@@ -40,9 +40,7 @@
 
             $result = $gateway->charge( $paymentRequest );
 
-            if ( $result->success ) {
-                $tenantSubscription->update( [ 'transaction_id' => $transactionId ] );
-            }
+            $tenantSubscription->update( [ 'transaction_id' => $transactionId ] );
 
             info( $result->message ?: 'Failed to initiate payment' );
         }
