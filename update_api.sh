@@ -114,8 +114,9 @@ $COMPOSE exec -T api php artisan db:seed --force --class=SubscriptionPlanSeeder
 $COMPOSE exec -T api php artisan db:seed --force --class=BusinessOnBoardSeeder
 #$COMPOSE exec -T api php artisan tenants:seed --class=SubscriptionPlanSeeder
 $COMPOSE exec -T api php artisan tenants:insert-register-report
-$COMPOSE exec -T api php artisan seed-branches
+$COMPOSE exec -T api_demo php artisan add-branch-id-to-all-central-tables
 $COMPOSE exec -T api php artisan add-branch-id-to-all-tables
+$COMPOSE exec -T api php artisan seed-branches
 
 log "🔗 Ensuring storage symlink..."
 $COMPOSE exec -T api php artisan storage:link --relative || true
