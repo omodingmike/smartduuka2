@@ -116,7 +116,7 @@
 
                 if ( ! $centralUser ) return NULL;
 
-                $host       = $request->inputHost();
+                $host       = $request->getHost();
                 $subdomain  = explode( '.' , $host )[ 0 ];
                 $tenantSlug = Str::before( $subdomain , '-api' );
 
