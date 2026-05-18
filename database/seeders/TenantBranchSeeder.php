@@ -12,8 +12,7 @@
         {
             $tenant = tenant();
             tenancy()->central( function () use ($tenant) {
-                $branch = TenantBranch::create( [
-                    'name'       => 'Main Branch' ,
+                $branch = TenantBranch::firstOrCreate( [ 'name' => 'Main Branch' ] , [
                     'tenant_id'  => $tenant->id ,
                     'can_delete' => FALSE
                 ] );
