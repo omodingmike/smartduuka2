@@ -19,8 +19,7 @@
             foreach ( $tenants as $tenant ) {
                 $has_main_branch = TenantBranch::where( 'tenant_id' , $tenant->id )->exists();
                 if ( ! $has_main_branch ) {
-                    $branch = TenantBranch::create( [
-                        'name'       => 'Main Branch' ,
+                    $branch = TenantBranch::firstOrCreate( [ 'name' => 'Main Branch' , ] , [
                         'tenant_id'  => $tenant->id ,
                         'can_delete' => FALSE
                     ] );
